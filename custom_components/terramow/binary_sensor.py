@@ -12,6 +12,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowBasicData, DOMAIN
+from .entity_utils import safe_write_ha_state
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -357,7 +358,7 @@ class _MapStatusBinarySensorBase(BinarySensorEntity):
             self.basic_data.lawn_mower.register_callback(117, self._handle_dp_117)
 
     async def _handle_dp_117(self, _payload: str) -> None:
-        self.async_write_ha_state()
+        safe_write_ha_state(self)
 
     @property
     def device_info(self) -> DeviceInfo:

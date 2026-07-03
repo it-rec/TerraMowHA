@@ -21,6 +21,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import DOMAIN, TerraMowBasicData
+from .entity_utils import safe_write_ha_state
 from .const import (
     CONF_MAP_RESOLUTION,
     DEFAULT_MAP_RESOLUTION,
@@ -911,7 +912,7 @@ class TerraMowMapCamera(Camera):
             self._map_data_logged = True
         await self.hass.async_add_executor_job(self._rebuild_static_image)
         self._cached_png = None
-        self.async_write_ha_state()
+        safe_write_ha_state(self)
 
     async def _on_path_data(self, path_data: dict[str, Any]) -> None:
         """路径数据更新回调。"""
@@ -924,7 +925,7 @@ class TerraMowMapCamera(Camera):
             self._path_data_logged = True
         await self.hass.async_add_executor_job(self._rebuild_static_image)
         self._cached_png = None
-        self.async_write_ha_state()
+        safe_write_ha_state(self)
 
     async def _on_history_path_data(self, path_data: dict[str, Any]) -> None:
         """历史路径数据更新回调。"""
@@ -937,7 +938,7 @@ class TerraMowMapCamera(Camera):
             self._history_path_data_logged = True
         await self.hass.async_add_executor_job(self._rebuild_static_image)
         self._cached_png = None
-        self.async_write_ha_state()
+        safe_write_ha_state(self)
 
     async def _on_pose(self, pose: dict[str, Any]) -> None:
         """姿态更新回调。"""
@@ -946,12 +947,12 @@ class TerraMowMapCamera(Camera):
         now = time.monotonic()
         if now - self._last_pose_state_update >= 2.0:
             self._last_pose_state_update = now
-            self.async_write_ha_state()
+            safe_write_ha_state(self)
 
     async def _on_battery_status(self, _payload: str) -> None:
         """电池状态更新后清理机器人图层缓存。"""
         self._cached_png = None
-        self.async_write_ha_state()
+        safe_write_ha_state(self)
 
     def _get_battery_connected(self) -> bool | None:
         """读取当前是否已连接充电器。"""

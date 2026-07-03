@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
 from . import TerraMowBasicData, DOMAIN
+from .entity_utils import safe_write_ha_state
 from .const import (
     DEFAULT_BLADE_DISK_SPEED_TYPE,
     MIN_MOW_SPEED_VERSION_FOR_AUTO,
@@ -152,7 +153,7 @@ class TerraMowZoneSelect(SelectEntity):
         """处理地图信息更新"""
         self._map_info = map_info
         self._update_options()
-        self.async_write_ha_state()
+        safe_write_ha_state(self)
     
     def _update_options(self) -> None:
         """根据地图信息更新可选分区列表"""
@@ -730,13 +731,13 @@ class MainDirectionModeSelect(SelectEntity):
         if self._pending_mode == confirmed_mode:
             _LOGGER.debug("Device confirmed mode change to %s, clearing pending state", confirmed_mode)
             self._pending_mode = None
-            self.async_write_ha_state()
+            safe_write_ha_state(self)
         elif self._pending_mode:
             _LOGGER.warning("Device confirmed mode %s but pending mode was %s", 
                           confirmed_mode, self._pending_mode)
             self._pending_mode = None
             self._current_option = confirmed_mode
-            self.async_write_ha_state()
+            safe_write_ha_state(self)
     
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

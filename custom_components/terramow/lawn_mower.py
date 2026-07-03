@@ -17,6 +17,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from . import TerraMowBasicData
+from .entity_utils import safe_schedule_update_ha_state
 from homeassistant.config_entries import ConfigEntry
 from .const import (
     MQTT_PORT,
@@ -280,7 +281,7 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
         _LOGGER.info("Activity changed from %s to %s", old_activity, value)
         _LOGGER.debug("State change details: mission=%s, sub_mission=%s, mission_state=%s, has_error=%s",
                      self.mission, self.sub_mission, self.mission_state, self.has_error)
-        self.schedule_update_ha_state()
+        safe_schedule_update_ha_state(self)
 
     @property
     def supported_features(self) -> LawnMowerEntityFeature:
@@ -350,7 +351,7 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
             self.activity = LawnMowerActivity.DOCKED
 
         if last_activity != self.activity:
-            self.schedule_update_ha_state()
+            safe_schedule_update_ha_state(self)
 
     async def on_global_params(self, payload: str):
         """Handle global parameter updates (dp_155)."""
@@ -577,7 +578,7 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
                     )
                 # 设置错误状态
                 self.activity = LawnMowerActivity.ERROR
-                self.schedule_update_ha_state()
+                safe_schedule_update_ha_state(self)
                 # 指数退避，封顶 MQTT_RECONNECT_MAX_DELAY；用可中断的等待以便立即停止。
                 delay = min(
                     MQTT_RECONNECT_BASE_DELAY * (2 ** (consecutive_failures - 1)),
@@ -622,7 +623,7 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
             _LOGGER.error(f"MQTT connection failed with code {rc}")
             # 设置错误状态
             self.activity = LawnMowerActivity.ERROR
-            self.schedule_update_ha_state()
+            safe_schedule_update_ha_state(self)
 
     def on_mqtt_disconnect(self, _client, _userdata, rc):  # type: ignore[misc]
         """Callback when disconnected from MQTT Broker."""
@@ -631,7 +632,7 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
             # 断开连接后自动重连
             # 设置错误状态
             self.activity = LawnMowerActivity.ERROR
-            self.schedule_update_ha_state()
+            safe_schedule_update_ha_state(self)
 
     def on_mqtt_message(self, _client, _userdata, msg):  # type: ignore[misc]
         """Callback when a message is received."""
@@ -1169,7 +1170,7 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
                 self.hass.add_job(self._async_update_device_model, model_name)
 
                 # 触发实体状态更新
-                self.schedule_update_ha_state()
+                safe_schedule_update_ha_state(self)
             else:
                 _LOGGER.warning("Received empty model name, keeping default")
         except Exception as e:
