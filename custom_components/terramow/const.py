@@ -2,6 +2,26 @@
 
 DOMAIN = "terramow"
 
+
+def to_ha_enum_state(value):
+    """Convert a device enum string to a Home Assistant state/option token.
+
+    Device protocol enums are UPPERCASE (e.g. ``"MISSION_IDLE"``). Home Assistant
+    requires entity state/option tokens (and their translation keys) to match
+    ``[a-z0-9-_]+``. Device-facing code keeps the original UPPERCASE values; this
+    helper is applied only at the entity surface (native_value / options).
+    """
+    return value.lower() if isinstance(value, str) and value else None
+
+
+def to_device_enum(value):
+    """Convert a Home Assistant enum option back to the device UPPERCASE form.
+
+    The inverse of :func:`to_ha_enum_state`, used when a select option chosen in
+    Home Assistant must be sent back to the device as its original enum string.
+    """
+    return value.upper() if isinstance(value, str) and value else None
+
 MQTT_PORT = 1883
 
 MQTT_USERNAME = "terramow"
