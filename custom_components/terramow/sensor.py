@@ -3,7 +3,6 @@ import logging
 import json
 
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.device_registry import DeviceInfo
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -23,6 +22,7 @@ from homeassistant.core import HomeAssistant
 from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from . import TerraMowBasicData, DOMAIN
+from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin, safe_write_ha_state
 from .const import (
     BLADE_MAINTENANCE_CYCLE_MINUTES,
@@ -30,14 +30,16 @@ from .const import (
     MOW_SPEED_TYPES,
     to_ha_enum_state,
 )
-from .lawn_mower import Mission, SubMission, MissionState
+from .hub import Mission, MissionState, SubMission
+
+# Push-based integration: no update throttling needed
+PARALLEL_UPDATES = 0
 
 _LOGGER = logging.getLogger(__name__)
 
-class BatterySensor(SensorEntity):
+class BatterySensor(TerraMowEntity, SensorEntity):
     """Representation of the battery sensor."""
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:battery"
     _attr_translation_key = "battery"
     _attr_native_unit_of_measurement = PERCENTAGE
@@ -56,31 +58,14 @@ class BatterySensor(SensorEntity):
         basic_data: TerraMowBasicData,
         hass: HomeAssistant,
     ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = self.basic_data.host
-        self.hass = hass
+        super().__init__(basic_data, hass)
         self._attr_native_value: int | None = None  # 初始化电池电量值
         self.basic_data.lawn_mower.register_callback(8, self.set_capacity)
         # self.basic_data.lawn_mower.register_callback(108, self.set_battery_attributes) # This is now handled by the lawn_mower entity
 
         _LOGGER.info("BatterySensor entity created")
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.battery"
-
+    _unique_id_suffix = "battery"
 
     def set_capacity(self, payload :str) -> None:
         """Handle battery capacity status updates."""
@@ -116,12 +101,11 @@ class BatterySensor(SensorEntity):
         }
 
 
-class BatteryStateSensor(PushUpdateMixin, SensorEntity):
+class BatteryStateSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Battery state sensor - uses dp_108 data."""
 
     _push_dp_ids = (108,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:battery-charging"
     _attr_translation_key = "battery_state"
     _attr_device_class = SensorDeviceClass.ENUM
@@ -132,30 +116,7 @@ class BatteryStateSensor(PushUpdateMixin, SensorEntity):
     ]
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.battery_state"
+    _unique_id_suffix = "battery_state"
 
     @property
     def native_value(self) -> str | None:
@@ -173,12 +134,11 @@ class BatteryStateSensor(PushUpdateMixin, SensorEntity):
         return None
 
 
-class BatteryTemperatureStateSensor(PushUpdateMixin, SensorEntity):
+class BatteryTemperatureStateSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Battery temperature state sensor - uses dp_108 data."""
 
     _push_dp_ids = (108,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:thermometer"
     _attr_translation_key = "battery_temperature_state"
     _attr_device_class = SensorDeviceClass.ENUM
@@ -189,30 +149,7 @@ class BatteryTemperatureStateSensor(PushUpdateMixin, SensorEntity):
     ]
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.battery_temperature_state"
+    _unique_id_suffix = "battery_temperature_state"
 
     @property
     def native_value(self) -> str | None:
@@ -231,12 +168,11 @@ class BatteryTemperatureStateSensor(PushUpdateMixin, SensorEntity):
         return None
 
 
-class TotalMowingTimeSensor(PushUpdateMixin, SensorEntity):
+class TotalMowingTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Total mowing time sensor - uses dp_124 data"""
 
     _push_dp_ids = (124,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:clock"
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
     _attr_device_class = SensorDeviceClass.DURATION
@@ -244,30 +180,7 @@ class TotalMowingTimeSensor(PushUpdateMixin, SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "total_mowing_time"
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.total_mowing_time"
+    _unique_id_suffix = "total_mowing_time"
 
     @property
     def native_value(self) -> int | None:
@@ -282,42 +195,18 @@ class TotalMowingTimeSensor(PushUpdateMixin, SensorEntity):
         return statistics_data.get('duration')
 
 
-class TotalMowingJobsSensor(PushUpdateMixin, SensorEntity):
+class TotalMowingJobsSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Total mowing jobs sensor - uses dp_124 data"""
 
     _push_dp_ids = (124,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:counter"
     _attr_native_unit_of_measurement = None
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "total_mowing_jobs"
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.total_mowing_jobs"
+    _unique_id_suffix = "total_mowing_jobs"
 
     @property
     def native_value(self) -> int | None:
@@ -332,42 +221,18 @@ class TotalMowingJobsSensor(PushUpdateMixin, SensorEntity):
         return statistics_data.get('clean_times')
 
 
-class TotalMowedAreaSensor(PushUpdateMixin, SensorEntity):
+class TotalMowedAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Lifetime mowed area sensor - uses dp_124 data"""
 
     _push_dp_ids = (124,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:texture-box"
     _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "total_mowed_area"
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.total_mowed_area"
+    _unique_id_suffix = "total_mowed_area"
 
     @property
     def native_value(self) -> float | None:
@@ -386,12 +251,11 @@ class TotalMowedAreaSensor(PushUpdateMixin, SensorEntity):
         return round(clean_area / 10, 1)
 
 
-class CurrentSessionAreaSensor(PushUpdateMixin, SensorEntity):
+class CurrentSessionAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Current session mowing area sensor - uses dp_113 data"""
 
     _push_dp_ids = (113,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:vector-square"
     _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
     _attr_device_class = None
@@ -399,30 +263,7 @@ class CurrentSessionAreaSensor(PushUpdateMixin, SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "current_session_area"
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.current_session_area"
+    _unique_id_suffix = "current_session_area"
 
     @property
     def native_value(self) -> float | None:
@@ -464,25 +305,14 @@ class CurrentSessionAreaSensor(PushUpdateMixin, SensorEntity):
         return attrs
 
 
-class CurrentSessionProgressSensor(SensorEntity):
+class CurrentSessionProgressSensor(TerraMowEntity, SensorEntity):
     """Progress (%) of the current session, derived from dp_113 clean_area/total_area."""
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:progress-check"
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "current_session_progress"
-
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -492,22 +322,7 @@ class CurrentSessionProgressSensor(SensorEntity):
     async def _handle_dp_113(self, _payload: str) -> None:
         safe_write_ha_state(self)
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model,
-        )
-
-    @property
-    def unique_id(self) -> str:
-        return f"lawn_mower.terramow@{self.host}.current_session_progress"
-
-    @property
-    def available(self) -> bool:
-        return self.basic_data.lawn_mower is not None
+    _unique_id_suffix = "current_session_progress"
 
     @property
     def native_value(self) -> float | None:
@@ -526,12 +341,11 @@ class CurrentSessionProgressSensor(SensorEntity):
         return round(min(progress, 100.0), 1)
 
 
-class CurrentSessionTimeSensor(PushUpdateMixin, SensorEntity):
+class CurrentSessionTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Current session mowing time sensor - uses dp_113 data"""
 
     _push_dp_ids = (113,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:timer"
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
     _attr_device_class = SensorDeviceClass.DURATION
@@ -539,30 +353,7 @@ class CurrentSessionTimeSensor(PushUpdateMixin, SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "current_session_time"
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.current_session_time"
+    _unique_id_suffix = "current_session_time"
 
     @property
     def native_value(self) -> int | None:
@@ -577,12 +368,11 @@ class CurrentSessionTimeSensor(PushUpdateMixin, SensorEntity):
         return current_work_data.get('work_duration')
 
 
-class CurrentJobTypeSensor(PushUpdateMixin, SensorEntity):
+class CurrentJobTypeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Current job type sensor - uses dp_113 data"""
 
     _push_dp_ids = (113,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:format-list-bulleted-type"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = [
@@ -597,30 +387,7 @@ class CurrentJobTypeSensor(PushUpdateMixin, SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "current_job_type"
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.current_job_type"
+    _unique_id_suffix = "current_job_type"
 
     @property
     def native_value(self) -> str | None:
@@ -638,12 +405,11 @@ class CurrentJobTypeSensor(PushUpdateMixin, SensorEntity):
         return None
 
 
-class RemainingBladeTimeSensor(PushUpdateMixin, SensorEntity):
+class RemainingBladeTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Remaining blade usage time sensor - uses dp_126 data"""
 
     _push_dp_ids = (126,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:saw-blade"
     _attr_native_unit_of_measurement = UnitOfTime.MINUTES
     _attr_device_class = SensorDeviceClass.DURATION
@@ -651,30 +417,7 @@ class RemainingBladeTimeSensor(PushUpdateMixin, SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "remaining_blade_time"
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.remaining_blade_time"
+    _unique_id_suffix = "remaining_blade_time"
 
     @property
     def native_value(self) -> int | None:
@@ -710,12 +453,11 @@ class RemainingBladeTimeSensor(PushUpdateMixin, SensorEntity):
         }
 
 
-class RemainingBaseStationTimeSensor(PushUpdateMixin, SensorEntity):
+class RemainingBaseStationTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Remaining base station cleaning time sensor - uses dp_125 data"""
 
     _push_dp_ids = (125,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:home-clock"
     _attr_native_unit_of_measurement = UnitOfTime.MINUTES
     _attr_device_class = SensorDeviceClass.DURATION
@@ -723,30 +465,7 @@ class RemainingBaseStationTimeSensor(PushUpdateMixin, SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "remaining_base_station_time"
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.remaining_base_station_time"
+    _unique_id_suffix = "remaining_base_station_time"
 
     @property
     def native_value(self) -> int | None:
@@ -782,12 +501,11 @@ class RemainingBaseStationTimeSensor(PushUpdateMixin, SensorEntity):
         }
 
 
-class TerraMowMowHeightSensor(PushUpdateMixin, SensorEntity):
+class TerraMowMowHeightSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """割草高度传感器 - 使用dp_155数据"""
 
     _push_dp_ids = (155,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:arrow-up-down"
     _attr_native_unit_of_measurement = UnitOfLength.MILLIMETERS
     _attr_device_class = SensorDeviceClass.DISTANCE
@@ -795,30 +513,7 @@ class TerraMowMowHeightSensor(PushUpdateMixin, SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "mow_height"
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.mow_height"
+    _unique_id_suffix = "mow_height"
 
     @property
     def native_value(self) -> int | None:
@@ -834,12 +529,11 @@ class TerraMowMowHeightSensor(PushUpdateMixin, SensorEntity):
         return mow_height.get('value')
 
 
-class TerraMowMowSpeedSensor(PushUpdateMixin, SensorEntity):
+class TerraMowMowSpeedSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """割草速度传感器 - 使用dp_155数据"""
 
     _push_dp_ids = (155,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:speedometer"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "mow_speed"
@@ -851,26 +545,10 @@ class TerraMowMowSpeedSensor(PushUpdateMixin, SensorEntity):
         basic_data: TerraMowBasicData,
         hass: HomeAssistant,
     ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
+        super().__init__(basic_data, hass)
         self._unknown_speed_type: str | None = None
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.mow_speed"
+    _unique_id_suffix = "mow_speed"
 
     @property
     def native_value(self) -> str | None:
@@ -935,41 +613,17 @@ class TerraMowMowSpeedSensor(PushUpdateMixin, SensorEntity):
         return attrs
 
 
-class NextScheduledStartSensor(PushUpdateMixin, SensorEntity):
+class NextScheduledStartSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Next scheduled start sensor - uses dp_138 data"""
 
     _push_dp_ids = (138,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:calendar-clock"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "next_scheduled_start"
     _attr_device_class = None  # 使用字符串显示时间
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.next_scheduled_start"
+    _unique_id_suffix = "next_scheduled_start"
 
     @property
     def native_value(self) -> str | None:
@@ -1021,38 +675,22 @@ class NextScheduledStartSensor(PushUpdateMixin, SensorEntity):
         return attrs
 
 
-class VersionCompatibilitySensor(PushUpdateMixin, SensorEntity):
+class VersionCompatibilitySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """版本兼容性状态传感器."""
 
     _push_dp_ids = (127,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:update"
     _attr_translation_key = "version_compatibility"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        """Initialize the sensor."""
-        self.basic_data = basic_data
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-
     @property
     def unique_id(self):
-        """Return a unique ID for this entity."""
+        """Return a unique ID for this entity.
+
+        Keeps the historical ``version_compatibility.terramow@...`` format
+        so existing entity registry entries stay attached.
+        """
         return f"version_compatibility.terramow@{self.basic_data.host}"
 
     @property
@@ -1084,10 +722,9 @@ class VersionCompatibilitySensor(PushUpdateMixin, SensorEntity):
         return attributes
 
 
-class TerraMowPoseSensor(SensorEntity):
+class TerraMowPoseSensor(TerraMowEntity, SensorEntity):
     """实时姿态传感器（2Hz）"""
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:crosshairs-gps"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "pose"
@@ -1097,29 +734,13 @@ class TerraMowPoseSensor(SensorEntity):
         basic_data: TerraMowBasicData,
         hass: HomeAssistant,
     ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
+        super().__init__(basic_data, hass)
         self._pose: dict[str, Any] = {}
 
         if hasattr(basic_data, 'lawn_mower') and basic_data.lawn_mower:
             basic_data.lawn_mower.register_pose_callback(self._on_pose)
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.pose"
+    _unique_id_suffix = "pose"
 
     async def _on_pose(self, pose: dict[str, Any]) -> None:
         """处理姿态更新"""
@@ -1146,11 +767,6 @@ class TerraMowPoseSensor(SensorEntity):
             'timestamp_ms': self._pose.get('timestamp_ms'),
             'frame': self._pose.get('frame'),
         }
-
-    @property
-    def available(self):
-        """Return True if entity is available."""
-        return self.basic_data.lawn_mower is not None
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -1218,12 +834,11 @@ CurrentJobTypeSensor(basic_data, hass),
     async_add_entities(entities)
 
 
-class PowerModeSensor(PushUpdateMixin, SensorEntity):
+class PowerModeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Power mode sensor - uses dp_107 data."""
 
     _push_dp_ids = (107,)
 
-    _attr_has_entity_name = True
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = [
         "power_mode_running",
@@ -1233,30 +848,7 @@ class PowerModeSensor(PushUpdateMixin, SensorEntity):
     _attr_translation_key = "power_mode"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.power_mode"
+    _unique_id_suffix = "power_mode"
 
     @property
     def native_value(self) -> str | None:
@@ -1269,47 +861,17 @@ class PowerModeSensor(PushUpdateMixin, SensorEntity):
             return power_mode
         return None
 
-    @property
-    def available(self):
-        """Return True if entity is available."""
-        return self.basic_data.lawn_mower is not None
 
-
-class MainDirectionStatusSensor(PushUpdateMixin, SensorEntity):
+class MainDirectionStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """主方向状态传感器 - 显示当前主方向配置和角度"""
 
     _push_dp_ids = (155,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:compass"
     _attr_translation_key = "main_direction_status"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.main_direction_status"
+    _unique_id_suffix = "main_direction_status"
 
     @property
     def native_value(self) -> str | None:
@@ -1395,42 +957,18 @@ BACK_TO_STATION_REASON_OPTIONS = [
 ]
 
 
-class BackToStationReasonSensor(PushUpdateMixin, SensorEntity):
+class BackToStationReasonSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Enum sensor exposing the dp_107 back_to_station_reason field."""
 
     _push_dp_ids = (107,)
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:home-import-outline"
     _attr_translation_key = "back_to_station_reason"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = BACK_TO_STATION_REASON_OPTIONS.copy()
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.back_to_station_reason"
+    _unique_id_suffix = "back_to_station_reason"
 
     @property
     def native_value(self) -> str | None:
@@ -1442,31 +980,15 @@ class BackToStationReasonSensor(PushUpdateMixin, SensorEntity):
             return reason
         return None
 
-    @property
-    def available(self):
-        """Return True if entity is available."""
-        return self.basic_data.lawn_mower is not None
 
-
-class _MissionEnumSensorBase(SensorEntity):
+class _MissionEnumSensorBase(TerraMowEntity, SensorEntity):
     """Shared base for the dp_107 mission/sub_mission/state enum sensors."""
 
-    _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_device_class = SensorDeviceClass.ENUM
 
     _enum_attr: str = ""
-    _unique_suffix: str = ""
-
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
+    _unique_id_suffix: str = ""
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -1475,23 +997,6 @@ class _MissionEnumSensorBase(SensorEntity):
 
     async def _handle_dp_107(self, _payload: str) -> None:
         safe_write_ha_state(self)
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model,
-        )
-
-    @property
-    def unique_id(self) -> str:
-        return f"lawn_mower.terramow@{self.host}.{self._unique_suffix}"
-
-    @property
-    def available(self) -> bool:
-        return self.basic_data.lawn_mower is not None
 
     @property
     def native_value(self) -> str | None:
@@ -1512,7 +1017,7 @@ class TerraMowMissionSensor(_MissionEnumSensorBase):
     _attr_translation_key = "mission"
     _attr_options = [to_ha_enum_state(member.value) for member in Mission]
     _enum_attr = "mission"
-    _unique_suffix = "mission"
+    _unique_id_suffix = "mission"
 
 
 class TerraMowSubMissionSensor(_MissionEnumSensorBase):
@@ -1522,7 +1027,7 @@ class TerraMowSubMissionSensor(_MissionEnumSensorBase):
     _attr_translation_key = "sub_mission"
     _attr_options = [to_ha_enum_state(member.value) for member in SubMission]
     _enum_attr = "sub_mission"
-    _unique_suffix = "sub_mission"
+    _unique_id_suffix = "sub_mission"
 
 
 class TerraMowMissionStateSensor(_MissionEnumSensorBase):
@@ -1532,4 +1037,4 @@ class TerraMowMissionStateSensor(_MissionEnumSensorBase):
     _attr_translation_key = "mission_state"
     _attr_options = [to_ha_enum_state(member.value) for member in MissionState]
     _enum_attr = "mission_state"
-    _unique_suffix = "mission_state"
+    _unique_id_suffix = "mission_state"

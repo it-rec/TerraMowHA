@@ -8,11 +8,14 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowBasicData, DOMAIN
+from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin, safe_write_ha_state
+
+# Push-based integration: no update throttling needed
+PARALLEL_UPDATES = 0
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,12 +45,11 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class TerraMowChargingSensor(PushUpdateMixin, BinarySensorEntity):
+class TerraMowChargingSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
     """Binary sensor for the TerraMow charging state."""
 
     _push_dp_ids = (108,)
 
-    _attr_has_entity_name = True
     _attr_translation_key = "charging_state"
     _attr_device_class = BinarySensorDeviceClass.BATTERY_CHARGING
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -58,27 +60,11 @@ class TerraMowChargingSensor(PushUpdateMixin, BinarySensorEntity):
         hass: HomeAssistant,
     ) -> None:
         """Initialize the charging sensor."""
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = self.basic_data.host
-        self.hass = hass
+        super().__init__(basic_data, hass)
         self._attr_is_on: bool | None = None
         _LOGGER.info("TerraMowChargingSensor entity created") # Callback is no longer needed here
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.charging_state"
+    _unique_id_suffix = "charging_state"
 
     @property
     def is_on(self) -> bool | None:
@@ -91,46 +77,17 @@ class TerraMowChargingSensor(PushUpdateMixin, BinarySensorEntity):
 
         return bool(charger_connected) if charger_connected is not None else None
 
-    @property
-    def available(self):
-        """Return True if entity is available."""
-        return self.basic_data.lawn_mower is not None
 
-
-class NavigationLocatedSensor(PushUpdateMixin, BinarySensorEntity):
+class NavigationLocatedSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
     """Binary sensor for whether the robot is navigation-located."""
 
     _push_dp_ids = (107,)
 
-    _attr_has_entity_name = True
     _attr_translation_key = "navigation_located"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_icon = "mdi:crosshairs-gps"
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = self.basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.navigation_located"
+    _unique_id_suffix = "navigation_located"
 
     @property
     def is_on(self) -> bool | None:
@@ -141,46 +98,17 @@ class NavigationLocatedSensor(PushUpdateMixin, BinarySensorEntity):
         value = self.basic_data.lawn_mower.is_robot_navi_located
         return bool(value) if value is not None else None
 
-    @property
-    def available(self):
-        """Return True if entity is available."""
-        return self.basic_data.lawn_mower is not None
 
-
-class FirmwareUpgradingSensor(PushUpdateMixin, BinarySensorEntity):
+class FirmwareUpgradingSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
     """Binary sensor for whether the robot firmware is upgrading."""
 
     _push_dp_ids = (107,)
 
-    _attr_has_entity_name = True
     _attr_device_class = BinarySensorDeviceClass.UPDATE
     _attr_translation_key = "firmware_upgrading"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = self.basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.firmware_upgrading"
+    _unique_id_suffix = "firmware_upgrading"
 
     @property
     def is_on(self) -> bool | None:
@@ -191,47 +119,17 @@ class FirmwareUpgradingSensor(PushUpdateMixin, BinarySensorEntity):
         value = self.basic_data.lawn_mower.is_upgrading
         return bool(value) if value is not None else None
 
-    @property
-    def available(self):
-        """Return True if entity is available."""
-        return self.basic_data.lawn_mower is not None
 
-
-class PowerSwitchSensor(PushUpdateMixin, BinarySensorEntity):
+class PowerSwitchSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
     """Binary sensor for the TerraMow power switch state."""
 
     _push_dp_ids = (108,)
 
-    _attr_has_entity_name = True
     _attr_translation_key = "power_switch"
     _attr_device_class = BinarySensorDeviceClass.POWER
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        """Initialize the power switch sensor."""
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = self.basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.power_switch"
+    _unique_id_suffix = "power_switch"
 
     @property
     def is_on(self) -> bool | None:
@@ -244,18 +142,12 @@ class PowerSwitchSensor(PushUpdateMixin, BinarySensorEntity):
 
         return bool(is_switch_on) if is_switch_on is not None else None
 
-    @property
-    def available(self):
-        """Return True if entity is available."""
-        return self.basic_data.lawn_mower is not None
 
-
-class TerraMowProblemSensor(PushUpdateMixin, BinarySensorEntity):
+class TerraMowProblemSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
     """Binary sensor exposing the dp_107 has_error flag as a problem."""
 
     _push_dp_ids = (107,)
 
-    _attr_has_entity_name = True
     _attr_translation_key = "problem"
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -265,26 +157,10 @@ class TerraMowProblemSensor(PushUpdateMixin, BinarySensorEntity):
         basic_data: TerraMowBasicData,
         hass: HomeAssistant,
     ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = self.basic_data.host
-        self.hass = hass
+        super().__init__(basic_data, hass)
         _LOGGER.info("TerraMowProblemSensor entity created")
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.problem"
+    _unique_id_suffix = "problem"
 
     @property
     def is_on(self) -> bool | None:
@@ -293,18 +169,12 @@ class TerraMowProblemSensor(PushUpdateMixin, BinarySensorEntity):
             return None
         return bool(self.basic_data.lawn_mower.has_error)
 
-    @property
-    def available(self):
-        """Return True if entity is available."""
-        return self.basic_data.lawn_mower is not None
 
-
-class TerraMowRainSensor(PushUpdateMixin, BinarySensorEntity):
+class TerraMowRainSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
     """Binary sensor that signals when the robot returns due to rain."""
 
     _push_dp_ids = (107,)
 
-    _attr_has_entity_name = True
     _attr_translation_key = "rain_detected"
     _attr_device_class = BinarySensorDeviceClass.MOISTURE
 
@@ -313,26 +183,10 @@ class TerraMowRainSensor(PushUpdateMixin, BinarySensorEntity):
         basic_data: TerraMowBasicData,
         hass: HomeAssistant,
     ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = self.basic_data.host
-        self.hass = hass
+        super().__init__(basic_data, hass)
         _LOGGER.info("TerraMowRainSensor entity created")
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.rain_detected"
+    _unique_id_suffix = "rain_detected"
 
     @property
     def is_on(self) -> bool | None:
@@ -341,30 +195,14 @@ class TerraMowRainSensor(PushUpdateMixin, BinarySensorEntity):
             return None
         return self.basic_data.lawn_mower.back_to_station_reason == "BACK_TO_STATION_REASON_RAINING"
 
-    @property
-    def available(self):
-        """Return True if entity is available."""
-        return self.basic_data.lawn_mower is not None
 
-
-class _MapStatusBinarySensorBase(BinarySensorEntity):
+class _MapStatusBinarySensorBase(TerraMowEntity, BinarySensorEntity):
     """Shared base for dp_117 map_status flag binary sensors."""
 
-    _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     _map_status_field: str = ""
-    _unique_suffix: str = ""
-
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = self.basic_data.host
-        self.hass = hass
+    _unique_id_suffix: str = ""
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -373,23 +211,6 @@ class _MapStatusBinarySensorBase(BinarySensorEntity):
 
     async def _handle_dp_117(self, _payload: str) -> None:
         safe_write_ha_state(self)
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model,
-        )
-
-    @property
-    def unique_id(self) -> str:
-        return f"lawn_mower.terramow@{self.host}.{self._unique_suffix}"
-
-    @property
-    def available(self) -> bool:
-        return self.basic_data.lawn_mower is not None
 
     @property
     def is_on(self) -> bool | None:
@@ -408,7 +229,7 @@ class TerraMowMapDetectedBinarySensor(_MapStatusBinarySensorBase):
     _attr_translation_key = "map_detected"
     _attr_icon = "mdi:map-check"
     _map_status_field = "is_map_detected"
-    _unique_suffix = "map_detected"
+    _unique_id_suffix = "map_detected"
 
 
 class TerraMowMapBuildableBinarySensor(_MapStatusBinarySensorBase):
@@ -417,7 +238,7 @@ class TerraMowMapBuildableBinarySensor(_MapStatusBinarySensorBase):
     _attr_translation_key = "map_buildable"
     _attr_icon = "mdi:map-plus"
     _map_status_field = "is_able_to_run_build_map"
-    _unique_suffix = "map_buildable"
+    _unique_id_suffix = "map_buildable"
 
 
 class TerraMowMapBackingUpBinarySensor(_MapStatusBinarySensorBase):
@@ -426,27 +247,16 @@ class TerraMowMapBackingUpBinarySensor(_MapStatusBinarySensorBase):
     _attr_translation_key = "map_backing_up"
     _attr_icon = "mdi:cloud-upload-outline"
     _map_status_field = "is_backing_up_map"
-    _unique_suffix = "map_backing_up"
+    _unique_id_suffix = "map_backing_up"
 
 
-class _TaskStatusBinarySensorBase(BinarySensorEntity):
+class _TaskStatusBinarySensorBase(TerraMowEntity, BinarySensorEntity):
     """Shared base for dp_107 task_status flag binary sensors."""
 
-    _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     _task_status_field: str = ""
-    _unique_suffix: str = ""
-
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = self.basic_data.host
-        self.hass = hass
+    _unique_id_suffix: str = ""
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -455,23 +265,6 @@ class _TaskStatusBinarySensorBase(BinarySensorEntity):
 
     async def _handle_dp_107(self, _payload: str) -> None:
         safe_write_ha_state(self)
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model,
-        )
-
-    @property
-    def unique_id(self) -> str:
-        return f"lawn_mower.terramow@{self.host}.{self._unique_suffix}"
-
-    @property
-    def available(self) -> bool:
-        return self.basic_data.lawn_mower is not None
 
     @property
     def is_on(self) -> bool | None:
@@ -494,7 +287,7 @@ class TerraMowSavingDataBinarySensor(_TaskStatusBinarySensorBase):
     _attr_translation_key = "saving_data"
     _attr_icon = "mdi:content-save-cog"
     _task_status_field = "is_saving_data"
-    _unique_suffix = "saving_data"
+    _unique_id_suffix = "saving_data"
 
 
 class TerraMowDataConversionBinarySensor(_TaskStatusBinarySensorBase):
@@ -503,4 +296,4 @@ class TerraMowDataConversionBinarySensor(_TaskStatusBinarySensorBase):
     _attr_translation_key = "data_conversion"
     _attr_icon = "mdi:database-sync"
     _task_status_field = "is_data_conversion_in_progress"
-    _unique_suffix = "data_conversion"
+    _unique_id_suffix = "data_conversion"

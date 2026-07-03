@@ -21,6 +21,7 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv, device_registry as dr, entity_registry as er
 
 from .config_flow import CannotConnect, InvalidAuth, validate_input
+from .hub import TerraMowHub
 from .const import (
     DOMAIN,
     CURRENT_HA_VERSION,
@@ -187,6 +188,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = basic_data
 
+    # The hub owns the MQTT connection and all protocol state. Starting it
+    # before the platforms are forwarded guarantees every entity can
+    # register its callbacks in __init__ regardless of platform order.
+    hub = TerraMowHub(basic_data, hass)
+    hub.start()
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
@@ -242,9 +249,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
-    # If unloading is successful, clear the data
+    # If unloading is successful, stop the hub and clear the data
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id)
+        basic_data = hass.data[DOMAIN].pop(entry.entry_id)
+        if basic_data.lawn_mower is not None:
+            await basic_data.lawn_mower.async_stop()
         if not hass.data[DOMAIN]:
             hass.data.pop(DOMAIN)
             if hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION):

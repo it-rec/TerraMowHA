@@ -14,12 +14,12 @@
   "loggers": [
     "paho.mqtt"
   ],
-  "quality_scale": "bronze",
+  "quality_scale": "silver",
   "requirements": [
     "paho-mqtt>=1.6.1",
     "Pillow>=9.0.0"
   ],
-  "version": "0.7.0",
+  "version": "0.8.0",
   "zeroconf": [
     {
       "type": "_mqtt._tcp.local.",

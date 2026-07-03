@@ -66,3 +66,12 @@ ignore_missing_imports = true
 [tool.black]
 target-version = ["py312"]
 line-length = 88
+[tool.coverage.run]
+source = ["custom_components/terramow"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = [
+    "if TYPE_CHECKING:",
+]

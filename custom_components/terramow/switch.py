@@ -3,14 +3,17 @@ import logging
 from typing import Any
 
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
-from . import TerraMowBasicData, DOMAIN
+from . import DOMAIN
+from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin
+
+# Push-based integration: no update throttling needed
+PARALLEL_UPDATES = 0
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,7 +33,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ThoroughCornerCuttingSwitch(PushUpdateMixin, SwitchEntity):
+class ThoroughCornerCuttingSwitch(PushUpdateMixin, TerraMowEntity, SwitchEntity):
     """Switch for enabling thorough corner cutting in mow_param.
 
     Note: enable_thorough_corner_cutting is reported under
@@ -42,33 +45,11 @@ class ThoroughCornerCuttingSwitch(PushUpdateMixin, SwitchEntity):
 
     _push_map_info = True
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:vector-polyline"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "thorough_corner_cutting"
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self) -> str:
-        return f"lawn_mower.terramow@{self.host}.thorough_corner_cutting"
+    _unique_id_suffix = "thorough_corner_cutting"
 
     def _get_mow_param(self) -> dict[str, Any] | None:
         if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:

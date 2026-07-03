@@ -3,13 +3,13 @@ import logging
 from typing import Any
 
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.components.select import SelectEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
 from . import TerraMowBasicData, DOMAIN
+from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin, safe_write_ha_state
 from .const import (
     DEFAULT_BLADE_DISK_SPEED_TYPE,
@@ -22,6 +22,9 @@ from .const import (
     to_device_enum,
     to_ha_enum_state,
 )
+
+# Push-based integration: no update throttling needed
+PARALLEL_UPDATES = 0
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,10 +47,9 @@ async def async_setup_entry(
 
     async_add_entities(entities)
 
-class TerraMowZoneSelect(SelectEntity):
+class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
     """地图分区选择器 - Zone selector for mowing specific areas"""
     
-    _attr_has_entity_name = True
     _attr_icon = "mdi:map-marker-multiple"
     _attr_entity_category = EntityCategory.CONFIG
 
@@ -62,10 +64,7 @@ class TerraMowZoneSelect(SelectEntity):
         basic_data: TerraMowBasicData,
         hass: HomeAssistant,
     ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
+        super().__init__(basic_data, hass)
         self._map_info: dict[str, Any] = {}
         self._current_option: str | None = None
         self._options = ["no_zones_available"]
@@ -73,25 +72,11 @@ class TerraMowZoneSelect(SelectEntity):
         # 注册地图信息回调
         if hasattr(basic_data, 'lawn_mower') and basic_data.lawn_mower:
             basic_data.lawn_mower.register_map_callback(self._on_map_info)
-    
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-    
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        # 注意: unique_id 保持使用 "region_select" 以保持向后兼容性
-        # 这确保升级后 entity_id 不变，用户的自动化脚本无需修改
-        return f"lawn_mower.terramow@{self.host}.region_select"
-    
-    
+
+    # 注意: unique_id 保持使用 "region_select" 以保持向后兼容性
+    # 这确保升级后 entity_id 不变，用户的自动化脚本无需修改
+    _unique_id_suffix = "region_select"
+
     @property
     def options(self) -> list[str]:
         """Return a set of selectable options."""
@@ -229,12 +214,11 @@ class TerraMowZoneSelect(SelectEntity):
         return attrs
 
 
-class MowSpeedSelect(PushUpdateMixin, SelectEntity):
+class MowSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
     """割草行走速度选择器 - 使用dp_155数据"""
 
     _push_dp_ids = (155,)
     
-    _attr_has_entity_name = True
     _attr_icon = "mdi:speedometer"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "mow_speed_setting"
@@ -251,10 +235,7 @@ class MowSpeedSelect(PushUpdateMixin, SelectEntity):
         basic_data: TerraMowBasicData,
         hass: HomeAssistant,
     ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
+        super().__init__(basic_data, hass)
         self._current_option = MOW_SPEED_TYPE_MEDIUM  # 默认中速
         self._unknown_speed_type: str | None = None
 
@@ -304,21 +285,8 @@ class MowSpeedSelect(PushUpdateMixin, SelectEntity):
             return True
         # 兼容兜底：若设备已上报 AUTO，则允许展示和选择该选项
         return self._get_device_speed_type() == MOW_SPEED_TYPE_AUTO
-    
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-    
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.mow_speed_setting"
+
+    _unique_id_suffix = "mow_speed_setting"
 
     @property
     def options(self) -> list[str]:
@@ -419,12 +387,11 @@ class MowSpeedSelect(PushUpdateMixin, SelectEntity):
         return attrs
 
 
-class BladeSpeedSelect(PushUpdateMixin, SelectEntity):
+class BladeSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
     """刀盘转速选择器 - 使用dp_155数据"""
 
     _push_dp_ids = (155,)
     
-    _attr_has_entity_name = True
     _attr_icon = "mdi:fan"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "blade_speed"
@@ -441,26 +408,10 @@ class BladeSpeedSelect(PushUpdateMixin, SelectEntity):
         basic_data: TerraMowBasicData,
         hass: HomeAssistant,
     ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
+        super().__init__(basic_data, hass)
         self._current_option = DEFAULT_BLADE_DISK_SPEED_TYPE  # 默认中速
-    
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-    
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.blade_speed"
+
+    _unique_id_suffix = "blade_speed"
 
     @property
     def options(self) -> list[str]:
@@ -521,12 +472,11 @@ class BladeSpeedSelect(PushUpdateMixin, SelectEntity):
         }
 
 
-class MainDirectionModeSelect(PushUpdateMixin, SelectEntity):
+class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
     """主方向模式选择器 - 使用dp_155数据"""
 
     _push_dp_ids = (155,)
     
-    _attr_has_entity_name = True
     _attr_icon = "mdi:compass"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "main_direction_mode"
@@ -543,10 +493,7 @@ class MainDirectionModeSelect(PushUpdateMixin, SelectEntity):
         basic_data: TerraMowBasicData,
         hass: HomeAssistant,
     ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
+        super().__init__(basic_data, hass)
         self._current_option = "MAIN_DIRECTION_MODE_SINGLE"  # 默认单主方向
         self._pending_mode: str | None = None  # 缓存待生效的模式
         
@@ -562,21 +509,8 @@ class MainDirectionModeSelect(PushUpdateMixin, SelectEntity):
                     self.on_device_mode_confirmed(confirmed_mode)
         
         self.hass.bus.async_listen(f"{DOMAIN}_device_mode_confirmed", on_device_confirmed)
-    
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-    
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.main_direction_mode"
+
+    _unique_id_suffix = "main_direction_mode"
     
     def get_effective_mode(self) -> str:
         """获取当前生效的模式（包括待处理模式）"""
@@ -786,7 +720,7 @@ class MainDirectionModeSelect(PushUpdateMixin, SelectEntity):
         return attrs
 
 
-class HighGrassEdgeTrimModeSelect(PushUpdateMixin, SelectEntity):
+class HighGrassEdgeTrimModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
     """High grass edge trim mode selector — published via dp_155.
 
     Note: high_grass_edge_trim_mode is reported under map_info["mow_param"],
@@ -798,7 +732,6 @@ class HighGrassEdgeTrimModeSelect(PushUpdateMixin, SelectEntity):
 
     _push_map_info = True
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:grass"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "high_grass_edge_trim_mode"
@@ -808,28 +741,7 @@ class HighGrassEdgeTrimModeSelect(PushUpdateMixin, SelectEntity):
         "HIGH_GRASS_EDGE_TRIM_INTENSIVE",
     ]
 
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def unique_id(self) -> str:
-        return f"lawn_mower.terramow@{self.host}.high_grass_edge_trim_mode"
+    _unique_id_suffix = "high_grass_edge_trim_mode"
 
     def _get_mow_param(self) -> dict[str, Any] | None:
         if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:

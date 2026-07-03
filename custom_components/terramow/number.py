@@ -3,7 +3,6 @@ import logging
 from typing import Any
 
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.device_registry import DeviceInfo
 
 from homeassistant.components.number import (
     NumberEntity,
@@ -19,7 +18,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
 from . import TerraMowBasicData, DOMAIN
+from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin
+
+# Push-based integration: no update throttling needed
+PARALLEL_UPDATES = 0
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,36 +49,16 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class TerraMowNumberBase(PushUpdateMixin, NumberEntity):
+class TerraMowNumberBase(PushUpdateMixin, TerraMowEntity, NumberEntity):
     """TerraMow数值控制基类"""
 
     _push_dp_ids = (155,)
     
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
     
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-
 
 class MowingHeightNumber(TerraMowNumberBase):
     """割草高度设置控制器 - 使用dp_155数据"""
     
-    _attr_has_entity_name = True
     _attr_icon = "mdi:arrow-up-down"
     _attr_native_unit_of_measurement = UnitOfLength.MILLIMETERS
     _attr_device_class = NumberDeviceClass.DISTANCE
@@ -85,18 +68,8 @@ class MowingHeightNumber(TerraMowNumberBase):
     _attr_native_min_value = 20
     _attr_native_max_value = 70
     _attr_native_step = 1
-    
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__(basic_data, hass)
-    
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.mowing_height"
+
+    _unique_id_suffix = "mowing_height"
     
     @property
     def native_value(self) -> float | None:
@@ -132,7 +105,6 @@ class MowingHeightNumber(TerraMowNumberBase):
 class EdgeCuttingDistanceNumber(TerraMowNumberBase):
     """边缘割草距离设置控制器 - 使用dp_155数据"""
     
-    _attr_has_entity_name = True
     _attr_icon = "mdi:border-outside"
     _attr_native_unit_of_measurement = UnitOfLength.MILLIMETERS
     _attr_device_class = NumberDeviceClass.DISTANCE
@@ -142,18 +114,8 @@ class EdgeCuttingDistanceNumber(TerraMowNumberBase):
     _attr_native_min_value = -150
     _attr_native_max_value = 150
     _attr_native_step = 1
-    
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__(basic_data, hass)
-    
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.edge_cutting_distance"
+
+    _unique_id_suffix = "edge_cutting_distance"
     
     @property
     def native_value(self) -> float | None:
@@ -189,7 +151,6 @@ class EdgeCuttingDistanceNumber(TerraMowNumberBase):
 class MowingSpacingNumber(TerraMowNumberBase):
     """割草间距设置控制器 - 使用dp_155数据"""
     
-    _attr_has_entity_name = True
     _attr_icon = "mdi:ruler"
     _attr_native_unit_of_measurement = UnitOfLength.MILLIMETERS
     _attr_device_class = NumberDeviceClass.DISTANCE
@@ -199,18 +160,8 @@ class MowingSpacingNumber(TerraMowNumberBase):
     _attr_native_min_value = 80  # 8cm 最小值
     _attr_native_max_value = 140  # 14cm 最大值
     _attr_native_step = 10  # 1cm 步进
-    
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__(basic_data, hass)
-    
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.mowing_spacing"
+
+    _unique_id_suffix = "mowing_spacing"
     
     @property
     def native_value(self) -> float | None:
@@ -269,7 +220,6 @@ class MowingSpacingNumber(TerraMowNumberBase):
 class MainDirectionSingleAngleNumber(TerraMowNumberBase):
     """单主方向角度设置控制器 - 使用dp_155数据"""
     
-    _attr_has_entity_name = True
     _attr_icon = "mdi:compass-outline"
     _attr_native_unit_of_measurement = "°"
     _attr_entity_category = EntityCategory.CONFIG
@@ -321,10 +271,7 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
             pass
         return None
     
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.main_direction_single_angle"
+    _unique_id_suffix = "main_direction_single_angle"
     
     @property
     def available(self) -> bool:
@@ -411,7 +358,6 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
 class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
     """自动旋转主方向间隔设置控制器 - 使用dp_155数据"""
     
-    _attr_has_entity_name = True
     _attr_icon = "mdi:rotate-right"
     _attr_native_unit_of_measurement = "°"
     _attr_entity_category = EntityCategory.CONFIG
@@ -463,10 +409,7 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
             pass
         return None
     
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.main_direction_auto_rotate_interval"
+    _unique_id_suffix = "main_direction_auto_rotate_interval"
     
     @property
     def available(self) -> bool:
@@ -552,7 +495,6 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
 class MultipleDirectionAngle1Number(TerraMowNumberBase):
     """多主方向第一角度设置控制器 - 使用dp_155数据"""
     
-    _attr_has_entity_name = True
     _attr_icon = "mdi:compass-outline"
     _attr_native_unit_of_measurement = "°"
     _attr_entity_category = EntityCategory.CONFIG
@@ -604,10 +546,7 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
             pass
         return None
     
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.multiple_direction_angle1"
+    _unique_id_suffix = "multiple_direction_angle1"
     
     @property
     def available(self) -> bool:
@@ -717,7 +656,6 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
 class MultipleDirectionAngle2Number(TerraMowNumberBase):
     """多主方向第二角度设置控制器 - 使用dp_155数据"""
     
-    _attr_has_entity_name = True
     _attr_icon = "mdi:compass"
     _attr_native_unit_of_measurement = "°"
     _attr_entity_category = EntityCategory.CONFIG
@@ -769,10 +707,7 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
             pass
         return None
     
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.multiple_direction_angle2"
+    _unique_id_suffix = "multiple_direction_angle2"
     
     @property
     def available(self) -> bool:
