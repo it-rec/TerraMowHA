@@ -11,10 +11,15 @@
   "integration_type": "device",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/TerraMow/TerraMowHA/issues",
-  "loggers": ["paho.mqtt"],
+  "loggers": [
+    "paho.mqtt"
+  ],
   "quality_scale": "bronze",
-  "requirements": ["paho-mqtt>=1.6.1", "Pillow>=9.0.0"],
-  "version": "0.4.0",
+  "requirements": [
+    "paho-mqtt>=1.6.1",
+    "Pillow>=9.0.0"
+  ],
+  "version": "0.5.0",
   "zeroconf": [
     {
       "type": "_mqtt._tcp.local.",
