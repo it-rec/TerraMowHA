@@ -175,7 +175,7 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
         if not self._current_option or self._current_option not in self._options:
             self._current_option = "all_zones"
 
-        _LOGGER.info("Updated zone options: %d sub-zones available", len(self._options) - 1)
+        _LOGGER.debug("Updated zone options: %d sub-zones available", len(self._options) - 1)
     
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

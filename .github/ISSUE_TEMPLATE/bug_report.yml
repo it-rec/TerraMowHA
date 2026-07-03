@@ -1,0 +1,52 @@
+name: Bug report
+description: Report a problem with the TerraMow integration
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! The diagnostics download
+        answers most questions in one file — please attach it below.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Integration version
+      placeholder: e.g. 0.8.0 (HACS → TerraMow, or manifest.json)
+    validations:
+      required: true
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: e.g. 2025.7.1
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Mower model and firmware version
+      placeholder: e.g. S1200, firmware 6.6.0 — shown on the device page in Home Assistant
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: >
+        Settings → Devices & Services → TerraMow → three-dot menu →
+        "Download diagnostics". Host and password are redacted
+        automatically. Drag the file here.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: >
+        Home Assistant logs around the time of the problem. For protocol
+        issues, enable debug logging first (Settings → Devices & Services →
+        TerraMow → Enable debug logging).
+      render: text

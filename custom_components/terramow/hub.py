@@ -220,7 +220,7 @@ class TerraMowHub:
         self._last_control_time = time.monotonic()
         self._control_interval = 1.0  # 控制间隔时间
 
-        _LOGGER.info("TerraMowHub created with host %s", self.host)
+        _LOGGER.debug("TerraMowHub created with host %s", self.host)
 
     @property
     def device_model(self) -> str:
@@ -324,7 +324,7 @@ class TerraMowHub:
             data = json.loads(payload)
             old_params = self._global_params
             self._global_params = data
-            _LOGGER.info("Global parameters updated: %s", data)
+            _LOGGER.debug("Global parameters updated: %s", data)
 
             # 检查主方向模式是否有变化，通知模式选择器
             self._notify_mode_selector_if_changed(old_params, data)
@@ -358,7 +358,7 @@ class TerraMowHub:
         try:
             data = json.loads(payload)
             self._map_status = data
-            _LOGGER.info("Map status updated: %s", data)
+            _LOGGER.debug("Map status updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_117: %s", payload)
 
@@ -368,7 +368,7 @@ class TerraMowHub:
         try:
             data = json.loads(payload)
             self._current_work_data = data
-            _LOGGER.info("Current work data updated: %s", data)
+            _LOGGER.debug("Current work data updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_113: %s", payload)
 
@@ -378,7 +378,7 @@ class TerraMowHub:
         try:
             data = json.loads(payload)
             self._statistics_data = data
-            _LOGGER.info("Statistics data updated: %s", data)
+            _LOGGER.debug("Statistics data updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_124: %s", payload)
 
@@ -388,7 +388,7 @@ class TerraMowHub:
         try:
             data = json.loads(payload)
             self._base_station_time = data
-            _LOGGER.info("Base station time updated: %s", data)
+            _LOGGER.debug("Base station time updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_125: %s", payload)
 
@@ -398,7 +398,7 @@ class TerraMowHub:
         try:
             data = json.loads(payload)
             self._blade_time = data
-            _LOGGER.info("Blade time updated: %s", data)
+            _LOGGER.debug("Blade time updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_126: %s", payload)
 
@@ -408,7 +408,7 @@ class TerraMowHub:
         try:
             data = json.loads(payload)
             self._schedule_data = data
-            _LOGGER.info("Schedule data updated: %s", data)
+            _LOGGER.debug("Schedule data updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_138: %s", payload)
 
@@ -418,7 +418,7 @@ class TerraMowHub:
         try:
             data = json.loads(payload)
             self._battery_status = data
-            _LOGGER.info("Battery status updated: %s", data)
+            _LOGGER.debug("Battery status updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_108: %s", payload)
 
@@ -427,7 +427,7 @@ class TerraMowHub:
         _LOGGER.debug("Raw mission status payload: %s", payload)
         try:
             data = json.loads(payload)
-            _LOGGER.info("Received mission status: %s", data)
+            _LOGGER.debug("Received mission status: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload: %s", payload)
             return
@@ -484,7 +484,7 @@ class TerraMowHub:
         _LOGGER.debug("Raw compatibility info payload: %s", payload)
         try:
             data = json.loads(payload)
-            _LOGGER.info("Received version compatibility info: %s", data)
+            _LOGGER.debug("Received version compatibility info: %s", data)
 
             # 进行版本兼容性检查
             compatibility_status = self.basic_data.check_version_compatibility(data)
@@ -564,14 +564,14 @@ class TerraMowHub:
                 client.subscribe(topic)
             # 订阅地图信息主题（旧固件兼容）
             client.subscribe(MAP_INFO_TOPIC)
-            _LOGGER.info("Subscribed to %s topic", MAP_INFO_TOPIC)
+            _LOGGER.debug("Subscribed to %s topic", MAP_INFO_TOPIC)
 
             # 订阅地图/路径元数据与姿态
             client.subscribe(MAP_META_TOPIC)
             client.subscribe(PATH_META_TOPIC)
             client.subscribe(PATH_HISTORY_META_TOPIC)
             client.subscribe(POSE_TOPIC)
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Subscribed to %s/%s/%s/%s topic",
                 MAP_META_TOPIC,
                 PATH_META_TOPIC,
@@ -660,7 +660,7 @@ class TerraMowHub:
 
         # 处理地图信息主题
         if topic == MAP_INFO_TOPIC:
-            _LOGGER.info("Received map info message, size: %d bytes", len(payload))
+            _LOGGER.debug("Received map info message, size: %d bytes", len(payload))
             self._handle_map_info(payload)
             return
 
@@ -710,14 +710,14 @@ class TerraMowHub:
         if dp_id not in self.callbacks:
             self.callbacks[dp_id] = []
         self.callbacks[dp_id].append(callback)
-        _LOGGER.info(f"Callback registered for dp_id: {dp_id}")
+        _LOGGER.debug(f"Callback registered for dp_id: {dp_id}")
 
     def register_map_callback(self, callback: Callable):
         """Register a callback function for map info updates."""
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
         self.map_callbacks.append(callback)
-        _LOGGER.info("Map callback registered")
+        _LOGGER.debug("Map callback registered")
         # 如果已有地图数据，立即触发回调
         if self._map_info:
             self.hass.add_job(callback, self._map_info)
@@ -727,7 +727,7 @@ class TerraMowHub:
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
         self.pose_callbacks.append(callback)
-        _LOGGER.info("Pose callback registered")
+        _LOGGER.debug("Pose callback registered")
         if self._pose:
             self.hass.add_job(callback, self._pose)
 
@@ -736,7 +736,7 @@ class TerraMowHub:
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
         self.path_callbacks.append(callback)
-        _LOGGER.info("Path callback registered")
+        _LOGGER.debug("Path callback registered")
         if self._path_data:
             self.hass.add_job(callback, self._path_data)
 
@@ -745,14 +745,14 @@ class TerraMowHub:
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
         self.history_path_callbacks.append(callback)
-        _LOGGER.info("History path callback registered")
+        _LOGGER.debug("History path callback registered")
         if self._history_path_data:
             self.hass.add_job(callback, self._history_path_data)
 
     def _update_map_info(self, map_info: dict[str, Any]) -> None:
         """Update map info and notify callbacks."""
         self._map_info = map_info
-        _LOGGER.info("Map info updated: id=%s, name=%s, state=%s",
+        _LOGGER.debug("Map info updated: id=%s, name=%s, state=%s",
                      map_info.get('id'), map_info.get('name'), map_info.get('map_state'))
         for callback in self.map_callbacks:
             self.hass.add_job(callback, map_info)

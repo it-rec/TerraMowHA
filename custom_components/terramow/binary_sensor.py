@@ -62,7 +62,7 @@ class TerraMowChargingSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity
         """Initialize the charging sensor."""
         super().__init__(basic_data, hass)
         self._attr_is_on: bool | None = None
-        _LOGGER.info("TerraMowChargingSensor entity created") # Callback is no longer needed here
+        _LOGGER.debug("TerraMowChargingSensor entity created") # Callback is no longer needed here
 
     _unique_id_suffix = "charging_state"
 
@@ -158,7 +158,7 @@ class TerraMowProblemSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity)
         hass: HomeAssistant,
     ) -> None:
         super().__init__(basic_data, hass)
-        _LOGGER.info("TerraMowProblemSensor entity created")
+        _LOGGER.debug("TerraMowProblemSensor entity created")
 
     _unique_id_suffix = "problem"
 
@@ -184,7 +184,7 @@ class TerraMowRainSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
         hass: HomeAssistant,
     ) -> None:
         super().__init__(basic_data, hass)
-        _LOGGER.info("TerraMowRainSensor entity created")
+        _LOGGER.debug("TerraMowRainSensor entity created")
 
     _unique_id_suffix = "rain_detected"
 
