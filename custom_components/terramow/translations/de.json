@@ -122,6 +122,9 @@
             "total_mowing_jobs": {
                 "name": "Gesamtanzahl Mäheinsätze"
             },
+            "total_mowed_area": {
+                "name": "Insgesamt gemähte Fläche"
+            },
             "current_session_area": {
                 "name": "Fläche der aktuellen Sitzung"
             },
@@ -281,6 +284,12 @@
             },
             "map_backing_up": {
                 "name": "Karte wird gesichert"
+            },
+            "saving_data": {
+                "name": "Daten werden gespeichert"
+            },
+            "data_conversion": {
+                "name": "Datenkonvertierung läuft"
             }
         },
         "button": {

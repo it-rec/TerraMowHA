@@ -122,6 +122,9 @@
             "total_mowing_jobs": {
                 "name": "总割草次数"
             },
+            "total_mowed_area": {
+                "name": "累计割草面积"
+            },
             "current_session_area": {
                 "name": "当前会话面积"
             },
@@ -281,6 +284,12 @@
             },
             "map_backing_up": {
                 "name": "正在备份地图"
+            },
+            "saving_data": {
+                "name": "正在保存数据"
+            },
+            "data_conversion": {
+                "name": "数据转换进行中"
             }
         },
         "button": {

@@ -4,7 +4,8 @@
         "abort": {
             "already_configured": "Il dispositivo è già configurato",
             "cannot_connect": "Connessione non riuscita",
-            "reauth_successful": "Nuova autenticazione riuscita"
+            "reauth_successful": "Nuova autenticazione riuscita",
+            "reconfigure_successful": "Riconfigurazione riuscita"
         },
         "error": {
             "cannot_connect": "Connessione non riuscita",
@@ -28,6 +29,14 @@
             },
             "reauth_confirm": {
                 "data": {
+                    "password": "Password"
+                }
+            },
+            "reconfigure": {
+                "title": "Riconfigura TerraMow",
+                "description": "Aggiorna l'indirizzo IP/nome host o la password del tuo TerraMow.",
+                "data": {
+                    "host": "Host",
                     "password": "Password"
                 }
             }
@@ -112,6 +121,9 @@
             },
             "total_mowing_jobs": {
                 "name": "Numero totale di tagli"
+            },
+            "total_mowed_area": {
+                "name": "Area totale tagliata"
             },
             "current_session_area": {
                 "name": "Area della sessione corrente"
@@ -272,6 +284,12 @@
             },
             "map_backing_up": {
                 "name": "Backup mappa in corso"
+            },
+            "saving_data": {
+                "name": "Salvataggio dati"
+            },
+            "data_conversion": {
+                "name": "Conversione dati in corso"
             }
         },
         "button": {

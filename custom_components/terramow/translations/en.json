@@ -122,6 +122,9 @@
             "total_mowing_jobs": {
                 "name": "Total Mowing Jobs"
             },
+            "total_mowed_area": {
+                "name": "Total Mowed Area"
+            },
             "current_session_area": {
                 "name": "Current Session Area"
             },
@@ -281,6 +284,12 @@
             },
             "map_backing_up": {
                 "name": "Map Backing Up"
+            },
+            "saving_data": {
+                "name": "Saving Data"
+            },
+            "data_conversion": {
+                "name": "Data Conversion in Progress"
             }
         },
         "button": {
