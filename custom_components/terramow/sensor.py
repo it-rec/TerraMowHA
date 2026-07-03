@@ -30,7 +30,7 @@ from .const import (
     MOW_SPEED_TYPES,
     to_ha_enum_state,
 )
-from .lawn_mower import Mission, SubMission, MissionState
+from .hub import Mission, MissionState, SubMission
 
 _LOGGER = logging.getLogger(__name__)
 

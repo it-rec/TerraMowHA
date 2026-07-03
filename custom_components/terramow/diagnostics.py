@@ -46,7 +46,10 @@ async def async_get_config_entry_diagnostics(
 
     diagnostics["device"] = {
         "model": lawn_mower.device_model,
-        "activity": str(lawn_mower.activity),
+        "mission": str(lawn_mower.mission),
+        "sub_mission": str(lawn_mower.sub_mission),
+        "mission_state": str(lawn_mower.mission_state),
+        "connection_error": lawn_mower.connection_error,
         "mqtt_connected": bool(
             lawn_mower.mqtt_client and lawn_mower.mqtt_client.is_connected()
         ),
