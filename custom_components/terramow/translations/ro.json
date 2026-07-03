@@ -1,0 +1,393 @@
+{
+    "config": {
+        "flow_title": "TerraMow ({host})",
+        "abort": {
+            "already_configured": "Dispozitivul este deja configurat",
+            "cannot_connect": "Conectarea a eșuat",
+            "reauth_successful": "Reautentificarea a fost realizată cu succes",
+            "reconfigure_successful": "Reconfigurarea a fost realizată cu succes"
+        },
+        "error": {
+            "cannot_connect": "Conectarea a eșuat",
+            "invalid_auth": "Autentificare nevalidă",
+            "unknown": "Eroare neașteptată"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "host": "Gazdă",
+                    "password": "Parolă",
+                    "username": "Nume de utilizator"
+                }
+            },
+            "user_pass": {
+                "title": "TerraMow",
+                "description": "S-a descoperit un TerraMow la {host}. Introduceți parola MQTT pentru a finaliza configurarea.",
+                "data": {
+                    "password": "Parolă"
+                }
+            },
+            "reauth_confirm": {
+                "data": {
+                    "password": "Parolă"
+                }
+            },
+            "reconfigure": {
+                "title": "Reconfigurare TerraMow",
+                "description": "Actualizați adresa IP / numele de gazdă sau parola dispozitivului TerraMow.",
+                "data": {
+                    "host": "Gazdă",
+                    "password": "Parolă"
+                }
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Opțiuni TerraMow",
+                "data": {
+                    "map_resolution": "Rezoluția de ieșire a hărții (px)"
+                },
+                "data_description": {
+                    "map_resolution": "Lungimea laturii imaginii PNG generate de camera hărții. Valorile mai mari oferă o imagine mai clară atunci când este încorporată în tablouri de bord, dar cresc lățimea de bandă și utilizarea CPU la fiecare randare."
+                }
+            }
+        }
+    },
+    "entity": {
+        "lawn_mower": {
+            "lawn_mower": {
+                "name": "Robot de Tuns Gazon"
+            }
+        },
+        "sensor": {
+            "battery": {
+                "name": "Baterie"
+            },
+            "battery_state": {
+                "name": "Starea Bateriei",
+                "state": {
+                    "battery_state_discharge": "Se Descarcă",
+                    "battery_state_charging": "Se Încarcă",
+                    "battery_state_charged": "Complet Încărcată"
+                }
+            },
+            "battery_temperature_state": {
+                "name": "Starea Temperaturii Bateriei",
+                "state": {
+                    "battery_tempreture_normal": "Normală",
+                    "battery_tempreture_overheat": "Supraîncălzire",
+                    "battery_tempreture_underheat": "Temperatură Prea Scăzută"
+                }
+            },
+            "map_status": {
+                "name": "Starea Hărții",
+                "state": {
+                    "map_state_empty": "Fără Hartă",
+                    "map_state_incomplete": "Hartă Incompletă",
+                    "map_state_complete": "Hartă Completă"
+                }
+            },
+            "map_area": {
+                "name": "Suprafața Hărții"
+            },
+            "mow_height": {
+                "name": "Înălțimea de Tundere"
+            },
+            "mow_speed": {
+                "name": "Viteza de Tundere",
+                "state": {
+                    "mow_speed_type_low": "Mică",
+                    "mow_speed_type_medium": "Medie",
+                    "mow_speed_type_adaptive_high": "Mare Adaptivă",
+                    "mow_speed_type_auto": "Automată"
+                }
+            },
+            "clean_mode": {
+                "name": "Mod de Operare",
+                "state": {
+                    "map_clean_info_mode_global": "Operare Globală",
+                    "map_clean_info_mode_select_region": "Operare pe Zonă Selectată",
+                    "map_clean_info_mode_draw_region": "Operare pe Zonă Desenată",
+                    "map_clean_info_mode_move_to_target_point": "Deplasare la Punctul Țintă"
+                }
+            },
+            "pose": {
+                "name": "Poziție și Orientare"
+            },
+            "total_mowing_time": {
+                "name": "Timp Total de Tundere"
+            },
+            "total_mowing_jobs": {
+                "name": "Total Sarcini de Tundere"
+            },
+            "total_mowed_area": {
+                "name": "Suprafață Totală Tunsă"
+            },
+            "current_session_area": {
+                "name": "Suprafața Sesiunii Curente"
+            },
+            "current_session_progress": {
+                "name": "Progresul Sesiunii Curente"
+            },
+            "current_session_time": {
+                "name": "Durata Sesiunii Curente"
+            },
+            "current_job_type": {
+                "name": "Tipul Sarcinii Curente",
+                "state": {
+                    "map_area_type_none": "Niciuna",
+                    "map_area_type_build_map": "Construire Hartă",
+                    "map_area_type_cleaning": "Tundere",
+                    "map_area_type_build_map_and_cleaning": "Construire Hartă și Tundere",
+                    "map_area_type_select_region_cleaning": "Tundere Zonă Selectată",
+                    "map_area_type_draw_region_cleaning": "Tundere Zonă Desenată",
+                    "map_area_type_edge_trim_cleaning": "Tundere Margini"
+                }
+            },
+            "remaining_blade_time": {
+                "name": "Timp Rămas pentru Lame"
+            },
+            "remaining_base_station_time": {
+                "name": "Timp Rămas pentru Stația de Bază"
+            },
+            "next_scheduled_start": {
+                "name": "Următoarea Pornire Programată"
+            },
+            "version_compatibility": {
+                "name": "Compatibilitatea Versiunii",
+                "state": {
+                    "compatible": "Compatibilă",
+                    "upgrade_required": "Actualizare Necesară",
+                    "downgrade_recommended": "Retrogradare Recomandată",
+                    "incompatible": "Incompatibilă",
+                    "unknown": "Necunoscută"
+                }
+            },
+            "main_direction_status": {
+                "name": "Starea Direcției Principale",
+                "state": {
+                    "main_direction_mode_single": "Direcție Unică",
+                    "main_direction_mode_multiple": "Direcții Multiple",
+                    "main_direction_mode_auto_rotate": "Rotire Automată a Direcției",
+                    "unavailable": "Indisponibilă",
+                    "no_config": "Fără Configurare"
+                }
+            },
+            "power_mode": {
+                "name": "Mod de Alimentare",
+                "state": {
+                    "power_mode_running": "În Funcțiune",
+                    "power_mode_standby": "În Așteptare",
+                    "power_mode_hibernate": "Hibernare"
+                }
+            },
+            "back_to_station_reason": {
+                "name": "Motivul Întoarcerii la Stație",
+                "state": {
+                    "back_to_station_reason_none": "Niciunul",
+                    "back_to_station_reason_low_battery": "Baterie Descărcată",
+                    "back_to_station_reason_raining": "Plouă",
+                    "back_to_station_reason_mow_motor_overheat": "Supraîncălzirea Motorului de Tundere",
+                    "back_to_station_reason_wheel_overheat": "Supraîncălzirea Roții de Tracțiune",
+                    "back_to_station_reason_night_time": "Întuneric"
+                }
+            },
+            "mission": {
+                "name": "Misiune",
+                "state": {
+                    "mission_idle": "Inactiv",
+                    "mission_recharge": "Se Reîncarcă",
+                    "mission_global_clean": "Tundere Globală",
+                    "mission_build_map": "Construire Hartă",
+                    "mission_build_map_and_clean": "Construire Hartă și Tundere",
+                    "mission_temporary_clean": "Tundere Temporară",
+                    "mission_back_to_starting_point": "Întoarcere la Punctul de Pornire",
+                    "mission_remote_control_clean": "Tundere prin Telecomandă",
+                    "mission_schedule_global_clean": "Tundere Globală Programată",
+                    "mission_schedule_build_map_and_clean": "Construire Hartă și Tundere Programate",
+                    "mission_select_region_clean": "Tundere pe Zone",
+                    "mission_create_custom_passage": "Creare Pasaj Personalizat",
+                    "mission_backup_map": "Copiere de Rezervă a Hărții",
+                    "mission_relocate_base_station": "Mutarea Stației de Bază",
+                    "mission_user_auto_calibration": "Calibrare Automată",
+                    "mission_restore_backup_map": "Restaurarea Copiei de Rezervă a Hărții",
+                    "mission_schedule_select_region_clean": "Tundere pe Zone Programată",
+                    "mission_draw_region_clean": "Tundere Zonă Desenată",
+                    "mission_edge_trim_clean": "Tundere Margini",
+                    "mission_update_backup_map": "Actualizarea Copiei de Rezervă a Hărții"
+                }
+            },
+            "sub_mission": {
+                "name": "Submisiune",
+                "state": {
+                    "sub_mission_idle": "Inactiv",
+                    "sub_mission_relocation": "Relocalizare",
+                    "sub_mission_return_to_base": "Întoarcere la Bază",
+                    "sub_mission_out_of_station": "Părăsirea Stației de Bază",
+                    "sub_mission_remote_control": "Telecomandă",
+                    "sub_mission_saving_map": "Salvarea Hărții",
+                    "sub_mission_setting_blade_height": "Reglarea Înălțimii Lamelor",
+                    "sub_mission_charging": "Se Încarcă",
+                    "sub_mission_remote_control_clean": "Tundere prin Telecomandă",
+                    "sub_mission_defogging": "Dezaburire",
+                    "sub_mission_wait_for_daylight": "Așteptarea Luminii Zilei",
+                    "sub_mission_cooling_down_motor": "Răcirea Motorului",
+                    "sub_mission_wait_for_rain_to_stop": "Așteptarea Opririi Ploii",
+                    "sub_mission_flexible_station_wait": "Așteptare la Stația de Bază"
+                }
+            },
+            "mission_state": {
+                "name": "Starea Misiunii",
+                "state": {
+                    "mission_state_idle": "Inactivă",
+                    "mission_state_running": "În Desfășurare",
+                    "mission_state_pause": "Întreruptă",
+                    "mission_state_abort": "Anulată",
+                    "mission_state_complete": "Finalizată"
+                }
+            }
+        },
+        "camera": {
+            "map_camera": {
+                "name": "Hartă"
+            },
+            "map_camera_clean": {
+                "name": "Hartă (Simplificată)"
+            }
+        },
+        "binary_sensor": {
+            "charging_state": {
+                "name": "Starea de Încărcare"
+            },
+            "navigation_located": {
+                "name": "Navigație Localizată"
+            },
+            "firmware_upgrading": {
+                "name": "Actualizare Firmware în Curs"
+            },
+            "power_switch": {
+                "name": "Întrerupător de Alimentare"
+            },
+            "problem": {
+                "name": "Problemă"
+            },
+            "rain_detected": {
+                "name": "Ploaie Detectată"
+            },
+            "map_detected": {
+                "name": "Hartă Detectată"
+            },
+            "map_buildable": {
+                "name": "Harta Poate Fi Construită"
+            },
+            "map_backing_up": {
+                "name": "Copiere de Rezervă a Hărții în Curs"
+            },
+            "saving_data": {
+                "name": "Salvare Date"
+            },
+            "data_conversion": {
+                "name": "Conversie de Date în Curs"
+            }
+        },
+        "button": {
+            "reset_blade_timer": {
+                "name": "Resetare Contor Lame"
+            },
+            "reset_base_station_timer": {
+                "name": "Resetare Contor Stație de Bază"
+            },
+            "edge_trim": {
+                "name": "Tundere Margini"
+            }
+        },
+        "select": {
+            "region_select": {
+                "name": "Selectare Zonă",
+                "state": {
+                    "no_zones_available": "Nu există zone disponibile",
+                    "all_zones": "Toate zonele"
+                }
+            },
+            "mow_speed_setting": {
+                "name": "Setarea Vitezei de Tundere",
+                "state": {
+                    "mow_speed_type_low": "Viteză Mică",
+                    "mow_speed_type_medium": "Viteză Medie",
+                    "mow_speed_type_adaptive_high": "Viteză Mare Adaptivă",
+                    "mow_speed_type_auto": "Viteză Automată"
+                }
+            },
+            "blade_speed": {
+                "name": "Setarea Vitezei Lamelor",
+                "state": {
+                    "blade_disk_speed_type_low": "Viteză Mică",
+                    "blade_disk_speed_type_medium": "Viteză Medie",
+                    "blade_disk_speed_type_high": "Viteză Mare"
+                }
+            },
+            "main_direction_mode": {
+                "name": "Modul Direcției Principale",
+                "state": {
+                    "main_direction_mode_single": "Direcție Unică",
+                    "main_direction_mode_multiple": "Direcții Multiple",
+                    "main_direction_mode_auto_rotate": "Rotire Automată a Direcției"
+                }
+            },
+            "high_grass_edge_trim_mode": {
+                "name": "Mod Tundere Margini pentru Iarbă Înaltă",
+                "state": {
+                    "high_grass_edge_trim_standard": "Standard",
+                    "high_grass_edge_trim_intensive": "Intensiv"
+                }
+            }
+        },
+        "switch": {
+            "thorough_corner_cutting": {
+                "name": "Tăiere Minuțioasă a Colțurilor"
+            }
+        },
+        "number": {
+            "mowing_height": {
+                "name": "Setarea Înălțimii de Tundere"
+            },
+            "edge_cutting_distance": {
+                "name": "Distanța de Tăiere a Marginilor"
+            },
+            "mowing_spacing": {
+                "name": "Setarea Distanței dintre Benzile de Tundere"
+            },
+            "main_direction_single_angle": {
+                "name": "Unghiul Direcției Unice"
+            },
+            "main_direction_auto_rotate_interval": {
+                "name": "Pasul Unghiular al Rotirii Automate"
+            },
+            "multiple_direction_angle1": {
+                "name": "Unghiul Primei Direcții"
+            },
+            "multiple_direction_angle2": {
+                "name": "Unghiul Celei de-a Doua Direcții"
+            }
+        },
+        "update": {
+            "firmware": {
+                "name": "Firmware"
+            }
+        }
+    },
+    "services": {
+        "start_select_region": {
+            "name": "Pornire Tundere Zonă Selectată",
+            "description": "Pornește tunderea pentru ID-urile de subzone specificate.",
+            "fields": {
+                "region_ids": {
+                    "name": "ID-uri de Zone",
+                    "description": "Lista ID-urilor subzonelor de tuns."
+                }
+            }
+        }
+    }
+}
