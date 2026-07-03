@@ -186,6 +186,7 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
         self._schedule_data: dict[str, Any] = {}  # 存储dp_138即将到来的预约
         self._battery_status: dict[str, Any] = {} # Store dp_108 battery status
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
+        self._seen_unknown_dp_ids: set[int] = set()  # 已记录过的未知数据点
         self._device_model: str = "TerraMow S1200"  # 默认型号名称，保持向后兼容
         self.basic_data.lawn_mower = self
 
@@ -723,7 +724,18 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
             for callback in callbacks:
                 self.hass.add_job(callback, payload)
         else:
-            _LOGGER.debug("No callback registered for dp_id: %d", dp_id)
+            # 帮助发现未文档化的数据点（例如提离报警、日程开关、错误码）：
+            # 每个未知 dp_id 只在 INFO 记录一次，完整报文在 DEBUG 持续记录。
+            if dp_id not in self._seen_unknown_dp_ids:
+                self._seen_unknown_dp_ids.add(dp_id)
+                _LOGGER.info(
+                    "Received undocumented data point %d (no handler registered). "
+                    "First payload: %s. Enable debug logging for the terramow "
+                    "integration to record all payloads for this data point.",
+                    dp_id, payload[:500],
+                )
+            else:
+                _LOGGER.debug("Unhandled data point %d payload: %s", dp_id, payload[:2000])
 
     def register_callback(self, dp_id: int, callback: Callable):
         """Register a callback function for a specific dp_id."""
