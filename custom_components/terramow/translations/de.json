@@ -4,7 +4,8 @@
         "abort": {
             "already_configured": "Das Gerät ist bereits konfiguriert",
             "cannot_connect": "Verbindung fehlgeschlagen",
-            "reauth_successful": "Erneute Authentifizierung war erfolgreich"
+            "reauth_successful": "Erneute Authentifizierung war erfolgreich",
+            "reconfigure_successful": "Die Neukonfiguration war erfolgreich"
         },
         "error": {
             "cannot_connect": "Verbindung fehlgeschlagen",
@@ -28,6 +29,14 @@
             },
             "reauth_confirm": {
                 "data": {
+                    "password": "Passwort"
+                }
+            },
+            "reconfigure": {
+                "title": "TerraMow neu konfigurieren",
+                "description": "IP-Adresse / Hostname oder Passwort deiner TerraMow aktualisieren.",
+                "data": {
+                    "host": "Host",
                     "password": "Passwort"
                 }
             }
