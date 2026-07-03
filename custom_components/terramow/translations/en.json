@@ -296,7 +296,11 @@
         },
         "select": {
             "region_select": {
-                "name": "Zone Select"
+                "name": "Zone Select",
+                "state": {
+                    "no_zones_available": "No zones available",
+                    "all_zones": "All zones"
+                }
             },
             "mow_speed_setting": {
                 "name": "Mow Speed Setting",

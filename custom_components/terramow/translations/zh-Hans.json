@@ -296,7 +296,11 @@
         },
         "select": {
             "region_select": {
-                "name": "分区选择"
+                "name": "分区选择",
+                "state": {
+                    "no_zones_available": "没有可用分区",
+                    "all_zones": "全部分区"
+                }
             },
             "mow_speed_setting": {
                 "name": "割草速度设置",
