@@ -287,7 +287,11 @@
         },
         "select": {
             "region_select": {
-                "name": "Zonenauswahl"
+                "name": "Zonenauswahl",
+                "state": {
+                    "no_zones_available": "Keine Zonen verfügbar",
+                    "all_zones": "Alle Zonen"
+                }
             },
             "mow_speed_setting": {
                 "name": "Mähgeschwindigkeit",
