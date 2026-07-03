@@ -13,6 +13,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowBasicData, DOMAIN
+from .entity_utils import safe_write_ha_state
 from .const import COMPATIBILITY_INFO_DP
 
 _LOGGER = logging.getLogger(__name__)
@@ -65,7 +66,7 @@ class TerraMowFirmwareUpdate(UpdateEntity):
             )
 
     async def _handle_compat_info(self, _payload: str) -> None:
-        self.async_write_ha_state()
+        safe_write_ha_state(self)
 
     @property
     def device_info(self) -> DeviceInfo:

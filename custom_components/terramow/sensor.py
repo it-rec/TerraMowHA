@@ -25,6 +25,7 @@ from enum import StrEnum
 from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from . import TerraMowBasicData, DOMAIN
+from .entity_utils import safe_write_ha_state
 from .const import (
     BLADE_MAINTENANCE_CYCLE_MINUTES,
     BASE_STATION_MAINTENANCE_CYCLE_MINUTES,
@@ -439,7 +440,7 @@ class CurrentSessionProgressSensor(SensorEntity):
             self.basic_data.lawn_mower.register_callback(113, self._handle_dp_113)
 
     async def _handle_dp_113(self, _payload: str) -> None:
-        self.async_write_ha_state()
+        safe_write_ha_state(self)
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -1056,7 +1057,7 @@ class TerraMowPoseSensor(SensorEntity):
     async def _on_pose(self, pose: dict[str, Any]) -> None:
         """处理姿态更新"""
         self._pose = pose
-        self.async_write_ha_state()
+        safe_write_ha_state(self)
 
     @property
     def native_value(self) -> float | None:
@@ -1399,7 +1400,7 @@ class _MissionEnumSensorBase(SensorEntity):
             self.basic_data.lawn_mower.register_callback(107, self._handle_dp_107)
 
     async def _handle_dp_107(self, _payload: str) -> None:
-        self.async_write_ha_state()
+        safe_write_ha_state(self)
 
     @property
     def device_info(self) -> DeviceInfo:

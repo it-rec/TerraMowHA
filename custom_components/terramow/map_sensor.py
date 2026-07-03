@@ -18,6 +18,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
 from . import TerraMowBasicData, DOMAIN
+from .entity_utils import safe_write_ha_state
 
 
 async def async_setup_entry(
@@ -68,7 +69,7 @@ class TerraMowMapSensorBase(SensorEntity):
     async def _on_map_info(self, map_info: dict[str, Any]) -> None:
         """处理地图信息更新"""
         self._map_info = map_info
-        self.async_write_ha_state()
+        safe_write_ha_state(self)
 
 class TerraMowMapStatusSensor(SensorEntity):
     """地图状态传感器 - 使用dp_117数据"""
