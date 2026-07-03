@@ -33,7 +33,7 @@
 - Zeroconf/mDNS 自动发现
 - 重新配置流程（无需删除重加即可更改主机/IP）和重新认证流程
 - 诊断信息下载，便于反馈问题
-- 支持 14 种语言（en、cs、da、de、es、fi、fr、it、nb、nl、pl、pt、sv、zh-Hans）
+- 支持 33 种语言（bg、ca、cs、da、de、el、en、es、et、fi、fr、hr、hu、it、ja、ko、lt、lv、nb、nl、pl、pt、pt-BR、ro、ru、sk、sl、sr、sv、tr、uk、zh-Hans、zh-Hant）
 - 基于 MQTT 的本地推送通信——无需云端
 
 ### 支持的实体
@@ -105,7 +105,7 @@ data:
 
 ### 语言
 
-集成已翻译为：Čeština、Dansk、Deutsch、English、Español、Français、Italiano、Nederlands、Norsk (bokmål)、Polski、Português、Suomi、Svenska 和简体中文。
+集成已翻译为：Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文。
 
 ### 升级说明
 

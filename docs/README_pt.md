@@ -33,7 +33,7 @@ Esta é uma integração para o Home Assistant destinada aos corta-relvas robót
 - Descoberta automática via Zeroconf/mDNS
 - Fluxo de reconfiguração (alterar o anfitrião/IP sem voltar a adicionar) e fluxo de reautenticação
 - Transferência de diagnósticos para relatórios de erros mais fáceis
-- Traduzida em 14 idiomas (en, cs, da, de, es, fi, fr, it, nb, nl, pl, pt, sv, zh-Hans)
+- Traduzida em 33 idiomas (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - Comunicação push local baseada em MQTT — sem necessidade de nuvem
 
 ### Entidades suportadas
@@ -104,7 +104,7 @@ data:
 
 ### Idiomas
 
-A integração está traduzida em: Čeština, Dansk, Deutsch, English, Español, Français, Italiano, Nederlands, Norsk (bokmål), Polski, Português, Suomi, Svenska e 简体中文.
+A integração está traduzida em: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Notas de atualização
 

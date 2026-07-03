@@ -33,7 +33,7 @@ Dette er en Home Assistant-integrasjon for TerraMow robotgressklippere.
 - Automatisk oppdagelse via Zeroconf/mDNS
 - Rekonfigurasjonsflyt (endre vert/IP uten å legge til på nytt) og reautentiseringsflyt
 - Nedlasting av diagnostikk for enkle feilrapporter
-- Oversatt til 14 språk (en, cs, da, de, es, fi, fr, it, nb, nl, pl, pt, sv, zh-Hans)
+- Oversatt til 33 språk (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - MQTT-basert lokal push-kommunikasjon — ingen sky kreves
 
 ### Støttede entiteter
@@ -104,7 +104,7 @@ data:
 
 ### Språk
 
-Integrasjonen er oversatt til: Čeština, Dansk, Deutsch, English, Español, Français, Italiano, Nederlands, Norsk (bokmål), Polski, Português, Suomi, Svenska og 简体中文.
+Integrasjonen er oversatt til: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Oppgraderingsnotater
 

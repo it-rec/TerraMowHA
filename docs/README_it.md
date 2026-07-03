@@ -33,7 +33,7 @@ Questa è un'integrazione di Home Assistant per i robot tagliaerba TerraMow.
 - Rilevamento automatico tramite Zeroconf/mDNS
 - Flusso di riconfigurazione (cambio di host/IP senza dover riaggiungere l'integrazione) e flusso di riautenticazione
 - Download della diagnostica per segnalazioni di bug semplici
-- Tradotta in 14 lingue (en, cs, da, de, es, fi, fr, it, nb, nl, pl, pt, sv, zh-Hans)
+- Tradotta in 33 lingue (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - Comunicazione locale di tipo push basata su MQTT — nessun cloud richiesto
 
 ### Entità supportate
@@ -104,7 +104,7 @@ data:
 
 ### Lingue
 
-L'integrazione è tradotta in: Čeština, Dansk, Deutsch, English, Español, Français, Italiano, Nederlands, Norsk (bokmål), Polski, Português, Suomi, Svenska e 简体中文.
+L'integrazione è tradotta in: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Note di aggiornamento
 
