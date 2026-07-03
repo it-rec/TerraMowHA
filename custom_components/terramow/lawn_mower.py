@@ -528,6 +528,11 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
             self.basic_data.compatibility_status = compatibility_status
             self.basic_data.firmware_version = data
 
+            # 在设备页展示固件版本（与 update 实体使用相同的格式）
+            sw_version = self._format_firmware_version(data)
+            if sw_version:
+                self.hass.add_job(self._async_update_device_sw_version, sw_version)
+
             # 记录兼容性检查结果
             message = self.basic_data.get_compatibility_message()
             if compatibility_status == CompatibilityStatus.COMPATIBLE:
@@ -1148,6 +1153,32 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
             text = raw.decode("utf-8")
             data = json.loads(text)
             return data, new_etag, True, False
+
+    @staticmethod
+    def _format_firmware_version(info: dict) -> str | None:
+        """Build the firmware version string shown on the device page."""
+        overall = info.get("overall")
+        if overall is None:
+            return None
+        ha_version = info.get("module", {}).get("home_assistant")
+        if ha_version is not None:
+            return f"{overall}.{ha_version}"
+        return str(overall)
+
+    async def _async_update_device_sw_version(self, sw_version: str):
+        """异步更新设备注册表中的固件版本信息."""
+        try:
+            device_registry = dr.async_get(self.hass)
+            device_entry = device_registry.async_get_device(
+                {('TerraMowLawnMower', self.basic_data.host)}
+            )
+            if device_entry and device_entry.sw_version != sw_version:
+                device_registry.async_update_device(
+                    device_entry.id, sw_version=sw_version
+                )
+                _LOGGER.info("Device registry updated with firmware version: %s", sw_version)
+        except Exception as e:
+            _LOGGER.error("Error updating device firmware version: %s", e)
 
     async def _async_update_device_model(self, model_name: str):
         """异步更新设备注册表中的模型信息."""
