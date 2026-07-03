@@ -26,6 +26,15 @@ MQTT_PORT = 1883
 
 MQTT_USERNAME = "terramow"
 
+# MQTT 重连退避（秒）
+# 首次连接失败后的基础等待时间，之后按指数退避，封顶为 MQTT_RECONNECT_MAX_DELAY。
+# 这样在割草机不可达（休眠/回基站/IP 变化）时不会每隔几秒刷一条 ERROR，也不会频繁拍打网络。
+MQTT_RECONNECT_BASE_DELAY = 5
+MQTT_RECONNECT_MAX_DELAY = 60
+
+# 实体移除时等待 MQTT 工作线程退出的最长时间（秒），避免线程残留为僵尸继续重连。
+MQTT_THREAD_JOIN_TIMEOUT = 10
+
 # MQTT主题
 MAP_INFO_TOPIC = "map/current/info"
 MAP_META_TOPIC = "map/current/meta"
@@ -37,6 +46,11 @@ MODEL_NAME_TOPIC = "model/name"
 # 版本兼容性相关常量
 # 当前插件要求的固件 home_assistant 兼容版本
 CURRENT_HA_VERSION = 3
+
+# 插件支持的最低固件 home_assistant 兼容版本。
+# 版本 2 缺少实时地图/路径能力（需要版本 3），但其余功能完整可用；
+# 部分机型（如 S800）最新固件仍报告版本 2，不应提示"需要升级固件"。
+MIN_SUPPORTED_HA_VERSION = 2
 
 # 最低要求的固件overall版本号
 MIN_REQUIRED_OVERALL_VERSION = 25

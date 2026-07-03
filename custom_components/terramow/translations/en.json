@@ -4,7 +4,8 @@
         "abort": {
             "already_configured": "Device is already configured",
             "cannot_connect": "Failed to connect",
-            "reauth_successful": "Re-authentication was successful"
+            "reauth_successful": "Re-authentication was successful",
+            "reconfigure_successful": "Re-configuration was successful"
         },
         "error": {
             "cannot_connect": "Failed to connect",
@@ -28,6 +29,14 @@
             },
             "reauth_confirm": {
                 "data": {
+                    "password": "Password"
+                }
+            },
+            "reconfigure": {
+                "title": "Reconfigure TerraMow",
+                "description": "Update the IP address / hostname or password of your TerraMow.",
+                "data": {
+                    "host": "Host",
                     "password": "Password"
                 }
             }
@@ -287,7 +296,11 @@
         },
         "select": {
             "region_select": {
-                "name": "Zone Select"
+                "name": "Zone Select",
+                "state": {
+                    "no_zones_available": "No zones available",
+                    "all_zones": "All zones"
+                }
             },
             "mow_speed_setting": {
                 "name": "Mow Speed Setting",

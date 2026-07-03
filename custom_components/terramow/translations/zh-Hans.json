@@ -4,7 +4,8 @@
         "abort": {
             "already_configured": "设备已配置",
             "cannot_connect": "连接失败",
-            "reauth_successful": "重新认证成功"
+            "reauth_successful": "重新认证成功",
+            "reconfigure_successful": "重新配置成功"
         },
         "error": {
             "cannot_connect": "连接失败",
@@ -28,6 +29,14 @@
             },
             "reauth_confirm": {
                 "data": {
+                    "password": "密码"
+                }
+            },
+            "reconfigure": {
+                "title": "重新配置 TerraMow",
+                "description": "更新 TerraMow 的 IP 地址/主机名或密码。",
+                "data": {
+                    "host": "主机",
                     "password": "密码"
                 }
             }
@@ -287,7 +296,11 @@
         },
         "select": {
             "region_select": {
-                "name": "分区选择"
+                "name": "分区选择",
+                "state": {
+                    "no_zones_available": "没有可用分区",
+                    "all_zones": "全部分区"
+                }
             },
             "mow_speed_setting": {
                 "name": "割草速度设置",
