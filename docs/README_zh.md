@@ -8,6 +8,8 @@
   <img src="images/terramow_logo.png" alt="TerraMow Logo" width="400">
 </div>
 
+🌐 [English](../README.md) · [Dansk](README_da.md) · [Deutsch](README_de.md) · [Español](README_es.md) · [Français](README_fr.md) · [Italiano](README_it.md) · [Nederlands](README_nl.md) · [Norsk (bokmål)](README_nb.md) · [Polski](README_pl.md) · [Português](README_pt.md) · [Suomi](README_fi.md) · [Svenska](README_sv.md) · [Čeština](README_cs.md) · **中文**
+
 ---
 
 这是一个适用于TerraMow机器人割草机的Home Assistant集成。
