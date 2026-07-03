@@ -63,7 +63,7 @@ class BatterySensor(TerraMowEntity, SensorEntity):
         self.basic_data.lawn_mower.register_callback(8, self.set_capacity)
         # self.basic_data.lawn_mower.register_callback(108, self.set_battery_attributes) # This is now handled by the lawn_mower entity
 
-        _LOGGER.info("BatterySensor entity created")
+        _LOGGER.debug("BatterySensor entity created")
 
     _unique_id_suffix = "battery"
 
@@ -72,7 +72,7 @@ class BatterySensor(TerraMowEntity, SensorEntity):
         try:
             data = json.loads(payload)
             self._attr_native_value = data.get('int_value', self._attr_native_value)
-            _LOGGER.info(f"Received battery capacity status: {data}")
+            _LOGGER.debug(f"Received battery capacity status: {data}")
 
         except json.JSONDecodeError:
             _LOGGER.error(f"Invalid JSON payload: {payload}")

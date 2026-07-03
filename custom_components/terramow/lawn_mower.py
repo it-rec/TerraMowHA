@@ -67,7 +67,7 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
         if not self._has_returning:
             _LOGGER.info("LawnMowerActivity.RETURNING not available in this HA version")
 
-        _LOGGER.info("TerraMowLawnMowerEntity created with host %s", self.host)
+        _LOGGER.debug("TerraMowLawnMowerEntity created with host %s", self.host)
 
     @property
     def hub(self) -> TerraMowHub:
@@ -96,7 +96,9 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
         """Set the current activity of the lawn mower."""
         old_activity = self._activity
         self._activity = value
-        _LOGGER.info("Activity changed from %s to %s", old_activity, value)
+        if old_activity != value:
+            # 只在真正变化时用 INFO，避免每条 dp_107 都刷一行日志
+            _LOGGER.info("Activity changed from %s to %s", old_activity, value)
         _LOGGER.debug("State change details: mission=%s, sub_mission=%s, mission_state=%s, has_error=%s",
                      self.hub.mission, self.hub.sub_mission, self.hub.mission_state, self.hub.has_error)
         safe_schedule_update_ha_state(self)

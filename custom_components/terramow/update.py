@@ -51,7 +51,7 @@ class TerraMowFirmwareUpdate(TerraMowEntity, UpdateEntity):
     ) -> None:
         """Initialize the firmware update entity."""
         super().__init__(basic_data, hass)
-        _LOGGER.info("TerraMowFirmwareUpdate entity created")
+        _LOGGER.debug("TerraMowFirmwareUpdate entity created")
 
     async def async_added_to_hass(self) -> None:
         # UpdateEntity.state is a cached_property; without an explicit
