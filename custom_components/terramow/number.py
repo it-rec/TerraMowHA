@@ -19,6 +19,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
 from . import TerraMowBasicData, DOMAIN
+from .entity_utils import PushUpdateMixin
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,8 +46,10 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class TerraMowNumberBase(NumberEntity):
+class TerraMowNumberBase(PushUpdateMixin, NumberEntity):
     """TerraMow数值控制基类"""
+
+    _push_dp_ids = (155,)
     
     def __init__(
         self,

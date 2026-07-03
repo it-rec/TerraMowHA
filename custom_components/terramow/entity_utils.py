@@ -38,3 +38,33 @@ def safe_schedule_update_ha_state(entity: Entity) -> None:
         entity.schedule_update_ha_state()
     except RuntimeError as err:
         _LOGGER.debug("Skipping state update for %s: %s", entity.entity_id, err)
+
+
+class PushUpdateMixin:
+    """Refresh entity state as soon as the relevant MQTT data arrives.
+
+    Entities that only read cached data point payloads otherwise rely on
+    Home Assistant's default 30-second polling, so state changes lag even
+    though the device pushes them instantly. Set ``_push_dp_ids`` to the
+    data point IDs the entity reads (and/or ``_push_map_info`` for the
+    map/current/info topic) and every message triggers a state write.
+    """
+
+    _push_dp_ids: tuple[int, ...] = ()
+    _push_map_info: bool = False
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        lawn_mower = getattr(self.basic_data, "lawn_mower", None)
+        if lawn_mower is None:
+            return
+        for dp_id in self._push_dp_ids:
+            lawn_mower.register_callback(dp_id, self._handle_push_update)
+        if self._push_map_info:
+            lawn_mower.register_map_callback(self._handle_map_push_update)
+
+    async def _handle_push_update(self, _payload: str) -> None:
+        safe_write_ha_state(self)
+
+    async def _handle_map_push_update(self, _map_info: dict) -> None:
+        safe_write_ha_state(self)

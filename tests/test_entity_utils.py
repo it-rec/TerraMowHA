@@ -48,3 +48,30 @@ def test_schedule_update_guards_the_same_way() -> None:
 
     entity.schedule_update_ha_state.side_effect = RuntimeError("not added")
     safe_schedule_update_ha_state(entity)  # must not raise
+
+
+def test_push_update_mixin_registers_callbacks() -> None:
+    from custom_components.terramow.entity_utils import PushUpdateMixin
+
+    class Base:
+        async def async_added_to_hass(self) -> None:
+            return None
+
+    class Probe(PushUpdateMixin, Base):
+        _push_dp_ids = (108, 155)
+        _push_map_info = True
+
+    probe = Probe()
+    lawn_mower = MagicMock()
+    probe.basic_data = MagicMock()
+    probe.basic_data.lawn_mower = lawn_mower
+
+    import asyncio
+
+    asyncio.get_event_loop_policy().new_event_loop().run_until_complete(
+        probe.async_added_to_hass()
+    )
+
+    registered = [call.args[0] for call in lawn_mower.register_callback.call_args_list]
+    assert registered == [108, 155]
+    lawn_mower.register_map_callback.assert_called_once()
