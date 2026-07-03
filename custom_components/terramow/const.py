@@ -47,6 +47,11 @@ MODEL_NAME_TOPIC = "model/name"
 # 当前插件要求的固件 home_assistant 兼容版本
 CURRENT_HA_VERSION = 3
 
+# 插件支持的最低固件 home_assistant 兼容版本。
+# 版本 2 缺少实时地图/路径能力（需要版本 3），但其余功能完整可用；
+# 部分机型（如 S800）最新固件仍报告版本 2，不应提示"需要升级固件"。
+MIN_SUPPORTED_HA_VERSION = 2
+
 # 最低要求的固件overall版本号
 MIN_REQUIRED_OVERALL_VERSION = 25
 
