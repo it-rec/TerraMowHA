@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.device_registry import DeviceInfo
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -19,6 +18,7 @@ from homeassistant.config_entries import ConfigEntry
 
 from . import TerraMowBasicData, DOMAIN
 from .const import to_ha_enum_state
+from .entity import TerraMowEntity
 from .entity_utils import safe_write_ha_state
 
 
@@ -39,7 +39,7 @@ async def async_setup_entry(
     
     async_add_entities(entities)
 
-class TerraMowMapSensorBase(SensorEntity):
+class TerraMowMapSensorBase(TerraMowEntity, SensorEntity):
     """地图传感器基类"""
     
     def __init__(
@@ -47,65 +47,28 @@ class TerraMowMapSensorBase(SensorEntity):
         basic_data: TerraMowBasicData,
         hass: HomeAssistant,
     ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
+        super().__init__(basic_data, hass)
         self._map_info: dict[str, Any] = {}
         
         # 注册地图信息回调
         if hasattr(basic_data, 'lawn_mower') and basic_data.lawn_mower:
             basic_data.lawn_mower.register_map_callback(self._on_map_info)
-    
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-    
+
     async def _on_map_info(self, map_info: dict[str, Any]) -> None:
         """处理地图信息更新"""
         self._map_info = map_info
         safe_write_ha_state(self)
 
-class TerraMowMapStatusSensor(SensorEntity):
+class TerraMowMapStatusSensor(TerraMowEntity, SensorEntity):
     """地图状态传感器 - 使用dp_117数据"""
     
-    _attr_has_entity_name = True
     _attr_icon = "mdi:map"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "map_status"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = ["map_state_empty", "map_state_incomplete", "map_state_complete"]
-    
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
-    
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model # Use dynamically updated model
-        )
-    
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.map_status"
+
+    _unique_id_suffix = "map_status"
     
     @property
     def native_value(self) -> str | None:
@@ -145,25 +108,14 @@ class TerraMowMapStatusSensor(SensorEntity):
 class TerraMowMapAreaSensor(TerraMowMapSensorBase):
     """地图面积传感器"""
     
-    _attr_has_entity_name = True
     _attr_icon = "mdi:texture-box"
     _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
     _attr_device_class = None  # 没有标准的面积设备类
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "map_area"
-    
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__(basic_data, hass)
-    
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.map_area"
+
+    _unique_id_suffix = "map_area"
     
     @property
     def native_value(self) -> float | None:
@@ -179,24 +131,13 @@ class TerraMowMapAreaSensor(TerraMowMapSensorBase):
 class TerraMowCleanModeSensor(TerraMowMapSensorBase):
     """清洁模式传感器"""
     
-    _attr_has_entity_name = True
     _attr_icon = "mdi:broom"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "clean_mode"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = ["map_clean_info_mode_global", "map_clean_info_mode_select_region", "map_clean_info_mode_draw_region", "map_clean_info_mode_move_to_target_point"]
-    
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__(basic_data, hass)
-    
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.clean_mode"
+
+    _unique_id_suffix = "clean_mode"
     
     @property
     def native_value(self) -> str | None:
