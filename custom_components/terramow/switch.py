@@ -12,6 +12,9 @@ from . import DOMAIN
 from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin
 
+# Push-based integration: no update throttling needed
+PARALLEL_UPDATES = 0
+
 _LOGGER = logging.getLogger(__name__)
 
 

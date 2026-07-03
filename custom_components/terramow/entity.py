@@ -58,5 +58,11 @@ class TerraMowEntity(Entity):
 
     @property
     def available(self) -> bool:
-        """Return True while the shared device connection exists."""
-        return self.basic_data.lawn_mower is not None
+        """Return True while the device connection is healthy.
+
+        Entities go unavailable instead of showing stale data when the
+        MQTT connection to the mower is lost (quality scale
+        ``entity-unavailable`` rule).
+        """
+        lawn_mower = self.basic_data.lawn_mower
+        return lawn_mower is not None and not lawn_mower.connection_error

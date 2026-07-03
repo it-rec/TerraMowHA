@@ -10,6 +10,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import DOMAIN
 from .entity import TerraMowEntity
 
+# Push-based integration: no update throttling needed
+PARALLEL_UPDATES = 0
+
 _LOGGER = logging.getLogger(__name__)
 
 
