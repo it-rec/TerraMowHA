@@ -2,10 +2,6 @@
 
 <div align="center">
   <p>
-    <a href="#english-version"><img src="https://img.shields.io/badge/English-blue?style=for-the-badge" alt="English"/></a>
-    <a href="docs/README_zh.md"><img src="https://img.shields.io/badge/中文-red?style=for-the-badge" alt="中文"/></a>
-  </p>
-  <p>
     <a href="https://github.com/TerraMow/TerraMowHA/actions/workflows/validate.yml"><img src="https://github.com/TerraMow/TerraMowHA/actions/workflows/validate.yml/badge.svg" alt="Validate"/></a>
     <a href="https://github.com/TerraMow/TerraMowHA/actions/workflows/release.yml"><img src="https://github.com/TerraMow/TerraMowHA/actions/workflows/release.yml/badge.svg" alt="Release"/></a>
   </p>
@@ -15,8 +11,6 @@
 🌐 **English** · [Dansk](docs/README_da.md) · [Deutsch](docs/README_de.md) · [Español](docs/README_es.md) · [Français](docs/README_fr.md) · [Italiano](docs/README_it.md) · [Nederlands](docs/README_nl.md) · [Norsk (bokmål)](docs/README_nb.md) · [Polski](docs/README_pl.md) · [Português](docs/README_pt.md) · [Suomi](docs/README_fi.md) · [Svenska](docs/README_sv.md) · [Čeština](docs/README_cs.md) · [中文](docs/README_zh.md)
 
 ---
-
-<a id="english-version"></a>
 
 This is a Home Assistant integration for TerraMow robotic lawn mowers.
 
