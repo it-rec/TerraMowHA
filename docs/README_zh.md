@@ -1,10 +1,6 @@
 # TerraMow Home Assistant集成
 
 <div align="center">
-  <p>
-    <a href="../README.md"><img src="https://img.shields.io/badge/English-blue?style=for-the-badge" alt="English"/></a>
-    <a href="#"><img src="https://img.shields.io/badge/中文-red?style=for-the-badge" alt="中文"/></a>
-  </p>
   <img src="images/terramow_logo.png" alt="TerraMow Logo" width="400">
 </div>
 
