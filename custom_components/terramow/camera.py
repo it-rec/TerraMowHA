@@ -17,10 +17,10 @@ from PIL import Image, ImageDraw, ImageFont
 from homeassistant.components.camera import Camera
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import DOMAIN, TerraMowBasicData
+from .entity import TerraMowEntity
 from .entity_utils import safe_write_ha_state
 from .const import (
     CONF_MAP_RESOLUTION,
@@ -804,10 +804,9 @@ def _render_placeholder(text: str = "Waiting for map data...") -> bytes:
     return buffer.getvalue()
 
 
-class TerraMowMapCamera(Camera):
+class TerraMowMapCamera(TerraMowEntity, Camera):
     """地图摄像头实体。"""
 
-    _attr_has_entity_name = True
     _attr_icon = "mdi:map"
 
     def __init__(
@@ -818,12 +817,10 @@ class TerraMowMapCamera(Camera):
         clean_mode: bool = False,
         output_resolution: int = DEFAULT_MAP_RESOLUTION,
     ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-        self.hass = hass
+        super().__init__(basic_data, hass)
         self._clean_mode = clean_mode
         self._attr_translation_key = "map_camera_clean" if clean_mode else "map_camera"
+        self._unique_id_suffix = "map_camera_clean" if clean_mode else "map_camera"
         self._map_rect: tuple[int, int, int, int] = (
             (0, 0, IMAGE_WIDTH, IMAGE_HEIGHT) if clean_mode else MAP_RECT
         )
@@ -852,24 +849,6 @@ class TerraMowMapCamera(Camera):
             lawn_mower.register_history_path_callback(self._on_history_path_data)
             lawn_mower.register_pose_callback(self._on_pose)
             lawn_mower.register_callback(BATTERY_STATUS_DP, self._on_battery_status)
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return DeviceInfo(
-            identifiers={("TerraMowLawnMower", self.basic_data.host)},
-            name="TerraMow",
-            manufacturer="TerraMow",
-            model=self.basic_data.lawn_mower.device_model,
-        )
-
-    @property
-    def unique_id(self) -> str:
-        suffix = "map_camera_clean" if self._clean_mode else "map_camera"
-        return f"lawn_mower.terramow@{self.host}.{suffix}"
-
-    @property
-    def available(self) -> bool:
-        return self.basic_data.lawn_mower is not None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -1964,7 +1943,6 @@ class TerraMowMapCamera(Camera):
                   (cx - station_rotated.width // 2, cy - station_rotated.height // 2),
                   station_mask_rotated)        
 
-
     def _draw_robot(self, image: Image.Image) -> None:
         """绘制实时机器人位置。"""
         transformer = self._transformer
@@ -2013,7 +1991,6 @@ class TerraMowMapCamera(Camera):
         image.paste(robot_rotated,
                   (cx - robot_rotated.width // 2, cy - robot_rotated.height // 2),
                   robot_mask_rotated)
-
 
     def _draw_map_chips(self, draw: ImageDraw.ImageDraw, scene: dict[str, Any]) -> None:
         """绘制地图上方摘要标签。"""

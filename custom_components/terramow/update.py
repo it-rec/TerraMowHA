@@ -9,10 +9,10 @@ from homeassistant.components.update import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowBasicData, DOMAIN
+from .entity import TerraMowEntity
 from .entity_utils import safe_write_ha_state
 from .const import COMPATIBILITY_INFO_DP
 
@@ -34,10 +34,9 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class TerraMowFirmwareUpdate(UpdateEntity):
+class TerraMowFirmwareUpdate(TerraMowEntity, UpdateEntity):
     """Update entity exposing the TerraMow firmware version."""
 
-    _attr_has_entity_name = True
     _attr_translation_key = "firmware"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_supported_features = UpdateEntityFeature(0)
@@ -48,10 +47,7 @@ class TerraMowFirmwareUpdate(UpdateEntity):
         hass: HomeAssistant,
     ) -> None:
         """Initialize the firmware update entity."""
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = self.basic_data.host
-        self.hass = hass
+        super().__init__(basic_data, hass)
         _LOGGER.info("TerraMowFirmwareUpdate entity created")
 
     async def async_added_to_hass(self) -> None:
@@ -68,27 +64,7 @@ class TerraMowFirmwareUpdate(UpdateEntity):
     async def _handle_compat_info(self, _payload: str) -> None:
         safe_write_ha_state(self)
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-            if self.basic_data.lawn_mower
-            else None,
-        )
-
-    @property
-    def unique_id(self) -> str:
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}.firmware"
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return self.basic_data.lawn_mower is not None
+    _unique_id_suffix = "firmware"
 
     def _format_version(self) -> str | None:
         """Build a version string from the firmware compatibility info."""

@@ -12,11 +12,11 @@ from homeassistant.components.lawn_mower import LawnMowerEntity
 from homeassistant.components.lawn_mower.const import LawnMowerActivity, LawnMowerEntityFeature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from . import TerraMowBasicData
+from .entity import TerraMowEntity
 from .entity_utils import safe_schedule_update_ha_state
 from homeassistant.config_entries import ConfigEntry
 from .const import (
@@ -119,8 +119,7 @@ async def async_setup_entry(
     # 启动 MQTT 客户端
     entity.start_mqtt_client()
 
-class TerraMowLawnMowerEntity(LawnMowerEntity):
-    _attr_has_entity_name = True
+class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
     # 使用默认图标
     _attr_icon = "mdi:robot-mower"
     _attr_translation_key = "lawn_mower"
@@ -131,11 +130,8 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
         hass: HomeAssistant,
     ) -> None:
         """Initialize a lawn mower."""
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = self.basic_data.host
+        super().__init__(basic_data, hass)
         self.password = self.basic_data.password
-        self.hass = hass
         self._activity = LawnMowerActivity.DOCKED  # 默认状态
         self.mqtt_client = None
         self._stop_event = threading.Event()  # 用于停止重连循环
@@ -212,17 +208,6 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
         _LOGGER.debug("Initial state: activity=%s, mission=%s, sub_mission=%s",
                      self._activity, self.mission, self.sub_mission)
 
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)}, # Corrected typo in identifier
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.device_model
-        )
-
     @property
     def device_model(self) -> str:
         """返回设备型号"""
@@ -232,6 +217,7 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
     def device_model(self, model_name: str) -> None:
         """更新设备型号"""
         self._device_model = model_name
+
     def _can_accept_command(self):
         """Check if control commands can be accepted"""
         now = time.monotonic()
@@ -262,12 +248,6 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
             Mission.MISSION_RECHARGE,
             Mission.MISSION_BACK_TO_STARTING_POINT
         ]
-
-    @property
-    def unique_id(self):
-        """Return a unique ID for this entity."""
-        return f"lawn_mower.terramow@{self.host}"
-
 
     @property
     def activity(self) -> LawnMowerActivity:

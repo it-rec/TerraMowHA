@@ -5,10 +5,10 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import TerraMowBasicData, DOMAIN
+from . import DOMAIN
+from .entity import TerraMowEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,45 +20,19 @@ async def async_setup_entry(
 ) -> None:
     """Set up the TerraMow button entities."""
     basic_data = hass.data[DOMAIN][config_entry.entry_id]
-    async_add_entities([EdgeTrimButton(basic_data)])
 
     entities = [
+        EdgeTrimButton(basic_data, hass),
         ResetBladeTimerButton(basic_data, hass),
         ResetBaseStationTimerButton(basic_data, hass),
     ]
 
     async_add_entities(entities)
 
-class TerraMowResetButtonBase(ButtonEntity):
+class TerraMowResetButtonBase(TerraMowEntity, ButtonEntity):
     """Base class for TerraMow reset buttons."""
 
-    _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    def __init__(
-            self,
-            basic_data: TerraMowBasicData,
-            hass: HomeAssistant,
-    ) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = self.basic_data.host
-        self.hass = hass
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model
-        )
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return self.basic_data.lawn_mower is not None
 
 
 class ResetBladeTimerButton(TerraMowResetButtonBase):
@@ -67,9 +41,7 @@ class ResetBladeTimerButton(TerraMowResetButtonBase):
     _attr_translation_key = "reset_blade_timer"
     _attr_icon = "mdi:saw-blade"
 
-    @property
-    def unique_id(self) -> str:
-        return f"lawn_mower.terramow@{self.host}.reset_blade_timer"
+    _unique_id_suffix = "reset_blade_timer"
 
     async def async_press(self) -> None:
         """Reset the blade timer by sending 0 to dp_126."""
@@ -82,40 +54,20 @@ class ResetBaseStationTimerButton(TerraMowResetButtonBase):
     _attr_translation_key = "reset_base_station_timer"
     _attr_icon = "mdi:home-lightning-bolt"
 
-    @property
-    def unique_id(self) -> str:
-        return f"lawn_mower.terramow@{self.host}.reset_base_station_timer"
+    _unique_id_suffix = "reset_base_station_timer"
 
     async def async_press(self) -> None:
         """Reset the base station timer by sending 0 to dp_125."""
         _LOGGER.info("Resetting base station timer")
         self.basic_data.lawn_mower.publish_data_point(125, {"int_value": 0})
 
-class EdgeTrimButton(ButtonEntity):
+class EdgeTrimButton(TerraMowEntity, ButtonEntity):
     """Button that starts the TerraMow in edge-trim mode."""
 
-    _attr_has_entity_name = True
     _attr_translation_key = "edge_trim"
     _attr_icon = "mdi:vector-square"
 
-    def __init__(self, basic_data: TerraMowBasicData) -> None:
-        super().__init__()
-        self.basic_data = basic_data
-        self.host = basic_data.host
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return the device info."""
-        return DeviceInfo(
-            identifiers={('TerraMowLawnMower', self.basic_data.host)},
-            name='TerraMow',
-            manufacturer='TerraMow',
-            model=self.basic_data.lawn_mower.device_model,
-        )
-
-    @property
-    def unique_id(self) -> str:
-        return f"lawn_mower.terramow@{self.host}.edge_trim"
+    _unique_id_suffix = "edge_trim"
 
     async def async_press(self) -> None:
         """Trigger edge-trim mowing."""
