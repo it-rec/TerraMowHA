@@ -33,7 +33,7 @@ Dette er en Home Assistant-integration til TerraMow robotplæneklippere.
 - Automatisk registrering via Zeroconf/mDNS
 - Rekonfigurationsflow (skift vært/IP uden at tilføje igen) og genautentificeringsflow
 - Download af diagnostik til nemme fejlrapporter
-- Oversat til 14 sprog (en, cs, da, de, es, fi, fr, it, nb, nl, pl, pt, sv, zh-Hans)
+- Oversat til 33 sprog (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - Lokal push-kommunikation baseret på MQTT — ingen cloud påkrævet
 
 ### Understøttede entiteter
@@ -104,7 +104,7 @@ data:
 
 ### Sprog
 
-Integrationen er oversat til: Čeština, Dansk, Deutsch, English, Español, Français, Italiano, Nederlands, Norsk (bokmål), Polski, Português, Suomi, Svenska og 简体中文.
+Integrationen er oversat til: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Opgraderingsnoter
 

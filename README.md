@@ -37,7 +37,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - Zeroconf/mDNS auto-discovery
 - Reconfigure flow (change host/IP without re-adding) and reauth flow
 - Diagnostics download for easy bug reports
-- Translated into 14 languages (en, cs, da, de, es, fi, fr, it, nb, nl, pl, pt, sv, zh-Hans)
+- Translated into 33 languages (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - MQTT based local push communication — no cloud required
 
 ### Supported entities
@@ -110,7 +110,7 @@ data:
 
 ### Languages
 
-The integration is translated into: Čeština, Dansk, Deutsch, English, Español, Français, Italiano, Nederlands, Norsk (bokmål), Polski, Português, Suomi, Svenska and 简体中文.
+The integration is translated into: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Upgrade notes
 

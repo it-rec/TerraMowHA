@@ -33,7 +33,7 @@ To jest integracja Home Assistant dla robotów koszących TerraMow.
 - Automatyczne wykrywanie przez Zeroconf/mDNS
 - Przepływ rekonfiguracji (zmiana hosta/IP bez ponownego dodawania) oraz przepływ ponownego uwierzytelniania
 - Pobieranie diagnostyki ułatwiające zgłaszanie błędów
-- Przetłumaczona na 14 języków (en, cs, da, de, es, fi, fr, it, nb, nl, pl, pt, sv, zh-Hans)
+- Przetłumaczona na 33 języków (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - Lokalna komunikacja push oparta na MQTT — chmura nie jest wymagana
 
 ### Obsługiwane encje
@@ -104,7 +104,7 @@ data:
 
 ### Języki
 
-Integracja jest przetłumaczona na: Čeština, Dansk, Deutsch, English, Español, Français, Italiano, Nederlands, Norsk (bokmål), Polski, Português, Suomi, Svenska oraz 简体中文.
+Integracja jest przetłumaczona na: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Uwagi dotyczące aktualizacji
 
