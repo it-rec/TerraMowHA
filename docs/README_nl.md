@@ -33,7 +33,7 @@ Dit is een Home Assistant-integratie voor TerraMow-robotmaaiers.
 - Automatische detectie via Zeroconf/mDNS
 - Herconfiguratieflow (host/IP wijzigen zonder opnieuw toe te voegen) en herauthenticatieflow
 - Diagnostiekdownload voor eenvoudige bugrapporten
-- Vertaald in 14 talen (en, cs, da, de, es, fi, fr, it, nb, nl, pl, pt, sv, zh-Hans)
+- Vertaald in 33 talen (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - Lokale pushcommunicatie op basis van MQTT — geen cloud nodig
 
 ### Ondersteunde entiteiten
@@ -104,7 +104,7 @@ data:
 
 ### Talen
 
-De integratie is vertaald in: Čeština, Dansk, Deutsch, English, Español, Français, Italiano, Nederlands, Norsk (bokmål), Polski, Português, Suomi, Svenska en 简体中文.
+De integratie is vertaald in: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Upgrade-opmerkingen
 

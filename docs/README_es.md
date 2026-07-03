@@ -33,7 +33,7 @@ Esta es una integración de Home Assistant para los robots cortacésped TerraMow
 - Detección automática mediante Zeroconf/mDNS
 - Flujo de reconfiguración (cambiar el host/IP sin volver a añadir la integración) y flujo de reautenticación
 - Descarga de diagnósticos para facilitar los informes de errores
-- Traducida a 14 idiomas (en, cs, da, de, es, fi, fr, it, nb, nl, pl, pt, sv, zh-Hans)
+- Traducida a 33 idiomas (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - Comunicación local de tipo push basada en MQTT — no se necesita la nube
 
 ### Entidades compatibles
@@ -104,7 +104,7 @@ data:
 
 ### Idiomas
 
-La integración está traducida a: Čeština, Dansk, Deutsch, English, Español, Français, Italiano, Nederlands, Norsk (bokmål), Polski, Português, Suomi, Svenska y 简体中文.
+La integración está traducida a: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Notas de actualización
 

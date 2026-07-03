@@ -33,7 +33,7 @@ Tämä on Home Assistant -integraatio TerraMow-robottiruohonleikkureille.
 - Automaattinen löytäminen Zeroconf/mDNS:n kautta
 - Uudelleenmääritysprosessi (isännän/IP:n vaihto ilman uudelleenlisäystä) ja uudelleentodennusprosessi
 - Diagnostiikan lataus helppoja virheraportteja varten
-- Käännetty 14 kielelle (en, cs, da, de, es, fi, fr, it, nb, nl, pl, pt, sv, zh-Hans)
+- Käännetty 33 kielelle (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - MQTT-pohjainen paikallinen push-viestintä — pilveä ei tarvita
 
 ### Tuetut entiteetit
@@ -104,7 +104,7 @@ data:
 
 ### Kielet
 
-Integraatio on käännetty seuraaville kielille: Čeština, Dansk, Deutsch, English, Español, Français, Italiano, Nederlands, Norsk (bokmål), Polski, Português, Suomi, Svenska ja 简体中文.
+Integraatio on käännetty seuraaville kielille: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Päivityshuomautukset
 

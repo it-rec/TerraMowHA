@@ -1,0 +1,393 @@
+{
+    "config": {
+        "flow_title": "TerraMow ({host})",
+        "abort": {
+            "already_configured": "デバイスは既に設定されています",
+            "cannot_connect": "接続に失敗しました",
+            "reauth_successful": "再認証に成功しました",
+            "reconfigure_successful": "再設定に成功しました"
+        },
+        "error": {
+            "cannot_connect": "接続に失敗しました",
+            "invalid_auth": "認証が無効です",
+            "unknown": "予期しないエラー"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "host": "ホスト",
+                    "password": "パスワード",
+                    "username": "ユーザー名"
+                }
+            },
+            "user_pass": {
+                "title": "TerraMow",
+                "description": "{host} で TerraMow を検出しました。セットアップを完了するには MQTT パスワードを入力してください。",
+                "data": {
+                    "password": "パスワード"
+                }
+            },
+            "reauth_confirm": {
+                "data": {
+                    "password": "パスワード"
+                }
+            },
+            "reconfigure": {
+                "title": "TerraMow の再設定",
+                "description": "TerraMow の IP アドレス/ホスト名またはパスワードを更新します。",
+                "data": {
+                    "host": "ホスト",
+                    "password": "パスワード"
+                }
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "TerraMow オプション",
+                "data": {
+                    "map_resolution": "マップ出力解像度 (px)"
+                },
+                "data_description": {
+                    "map_resolution": "マップカメラ PNG の出力辺の長さです。値を大きくするとダッシュボードに埋め込んだ際の画像が鮮明になりますが、レンダリングごとの帯域幅と CPU 負荷が増加します。"
+                }
+            }
+        }
+    },
+    "entity": {
+        "lawn_mower": {
+            "lawn_mower": {
+                "name": "芝刈り機"
+            }
+        },
+        "sensor": {
+            "battery": {
+                "name": "バッテリー"
+            },
+            "battery_state": {
+                "name": "バッテリー状態",
+                "state": {
+                    "battery_state_discharge": "放電中",
+                    "battery_state_charging": "充電中",
+                    "battery_state_charged": "満充電"
+                }
+            },
+            "battery_temperature_state": {
+                "name": "バッテリー温度状態",
+                "state": {
+                    "battery_tempreture_normal": "正常",
+                    "battery_tempreture_overheat": "過熱",
+                    "battery_tempreture_underheat": "低温"
+                }
+            },
+            "map_status": {
+                "name": "マップ状態",
+                "state": {
+                    "map_state_empty": "マップなし",
+                    "map_state_incomplete": "マップ未完成",
+                    "map_state_complete": "マップ完成"
+                }
+            },
+            "map_area": {
+                "name": "マップ面積"
+            },
+            "mow_height": {
+                "name": "刈り高さ"
+            },
+            "mow_speed": {
+                "name": "刈り取り速度",
+                "state": {
+                    "mow_speed_type_low": "低速",
+                    "mow_speed_type_medium": "中速",
+                    "mow_speed_type_adaptive_high": "適応高速",
+                    "mow_speed_type_auto": "自動"
+                }
+            },
+            "clean_mode": {
+                "name": "作業モード",
+                "state": {
+                    "map_clean_info_mode_global": "全体作業",
+                    "map_clean_info_mode_select_region": "エリア選択作業",
+                    "map_clean_info_mode_draw_region": "エリア描画作業",
+                    "map_clean_info_mode_move_to_target_point": "目標地点へ移動"
+                }
+            },
+            "pose": {
+                "name": "姿勢"
+            },
+            "total_mowing_time": {
+                "name": "合計芝刈り時間"
+            },
+            "total_mowing_jobs": {
+                "name": "合計芝刈り回数"
+            },
+            "total_mowed_area": {
+                "name": "合計芝刈り面積"
+            },
+            "current_session_area": {
+                "name": "現在のセッション面積"
+            },
+            "current_session_progress": {
+                "name": "現在のセッション進捗"
+            },
+            "current_session_time": {
+                "name": "現在のセッション時間"
+            },
+            "current_job_type": {
+                "name": "現在の作業タイプ",
+                "state": {
+                    "map_area_type_none": "なし",
+                    "map_area_type_build_map": "マップ作成",
+                    "map_area_type_cleaning": "芝刈り",
+                    "map_area_type_build_map_and_cleaning": "マップ作成と芝刈り",
+                    "map_area_type_select_region_cleaning": "エリア選択芝刈り",
+                    "map_area_type_draw_region_cleaning": "エリア描画芝刈り",
+                    "map_area_type_edge_trim_cleaning": "エッジ刈り"
+                }
+            },
+            "remaining_blade_time": {
+                "name": "ブレード残り時間"
+            },
+            "remaining_base_station_time": {
+                "name": "ベースステーション残り時間"
+            },
+            "next_scheduled_start": {
+                "name": "次回スケジュール開始"
+            },
+            "version_compatibility": {
+                "name": "バージョン互換性",
+                "state": {
+                    "compatible": "互換あり",
+                    "upgrade_required": "アップグレードが必要",
+                    "downgrade_recommended": "ダウングレード推奨",
+                    "incompatible": "互換性なし",
+                    "unknown": "不明"
+                }
+            },
+            "main_direction_status": {
+                "name": "主方向ステータス",
+                "state": {
+                    "main_direction_mode_single": "単一方向",
+                    "main_direction_mode_multiple": "複数方向",
+                    "main_direction_mode_auto_rotate": "自動回転方向",
+                    "unavailable": "利用不可",
+                    "no_config": "設定なし"
+                }
+            },
+            "power_mode": {
+                "name": "電源モード",
+                "state": {
+                    "power_mode_running": "動作中",
+                    "power_mode_standby": "スタンバイ",
+                    "power_mode_hibernate": "休止"
+                }
+            },
+            "back_to_station_reason": {
+                "name": "ステーション帰還理由",
+                "state": {
+                    "back_to_station_reason_none": "なし",
+                    "back_to_station_reason_low_battery": "バッテリー残量低下",
+                    "back_to_station_reason_raining": "降雨",
+                    "back_to_station_reason_mow_motor_overheat": "刈り取りモーター過熱",
+                    "back_to_station_reason_wheel_overheat": "駆動輪過熱",
+                    "back_to_station_reason_night_time": "暗闇"
+                }
+            },
+            "mission": {
+                "name": "ミッション",
+                "state": {
+                    "mission_idle": "アイドル",
+                    "mission_recharge": "充電帰還",
+                    "mission_global_clean": "全体芝刈り",
+                    "mission_build_map": "マップ作成",
+                    "mission_build_map_and_clean": "マップ作成と芝刈り",
+                    "mission_temporary_clean": "一時芝刈り",
+                    "mission_back_to_starting_point": "開始地点へ帰還",
+                    "mission_remote_control_clean": "リモコン芝刈り",
+                    "mission_schedule_global_clean": "スケジュール全体芝刈り",
+                    "mission_schedule_build_map_and_clean": "スケジュールマップ作成と芝刈り",
+                    "mission_select_region_clean": "ゾーン芝刈り",
+                    "mission_create_custom_passage": "カスタム通路の作成",
+                    "mission_backup_map": "マップのバックアップ中",
+                    "mission_relocate_base_station": "ベースステーションの再配置",
+                    "mission_user_auto_calibration": "自動キャリブレーション",
+                    "mission_restore_backup_map": "バックアップマップの復元",
+                    "mission_schedule_select_region_clean": "スケジュールゾーン芝刈り",
+                    "mission_draw_region_clean": "描画ゾーン芝刈り",
+                    "mission_edge_trim_clean": "エッジ刈り",
+                    "mission_update_backup_map": "バックアップマップの更新"
+                }
+            },
+            "sub_mission": {
+                "name": "サブミッション",
+                "state": {
+                    "sub_mission_idle": "アイドル",
+                    "sub_mission_relocation": "再位置推定中",
+                    "sub_mission_return_to_base": "ベースへ帰還中",
+                    "sub_mission_out_of_station": "ベースステーションから出発中",
+                    "sub_mission_remote_control": "リモコン操作",
+                    "sub_mission_saving_map": "マップ保存中",
+                    "sub_mission_setting_blade_height": "ブレード高さ調整中",
+                    "sub_mission_charging": "充電中",
+                    "sub_mission_remote_control_clean": "リモコン芝刈り",
+                    "sub_mission_defogging": "除霧中",
+                    "sub_mission_wait_for_daylight": "日の出待ち",
+                    "sub_mission_cooling_down_motor": "モーター冷却中",
+                    "sub_mission_wait_for_rain_to_stop": "雨が止むのを待機中",
+                    "sub_mission_flexible_station_wait": "ベースステーションで待機中"
+                }
+            },
+            "mission_state": {
+                "name": "ミッション状態",
+                "state": {
+                    "mission_state_idle": "アイドル",
+                    "mission_state_running": "実行中",
+                    "mission_state_pause": "一時停止",
+                    "mission_state_abort": "中断",
+                    "mission_state_complete": "完了"
+                }
+            }
+        },
+        "camera": {
+            "map_camera": {
+                "name": "マップ"
+            },
+            "map_camera_clean": {
+                "name": "マップ（クリーン）"
+            }
+        },
+        "binary_sensor": {
+            "charging_state": {
+                "name": "充電状態"
+            },
+            "navigation_located": {
+                "name": "ナビゲーション位置特定"
+            },
+            "firmware_upgrading": {
+                "name": "ファームウェア更新中"
+            },
+            "power_switch": {
+                "name": "電源スイッチ"
+            },
+            "problem": {
+                "name": "問題"
+            },
+            "rain_detected": {
+                "name": "降雨検知"
+            },
+            "map_detected": {
+                "name": "マップ検出"
+            },
+            "map_buildable": {
+                "name": "マップ作成可能"
+            },
+            "map_backing_up": {
+                "name": "マップバックアップ中"
+            },
+            "saving_data": {
+                "name": "データ保存中"
+            },
+            "data_conversion": {
+                "name": "データ変換進行中"
+            }
+        },
+        "button": {
+            "reset_blade_timer": {
+                "name": "ブレードタイマーのリセット"
+            },
+            "reset_base_station_timer": {
+                "name": "ベースステーションタイマーのリセット"
+            },
+            "edge_trim": {
+                "name": "エッジ刈り"
+            }
+        },
+        "select": {
+            "region_select": {
+                "name": "ゾーン選択",
+                "state": {
+                    "no_zones_available": "利用可能なゾーンなし",
+                    "all_zones": "すべてのゾーン"
+                }
+            },
+            "mow_speed_setting": {
+                "name": "刈り取り速度設定",
+                "state": {
+                    "mow_speed_type_low": "低速",
+                    "mow_speed_type_medium": "中速",
+                    "mow_speed_type_adaptive_high": "適応高速",
+                    "mow_speed_type_auto": "自動速度"
+                }
+            },
+            "blade_speed": {
+                "name": "ブレード回転速度設定",
+                "state": {
+                    "blade_disk_speed_type_low": "低速",
+                    "blade_disk_speed_type_medium": "中速",
+                    "blade_disk_speed_type_high": "高速"
+                }
+            },
+            "main_direction_mode": {
+                "name": "主方向モード",
+                "state": {
+                    "main_direction_mode_single": "単一方向",
+                    "main_direction_mode_multiple": "複数方向",
+                    "main_direction_mode_auto_rotate": "自動回転方向"
+                }
+            },
+            "high_grass_edge_trim_mode": {
+                "name": "高い草のエッジ刈りモード",
+                "state": {
+                    "high_grass_edge_trim_standard": "標準",
+                    "high_grass_edge_trim_intensive": "強力"
+                }
+            }
+        },
+        "switch": {
+            "thorough_corner_cutting": {
+                "name": "コーナーの徹底刈り取り"
+            }
+        },
+        "number": {
+            "mowing_height": {
+                "name": "刈り高さ設定"
+            },
+            "edge_cutting_distance": {
+                "name": "エッジ刈り距離"
+            },
+            "mowing_spacing": {
+                "name": "刈り取り間隔設定"
+            },
+            "main_direction_single_angle": {
+                "name": "単一方向角度"
+            },
+            "main_direction_auto_rotate_interval": {
+                "name": "自動回転角度間隔"
+            },
+            "multiple_direction_angle1": {
+                "name": "第1方向角度"
+            },
+            "multiple_direction_angle2": {
+                "name": "第2方向角度"
+            }
+        },
+        "update": {
+            "firmware": {
+                "name": "ファームウェア"
+            }
+        }
+    },
+    "services": {
+        "start_select_region": {
+            "name": "エリア選択芝刈りの開始",
+            "description": "指定したサブエリア ID の芝刈りを開始します。",
+            "fields": {
+                "region_ids": {
+                    "name": "エリア ID",
+                    "description": "芝刈りを行うサブエリア ID のリスト。"
+                }
+            }
+        }
+    }
+}
