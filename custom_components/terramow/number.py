@@ -226,11 +226,19 @@ class MowingSpacingNumber(TerraMowNumberBase):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
-        return {
+        attrs: dict[str, Any] = {
             'valid_range': '80-140mm (8-14cm)',
             'warning': 'Changing this value will reset mowing progress',
             'warning_zh': '修改此值将重置作业进度'
         }
+        # dp_155 的 current_mow_spacing 仅由机器人上报，表示实际生效的割草间距
+        # （设置值在作业进度重置前可能尚未生效）。
+        if hasattr(self.basic_data, 'lawn_mower') and self.basic_data.lawn_mower:
+            global_params = self.basic_data.lawn_mower.global_params or {}
+            current = global_params.get('current_mow_spacing')
+            if current is not None:
+                attrs['current_mow_spacing'] = current
+        return attrs
     
     async def async_set_native_value(self, value: float) -> None:
         """Set the mowing spacing."""
