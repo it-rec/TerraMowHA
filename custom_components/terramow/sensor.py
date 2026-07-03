@@ -9,7 +9,6 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorStateClass,
-    SensorEntityDescription
 )
 
 from homeassistant.const import (
@@ -21,7 +20,6 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 
-from enum import StrEnum
 from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from . import TerraMowBasicData, DOMAIN
@@ -35,19 +33,6 @@ from .const import (
 from .lawn_mower import Mission, SubMission, MissionState
 
 _LOGGER = logging.getLogger(__name__)
-
-class BatteryStateEnum(StrEnum):
-    """Battery state type."""
-    BATTERY_STATE_CHARGED = "BATTERY_STATE_CHARGED"
-    BATTERY_STATE_CHARGING = "BATTERY_STATE_CHARGING"
-    BATTERY_STATE_DISCHARGING = "BATTERY_STATE_DISCHARGING"
-
-batteryStateDescription = SensorEntityDescription(
-    name="TerraMow battery",
-    key="terramow_battery_state_sensor",
-    device_class=SensorDeviceClass.ENUM,
-    options= [state.value for state in BatteryStateEnum]
-)
 
 class BatterySensor(SensorEntity):
     """Representation of the battery sensor."""
