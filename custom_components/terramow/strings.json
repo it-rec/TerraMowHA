@@ -122,6 +122,9 @@
       "total_mowing_jobs": {
         "name": "Total Mowing Jobs"
       },
+      "total_mowed_area": {
+        "name": "Total Mowed Area"
+      },
       "current_session_area": {
         "name": "Current Session Area"
       },

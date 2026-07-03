@@ -122,6 +122,9 @@
             "total_mowing_jobs": {
                 "name": "Nombre total de tontes"
             },
+            "total_mowed_area": {
+                "name": "Surface totale tondue"
+            },
             "current_session_area": {
                 "name": "Surface de la session en cours"
             },

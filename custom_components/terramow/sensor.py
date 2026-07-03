@@ -339,6 +339,58 @@ class TotalMowingJobsSensor(SensorEntity):
         return statistics_data.get('clean_times')
 
 
+class TotalMowedAreaSensor(SensorEntity):
+    """Lifetime mowed area sensor - uses dp_124 data"""
+
+    _attr_has_entity_name = True
+    _attr_icon = "mdi:texture-box"
+    _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "total_mowed_area"
+
+    def __init__(
+        self,
+        basic_data: TerraMowBasicData,
+        hass: HomeAssistant,
+    ) -> None:
+        super().__init__()
+        self.basic_data = basic_data
+        self.host = basic_data.host
+        self.hass = hass
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device info."""
+        return DeviceInfo(
+            identifiers={('TerraMowLawnMower', self.basic_data.host)},
+            name='TerraMow',
+            manufacturer='TerraMow',
+            model=self.basic_data.lawn_mower.device_model
+        )
+
+    @property
+    def unique_id(self):
+        """Return a unique ID for this entity."""
+        return f"lawn_mower.terramow@{self.host}.total_mowed_area"
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the lifetime mowed area in square meters."""
+        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+            return None
+
+        statistics_data = self.basic_data.lawn_mower.statistics_data
+        if not statistics_data:
+            return None
+
+        clean_area = statistics_data.get('clean_area')
+        if clean_area is None:
+            return None
+        # 协议单位为 0.1 平方米
+        return round(clean_area / 10, 1)
+
+
 class CurrentSessionAreaSensor(SensorEntity):
     """Current session mowing area sensor - uses dp_113 data"""
 
@@ -1121,6 +1173,7 @@ async def async_setup_entry(
         # 统计和会话传感器
         TotalMowingTimeSensor(basic_data, hass),
         TotalMowingJobsSensor(basic_data, hass),
+        TotalMowedAreaSensor(basic_data, hass),
         CurrentSessionAreaSensor(basic_data, hass),
         CurrentSessionProgressSensor(basic_data, hass),
         CurrentSessionTimeSensor(basic_data, hass),
