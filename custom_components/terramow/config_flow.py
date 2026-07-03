@@ -238,6 +238,49 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ):
+        """Handle reconfiguration of an existing entry (e.g. a changed IP/host)."""
+        errors: dict[str, str] = {}
+        entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
+        if user_input is not None and entry is not None:
+            try:
+                info = await validate_input(self.hass, user_input)
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
+            except InvalidAuth:
+                errors["base"] = "invalid_auth"
+            except Exception:
+                _LOGGER.exception("Unexpected exception")
+                errors["base"] = "unknown"
+            else:
+                new_host = user_input[CONF_HOST]
+                # 唯一 ID 就是主机名；如果新主机已被其他条目占用则中止。
+                for other in self.hass.config_entries.async_entries(DOMAIN):
+                    if (
+                        other.entry_id != entry.entry_id
+                        and other.data.get(CONF_HOST) == new_host
+                    ):
+                        return self.async_abort(reason="already_configured")
+                _LOGGER.info('Reconfiguring host to "%s"', new_host)
+                self.hass.config_entries.async_update_entry(
+                    entry,
+                    title=info["title"],
+                    data=user_input,
+                    unique_id=new_host,
+                )
+                await self.hass.config_entries.async_reload(entry.entry_id)
+                return self.async_abort(reason="reconfigure_successful")
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(
+                STEP_USER_DATA_SCHEMA, entry.data if entry else {}
+            ),
+            errors=errors,
+        )
+
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:

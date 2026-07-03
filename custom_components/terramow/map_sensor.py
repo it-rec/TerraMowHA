@@ -18,6 +18,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
 from . import TerraMowBasicData, DOMAIN
+from .const import to_ha_enum_state
+from .entity_utils import safe_write_ha_state
 
 
 async def async_setup_entry(
@@ -68,7 +70,7 @@ class TerraMowMapSensorBase(SensorEntity):
     async def _on_map_info(self, map_info: dict[str, Any]) -> None:
         """处理地图信息更新"""
         self._map_info = map_info
-        self.async_write_ha_state()
+        safe_write_ha_state(self)
 
 class TerraMowMapStatusSensor(SensorEntity):
     """地图状态传感器 - 使用dp_117数据"""
@@ -78,7 +80,7 @@ class TerraMowMapStatusSensor(SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "map_status"
     _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = ["MAP_STATE_EMPTY", "MAP_STATE_INCOMPLETE", "MAP_STATE_COMPLETE"]
+    _attr_options = ["map_state_empty", "map_state_incomplete", "map_state_complete"]
     
     def __init__(
         self,
@@ -114,8 +116,9 @@ class TerraMowMapStatusSensor(SensorEntity):
         map_status = self.basic_data.lawn_mower.map_status
         if not map_status:
             return None
-            
-        return map_status.get('map_state')
+
+        state = to_ha_enum_state(map_status.get('map_state'))
+        return state if state in self._attr_options else None
     
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -181,7 +184,7 @@ class TerraMowCleanModeSensor(TerraMowMapSensorBase):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "clean_mode"
     _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = ["MAP_CLEAN_INFO_MODE_GLOBAL", "MAP_CLEAN_INFO_MODE_SELECT_REGION", "MAP_CLEAN_INFO_MODE_DRAW_REGION", "MAP_CLEAN_INFO_MODE_MOVE_TO_TARGET_POINT"]
+    _attr_options = ["map_clean_info_mode_global", "map_clean_info_mode_select_region", "map_clean_info_mode_draw_region", "map_clean_info_mode_move_to_target_point"]
     
     def __init__(
         self,
@@ -202,9 +205,9 @@ class TerraMowCleanModeSensor(TerraMowMapSensorBase):
             return None
         
         clean_info = self._map_info.get('clean_info', {})
-        mode = clean_info.get('mode', '')
-        
-        return mode if mode else None
+        mode = to_ha_enum_state(clean_info.get('mode', ''))
+
+        return mode if mode in self._attr_options else None
     
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

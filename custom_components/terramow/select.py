@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
 from . import TerraMowBasicData, DOMAIN
+from .entity_utils import safe_write_ha_state
 from .const import (
     DEFAULT_BLADE_DISK_SPEED_TYPE,
     MIN_MOW_SPEED_VERSION_FOR_AUTO,
@@ -18,6 +19,8 @@ from .const import (
     MOW_SPEED_TYPE_LOW,
     MOW_SPEED_TYPE_MEDIUM,
     MOW_SPEED_TYPES,
+    to_device_enum,
+    to_ha_enum_state,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -150,7 +153,7 @@ class TerraMowZoneSelect(SelectEntity):
         """处理地图信息更新"""
         self._map_info = map_info
         self._update_options()
-        self.async_write_ha_state()
+        safe_write_ha_state(self)
     
     def _update_options(self) -> None:
         """根据地图信息更新可选分区列表"""
@@ -321,18 +324,19 @@ class MowSpeedSelect(SelectEntity):
         options = self._BASE_OPTIONS.copy()
         if self._should_expose_auto_option():
             options.append(MOW_SPEED_TYPE_AUTO)
-        return options
-    
+        # Expose lowercase tokens to Home Assistant; device values stay UPPERCASE.
+        return [to_ha_enum_state(o) for o in options]
+
     @property
     def current_option(self) -> str | None:
         """Return the current selected option."""
         if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            return self._current_option
-            
+            return to_ha_enum_state(self._current_option)
+
         global_params = self.basic_data.lawn_mower.global_params
         if not global_params:
-            return self._current_option
-        
+            return to_ha_enum_state(self._current_option)
+
         mow_speed = global_params.get('mow_speed', {})
         speed_type = mow_speed.get('speed_type')
         if not speed_type:
@@ -343,7 +347,7 @@ class MowSpeedSelect(SelectEntity):
         if speed_type in MOW_SPEED_TYPES:
             self._unknown_speed_type = None
             self._current_option = speed_type
-            return self._current_option
+            return to_ha_enum_state(self._current_option)
 
         if speed_type != self._unknown_speed_type:
             _LOGGER.warning(
@@ -354,9 +358,11 @@ class MowSpeedSelect(SelectEntity):
 
         self._current_option = None
         return None
-    
+
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
+        # Home Assistant passes the lowercase token; map back to the device enum.
+        option = to_device_enum(option)
         if option not in MOW_SPEED_TYPES:
             _LOGGER.error("Invalid mow speed option: %s", option)
             return
@@ -451,27 +457,34 @@ class BladeSpeedSelect(SelectEntity):
     def unique_id(self):
         """Return a unique ID for this entity."""
         return f"lawn_mower.terramow@{self.host}.blade_speed"
-    
+
+    @property
+    def options(self) -> list[str]:
+        """Return the selectable options as lowercase Home Assistant tokens."""
+        return [to_ha_enum_state(o) for o in self._attr_options]
+
     @property
     def current_option(self) -> str | None:
         """Return the current selected option."""
         if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            return self._current_option
-            
+            return to_ha_enum_state(self._current_option)
+
         global_params = self.basic_data.lawn_mower.global_params
         if not global_params:
-            return self._current_option
-        
+            return to_ha_enum_state(self._current_option)
+
         blade_disk_speed = global_params.get('blade_disk_speed', {})
         speed_type = blade_disk_speed.get('speed_type')
-        
+
         if speed_type and speed_type in self._attr_options:
             self._current_option = speed_type
-            
-        return self._current_option
-    
+
+        return to_ha_enum_state(self._current_option)
+
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
+        # Home Assistant passes the lowercase token; map back to the device enum.
+        option = to_device_enum(option)
         if option not in self._attr_options:
             _LOGGER.error("Invalid blade speed option: %s", option)
             return
@@ -577,14 +590,21 @@ class MainDirectionModeSelect(SelectEntity):
         return self._current_option
     
     @property
+    def options(self) -> list[str]:
+        """Return the selectable options as lowercase Home Assistant tokens."""
+        return [to_ha_enum_state(o) for o in self._attr_options]
+
+    @property
     def current_option(self) -> str | None:
         """Return the current selected option."""
         mode = self.get_effective_mode()
         self._current_option = mode
-        return mode
-    
+        return to_ha_enum_state(mode)
+
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
+        # Home Assistant passes the lowercase token; map back to the device enum.
+        option = to_device_enum(option)
         if option not in self._attr_options:
             _LOGGER.error("Invalid main direction mode option: %s", option)
             return
@@ -711,13 +731,13 @@ class MainDirectionModeSelect(SelectEntity):
         if self._pending_mode == confirmed_mode:
             _LOGGER.debug("Device confirmed mode change to %s, clearing pending state", confirmed_mode)
             self._pending_mode = None
-            self.async_write_ha_state()
+            safe_write_ha_state(self)
         elif self._pending_mode:
             _LOGGER.warning("Device confirmed mode %s but pending mode was %s", 
                           confirmed_mode, self._pending_mode)
             self._pending_mode = None
             self._current_option = confirmed_mode
-            self.async_write_ha_state()
+            safe_write_ha_state(self)
     
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -815,6 +835,11 @@ class HighGrassEdgeTrimModeSelect(SelectEntity):
         return mow_param
 
     @property
+    def options(self) -> list[str]:
+        """Return the selectable options as lowercase Home Assistant tokens."""
+        return [to_ha_enum_state(o) for o in self._attr_options]
+
+    @property
     def current_option(self) -> str | None:
         mow_param = self._get_mow_param()
         if mow_param is None:
@@ -824,10 +849,12 @@ class HighGrassEdgeTrimModeSelect(SelectEntity):
             return None
         mode = trim_cfg.get('mode')
         if mode in self._attr_options:
-            return mode
+            return to_ha_enum_state(mode)
         return None
 
     async def async_select_option(self, option: str) -> None:
+        # Home Assistant passes the lowercase token; map back to the device enum.
+        option = to_device_enum(option)
         if option not in self._attr_options:
             _LOGGER.error("Invalid high grass edge trim mode option: %s", option)
             return

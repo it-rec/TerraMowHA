@@ -4,7 +4,8 @@
         "abort": {
             "already_configured": "设备已配置",
             "cannot_connect": "连接失败",
-            "reauth_successful": "重新认证成功"
+            "reauth_successful": "重新认证成功",
+            "reconfigure_successful": "重新配置成功"
         },
         "error": {
             "cannot_connect": "连接失败",
@@ -28,6 +29,14 @@
             },
             "reauth_confirm": {
                 "data": {
+                    "password": "密码"
+                }
+            },
+            "reconfigure": {
+                "title": "重新配置 TerraMow",
+                "description": "更新 TerraMow 的 IP 地址/主机名或密码。",
+                "data": {
+                    "host": "主机",
                     "password": "密码"
                 }
             }
@@ -59,25 +68,25 @@
             "battery_state": {
                 "name": "电池状态",
                 "state": {
-                    "BATTERY_STATE_DISCHARGE": "放电中",
-                    "BATTERY_STATE_CHARGING": "充电中",
-                    "BATTERY_STATE_CHARGED": "已充满"
+                    "battery_state_discharge": "放电中",
+                    "battery_state_charging": "充电中",
+                    "battery_state_charged": "已充满"
                 }
             },
             "battery_temperature_state": {
                 "name": "电池温度状态",
                 "state": {
-                    "BATTERY_TEMPRETURE_NORMAL": "正常",
-                    "BATTERY_TEMPRETURE_OVERHEAT": "过热",
-                    "BATTERY_TEMPRETURE_UNDERHEAT": "过冷"
+                    "battery_tempreture_normal": "正常",
+                    "battery_tempreture_overheat": "过热",
+                    "battery_tempreture_underheat": "过冷"
                 }
             },
             "map_status": {
                 "name": "地图状态",
                 "state": {
-                    "MAP_STATE_EMPTY": "无地图",
-                    "MAP_STATE_INCOMPLETE": "地图未完成",
-                    "MAP_STATE_COMPLETE": "地图已完成"
+                    "map_state_empty": "无地图",
+                    "map_state_incomplete": "地图未完成",
+                    "map_state_complete": "地图已完成"
                 }
             },
             "map_area": {
@@ -89,19 +98,19 @@
             "mow_speed": {
                 "name": "割草速度",
                 "state": {
-                    "MOW_SPEED_TYPE_LOW": "低速",
-                    "MOW_SPEED_TYPE_MEDIUM": "中速",
-                    "MOW_SPEED_TYPE_ADAPTIVE_HIGH": "自适应高速",
-                    "MOW_SPEED_TYPE_AUTO": "自动模式"
+                    "mow_speed_type_low": "低速",
+                    "mow_speed_type_medium": "中速",
+                    "mow_speed_type_adaptive_high": "自适应高速",
+                    "mow_speed_type_auto": "自动模式"
                 }
             },
             "clean_mode": {
                 "name": "作业模式",
                 "state": {
-                    "MAP_CLEAN_INFO_MODE_GLOBAL": "全局作业",
-                    "MAP_CLEAN_INFO_MODE_SELECT_REGION": "选区作业",
-                    "MAP_CLEAN_INFO_MODE_DRAW_REGION": "划区作业",
-                    "MAP_CLEAN_INFO_MODE_MOVE_TO_TARGET_POINT": "移动到目标点"
+                    "map_clean_info_mode_global": "全局作业",
+                    "map_clean_info_mode_select_region": "选区作业",
+                    "map_clean_info_mode_draw_region": "划区作业",
+                    "map_clean_info_mode_move_to_target_point": "移动到目标点"
                 }
             },
             "pose": {
@@ -125,13 +134,13 @@
             "current_job_type": {
                 "name": "当前作业类型",
                 "state": {
-                    "MAP_AREA_TYPE_NONE": "无",
-                    "MAP_AREA_TYPE_BUILD_MAP": "建图",
-                    "MAP_AREA_TYPE_CLEANING": "割草",
-                    "MAP_AREA_TYPE_BUILD_MAP_AND_CLEANING": "建图并割草",
-                    "MAP_AREA_TYPE_SELECT_REGION_CLEANING": "选区割草",
-                    "MAP_AREA_TYPE_DRAW_REGION_CLEANING": "划区割草",
-                    "MAP_AREA_TYPE_EDGE_TRIM_CLEANING": "沿边割草"
+                    "map_area_type_none": "无",
+                    "map_area_type_build_map": "建图",
+                    "map_area_type_cleaning": "割草",
+                    "map_area_type_build_map_and_cleaning": "建图并割草",
+                    "map_area_type_select_region_cleaning": "选区割草",
+                    "map_area_type_draw_region_cleaning": "划区割草",
+                    "map_area_type_edge_trim_cleaning": "沿边割草"
                 }
             },
             "remaining_blade_time": {
@@ -156,9 +165,9 @@
             "main_direction_status": {
                 "name": "主方向状态",
                 "state": {
-                    "MAIN_DIRECTION_MODE_SINGLE": "单主方向",
-                    "MAIN_DIRECTION_MODE_MULTIPLE": "多主方向",
-                    "MAIN_DIRECTION_MODE_AUTO_ROTATE": "自动旋转主方向",
+                    "main_direction_mode_single": "单主方向",
+                    "main_direction_mode_multiple": "多主方向",
+                    "main_direction_mode_auto_rotate": "自动旋转主方向",
                     "unavailable": "不可用",
                     "no_config": "无配置"
                 }
@@ -166,74 +175,74 @@
             "power_mode": {
                 "name": "电源模式",
                 "state": {
-                    "POWER_MODE_RUNNING": "运行中",
-                    "POWER_MODE_STANDBY": "待机",
-                    "POWER_MODE_HIBERNATE": "休眠"
+                    "power_mode_running": "运行中",
+                    "power_mode_standby": "待机",
+                    "power_mode_hibernate": "休眠"
                 }
             },
             "back_to_station_reason": {
                 "name": "回基站原因",
                 "state": {
-                    "BACK_TO_STATION_REASON_NONE": "无",
-                    "BACK_TO_STATION_REASON_LOW_BATTERY": "电量不足",
-                    "BACK_TO_STATION_REASON_RAINING": "下雨",
-                    "BACK_TO_STATION_REASON_MOW_MOTOR_OVERHEAT": "刀盘电机过热",
-                    "BACK_TO_STATION_REASON_WHEEL_OVERHEAT": "驱动轮电机过热",
-                    "BACK_TO_STATION_REASON_NIGHT_TIME": "夜间"
+                    "back_to_station_reason_none": "无",
+                    "back_to_station_reason_low_battery": "电量不足",
+                    "back_to_station_reason_raining": "下雨",
+                    "back_to_station_reason_mow_motor_overheat": "刀盘电机过热",
+                    "back_to_station_reason_wheel_overheat": "驱动轮电机过热",
+                    "back_to_station_reason_night_time": "夜间"
                 }
             },
             "mission": {
                 "name": "任务",
                 "state": {
-                    "MISSION_IDLE": "空闲",
-                    "MISSION_RECHARGE": "回充",
-                    "MISSION_GLOBAL_CLEAN": "全局割草",
-                    "MISSION_BUILD_MAP": "建图",
-                    "MISSION_BUILD_MAP_AND_CLEAN": "建图并割草",
-                    "MISSION_TEMPORARY_CLEAN": "临时割草",
-                    "MISSION_BACK_TO_STARTING_POINT": "返回起点",
-                    "MISSION_REMOTE_CONTROL_CLEAN": "遥控割草",
-                    "MISSION_SCHEDULE_GLOBAL_CLEAN": "预约全局割草",
-                    "MISSION_SCHEDULE_BUILD_MAP_AND_CLEAN": "预约建图并割草",
-                    "MISSION_SELECT_REGION_CLEAN": "选区割草",
-                    "MISSION_CREATE_CUSTOM_PASSAGE": "创建自定义通道",
-                    "MISSION_BACKUP_MAP": "备份地图",
-                    "MISSION_RELOCATE_BASE_STATION": "重新定位基站",
-                    "MISSION_USER_AUTO_CALIBRATION": "自动校准",
-                    "MISSION_RESTORE_BACKUP_MAP": "恢复备份地图",
-                    "MISSION_SCHEDULE_SELECT_REGION_CLEAN": "预约选区割草",
-                    "MISSION_DRAW_REGION_CLEAN": "划区割草",
-                    "MISSION_EDGE_TRIM_CLEAN": "沿边修剪",
-                    "MISSION_UPDATE_BACKUP_MAP": "更新备份地图"
+                    "mission_idle": "空闲",
+                    "mission_recharge": "回充",
+                    "mission_global_clean": "全局割草",
+                    "mission_build_map": "建图",
+                    "mission_build_map_and_clean": "建图并割草",
+                    "mission_temporary_clean": "临时割草",
+                    "mission_back_to_starting_point": "返回起点",
+                    "mission_remote_control_clean": "遥控割草",
+                    "mission_schedule_global_clean": "预约全局割草",
+                    "mission_schedule_build_map_and_clean": "预约建图并割草",
+                    "mission_select_region_clean": "选区割草",
+                    "mission_create_custom_passage": "创建自定义通道",
+                    "mission_backup_map": "备份地图",
+                    "mission_relocate_base_station": "重新定位基站",
+                    "mission_user_auto_calibration": "自动校准",
+                    "mission_restore_backup_map": "恢复备份地图",
+                    "mission_schedule_select_region_clean": "预约选区割草",
+                    "mission_draw_region_clean": "划区割草",
+                    "mission_edge_trim_clean": "沿边修剪",
+                    "mission_update_backup_map": "更新备份地图"
                 }
             },
             "sub_mission": {
                 "name": "子任务",
                 "state": {
-                    "SUB_MISSION_IDLE": "空闲",
-                    "SUB_MISSION_RELOCATION": "重定位中",
-                    "SUB_MISSION_RETURN_TO_BASE": "返回基站",
-                    "SUB_MISSION_OUT_OF_STATION": "离开基站",
-                    "SUB_MISSION_REMOTE_CONTROL": "遥控",
-                    "SUB_MISSION_SAVING_MAP": "保存地图",
-                    "SUB_MISSION_SETTING_BLADE_HEIGHT": "调整刀盘高度",
-                    "SUB_MISSION_CHARGING": "充电中",
-                    "SUB_MISSION_REMOTE_CONTROL_CLEAN": "遥控割草",
-                    "SUB_MISSION_DEFOGGING": "除雾",
-                    "SUB_MISSION_WAIT_FOR_DAYLIGHT": "等待天亮",
-                    "SUB_MISSION_COOLING_DOWN_MOTOR": "电机降温中",
-                    "SUB_MISSION_WAIT_FOR_RAIN_TO_STOP": "等待雨停",
-                    "SUB_MISSION_FLEXIBLE_STATION_WAIT": "在基站等待"
+                    "sub_mission_idle": "空闲",
+                    "sub_mission_relocation": "重定位中",
+                    "sub_mission_return_to_base": "返回基站",
+                    "sub_mission_out_of_station": "离开基站",
+                    "sub_mission_remote_control": "遥控",
+                    "sub_mission_saving_map": "保存地图",
+                    "sub_mission_setting_blade_height": "调整刀盘高度",
+                    "sub_mission_charging": "充电中",
+                    "sub_mission_remote_control_clean": "遥控割草",
+                    "sub_mission_defogging": "除雾",
+                    "sub_mission_wait_for_daylight": "等待天亮",
+                    "sub_mission_cooling_down_motor": "电机降温中",
+                    "sub_mission_wait_for_rain_to_stop": "等待雨停",
+                    "sub_mission_flexible_station_wait": "在基站等待"
                 }
             },
             "mission_state": {
                 "name": "任务状态",
                 "state": {
-                    "MISSION_STATE_IDLE": "空闲",
-                    "MISSION_STATE_RUNNING": "运行中",
-                    "MISSION_STATE_PAUSE": "已暂停",
-                    "MISSION_STATE_ABORT": "已中止",
-                    "MISSION_STATE_COMPLETE": "已完成"
+                    "mission_state_idle": "空闲",
+                    "mission_state_running": "运行中",
+                    "mission_state_pause": "已暂停",
+                    "mission_state_abort": "已中止",
+                    "mission_state_complete": "已完成"
                 }
             }
         },
@@ -287,47 +296,42 @@
         },
         "select": {
             "region_select": {
-                "name": "分区选择"
+                "name": "分区选择",
+                "state": {
+                    "no_zones_available": "没有可用分区",
+                    "all_zones": "全部分区"
+                }
             },
             "mow_speed_setting": {
                 "name": "割草速度设置",
                 "state": {
-                    "MOW_SPEED_TYPE_LOW": "低速",
-                    "MOW_SPEED_TYPE_MEDIUM": "中速",
-                    "MOW_SPEED_TYPE_ADAPTIVE_HIGH": "自适应高速",
-                    "MOW_SPEED_TYPE_AUTO": "自动模式"
+                    "mow_speed_type_low": "低速",
+                    "mow_speed_type_medium": "中速",
+                    "mow_speed_type_adaptive_high": "自适应高速",
+                    "mow_speed_type_auto": "自动模式"
                 }
             },
             "blade_speed": {
                 "name": "刀盘转速设置",
                 "state": {
-                    "BLADE_DISK_SPEED_TYPE_LOW": "低速",
-                    "BLADE_DISK_SPEED_TYPE_MEDIUM": "中速",
-                    "BLADE_DISK_SPEED_TYPE_HIGH": "高速"
+                    "blade_disk_speed_type_low": "低速",
+                    "blade_disk_speed_type_medium": "中速",
+                    "blade_disk_speed_type_high": "高速"
                 }
             },
             "main_direction_mode": {
                 "name": "主方向模式",
                 "state": {
-                    "MAIN_DIRECTION_MODE_SINGLE": "单主方向",
-                    "MAIN_DIRECTION_MODE_MULTIPLE": "多主方向",
-                    "MAIN_DIRECTION_MODE_AUTO_ROTATE": "自动旋转主方向"
-                },
-                "options": {
-                    "MAIN_DIRECTION_MODE_SINGLE": "单主方向",
-                    "MAIN_DIRECTION_MODE_MULTIPLE": "多主方向",
-                    "MAIN_DIRECTION_MODE_AUTO_ROTATE": "自动旋转主方向"
+                    "main_direction_mode_single": "单主方向",
+                    "main_direction_mode_multiple": "多主方向",
+                    "main_direction_mode_auto_rotate": "自动旋转主方向"
                 }
             },
             "high_grass_edge_trim_mode": {
                 "name": "高草沿边修剪模式",
                 "state": {
-                    "HIGH_GRASS_EDGE_TRIM_STANDARD": "标准",
-                    "HIGH_GRASS_EDGE_TRIM_INTENSIVE": "强化"
-                },
-                "options": {
-                    "HIGH_GRASS_EDGE_TRIM_STANDARD": "标准",
-                    "HIGH_GRASS_EDGE_TRIM_INTENSIVE": "强化"
+                    "high_grass_edge_trim_standard": "标准",
+                    "high_grass_edge_trim_intensive": "强化"
                 }
             }
         },
@@ -364,14 +368,6 @@
                 "name": "固件"
             }
         }
-    },
-    "state": {
-        "unknown": "未知",
-        "no_zones_available": "无分区可选",
-        "all_zones": "全部分区",
-        "changing_mode": "正在切换模式",
-        "active": "活跃",
-        "pending": "等待确认"
     },
     "services": {
         "start_select_region": {
