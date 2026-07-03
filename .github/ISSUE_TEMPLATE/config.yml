@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Upstream TerraMow integration
+    url: https://github.com/TerraMow/TerraMowHA/issues
+    about: Issues that concern the original upstream integration.
