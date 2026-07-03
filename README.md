@@ -12,6 +12,8 @@
   <img src="docs/images/terramow_logo.png" alt="TerraMow Logo" width="400">
 </div>
 
+🌐 **English** · [Dansk](docs/README_da.md) · [Deutsch](docs/README_de.md) · [Español](docs/README_es.md) · [Français](docs/README_fr.md) · [Italiano](docs/README_it.md) · [Nederlands](docs/README_nl.md) · [Norsk (bokmål)](docs/README_nb.md) · [Polski](docs/README_pl.md) · [Português](docs/README_pt.md) · [Suomi](docs/README_fi.md) · [Svenska](docs/README_sv.md) · [Čeština](docs/README_cs.md) · [中文](docs/README_zh.md)
+
 ---
 
 <a id="english-version"></a>

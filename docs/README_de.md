@@ -1,0 +1,132 @@
+# TerraMow für Home Assistant
+
+<div align="center">
+  <img src="images/terramow_logo.png" alt="TerraMow Logo" width="400">
+</div>
+
+🌐 [English](../README.md) · [Dansk](README_da.md) · **Deutsch** · [Español](README_es.md) · [Français](README_fr.md) · [Italiano](README_it.md) · [Nederlands](README_nl.md) · [Norsk (bokmål)](README_nb.md) · [Polski](README_pl.md) · [Português](README_pt.md) · [Suomi](README_fi.md) · [Svenska](README_sv.md) · [Čeština](README_cs.md) · [中文](README_zh.md)
+
+---
+
+Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
+
+### Funktionen
+
+**Steuerung**
+- Rasenmäher-Entität: Starten, Pausieren und Andocken
+- Zonenmähen: Zonenauswahl-Entität und der Dienst `terramow.start_select_region`
+- Taste für Kantenschnitt
+- Einstellungen aus Home Assistant: Mähhöhe, Geschwindigkeit, Bahnabstand, Messerdrehzahl, Kantenschnittabstand, Hauptrichtungsmodus und -winkel, gründliches Eckenmähen, Kantenschnittmodus für hohes Gras
+- Wartung: Reset-Tasten für die Zähler von Messerteller und Basisstation
+
+**Überwachung**
+- Live-Kartenkamera mit Mähpfad, Roboterposition und Basisstation (plus eine reine Kartenkamera für Dashboards, Auflösung über die Optionen konfigurierbar)
+- Akku: Ladestand, Ladezustand, Temperaturzustand, Ladegerät verbunden, Netzschalter
+- Auftragsfortschritt: Fläche der aktuellen Sitzung, Fortschritt (%), Dauer und Auftragstyp; Gesamtmähzeit, Auftragsanzahl und gemähte Fläche
+- Status: Mission / Untermission / Missionszustand, Betriebsmodus, Leistungsmodus, Grund für die Rückkehr zur Station, Regenerkennung, Problemanzeige, Anzeigen für Datenspeicherung und Datenkonvertierung
+- Karte: Status, Fläche, Flags für erkannt / erstellbar / Sicherung läuft
+- Zeitplan: nächster geplanter Start
+- Firmware-Update-Entität, Firmware-Version auf der Geräteseite und Sensor für die Versionskompatibilität
+- Alle Entitäten werden bei Geräte-Pushes sofort aktualisiert — keine Polling-Verzögerung
+
+**Komfortfunktionen der Integration**
+- Automatische Erkennung über Zeroconf/mDNS
+- Rekonfigurations-Flow (Host/IP ändern ohne erneutes Hinzufügen) und Reauthentifizierungs-Flow
+- Diagnose-Download für einfache Fehlerberichte
+- In 14 Sprachen übersetzt (en, cs, da, de, es, fi, fr, it, nb, nl, pl, pt, sv, zh-Hans)
+- Lokale Push-Kommunikation auf MQTT-Basis — keine Cloud erforderlich
+
+### Unterstützte Entitäten
+
+| Plattform | Entitäten |
+| --- | --- |
+| Rasenmäher | Steuerung für Starten / Pausieren / Andocken mit Live-Aktivität |
+| Kamera | Karte mit Pfad, Roboter und Basisstation; reine Kartenvariante |
+| Sensor | Akkustand, Akkuzustand, Akkutemperaturzustand, Kartenstatus, Kartenfläche, Mähhöhe, Mähgeschwindigkeit, Betriebsmodus, Position, Gesamtmähzeit / Aufträge / gemähte Fläche, Fläche / Fortschritt / Dauer / Auftragstyp der aktuellen Sitzung, verbleibende Zeit für Messer und Basisstation, nächster geplanter Start, Versionskompatibilität, Hauptrichtungsstatus, Leistungsmodus, Grund für die Rückkehr zur Station, Mission, Untermission, Missionszustand |
+| Binärsensor | Wird geladen, Navigation lokalisiert, Firmware-Aktualisierung läuft, Netzschalter, Problem, Regen erkannt, Karte erkannt / erstellbar / Sicherung läuft, Daten werden gespeichert, Datenkonvertierung läuft |
+| Auswahl | Zonenauswahl, Mähgeschwindigkeit, Messerdrehzahl, Hauptrichtungsmodus, Kantenschnittmodus für hohes Gras |
+| Zahl | Mähhöhe, Kantenschnittabstand, Bahnabstand, Winkel für Einzelrichtung, Intervall für automatische Winkeldrehung, Winkel der ersten / zweiten Richtung |
+| Schalter | Gründliches Eckenmähen |
+| Taste | Kantenschnitt, Messer-Timer zurücksetzen, Basisstations-Timer zurücksetzen |
+| Update | Firmware-Version |
+
+### Installation
+
+#### Methode 1: HACS (empfohlen)
+1. Stellen Sie sicher, dass [HACS](https://hacs.xyz/) installiert ist
+2. Verwenden Sie die Schaltfläche oben, um die Integration zu HACS hinzuzufügen
+3. Gehen Sie zu HACS → Integrationen → + → Suchen Sie nach „TerraMow“
+4. Installieren Sie die Integration und starten Sie Home Assistant neu
+
+#### Methode 2: Manuelle Installation
+1. Kopieren Sie den Ordner `custom_components/terramow` in den Ordner `/config/custom_components` Ihres Home Assistant
+2. Starten Sie Home Assistant neu
+3. Gehen Sie zu Einstellungen → Geräte & Dienste → Integration hinzufügen
+4. Suchen Sie nach „TerraMow“ und folgen Sie den Konfigurationsschritten
+
+### Konfiguration
+
+Geräte im lokalen Netzwerk werden automatisch über Zeroconf erkannt — akzeptieren Sie das erkannte Gerät und geben Sie das MQTT-Passwort ein. Für die manuelle Einrichtung sind die folgenden Parameter erforderlich:
+
+- **Host**: IP-Adresse oder Hostname des TerraMow-Geräts
+- **Passwort**: MQTT-Passwort für die Authentifizierung
+
+**Einstellungen später ändern**
+- *Rekonfigurieren* (Einstellungen → Geräte & Dienste → TerraMow → Rekonfigurieren): Host/IP oder Passwort direkt ändern, z. B. nachdem der Mäher eine neue DHCP-Adresse erhalten hat — die Integration muss nicht entfernt und neu hinzugefügt werden.
+- *Optionen* (Konfigurieren): Ausgabeauflösung der Kartenkamera festlegen. Höhere Werte liefern ein schärferes Dashboard-Bild, kosten aber mehr Bandbreite und CPU pro Rendering.
+- Wenn sich das Gerätepasswort ändert, startet Home Assistant automatisch einen *Reauthentifizierungs*-Flow.
+
+### Anforderungen
+
+- Home Assistant 2023.9.3 oder neuer (getestet mit 2025.1.1)
+- TerraMow-Firmware-Version 6.6.0 oder neuer
+- TerraMow-APP-Version 1.6.0 oder neuer
+- Live-Karte und Mähpfad erfordern die Firmware-HA-Modul-Version 3; auf Version 2 (z. B. S800) funktioniert alles andere, und der Sensor für die Versionskompatibilität meldet dies
+
+### Dienste
+
+#### `terramow.start_select_region`
+
+Startet das Mähen für eine Liste ausgewählter Teilbereiche.
+
+```yaml
+service: terramow.start_select_region
+target:
+  entity_id: lawn_mower.terramow
+data:
+  region_ids: [1, 2]
+```
+
+### Diagnose & Fehlerbehebung
+
+- **Diagnose-Download**: Einstellungen → Geräte & Dienste → TerraMow → Drei-Punkte-Menü → *Diagnose herunterladen* erzeugt einen bereinigten JSON-Schnappschuss (Gerätezustand, Firmware-Kompatibilität, Rohdatenpunkt-Caches) — bitte fügen Sie ihn Fehlerberichten bei.
+- **Nicht unterstützte Funktionen entdecken**: Der Mäher veröffentlicht mehr Datenpunkte, als dokumentiert sind. Die erste Nutzlast jedes unbekannten Datenpunkts wird einmalig auf INFO-Ebene protokolliert; aktivieren Sie das Debug-Logging für die `terramow`-Integration, um alle aufzuzeichnen. Wenn Sie einen Datenpunkt für eine fehlende Funktion finden (z. B. Hebealarm, Zeitplanschalter, Fehlercodes), teilen Sie ihn bitte in einem Issue mit.
+
+### Sprachen
+
+Die Integration ist übersetzt in: Čeština, Dansk, Deutsch, English, Español, Français, Italiano, Nederlands, Norsk (bokmål), Polski, Português, Suomi, Svenska und 简体中文.
+
+### Hinweise zum Upgrade
+
+- **v0.5.0**: Die Zustandswerte der Entitäten wurden von Groß- auf Kleinschreibung umgestellt (z. B. `MISSION_IDLE` → `mission_idle`), um die Übersetzungsanforderungen von Home Assistant zu erfüllen. Automatisierungen oder Templates, die rohe Zustandszeichenketten vergleichen, benötigen eine einmalige Anpassung; die angezeigten Namen bleiben unverändert.
+
+### Support
+
+Öffnen Sie für Unterstützung ein Issue auf [GitHub](https://github.com/TerraMow/TerraMowHA/issues).
+
+### Informationen für Entwickler
+
+Entwickler, die diese Integration verstehen oder erweitern möchten, finden weitere Informationen im [Entwicklerhandbuch](en/developers.md).
+
+So führen Sie die Testsuite lokal aus:
+
+```bash
+pip install -r requirements_test.txt
+pytest tests/
+```
+
+---
+
+## Lizenz
+
+Dieses Projekt ist unter der GNU General Public License v3.0 lizenziert — Details finden Sie in der Datei [LICENSE](../LICENSE).

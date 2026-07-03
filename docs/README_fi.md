@@ -1,0 +1,132 @@
+# TerraMow Home Assistantille
+
+<div align="center">
+  <img src="images/terramow_logo.png" alt="TerraMow Logo" width="400">
+</div>
+
+🌐 [English](../README.md) · [Dansk](README_da.md) · [Deutsch](README_de.md) · [Español](README_es.md) · [Français](README_fr.md) · [Italiano](README_it.md) · [Nederlands](README_nl.md) · [Norsk (bokmål)](README_nb.md) · [Polski](README_pl.md) · [Português](README_pt.md) · **Suomi** · [Svenska](README_sv.md) · [Čeština](README_cs.md) · [中文](README_zh.md)
+
+---
+
+Tämä on Home Assistant -integraatio TerraMow-robottiruohonleikkureille.
+
+### Ominaisuudet
+
+**Ohjaus**
+- Ruohonleikkurientiteetti: käynnistys, tauko ja telakointi
+- Vyöhykeleikkuu: vyöhykkeen valintaentiteetti ja `terramow.start_select_region`-palvelu
+- Reunaleikkuupainike
+- Asetukset Home Assistantista: leikkuukorkeus, nopeus, leikkuuväli, terän nopeus, reunaleikkuun etäisyys, pääsuuntatila ja -kulmat, perusteellinen kulmien leikkuu, korkean ruohon reunaleikkuutila
+- Huolto: nollauspainikkeet terälautasen ja tukiaseman laskureille
+
+**Valvonta**
+- Reaaliaikainen karttakamera, jossa näkyvät leikkuureitti, robotin sijainti ja tukiasema (lisäksi pelkän kartan näyttävä kamera kojelautoja varten, resoluutio määritettävissä asetuksista)
+- Akku: varaustaso, lataustila, lämpötilatila, laturi kytketty, virtakytkin
+- Työn edistyminen: nykyisen istunnon pinta-ala, edistyminen (%), kesto ja työn tyyppi; kokonaisleikkuuaika, töiden määrä ja leikattu pinta-ala
+- Tila: tehtävä / alitehtävä / tehtävän tila, toimintatila, virtatila, tukiasemalle paluun syy, sateen tunnistus, ongelmailmaisin, tietojen tallennuksen ja tietojen muunnoksen ilmaisimet
+- Kartta: tila, pinta-ala, liput havaittu / rakennettavissa / varmuuskopioidaan
+- Aikataulu: seuraava ajastettu käynnistys
+- Laiteohjelmiston päivitysentiteetti, laiteohjelmistoversio laitesivulla ja versioyhteensopivuusanturi
+- Kaikki entiteetit päivittyvät välittömästi laitteen push-viesteistä — ei kyselyviivettä
+
+**Integraation käyttömukavuus**
+- Automaattinen löytäminen Zeroconf/mDNS:n kautta
+- Uudelleenmääritysprosessi (isännän/IP:n vaihto ilman uudelleenlisäystä) ja uudelleentodennusprosessi
+- Diagnostiikan lataus helppoja virheraportteja varten
+- Käännetty 14 kielelle (en, cs, da, de, es, fi, fr, it, nb, nl, pl, pt, sv, zh-Hans)
+- MQTT-pohjainen paikallinen push-viestintä — pilveä ei tarvita
+
+### Tuetut entiteetit
+
+| Alusta | Entiteetit |
+| --- | --- |
+| Ruohonleikkuri | Käynnistys / tauko / telakointi -ohjaus reaaliaikaisella toimintatiedolla |
+| Kamera | Kartta, jossa reitti, robotti ja tukiasema; pelkän kartan näyttävä variantti |
+| Anturi | Akun varaustaso, akun tila, akun lämpötilatila, kartan tila, kartan pinta-ala, leikkuukorkeus, leikkuunopeus, toimintatila, sijainti, kokonaisleikkuuaika / töiden määrä / leikattu pinta-ala, nykyisen istunnon pinta-ala / edistyminen / kesto / työn tyyppi, terän ja tukiaseman jäljellä oleva aika, seuraava ajastettu käynnistys, versioyhteensopivuus, pääsuunnan tila, virtatila, tukiasemalle paluun syy, tehtävä, alitehtävä, tehtävän tila |
+| Binäärianturi | Lataus, navigointi paikannettu, laiteohjelmiston päivitys käynnissä, virtakytkin, ongelma, sade havaittu, kartta havaittu / rakennettavissa / varmuuskopioidaan, tietojen tallennus, tietojen muunnos käynnissä |
+| Valinta | Vyöhykkeen valinta, leikkuunopeus, terän nopeus, pääsuuntatila, korkean ruohon reunaleikkuutila |
+| Numero | Leikkuukorkeus, reunaleikkuun etäisyys, leikkuuväli, yhden suunnan kulma, automaattisen kierron kulmaväli, ensimmäisen / toisen suunnan kulma |
+| Kytkin | Perusteellinen kulmien leikkuu |
+| Painike | Reunaleikkuu, terän ajastimen nollaus, tukiaseman ajastimen nollaus |
+| Päivitys | Laiteohjelmistoversio |
+
+### Asennus
+
+#### Tapa 1: HACS (suositeltu)
+1. Varmista, että [HACS](https://hacs.xyz/) on asennettu
+2. Käytä yllä olevaa painiketta lisätäksesi repositorion HACS:iin
+3. Siirry kohtaan HACS → Integraatiot → + → hae "TerraMow"
+4. Asenna ja käynnistä Home Assistant uudelleen
+
+#### Tapa 2: Manuaalinen asennus
+1. Kopioi `custom_components/terramow`-kansio Home Assistantin `/config/custom_components`-kansioon
+2. Käynnistä Home Assistant uudelleen
+3. Siirry kohtaan Asetukset → Laitteet ja palvelut → Lisää integraatio
+4. Hae "TerraMow" ja seuraa määritysvaiheita
+
+### Määritys
+
+Paikallisverkon laitteet löydetään automaattisesti Zeroconfin kautta — hyväksy löydetty laite ja syötä MQTT-salasana. Manuaalista määritystä varten tarvitaan seuraavat parametrit:
+
+- **Isäntä**: TerraMow-laitteen IP-osoite tai isäntänimi
+- **Salasana**: MQTT-salasana todennusta varten
+
+**Asetusten muuttaminen myöhemmin**
+- *Uudelleenmääritys* (Asetukset → Laitteet ja palvelut → TerraMow → Määritä uudelleen): vaihda isäntä/IP tai salasana suoraan, esim. kun leikkuri on saanut uuden DHCP-osoitteen — integraatiota ei tarvitse poistaa ja lisätä uudelleen.
+- *Valinnat* (Määritä): aseta karttakameran lähtöresoluutio. Suuremmat arvot antavat terävämmän kuvan kojelaudalle kaistanleveyden ja renderöintikohtaisen CPU-kuorman kustannuksella.
+- Jos laitteen salasana vaihtuu, Home Assistant käynnistää automaattisesti *uudelleentodennusprosessin*.
+
+### Vaatimukset
+
+- Home Assistant 2023.9.3 tai uudempi (testattu versiolla 2025.1.1)
+- TerraMow-laiteohjelmiston versio 6.6.0 tai uudempi
+- TerraMow APP -versio 1.6.0 tai uudempi
+- Reaaliaikainen kartta ja leikkuureitti vaativat laiteohjelmiston HA-moduulin version 3; versiolla 2 (esim. S800) kaikki muu toimii, ja versioyhteensopivuusanturi ilmoittaa asiasta
+
+### Palvelut
+
+#### `terramow.start_select_region`
+
+Käynnistää leikkuun valittujen alialueiden luettelolle.
+
+```yaml
+service: terramow.start_select_region
+target:
+  entity_id: lawn_mower.terramow
+data:
+  region_ids: [1, 2]
+```
+
+### Diagnostiikka ja vianetsintä
+
+- **Diagnostiikan lataus**: Asetukset → Laitteet ja palvelut → TerraMow → kolmen pisteen valikko → *Lataa diagnostiikka* tuottaa anonymisoidun JSON-tilannekuvan (laitteen tila, laiteohjelmiston yhteensopivuus, raakadatapisteiden välimuistit) — liitä se virheraportteihin.
+- **Tukemattomien ominaisuuksien löytäminen**: leikkuri julkaisee enemmän datapisteitä kuin on dokumentoitu. Jokaisen tuntemattoman datapisteen ensimmäinen sisältö kirjataan kerran INFO-tasolla; ota virheenkorjauslokitus käyttöön `terramow`-integraatiolle tallentaaksesi ne kaikki. Jos löydät datapisteen puuttuvalle ominaisuudelle (esim. nostohälytys, aikataulukytkin, virhekoodit), jaa se issuessa.
+
+### Kielet
+
+Integraatio on käännetty seuraaville kielille: Čeština, Dansk, Deutsch, English, Español, Français, Italiano, Nederlands, Norsk (bokmål), Polski, Português, Suomi, Svenska ja 简体中文.
+
+### Päivityshuomautukset
+
+- **v0.5.0**: entiteettien tila-arvot muuttuivat isoista kirjaimista pieniksi (esim. `MISSION_IDLE` → `mission_idle`) Home Assistantin käännösvaatimusten täyttämiseksi. Raakoja tilamerkkijonoja vertailevat automaatiot tai mallipohjat vaativat kertaluonteisen päivityksen; näytettävät nimet eivät muutu.
+
+### Tuki
+
+Avaa issue [GitHubissa](https://github.com/TerraMow/TerraMowHA/issues) saadaksesi tukea.
+
+### Tietoa kehittäjille
+
+Kehittäjät, jotka haluavat ymmärtää tätä integraatiota tai laajentaa sitä, löytävät lisätietoja [kehittäjän oppaasta](en/developers.md).
+
+Testien ajaminen paikallisesti:
+
+```bash
+pip install -r requirements_test.txt
+pytest tests/
+```
+
+---
+
+## Lisenssi
+
+Tämä projekti on lisensoitu GNU General Public License v3.0 -lisenssillä — katso lisätiedot [LICENSE](../LICENSE)-tiedostosta.
