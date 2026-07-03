@@ -122,6 +122,9 @@
             "total_mowing_jobs": {
                 "name": "Número total de cortes"
             },
+            "total_mowed_area": {
+                "name": "Área total cortada"
+            },
             "current_session_area": {
                 "name": "Área da sessão atual"
             },

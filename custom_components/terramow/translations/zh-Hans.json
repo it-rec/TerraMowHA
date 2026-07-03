@@ -122,6 +122,9 @@
             "total_mowing_jobs": {
                 "name": "总割草次数"
             },
+            "total_mowed_area": {
+                "name": "累计割草面积"
+            },
             "current_session_area": {
                 "name": "当前会话面积"
             },

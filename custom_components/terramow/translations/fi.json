@@ -122,6 +122,9 @@
             "total_mowing_jobs": {
                 "name": "Leikkuukertojen kokonaismäärä"
             },
+            "total_mowed_area": {
+                "name": "Leikattu kokonaispinta-ala"
+            },
             "current_session_area": {
                 "name": "Nykyisen istunnon pinta-ala"
             },

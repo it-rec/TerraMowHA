@@ -122,6 +122,9 @@
             "total_mowing_jobs": {
                 "name": "Totalt antall klippinger"
             },
+            "total_mowed_area": {
+                "name": "Totalt klippet areal"
+            },
             "current_session_area": {
                 "name": "Areal for gjeldende økt"
             },

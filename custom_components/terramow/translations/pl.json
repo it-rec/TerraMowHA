@@ -122,6 +122,9 @@
             "total_mowing_jobs": {
                 "name": "Łączna liczba koszeń"
             },
+            "total_mowed_area": {
+                "name": "Łączna skoszona powierzchnia"
+            },
             "current_session_area": {
                 "name": "Powierzchnia bieżącej sesji"
             },

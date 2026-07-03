@@ -122,6 +122,9 @@
             "total_mowing_jobs": {
                 "name": "Celkový počet sečení"
             },
+            "total_mowed_area": {
+                "name": "Celková posečená plocha"
+            },
             "current_session_area": {
                 "name": "Plocha aktuální relace"
             },

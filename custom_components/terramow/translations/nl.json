@@ -122,6 +122,9 @@
             "total_mowing_jobs": {
                 "name": "Totaal aantal maaibeurten"
             },
+            "total_mowed_area": {
+                "name": "Totaal gemaaide oppervlakte"
+            },
             "current_session_area": {
                 "name": "Oppervlak huidige sessie"
             },
