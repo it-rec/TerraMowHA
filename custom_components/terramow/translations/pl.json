@@ -4,7 +4,8 @@
         "abort": {
             "already_configured": "Urządzenie jest już skonfigurowane",
             "cannot_connect": "Nie udało się połączyć",
-            "reauth_successful": "Ponowne uwierzytelnienie powiodło się"
+            "reauth_successful": "Ponowne uwierzytelnienie powiodło się",
+            "reconfigure_successful": "Rekonfiguracja powiodła się"
         },
         "error": {
             "cannot_connect": "Nie udało się połączyć",
@@ -28,6 +29,14 @@
             },
             "reauth_confirm": {
                 "data": {
+                    "password": "Hasło"
+                }
+            },
+            "reconfigure": {
+                "title": "Skonfiguruj ponownie TerraMow",
+                "description": "Zaktualizuj adres IP/nazwę hosta lub hasło swojego TerraMow.",
+                "data": {
+                    "host": "Host",
                     "password": "Hasło"
                 }
             }
