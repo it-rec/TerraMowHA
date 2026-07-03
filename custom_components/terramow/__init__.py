@@ -24,6 +24,7 @@ from .config_flow import CannotConnect, InvalidAuth, validate_input
 from .const import (
     DOMAIN,
     CURRENT_HA_VERSION,
+    MIN_SUPPORTED_HA_VERSION,
     MIN_REQUIRED_OVERALL_VERSION,
     CompatibilityStatus
 )
@@ -75,13 +76,25 @@ class TerraMowBasicData:
                 return CompatibilityStatus.UPGRADE_REQUIRED
 
             # Check HA version compatibility
-            if ha_version < CURRENT_HA_VERSION:
+            if ha_version < MIN_SUPPORTED_HA_VERSION:
                 _LOGGER.warning(
-                    "Firmware HA version is lower: %d < %d, some functions may not be available",
-                    ha_version, CURRENT_HA_VERSION
+                    "Firmware HA version is too low: %d < %d, please upgrade firmware",
+                    ha_version, MIN_SUPPORTED_HA_VERSION
                 )
                 self.compatibility_reason = f"ha_version_low:{ha_version}"
                 return CompatibilityStatus.UPGRADE_REQUIRED
+            elif ha_version < CURRENT_HA_VERSION:
+                # Older but supported HA module version (e.g. the S800 reports
+                # version 2 on its latest firmware). Everything except the
+                # version-3-only live map/path features keeps working, so do
+                # not nag the user to upgrade firmware that does not exist.
+                _LOGGER.info(
+                    "Firmware HA version %d is older than plugin version %d; "
+                    "version-%d-only features (live map/path) are unavailable",
+                    ha_version, CURRENT_HA_VERSION, CURRENT_HA_VERSION
+                )
+                self.compatibility_reason = f"ha_version_limited:{ha_version}"
+                return CompatibilityStatus.COMPATIBLE
             elif ha_version > CURRENT_HA_VERSION:
                 _LOGGER.warning(
                     "Firmware HA version is higher: %d > %d, recommend upgrading plugin",
@@ -101,6 +114,12 @@ class TerraMowBasicData:
     def get_compatibility_message(self) -> str:
         """Get user-friendly compatibility status message."""
         if self.compatibility_status == CompatibilityStatus.COMPATIBLE:
+            if self.compatibility_reason.startswith("ha_version_limited:"):
+                firmware_version = self.compatibility_reason.split(':')[1]
+                return (
+                    f"Version compatible (firmware HA module version {firmware_version}); "
+                    f"live map and path view require version {CURRENT_HA_VERSION}"
+                )
             return "Version compatible, all functions working"
         elif self.compatibility_status == CompatibilityStatus.UPGRADE_REQUIRED:
             # Provide different prompts based on the specific reason
