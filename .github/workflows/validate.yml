@@ -39,6 +39,26 @@ jobs:
           # the integration itself (manifest, hacs.json, brands) still runs.
           ignore: topics description issues
 
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_test.txt
+
+      - name: Run pytest
+        run: pytest tests/ -v
+
   python-lint:
     name: Python Lint
     runs-on: ubuntu-latest
