@@ -30,6 +30,9 @@ from .hub import (
     TerraMowHub,
 )
 
+# Push-based integration: no update throttling needed
+PARALLEL_UPDATES = 0
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -97,6 +100,16 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
         _LOGGER.debug("State change details: mission=%s, sub_mission=%s, mission_state=%s, has_error=%s",
                      self.hub.mission, self.hub.sub_mission, self.hub.mission_state, self.hub.has_error)
         safe_schedule_update_ha_state(self)
+
+    @property
+    def available(self) -> bool:
+        """Stay available during connection loss to surface ERROR.
+
+        Unlike the other entities, the mower itself reports connection
+        problems through its ERROR activity, which is more useful in
+        automations than a bare "unavailable".
+        """
+        return self.basic_data.lawn_mower is not None
 
     @property
     def supported_features(self) -> LawnMowerEntityFeature:

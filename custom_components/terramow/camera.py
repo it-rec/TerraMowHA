@@ -28,6 +28,9 @@ from .const import (
     MAP_RESOLUTION_OPTIONS,
 )
 
+# Push-based integration: no update throttling needed
+PARALLEL_UPDATES = 0
+
 _LOGGER = logging.getLogger(__name__)
 
 # 输出画布

@@ -16,6 +16,9 @@ from .entity import TerraMowEntity
 from .entity_utils import safe_write_ha_state
 from .const import COMPATIBILITY_INFO_DP
 
+# Push-based integration: no update throttling needed
+PARALLEL_UPDATES = 0
+
 _LOGGER = logging.getLogger(__name__)
 
 

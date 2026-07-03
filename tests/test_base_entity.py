@@ -12,6 +12,7 @@ def _basic_data(host: str = "192.0.2.10", model: str | None = "TerraMow S1200"):
         basic_data.lawn_mower = None
     else:
         basic_data.lawn_mower.device_model = model
+        basic_data.lawn_mower.connection_error = False
     return basic_data
 
 
@@ -61,6 +62,9 @@ def test_available_tracks_lawn_mower_presence() -> None:
     basic_data = _basic_data()
     entity = TerraMowEntity(basic_data)
     assert entity.available is True
+
+    basic_data.lawn_mower.connection_error = True
+    assert entity.available is False
 
     basic_data.lawn_mower = None
     assert entity.available is False

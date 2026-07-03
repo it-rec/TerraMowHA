@@ -56,8 +56,28 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements_test.txt
 
-      - name: Run pytest
-        run: pytest tests/ -v
+      - name: Run pytest with coverage
+        run: |
+          pytest tests/ -v \
+            --cov=custom_components/terramow \
+            --cov-report=term-missing \
+            --cov-report=xml
+
+      - name: Add coverage summary
+        if: always()
+        run: |
+          pip install coverage
+          echo "## Test coverage" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          coverage report --skip-empty >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
 
   python-lint:
     name: Python Lint

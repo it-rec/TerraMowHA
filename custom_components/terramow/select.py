@@ -23,6 +23,9 @@ from .const import (
     to_ha_enum_state,
 )
 
+# Push-based integration: no update throttling needed
+PARALLEL_UPDATES = 0
+
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
