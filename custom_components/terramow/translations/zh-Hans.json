@@ -281,6 +281,12 @@
             },
             "map_backing_up": {
                 "name": "正在备份地图"
+            },
+            "saving_data": {
+                "name": "正在保存数据"
+            },
+            "data_conversion": {
+                "name": "数据转换进行中"
             }
         },
         "button": {

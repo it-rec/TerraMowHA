@@ -281,6 +281,12 @@
             },
             "map_backing_up": {
                 "name": "Kartsäkerhetskopiering pågår"
+            },
+            "saving_data": {
+                "name": "Sparar data"
+            },
+            "data_conversion": {
+                "name": "Datakonvertering pågår"
             }
         },
         "button": {

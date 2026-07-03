@@ -281,6 +281,12 @@
             },
             "map_backing_up": {
                 "name": "Backup mappa in corso"
+            },
+            "saving_data": {
+                "name": "Salvataggio dati"
+            },
+            "data_conversion": {
+                "name": "Conversione dati in corso"
             }
         },
         "button": {

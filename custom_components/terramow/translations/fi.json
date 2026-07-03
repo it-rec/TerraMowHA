@@ -281,6 +281,12 @@
             },
             "map_backing_up": {
                 "name": "Kartan varmuuskopiointi käynnissä"
+            },
+            "saving_data": {
+                "name": "Tallentaa tietoja"
+            },
+            "data_conversion": {
+                "name": "Tietojen muunnos käynnissä"
             }
         },
         "button": {
