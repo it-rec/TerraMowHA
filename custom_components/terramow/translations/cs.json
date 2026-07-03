@@ -281,6 +281,12 @@
             },
             "map_backing_up": {
                 "name": "Probíhá zálohování mapy"
+            },
+            "saving_data": {
+                "name": "Ukládání dat"
+            },
+            "data_conversion": {
+                "name": "Probíhá konverze dat"
             }
         },
         "button": {

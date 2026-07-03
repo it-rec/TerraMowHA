@@ -281,6 +281,12 @@
             },
             "map_backing_up": {
                 "name": "Kaartback-up bezig"
+            },
+            "saving_data": {
+                "name": "Gegevens opslaan"
+            },
+            "data_conversion": {
+                "name": "Gegevensconversie bezig"
             }
         },
         "button": {

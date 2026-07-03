@@ -281,6 +281,12 @@
       },
       "map_backing_up": {
         "name": "Map Backing Up"
+      },
+      "saving_data": {
+        "name": "Saving Data"
+      },
+      "data_conversion": {
+        "name": "Data Conversion in Progress"
       }
     },
     "button": {

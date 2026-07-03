@@ -281,6 +281,12 @@
             },
             "map_backing_up": {
                 "name": "Kortsikkerhedskopiering i gang"
+            },
+            "saving_data": {
+                "name": "Gemmer data"
+            },
+            "data_conversion": {
+                "name": "Datakonvertering i gang"
             }
         },
         "button": {

@@ -35,6 +35,8 @@ async def async_setup_entry(
         TerraMowMapDetectedBinarySensor(basic_data, hass),
         TerraMowMapBuildableBinarySensor(basic_data, hass),
         TerraMowMapBackingUpBinarySensor(basic_data, hass),
+        TerraMowSavingDataBinarySensor(basic_data, hass),
+        TerraMowDataConversionBinarySensor(basic_data, hass),
     ]
 
     async_add_entities(entities)
@@ -413,3 +415,80 @@ class TerraMowMapBackingUpBinarySensor(_MapStatusBinarySensorBase):
     _attr_icon = "mdi:cloud-upload-outline"
     _map_status_field = "is_backing_up_map"
     _unique_suffix = "map_backing_up"
+
+
+class _TaskStatusBinarySensorBase(BinarySensorEntity):
+    """Shared base for dp_107 task_status flag binary sensors."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    _task_status_field: str = ""
+    _unique_suffix: str = ""
+
+    def __init__(
+        self,
+        basic_data: TerraMowBasicData,
+        hass: HomeAssistant,
+    ) -> None:
+        super().__init__()
+        self.basic_data = basic_data
+        self.host = self.basic_data.host
+        self.hass = hass
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        if self.basic_data.lawn_mower:
+            self.basic_data.lawn_mower.register_callback(107, self._handle_dp_107)
+
+    async def _handle_dp_107(self, _payload: str) -> None:
+        safe_write_ha_state(self)
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={('TerraMowLawnMower', self.basic_data.host)},
+            name='TerraMow',
+            manufacturer='TerraMow',
+            model=self.basic_data.lawn_mower.device_model,
+        )
+
+    @property
+    def unique_id(self) -> str:
+        return f"lawn_mower.terramow@{self.host}.{self._unique_suffix}"
+
+    @property
+    def available(self) -> bool:
+        return self.basic_data.lawn_mower is not None
+
+    @property
+    def is_on(self) -> bool | None:
+        if not self.basic_data.lawn_mower:
+            return None
+        task_status = self.basic_data.lawn_mower.task_status
+        if not task_status:
+            return None
+        value = task_status.get(self._task_status_field)
+        return bool(value) if value is not None else None
+
+
+class TerraMowSavingDataBinarySensor(_TaskStatusBinarySensorBase):
+    """True while the robot is saving data.
+
+    Per the data point documentation the robot may not respond to
+    operation commands while this flag is set.
+    """
+
+    _attr_translation_key = "saving_data"
+    _attr_icon = "mdi:content-save-cog"
+    _task_status_field = "is_saving_data"
+    _unique_suffix = "saving_data"
+
+
+class TerraMowDataConversionBinarySensor(_TaskStatusBinarySensorBase):
+    """True while a data compatibility conversion is in progress."""
+
+    _attr_translation_key = "data_conversion"
+    _attr_icon = "mdi:database-sync"
+    _task_status_field = "is_data_conversion_in_progress"
+    _unique_suffix = "data_conversion"

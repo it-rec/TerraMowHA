@@ -281,6 +281,12 @@
             },
             "map_backing_up": {
                 "name": "Karte wird gesichert"
+            },
+            "saving_data": {
+                "name": "Daten werden gespeichert"
+            },
+            "data_conversion": {
+                "name": "Datenkonvertierung läuft"
             }
         },
         "button": {

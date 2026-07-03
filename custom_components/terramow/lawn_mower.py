@@ -1272,6 +1272,19 @@ class TerraMowLawnMowerEntity(LawnMowerEntity):
         return self._task_status.get("back_to_station_reason")
 
     @property
+    def is_saving_data(self) -> bool:
+        """Return whether the robot is saving data (dp_107).
+
+        While true the robot may not respond to operation commands.
+        """
+        return bool(self._task_status.get("is_saving_data", False))
+
+    @property
+    def is_data_conversion_in_progress(self) -> bool:
+        """Return whether a data compatibility conversion is running (dp_107)."""
+        return bool(self._task_status.get("is_data_conversion_in_progress", False))
+
+    @property
     def compatibility_status(self) -> str:
         """Return current compatibility status."""
         return self.basic_data.compatibility_status
