@@ -4,7 +4,8 @@
         "abort": {
             "already_configured": "Apparaat is al geconfigureerd",
             "cannot_connect": "Verbinding mislukt",
-            "reauth_successful": "Herauthenticatie geslaagd"
+            "reauth_successful": "Herauthenticatie geslaagd",
+            "reconfigure_successful": "Herconfiguratie geslaagd"
         },
         "error": {
             "cannot_connect": "Verbinding mislukt",
@@ -28,6 +29,14 @@
             },
             "reauth_confirm": {
                 "data": {
+                    "password": "Wachtwoord"
+                }
+            },
+            "reconfigure": {
+                "title": "TerraMow opnieuw configureren",
+                "description": "Werk het IP-adres/de hostnaam of het wachtwoord van je TerraMow bij.",
+                "data": {
+                    "host": "Host",
                     "password": "Wachtwoord"
                 }
             }
