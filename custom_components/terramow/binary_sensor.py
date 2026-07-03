@@ -12,7 +12,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowBasicData, DOMAIN
-from .entity_utils import safe_write_ha_state
+from .entity_utils import PushUpdateMixin, safe_write_ha_state
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,8 +42,10 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class TerraMowChargingSensor(BinarySensorEntity):
+class TerraMowChargingSensor(PushUpdateMixin, BinarySensorEntity):
     """Binary sensor for the TerraMow charging state."""
+
+    _push_dp_ids = (108,)
 
     _attr_has_entity_name = True
     _attr_translation_key = "charging_state"
@@ -95,8 +97,10 @@ class TerraMowChargingSensor(BinarySensorEntity):
         return self.basic_data.lawn_mower is not None
 
 
-class NavigationLocatedSensor(BinarySensorEntity):
+class NavigationLocatedSensor(PushUpdateMixin, BinarySensorEntity):
     """Binary sensor for whether the robot is navigation-located."""
+
+    _push_dp_ids = (107,)
 
     _attr_has_entity_name = True
     _attr_translation_key = "navigation_located"
@@ -143,8 +147,10 @@ class NavigationLocatedSensor(BinarySensorEntity):
         return self.basic_data.lawn_mower is not None
 
 
-class FirmwareUpgradingSensor(BinarySensorEntity):
+class FirmwareUpgradingSensor(PushUpdateMixin, BinarySensorEntity):
     """Binary sensor for whether the robot firmware is upgrading."""
+
+    _push_dp_ids = (107,)
 
     _attr_has_entity_name = True
     _attr_device_class = BinarySensorDeviceClass.UPDATE
@@ -191,8 +197,10 @@ class FirmwareUpgradingSensor(BinarySensorEntity):
         return self.basic_data.lawn_mower is not None
 
 
-class PowerSwitchSensor(BinarySensorEntity):
+class PowerSwitchSensor(PushUpdateMixin, BinarySensorEntity):
     """Binary sensor for the TerraMow power switch state."""
+
+    _push_dp_ids = (108,)
 
     _attr_has_entity_name = True
     _attr_translation_key = "power_switch"
@@ -242,8 +250,10 @@ class PowerSwitchSensor(BinarySensorEntity):
         return self.basic_data.lawn_mower is not None
 
 
-class TerraMowProblemSensor(BinarySensorEntity):
+class TerraMowProblemSensor(PushUpdateMixin, BinarySensorEntity):
     """Binary sensor exposing the dp_107 has_error flag as a problem."""
+
+    _push_dp_ids = (107,)
 
     _attr_has_entity_name = True
     _attr_translation_key = "problem"
@@ -289,8 +299,10 @@ class TerraMowProblemSensor(BinarySensorEntity):
         return self.basic_data.lawn_mower is not None
 
 
-class TerraMowRainSensor(BinarySensorEntity):
+class TerraMowRainSensor(PushUpdateMixin, BinarySensorEntity):
     """Binary sensor that signals when the robot returns due to rain."""
+
+    _push_dp_ids = (107,)
 
     _attr_has_entity_name = True
     _attr_translation_key = "rain_detected"

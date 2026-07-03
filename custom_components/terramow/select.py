@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
 from . import TerraMowBasicData, DOMAIN
-from .entity_utils import safe_write_ha_state
+from .entity_utils import PushUpdateMixin, safe_write_ha_state
 from .const import (
     DEFAULT_BLADE_DISK_SPEED_TYPE,
     MIN_MOW_SPEED_VERSION_FOR_AUTO,
@@ -229,8 +229,10 @@ class TerraMowZoneSelect(SelectEntity):
         return attrs
 
 
-class MowSpeedSelect(SelectEntity):
+class MowSpeedSelect(PushUpdateMixin, SelectEntity):
     """割草行走速度选择器 - 使用dp_155数据"""
+
+    _push_dp_ids = (155,)
     
     _attr_has_entity_name = True
     _attr_icon = "mdi:speedometer"
@@ -417,8 +419,10 @@ class MowSpeedSelect(SelectEntity):
         return attrs
 
 
-class BladeSpeedSelect(SelectEntity):
+class BladeSpeedSelect(PushUpdateMixin, SelectEntity):
     """刀盘转速选择器 - 使用dp_155数据"""
+
+    _push_dp_ids = (155,)
     
     _attr_has_entity_name = True
     _attr_icon = "mdi:fan"
@@ -517,8 +521,10 @@ class BladeSpeedSelect(SelectEntity):
         }
 
 
-class MainDirectionModeSelect(SelectEntity):
+class MainDirectionModeSelect(PushUpdateMixin, SelectEntity):
     """主方向模式选择器 - 使用dp_155数据"""
+
+    _push_dp_ids = (155,)
     
     _attr_has_entity_name = True
     _attr_icon = "mdi:compass"
@@ -780,7 +786,7 @@ class MainDirectionModeSelect(SelectEntity):
         return attrs
 
 
-class HighGrassEdgeTrimModeSelect(SelectEntity):
+class HighGrassEdgeTrimModeSelect(PushUpdateMixin, SelectEntity):
     """High grass edge trim mode selector — published via dp_155.
 
     Note: high_grass_edge_trim_mode is reported under map_info["mow_param"],
@@ -789,6 +795,8 @@ class HighGrassEdgeTrimModeSelect(SelectEntity):
     we publish the selection to dp_155 with the matching sub-dict — adjust
     if firmware exposes a different DP.
     """
+
+    _push_map_info = True
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:grass"

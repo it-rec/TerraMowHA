@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
 from . import TerraMowBasicData, DOMAIN
+from .entity_utils import PushUpdateMixin
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ThoroughCornerCuttingSwitch(SwitchEntity):
+class ThoroughCornerCuttingSwitch(PushUpdateMixin, SwitchEntity):
     """Switch for enabling thorough corner cutting in mow_param.
 
     Note: enable_thorough_corner_cutting is reported under
@@ -38,6 +39,8 @@ class ThoroughCornerCuttingSwitch(SwitchEntity):
     mow_param flags is documented, we publish the toggle to dp_155 with
     the matching sub-dict — adjust if firmware exposes a different DP.
     """
+
+    _push_map_info = True
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:vector-polyline"

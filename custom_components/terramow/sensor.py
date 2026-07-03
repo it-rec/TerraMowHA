@@ -23,7 +23,7 @@ from homeassistant.core import HomeAssistant
 from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from . import TerraMowBasicData, DOMAIN
-from .entity_utils import safe_write_ha_state
+from .entity_utils import PushUpdateMixin, safe_write_ha_state
 from .const import (
     BLADE_MAINTENANCE_CYCLE_MINUTES,
     BASE_STATION_MAINTENANCE_CYCLE_MINUTES,
@@ -116,8 +116,10 @@ class BatterySensor(SensorEntity):
         }
 
 
-class BatteryStateSensor(SensorEntity):
+class BatteryStateSensor(PushUpdateMixin, SensorEntity):
     """Battery state sensor - uses dp_108 data."""
+
+    _push_dp_ids = (108,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:battery-charging"
@@ -171,8 +173,10 @@ class BatteryStateSensor(SensorEntity):
         return None
 
 
-class BatteryTemperatureStateSensor(SensorEntity):
+class BatteryTemperatureStateSensor(PushUpdateMixin, SensorEntity):
     """Battery temperature state sensor - uses dp_108 data."""
+
+    _push_dp_ids = (108,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:thermometer"
@@ -227,8 +231,10 @@ class BatteryTemperatureStateSensor(SensorEntity):
         return None
 
 
-class TotalMowingTimeSensor(SensorEntity):
+class TotalMowingTimeSensor(PushUpdateMixin, SensorEntity):
     """Total mowing time sensor - uses dp_124 data"""
+
+    _push_dp_ids = (124,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:clock"
@@ -276,8 +282,10 @@ class TotalMowingTimeSensor(SensorEntity):
         return statistics_data.get('duration')
 
 
-class TotalMowingJobsSensor(SensorEntity):
+class TotalMowingJobsSensor(PushUpdateMixin, SensorEntity):
     """Total mowing jobs sensor - uses dp_124 data"""
+
+    _push_dp_ids = (124,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:counter"
@@ -324,8 +332,10 @@ class TotalMowingJobsSensor(SensorEntity):
         return statistics_data.get('clean_times')
 
 
-class TotalMowedAreaSensor(SensorEntity):
+class TotalMowedAreaSensor(PushUpdateMixin, SensorEntity):
     """Lifetime mowed area sensor - uses dp_124 data"""
+
+    _push_dp_ids = (124,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:texture-box"
@@ -376,8 +386,10 @@ class TotalMowedAreaSensor(SensorEntity):
         return round(clean_area / 10, 1)
 
 
-class CurrentSessionAreaSensor(SensorEntity):
+class CurrentSessionAreaSensor(PushUpdateMixin, SensorEntity):
     """Current session mowing area sensor - uses dp_113 data"""
+
+    _push_dp_ids = (113,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:vector-square"
@@ -514,8 +526,10 @@ class CurrentSessionProgressSensor(SensorEntity):
         return round(min(progress, 100.0), 1)
 
 
-class CurrentSessionTimeSensor(SensorEntity):
+class CurrentSessionTimeSensor(PushUpdateMixin, SensorEntity):
     """Current session mowing time sensor - uses dp_113 data"""
+
+    _push_dp_ids = (113,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:timer"
@@ -563,8 +577,10 @@ class CurrentSessionTimeSensor(SensorEntity):
         return current_work_data.get('work_duration')
 
 
-class CurrentJobTypeSensor(SensorEntity):
+class CurrentJobTypeSensor(PushUpdateMixin, SensorEntity):
     """Current job type sensor - uses dp_113 data"""
+
+    _push_dp_ids = (113,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:format-list-bulleted-type"
@@ -622,8 +638,10 @@ class CurrentJobTypeSensor(SensorEntity):
         return None
 
 
-class RemainingBladeTimeSensor(SensorEntity):
+class RemainingBladeTimeSensor(PushUpdateMixin, SensorEntity):
     """Remaining blade usage time sensor - uses dp_126 data"""
+
+    _push_dp_ids = (126,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:saw-blade"
@@ -692,8 +710,10 @@ class RemainingBladeTimeSensor(SensorEntity):
         }
 
 
-class RemainingBaseStationTimeSensor(SensorEntity):
+class RemainingBaseStationTimeSensor(PushUpdateMixin, SensorEntity):
     """Remaining base station cleaning time sensor - uses dp_125 data"""
+
+    _push_dp_ids = (125,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:home-clock"
@@ -762,8 +782,10 @@ class RemainingBaseStationTimeSensor(SensorEntity):
         }
 
 
-class TerraMowMowHeightSensor(SensorEntity):
+class TerraMowMowHeightSensor(PushUpdateMixin, SensorEntity):
     """割草高度传感器 - 使用dp_155数据"""
+
+    _push_dp_ids = (155,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:arrow-up-down"
@@ -812,8 +834,10 @@ class TerraMowMowHeightSensor(SensorEntity):
         return mow_height.get('value')
 
 
-class TerraMowMowSpeedSensor(SensorEntity):
+class TerraMowMowSpeedSensor(PushUpdateMixin, SensorEntity):
     """割草速度传感器 - 使用dp_155数据"""
+
+    _push_dp_ids = (155,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:speedometer"
@@ -911,8 +935,10 @@ class TerraMowMowSpeedSensor(SensorEntity):
         return attrs
 
 
-class NextScheduledStartSensor(SensorEntity):
+class NextScheduledStartSensor(PushUpdateMixin, SensorEntity):
     """Next scheduled start sensor - uses dp_138 data"""
+
+    _push_dp_ids = (138,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:calendar-clock"
@@ -995,8 +1021,10 @@ class NextScheduledStartSensor(SensorEntity):
         return attrs
 
 
-class VersionCompatibilitySensor(SensorEntity):
+class VersionCompatibilitySensor(PushUpdateMixin, SensorEntity):
     """版本兼容性状态传感器."""
+
+    _push_dp_ids = (127,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:update"
@@ -1190,8 +1218,10 @@ CurrentJobTypeSensor(basic_data, hass),
     async_add_entities(entities)
 
 
-class PowerModeSensor(SensorEntity):
+class PowerModeSensor(PushUpdateMixin, SensorEntity):
     """Power mode sensor - uses dp_107 data."""
+
+    _push_dp_ids = (107,)
 
     _attr_has_entity_name = True
     _attr_device_class = SensorDeviceClass.ENUM
@@ -1245,8 +1275,10 @@ class PowerModeSensor(SensorEntity):
         return self.basic_data.lawn_mower is not None
 
 
-class MainDirectionStatusSensor(SensorEntity):
+class MainDirectionStatusSensor(PushUpdateMixin, SensorEntity):
     """主方向状态传感器 - 显示当前主方向配置和角度"""
+
+    _push_dp_ids = (155,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:compass"
@@ -1363,8 +1395,10 @@ BACK_TO_STATION_REASON_OPTIONS = [
 ]
 
 
-class BackToStationReasonSensor(SensorEntity):
+class BackToStationReasonSensor(PushUpdateMixin, SensorEntity):
     """Enum sensor exposing the dp_107 back_to_station_reason field."""
+
+    _push_dp_ids = (107,)
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:home-import-outline"
