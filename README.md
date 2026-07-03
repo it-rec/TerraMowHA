@@ -103,6 +103,10 @@ data:
   region_ids: [1, 2]
 ```
 
+### Dashboard example
+
+A ready-made Lovelace view (live map, controls, progress gauge, status glance) plus notification automations: see the [dashboard guide](docs/en/dashboard.md).
+
 ### Diagnostics & troubleshooting
 
 - **Diagnostics download**: Settings → Devices & Services → TerraMow → three-dot menu → *Download diagnostics* produces a redacted JSON snapshot (device state, firmware compatibility, raw data point caches) — please attach it to bug reports.

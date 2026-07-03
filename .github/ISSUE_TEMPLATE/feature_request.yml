@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest a new capability for the integration
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What should the integration be able to do?
+    validations:
+      required: true
+  - type: textarea
+    id: datapoint
+    attributes:
+      label: Do you know the data point?
+      description: >
+        The mower publishes more data points than are documented. If your
+        Home Assistant log shows "Received undocumented data point NNN"
+        messages that look related, paste them here — that is usually
+        everything needed to implement the feature.
+      render: text
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else?
+      description: Screenshots from the TerraMow app, use cases, workarounds.
