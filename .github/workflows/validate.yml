@@ -33,6 +33,11 @@ jobs:
         uses: hacs/action@main
         with:
           category: integration
+          # This fork does not carry the store-listing repository metadata
+          # (description, topics, enabled Issues) that HACS requires for the
+          # public default store. Skip those repo-only checks so validation of
+          # the integration itself (manifest, hacs.json, brands) still runs.
+          ignore: topics description issues
 
   python-lint:
     name: Python Lint

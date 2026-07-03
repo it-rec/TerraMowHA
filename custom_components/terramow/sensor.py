@@ -30,6 +30,7 @@ from .const import (
     BLADE_MAINTENANCE_CYCLE_MINUTES,
     BASE_STATION_MAINTENANCE_CYCLE_MINUTES,
     MOW_SPEED_TYPES,
+    to_ha_enum_state,
 )
 from .lawn_mower import Mission, SubMission, MissionState
 
@@ -138,9 +139,9 @@ class BatteryStateSensor(SensorEntity):
     _attr_translation_key = "battery_state"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = [
-        "BATTERY_STATE_DISCHARGE",
-        "BATTERY_STATE_CHARGING",
-        "BATTERY_STATE_CHARGED",
+        "battery_state_discharge",
+        "battery_state_charging",
+        "battery_state_charged",
     ]
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
@@ -179,7 +180,7 @@ class BatteryStateSensor(SensorEntity):
         if not battery_status:
             return None
 
-        state = battery_status.get('state')
+        state = to_ha_enum_state(battery_status.get('state'))
         if state in self._attr_options:
             return state
         return None
@@ -193,9 +194,9 @@ class BatteryTemperatureStateSensor(SensorEntity):
     _attr_translation_key = "battery_temperature_state"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = [
-        "BATTERY_TEMPRETURE_NORMAL",
-        "BATTERY_TEMPRETURE_OVERHEAT",
-        "BATTERY_TEMPRETURE_UNDERHEAT",
+        "battery_tempreture_normal",
+        "battery_tempreture_overheat",
+        "battery_tempreture_underheat",
     ]
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
@@ -235,7 +236,7 @@ class BatteryTemperatureStateSensor(SensorEntity):
             return None
 
         # Firmware reports the field as 'tempreture' (typo preserved).
-        value = battery_status.get('tempreture')
+        value = to_ha_enum_state(battery_status.get('tempreture'))
         if value in self._attr_options:
             return value
         return None
@@ -532,13 +533,13 @@ class CurrentJobTypeSensor(SensorEntity):
     _attr_icon = "mdi:format-list-bulleted-type"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = [
-        "MAP_AREA_TYPE_NONE",
-        "MAP_AREA_TYPE_BUILD_MAP",
-        "MAP_AREA_TYPE_CLEANING",
-        "MAP_AREA_TYPE_BUILD_MAP_AND_CLEANING",
-        "MAP_AREA_TYPE_SELECT_REGION_CLEANING",
-        "MAP_AREA_TYPE_DRAW_REGION_CLEANING",
-        "MAP_AREA_TYPE_EDGE_TRIM_CLEANING",
+        "map_area_type_none",
+        "map_area_type_build_map",
+        "map_area_type_cleaning",
+        "map_area_type_build_map_and_cleaning",
+        "map_area_type_select_region_cleaning",
+        "map_area_type_draw_region_cleaning",
+        "map_area_type_edge_trim_cleaning",
     ]
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "current_job_type"
@@ -578,7 +579,7 @@ class CurrentJobTypeSensor(SensorEntity):
         if not current_work_data:
             return None
 
-        job_type = current_work_data.get('type')
+        job_type = to_ha_enum_state(current_work_data.get('type'))
         if job_type in self._attr_options:
             return job_type
         return None
@@ -782,7 +783,7 @@ class TerraMowMowSpeedSensor(SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "mow_speed"
     _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = MOW_SPEED_TYPES.copy()
+    _attr_options = [to_ha_enum_state(t) for t in MOW_SPEED_TYPES]
 
     def __init__(
         self,
@@ -826,9 +827,10 @@ class TerraMowMowSpeedSensor(SensorEntity):
             self._unknown_speed_type = None
             return None
 
-        if speed_type in self._attr_options:
+        normalized = to_ha_enum_state(speed_type)
+        if normalized in self._attr_options:
             self._unknown_speed_type = None
-            return speed_type
+            return normalized
 
         if speed_type != self._unknown_speed_type:
             _LOGGER.warning(
@@ -1156,9 +1158,9 @@ class PowerModeSensor(SensorEntity):
     _attr_has_entity_name = True
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = [
-        "POWER_MODE_RUNNING",
-        "POWER_MODE_STANDBY",
-        "POWER_MODE_HIBERNATE",
+        "power_mode_running",
+        "power_mode_standby",
+        "power_mode_hibernate",
     ]
     _attr_translation_key = "power_mode"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -1194,7 +1196,7 @@ class PowerModeSensor(SensorEntity):
         if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
             return None
 
-        power_mode = self.basic_data.lawn_mower.power_mode
+        power_mode = to_ha_enum_state(self.basic_data.lawn_mower.power_mode)
         if power_mode in self._attr_options:
             return power_mode
         return None
@@ -1252,8 +1254,8 @@ class MainDirectionStatusSensor(SensorEntity):
         main_direction_config = global_params.get('main_direction_angle_config', {})
         mode = main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE')
 
-        # 返回当前模式作为传感器值
-        return mode
+        # 返回当前模式作为传感器值（小写 token 以匹配翻译键）
+        return to_ha_enum_state(mode)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -1314,12 +1316,12 @@ class MainDirectionStatusSensor(SensorEntity):
 
 
 BACK_TO_STATION_REASON_OPTIONS = [
-    "BACK_TO_STATION_REASON_NONE",
-    "BACK_TO_STATION_REASON_LOW_BATTERY",
-    "BACK_TO_STATION_REASON_RAINING",
-    "BACK_TO_STATION_REASON_MOW_MOTOR_OVERHEAT",
-    "BACK_TO_STATION_REASON_WHEEL_OVERHEAT",
-    "BACK_TO_STATION_REASON_NIGHT_TIME",
+    "back_to_station_reason_none",
+    "back_to_station_reason_low_battery",
+    "back_to_station_reason_raining",
+    "back_to_station_reason_mow_motor_overheat",
+    "back_to_station_reason_wheel_overheat",
+    "back_to_station_reason_night_time",
 ]
 
 
@@ -1363,7 +1365,7 @@ class BackToStationReasonSensor(SensorEntity):
         """Return the raw back_to_station_reason enum string."""
         if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
             return None
-        reason = self.basic_data.lawn_mower.back_to_station_reason
+        reason = to_ha_enum_state(self.basic_data.lawn_mower.back_to_station_reason)
         if reason in self._attr_options:
             return reason
         return None
@@ -1427,6 +1429,7 @@ class _MissionEnumSensorBase(SensorEntity):
         if member is None:
             return None
         value = member.value if hasattr(member, "value") else str(member)
+        value = to_ha_enum_state(value)
         return value if value in self._attr_options else None
 
 
@@ -1435,7 +1438,7 @@ class TerraMowMissionSensor(_MissionEnumSensorBase):
 
     _attr_icon = "mdi:robot-mower-outline"
     _attr_translation_key = "mission"
-    _attr_options = [member.value for member in Mission]
+    _attr_options = [to_ha_enum_state(member.value) for member in Mission]
     _enum_attr = "mission"
     _unique_suffix = "mission"
 
@@ -1445,7 +1448,7 @@ class TerraMowSubMissionSensor(_MissionEnumSensorBase):
 
     _attr_icon = "mdi:list-status"
     _attr_translation_key = "sub_mission"
-    _attr_options = [member.value for member in SubMission]
+    _attr_options = [to_ha_enum_state(member.value) for member in SubMission]
     _enum_attr = "sub_mission"
     _unique_suffix = "sub_mission"
 
@@ -1455,6 +1458,6 @@ class TerraMowMissionStateSensor(_MissionEnumSensorBase):
 
     _attr_icon = "mdi:state-machine"
     _attr_translation_key = "mission_state"
-    _attr_options = [member.value for member in MissionState]
+    _attr_options = [to_ha_enum_state(member.value) for member in MissionState]
     _enum_attr = "mission_state"
     _unique_suffix = "mission_state"
