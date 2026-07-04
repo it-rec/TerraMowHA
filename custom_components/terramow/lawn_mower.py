@@ -15,12 +15,11 @@ from homeassistant.components.lawn_mower.const import (
     LawnMowerActivity,
     LawnMowerEntityFeature,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowBasicData
-from .const import DOMAIN
+from . import TerraMowConfigEntry
 from .entity import TerraMowEntity
 from .entity_utils import safe_schedule_update_ha_state
 from .hub import (
@@ -39,11 +38,11 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    config_entry: TerraMowConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the TerraMow lawn mower entity."""
-    basic_data = hass.data[DOMAIN][config_entry.entry_id]
+    basic_data = config_entry.runtime_data
 
     async_add_entities([TerraMowLawnMowerEntity(basic_data, hass)])
 

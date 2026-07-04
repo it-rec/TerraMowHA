@@ -15,11 +15,10 @@ from typing import Any
 from PIL import Image, ImageDraw, ImageFont
 
 from homeassistant.components.camera import Camera
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import DOMAIN, TerraMowBasicData
+from . import TerraMowBasicData, TerraMowConfigEntry
 from .entity import TerraMowEntity
 from .entity_utils import safe_write_ha_state
 from .const import (
@@ -2146,11 +2145,11 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    config_entry: TerraMowConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """初始化 camera 平台。"""
-    basic_data = hass.data[DOMAIN][config_entry.entry_id]
+    basic_data = config_entry.runtime_data
     resolution = config_entry.options.get(
         CONF_MAP_RESOLUTION, DEFAULT_MAP_RESOLUTION
     )

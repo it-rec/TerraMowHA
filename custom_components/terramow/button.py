@@ -2,12 +2,11 @@ from __future__ import annotations
 import logging
 
 from homeassistant.components.button import ButtonEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import DOMAIN
+from . import TerraMowConfigEntry
 from .entity import TerraMowEntity
 
 # Push-based integration: no update throttling needed
@@ -18,11 +17,11 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    config_entry: TerraMowConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the TerraMow button entities."""
-    basic_data = hass.data[DOMAIN][config_entry.entry_id]
+    basic_data = config_entry.runtime_data
 
     entities = [
         EdgeTrimButton(basic_data, hass),

@@ -78,7 +78,7 @@ async def test_setup_entry_success_starts_hub_and_forwards(hass: HomeAssistant) 
     assert result is True
     hub_cls.return_value.start.assert_called_once()
     forward.assert_awaited_once()
-    assert entry.entry_id in hass.data[DOMAIN]
+    assert entry.runtime_data is not None
 
 
 async def test_options_updated_reloads_entry(hass: HomeAssistant) -> None:

@@ -27,9 +27,9 @@ rules:
   runtime-data:
     status: done
     comment: >
-      Per-entry runtime state lives in a dedicated hass.data[DOMAIN][entry_id]
-      store (the shared hub), created on setup and removed on unload; no mutable
-      state is stashed on the module or the config entry object.
+      Per-entry runtime state (the shared hub) lives in the typed
+      entry.runtime_data (ConfigEntry[TerraMowBasicData]); it is set on setup and
+      cleared automatically by Home Assistant on unload.
   test-before-configure: done
   test-before-setup: done
   unique-config-entry: done
