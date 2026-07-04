@@ -407,5 +407,13 @@
       "title": "Ieteicams atjaunināt TerraMow integrāciju",
       "description": "TerraMow programmaparatūras HA moduļa versija ({firmware_version}) ir jaunāka, nekā atbalsta šī integrācija ({plugin_version}). Atjauniniet integrāciju HACS, lai iegūtu jaunākās funkcijas."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} nav reģistrēta TerraMow entītija."
+    },
+    "lawn_mower_not_ready": {
+      "message": "TerraMow zāles pļāvējs {entity_id} vēl nav gatavs."
+    }
   }
 }

@@ -407,5 +407,13 @@
       "title": "TerraMow-integraation päivitystä suositellaan",
       "description": "TerraMow-laiteohjelmiston HA-moduulin versio ({firmware_version}) on uudempi kuin tämä integraatio tukee ({plugin_version}). Päivitä integraatio HACS:ssa saadaksesi uusimmat ominaisuudet."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} ei ole rekisteröity TerraMow-entiteetti."
+    },
+    "lawn_mower_not_ready": {
+      "message": "Kohteen {entity_id} TerraMow-ruohonleikkuri ei ole vielä valmis."
+    }
   }
 }

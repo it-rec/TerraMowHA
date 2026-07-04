@@ -407,5 +407,13 @@
       "title": "建議更新 TerraMow 整合",
       "description": "TerraMow 韌體的 HA 模組版本（{firmware_version}）比此整合支援的版本（{plugin_version}）更新。請在 HACS 中更新整合以取得最新功能。"
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} 不是已註冊的 TerraMow 實體。"
+    },
+    "lawn_mower_not_ready": {
+      "message": "{entity_id} 對應的 TerraMow 割草機尚未就緒。"
+    }
   }
 }

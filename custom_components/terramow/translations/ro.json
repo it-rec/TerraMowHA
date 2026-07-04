@@ -407,5 +407,13 @@
       "title": "Se recomandă actualizarea integrării TerraMow",
       "description": "Versiunea modulului HA din firmware-ul TerraMow ({firmware_version}) este mai nouă decât acceptă această integrare ({plugin_version}). Actualizați integrarea în HACS pentru a obține cele mai noi funcții."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} nu este o entitate TerraMow înregistrată."
+    },
+    "lawn_mower_not_ready": {
+      "message": "Mașina de tuns iarba TerraMow pentru {entity_id} nu este încă pregătită."
+    }
   }
 }

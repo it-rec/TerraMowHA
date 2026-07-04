@@ -407,5 +407,13 @@
       "title": "Zalecana aktualizacja integracji TerraMow",
       "description": "Wersja modułu HA w oprogramowaniu układowym TerraMow ({firmware_version}) jest nowsza niż obsługuje ta integracja ({plugin_version}). Zaktualizuj integrację w HACS, aby uzyskać najnowsze funkcje."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} nie jest zarejestrowaną encją TerraMow."
+    },
+    "lawn_mower_not_ready": {
+      "message": "Kosiarka TerraMow dla {entity_id} nie jest jeszcze gotowa."
+    }
   }
 }

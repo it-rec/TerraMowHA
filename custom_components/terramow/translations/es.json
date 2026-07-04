@@ -407,5 +407,13 @@
       "title": "Se recomienda actualizar la integración TerraMow",
       "description": "La versión del módulo HA del firmware de TerraMow ({firmware_version}) es más reciente de lo que admite esta integración ({plugin_version}). Actualiza la integración en HACS para obtener las últimas funciones."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} no es una entidad TerraMow registrada."
+    },
+    "lawn_mower_not_ready": {
+      "message": "El cortacésped TerraMow para {entity_id} aún no está listo."
+    }
   }
 }

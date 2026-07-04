@@ -407,5 +407,13 @@
       "title": "Препоръчва се актуализация на интеграцията TerraMow",
       "description": "Версията на HA модула във фърмуера на TerraMow ({firmware_version}) е по-нова от поддържаната от тази интеграция ({plugin_version}). Актуализирайте интеграцията в HACS, за да получите най-новите функции."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} не е регистрирана единица на TerraMow."
+    },
+    "lawn_mower_not_ready": {
+      "message": "Косачката TerraMow за {entity_id} все още не е готова."
+    }
   }
 }

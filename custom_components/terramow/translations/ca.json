@@ -407,5 +407,13 @@
       "title": "Es recomana actualitzar la integració TerraMow",
       "description": "La versió del mòdul HA del firmware de TerraMow ({firmware_version}) és més nova del que admet aquesta integració ({plugin_version}). Actualitza la integració a HACS per obtenir les darreres funcions."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} no és una entitat TerraMow registrada."
+    },
+    "lawn_mower_not_ready": {
+      "message": "La talladora de gespa TerraMow per a {entity_id} encara no està a punt."
+    }
   }
 }

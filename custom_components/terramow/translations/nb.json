@@ -407,5 +407,13 @@
       "title": "Oppdatering av TerraMow-integrasjonen anbefales",
       "description": "HA-modulversjonen i TerraMow-fastvaren ({firmware_version}) er nyere enn det denne integrasjonen støtter ({plugin_version}). Oppdater integrasjonen i HACS for å få de nyeste funksjonene."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} er ikke en registrert TerraMow-enhet."
+    },
+    "lawn_mower_not_ready": {
+      "message": "TerraMow-gressklipperen for {entity_id} er ikke klar ennå."
+    }
   }
 }
