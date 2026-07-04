@@ -56,30 +56,12 @@ python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
-# Incremental typing: only the modules listed here are gated in CI. Untyped
-# modules they import are resolved but not reported (follow_imports = silent),
-# so the checked surface can grow one module at a time. Add a module here once
-# it is fully typed.
+# The whole integration package is type-checked. External imports
+# (homeassistant, paho, …) are resolved but not reported (follow_imports =
+# silent) so third-party gaps don't break the gate; every module we ship is
+# fully typed and any new module is picked up automatically.
 follow_imports = "silent"
-files = [
-    "custom_components/terramow/binary_sensor.py",
-    "custom_components/terramow/button.py",
-    "custom_components/terramow/camera.py",
-    "custom_components/terramow/config_flow.py",
-    "custom_components/terramow/const.py",
-    "custom_components/terramow/diagnostics.py",
-    "custom_components/terramow/entity.py",
-    "custom_components/terramow/entity_utils.py",
-    "custom_components/terramow/hub.py",
-    "custom_components/terramow/issues.py",
-    "custom_components/terramow/lawn_mower.py",
-    "custom_components/terramow/map_sensor.py",
-    "custom_components/terramow/number.py",
-    "custom_components/terramow/select.py",
-    "custom_components/terramow/sensor.py",
-    "custom_components/terramow/switch.py",
-    "custom_components/terramow/update.py",
-]
+files = ["custom_components/terramow"]
 
 [[tool.mypy.overrides]]
 module = [
