@@ -17,9 +17,9 @@
   "quality_scale": "silver",
   "requirements": [
     "paho-mqtt>=1.6.1",
-    "Pillow>=9.0.0"
+    "Pillow>=9.1.0"
   ],
-  "version": "0.8.2",
+  "version": "0.8.3",
   "zeroconf": [
     {
       "type": "_mqtt._tcp.local.",
