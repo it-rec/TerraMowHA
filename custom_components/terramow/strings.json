@@ -389,5 +389,23 @@
         }
       }
     }
+  },
+  "issues": {
+    "firmware_ha_module_too_low": {
+      "title": "TerraMow firmware update required",
+      "description": "The TerraMow's firmware HA module version ({firmware_version}) is too old for this integration, which needs version {required_version}. Update the mower firmware from the TerraMow app to restore full functionality."
+    },
+    "firmware_overall_too_low": {
+      "title": "TerraMow firmware update required",
+      "description": "The TerraMow's firmware is older than the minimum supported version ({required_version}). Update the mower firmware from the TerraMow app to use this integration."
+    },
+    "firmware_incompatible": {
+      "title": "TerraMow firmware incompatible",
+      "description": "The integration could not confirm the TerraMow's firmware is compatible. Check that both the mower firmware and this integration are up to date, then download the diagnostics and open an issue if the problem persists."
+    },
+    "plugin_downgrade_recommended": {
+      "title": "TerraMow integration update recommended",
+      "description": "The TerraMow's firmware HA module version ({firmware_version}) is newer than this integration supports ({plugin_version}). Update the integration in HACS to get the latest features."
+    }
   }
 }
