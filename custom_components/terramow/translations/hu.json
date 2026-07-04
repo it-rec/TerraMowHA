@@ -61,6 +61,16 @@
         "name": "Robotfűnyíró"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Fűnyíró esemény"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Nyírási ütemterv"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Akkumulátor"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "A TerraMow integráció frissítése ajánlott",
       "description": "A TerraMow firmware HA moduljának verziója ({firmware_version}) újabb, mint amit ez az integráció támogat ({plugin_version}). Frissítse az integrációt a HACS-ban a legújabb funkciók eléréséhez."
+    },
+    "blade_maintenance_due": {
+      "title": "A TerraMow késeinek karbantartása esedékes",
+      "description": "A TerraMow késtárcsája elérte az ajánlott {hours} órás szervizintervallumot. Tisztítsa meg vagy cserélje ki a késeket, majd állítsa vissza a kés-időzítőt az emlékeztető törléséhez."
+    },
+    "base_station_maintenance_due": {
+      "title": "A TerraMow bázisállomásának karbantartása esedékes",
+      "description": "A TerraMow bázisállomása elérte az ajánlott {days} napos szervizintervallumot. Tisztítsa meg a bázisállomást, majd állítsa vissza a bázisállomás-időzítőt az emlékeztető törléséhez."
     }
   },
   "exceptions": {

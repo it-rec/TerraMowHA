@@ -61,6 +61,16 @@
         "name": "Robotická kosačka"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Udalosť kosačky"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Plán kosenia"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Batéria"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "Odporúča sa aktualizácia integrácie TerraMow",
       "description": "Verzia HA modulu vo firmvéri TerraMow ({firmware_version}) je novšia, než táto integrácia podporuje ({plugin_version}). Aktualizujte integráciu v HACS, aby ste získali najnovšie funkcie."
+    },
+    "blade_maintenance_due": {
+      "title": "Vyžaduje sa údržba nožov TerraMow",
+      "description": "Nožový disk TerraMow dosiahol odporúčaný servisný interval {hours} hodín. Vyčistite alebo vymeňte nože a potom vynulujte časovač nožov, aby ste odstránili toto upozornenie."
+    },
+    "base_station_maintenance_due": {
+      "title": "Vyžaduje sa údržba základňovej stanice TerraMow",
+      "description": "Základňová stanica TerraMow dosiahla odporúčaný servisný interval {days} dní. Vyčistite základňovú stanicu a potom vynulujte časovač základňovej stanice, aby ste odstránili toto upozornenie."
     }
   },
   "exceptions": {

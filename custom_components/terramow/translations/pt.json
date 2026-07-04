@@ -61,6 +61,16 @@
         "name": "Robô corta-relva"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Evento do robô corta-relva"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Agendamento de corte"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Bateria"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "Recomenda-se atualizar a integração TerraMow",
       "description": "A versão do módulo HA no firmware do TerraMow ({firmware_version}) é mais recente do que esta integração suporta ({plugin_version}). Atualize a integração no HACS para obter as funcionalidades mais recentes."
+    },
+    "blade_maintenance_due": {
+      "title": "Manutenção das lâminas do TerraMow necessária",
+      "description": "O disco de lâminas do TerraMow atingiu o intervalo de manutenção recomendado de {hours} horas. Limpe ou substitua as lâminas e, em seguida, reponha o temporizador das lâminas para eliminar este lembrete."
+    },
+    "base_station_maintenance_due": {
+      "title": "Manutenção da estação base do TerraMow necessária",
+      "description": "A estação base do TerraMow atingiu o intervalo de manutenção recomendado de {days} dias. Limpe a estação base e, em seguida, reponha o temporizador da estação base para eliminar este lembrete."
     }
   },
   "exceptions": {

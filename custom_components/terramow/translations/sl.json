@@ -61,6 +61,16 @@
         "name": "Robotska kosilnica"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Dogodek kosilnice"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Urnik košnje"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Baterija"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "Priporočljiva je posodobitev integracije TerraMow",
       "description": "Različica modula HA v vdelani programski opremi TerraMow ({firmware_version}) je novejša, kot jo podpira ta integracija ({plugin_version}). Posodobite integracijo v HACS, da pridobite najnovejše funkcije."
+    },
+    "blade_maintenance_due": {
+      "title": "Potrebno je vzdrževanje rezil TerraMow",
+      "description": "Rezilna plošča naprave TerraMow je dosegla priporočeni servisni interval {hours} ur. Očistite ali zamenjajte rezila in nato ponastavite časovnik rezil, da odstranite to opozorilo."
+    },
+    "base_station_maintenance_due": {
+      "title": "Potrebno je vzdrževanje bazne postaje TerraMow",
+      "description": "Bazna postaja naprave TerraMow je dosegla priporočeni servisni interval {days} dni. Očistite bazno postajo in nato ponastavite časovnik bazne postaje, da odstranite to opozorilo."
     }
   },
   "exceptions": {

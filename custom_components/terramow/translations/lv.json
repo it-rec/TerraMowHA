@@ -61,6 +61,16 @@
         "name": "Zāliena pļāvējs"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Zāles pļāvēja notikums"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Pļaušanas grafiks"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Akumulators"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "Ieteicams atjaunināt TerraMow integrāciju",
       "description": "TerraMow programmaparatūras HA moduļa versija ({firmware_version}) ir jaunāka, nekā atbalsta šī integrācija ({plugin_version}). Atjauniniet integrāciju HACS, lai iegūtu jaunākās funkcijas."
+    },
+    "blade_maintenance_due": {
+      "title": "Nepieciešama TerraMow asmeņu apkope",
+      "description": "TerraMow asmeņu disks ir sasniedzis ieteicamo apkopes intervālu {hours} stundas. Notīriet vai nomainiet asmeņus un pēc tam atiestatiet asmeņu taimeri, lai noņemtu šo atgādinājumu."
+    },
+    "base_station_maintenance_due": {
+      "title": "Nepieciešama TerraMow bāzes stacijas apkope",
+      "description": "TerraMow bāzes stacija ir sasniegusi ieteicamo apkopes intervālu {days} dienas. Notīriet bāzes staciju un pēc tam atiestatiet bāzes stacijas taimeri, lai noņemtu šo atgādinājumu."
     }
   },
   "exceptions": {

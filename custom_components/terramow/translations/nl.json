@@ -61,6 +61,16 @@
         "name": "Robotmaaier"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Maaierevenement"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Maaischema"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Batterij"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "Update van TerraMow-integratie aanbevolen",
       "description": "De HA-moduleversie in de TerraMow-firmware ({firmware_version}) is nieuwer dan deze integratie ondersteunt ({plugin_version}). Werk de integratie bij in HACS om de nieuwste functies te krijgen."
+    },
+    "blade_maintenance_due": {
+      "title": "Onderhoud van TerraMow-messen vereist",
+      "description": "De messchijf van de TerraMow heeft het aanbevolen onderhoudsinterval van {hours} uur bereikt. Reinig of vervang de messen en reset vervolgens de messentimer om deze herinnering te wissen."
+    },
+    "base_station_maintenance_due": {
+      "title": "Onderhoud van TerraMow-basisstation vereist",
+      "description": "Het basisstation van de TerraMow heeft het aanbevolen onderhoudsinterval van {days} dagen bereikt. Reinig het basisstation en reset vervolgens de basisstationtimer om deze herinnering te wissen."
     }
   },
   "exceptions": {

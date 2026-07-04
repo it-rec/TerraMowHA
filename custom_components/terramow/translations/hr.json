@@ -61,6 +61,16 @@
         "name": "Robotska kosilica"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Događaj kosilice"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Raspored košnje"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Baterija"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "Preporučuje se ažuriranje integracije TerraMow",
       "description": "Verzija HA modula u firmveru TerraMow ({firmware_version}) novija je nego što ova integracija podržava ({plugin_version}). Ažurirajte integraciju u HACS-u kako biste dobili najnovije značajke."
+    },
+    "blade_maintenance_due": {
+      "title": "Potrebno održavanje noževa TerraMow",
+      "description": "Disk s noževima uređaja TerraMow dosegnuo je preporučeni servisni interval od {hours} sati. Očistite ili zamijenite noževe, a zatim ponovno postavite mjerač vremena noževa kako biste uklonili ovaj podsjetnik."
+    },
+    "base_station_maintenance_due": {
+      "title": "Potrebno održavanje bazne stanice TerraMow",
+      "description": "Bazna stanica uređaja TerraMow dosegnula je preporučeni servisni interval od {days} dana. Očistite baznu stanicu, a zatim ponovno postavite mjerač vremena bazne stanice kako biste uklonili ovaj podsjetnik."
     }
   },
   "exceptions": {

@@ -61,6 +61,16 @@
         "name": "Robot de Tuns Gazon"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Eveniment mașină de tuns iarba"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Program de tuns"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Baterie"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "Se recomandă actualizarea integrării TerraMow",
       "description": "Versiunea modulului HA din firmware-ul TerraMow ({firmware_version}) este mai nouă decât acceptă această integrare ({plugin_version}). Actualizați integrarea în HACS pentru a obține cele mai noi funcții."
+    },
+    "blade_maintenance_due": {
+      "title": "Este necesară întreținerea lamelor TerraMow",
+      "description": "Discul cu lame al TerraMow a atins intervalul de service recomandat de {hours} ore. Curățați sau înlocuiți lamele, apoi resetați cronometrul lamelor pentru a șterge acest memento."
+    },
+    "base_station_maintenance_due": {
+      "title": "Este necesară întreținerea stației de bază TerraMow",
+      "description": "Stația de bază TerraMow a atins intervalul de service recomandat de {days} zile. Curățați stația de bază, apoi resetați cronometrul stației de bază pentru a șterge acest memento."
     }
   },
   "exceptions": {

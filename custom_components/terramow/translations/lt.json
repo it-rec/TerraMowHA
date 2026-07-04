@@ -61,6 +61,16 @@
         "name": "Vejapjovė"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Vejapjovės įvykis"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Pjovimo tvarkaraštis"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Baterija"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "Rekomenduojama atnaujinti „TerraMow“ integraciją",
       "description": "„TerraMow“ programinės aparatinės įrangos HA modulio versija ({firmware_version}) yra naujesnė nei palaiko ši integracija ({plugin_version}). Atnaujinkite integraciją per HACS, kad gautumėte naujausias funkcijas."
+    },
+    "blade_maintenance_due": {
+      "title": "Reikalinga „TerraMow“ peilių priežiūra",
+      "description": "„TerraMow“ peilių diskas pasiekė rekomenduojamą {hours} valandų techninės priežiūros intervalą. Nuvalykite arba pakeiskite peilius ir iš naujo nustatykite peilių laikmatį, kad pašalintumėte šį priminimą."
+    },
+    "base_station_maintenance_due": {
+      "title": "Reikalinga „TerraMow“ bazinės stotelės priežiūra",
+      "description": "„TerraMow“ bazinė stotelė pasiekė rekomenduojamą {days} dienų techninės priežiūros intervalą. Nuvalykite bazinę stotelę ir iš naujo nustatykite bazinės stotelės laikmatį, kad pašalintumėte šį priminimą."
     }
   },
   "exceptions": {

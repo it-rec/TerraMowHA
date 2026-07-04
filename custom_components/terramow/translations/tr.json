@@ -61,6 +61,16 @@
         "name": "Çim Biçme Robotu"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Çim biçme makinesi olayı"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Biçme programı"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Pil"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "TerraMow entegrasyonu güncellemesi önerilir",
       "description": "TerraMow bellenimindeki HA modülü sürümü ({firmware_version}), bu entegrasyonun desteklediğinden ({plugin_version}) daha yeni. En son özellikleri almak için entegrasyonu HACS'te güncelleyin."
+    },
+    "blade_maintenance_due": {
+      "title": "TerraMow bıçak bakımı gerekli",
+      "description": "TerraMow'un bıçak diski önerilen {hours} saatlik servis aralığına ulaştı. Bıçakları temizleyin veya değiştirin, ardından bu hatırlatmayı temizlemek için bıçak zamanlayıcısını sıfırlayın."
+    },
+    "base_station_maintenance_due": {
+      "title": "TerraMow baz istasyonu bakımı gerekli",
+      "description": "TerraMow'un baz istasyonu önerilen {days} günlük servis aralığına ulaştı. Baz istasyonunu temizleyin, ardından bu hatırlatmayı temizlemek için baz istasyonu zamanlayıcısını sıfırlayın."
     }
   },
   "exceptions": {

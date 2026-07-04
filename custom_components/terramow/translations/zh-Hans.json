@@ -61,6 +61,16 @@
         "name": "割草机"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "割草机事件"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "割草计划"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "电池"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "建议更新 TerraMow 集成",
       "description": "TerraMow 固件的 HA 模块版本（{firmware_version}）比此集成支持的版本（{plugin_version}）更新。请在 HACS 中更新集成以获取最新功能。"
+    },
+    "blade_maintenance_due": {
+      "title": "TerraMow 刀盘需要保养",
+      "description": "TerraMow 的刀盘已达到建议的 {hours} 小时保养周期。请清洁或更换刀片，然后重置刀盘计时器以清除此提醒。"
+    },
+    "base_station_maintenance_due": {
+      "title": "TerraMow 基站需要保养",
+      "description": "TerraMow 的基站已达到建议的 {days} 天保养周期。请清洁基站，然后重置基站计时器以清除此提醒。"
     }
   },
   "exceptions": {

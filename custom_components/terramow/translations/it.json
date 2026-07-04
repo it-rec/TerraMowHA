@@ -61,6 +61,16 @@
         "name": "Robot tagliaerba"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Evento del robot tosaerba"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Pianificazione del taglio"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Batteria"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "Aggiornamento dell'integrazione TerraMow consigliato",
       "description": "La versione del modulo HA nel firmware TerraMow ({firmware_version}) è più recente di quella supportata da questa integrazione ({plugin_version}). Aggiorna l'integrazione in HACS per ottenere le funzionalità più recenti."
+    },
+    "blade_maintenance_due": {
+      "title": "Manutenzione delle lame TerraMow necessaria",
+      "description": "Il disco lame del TerraMow ha raggiunto l'intervallo di manutenzione consigliato di {hours} ore. Pulisci o sostituisci le lame, quindi reimposta il timer delle lame per cancellare questo promemoria."
+    },
+    "base_station_maintenance_due": {
+      "title": "Manutenzione della stazione base TerraMow necessaria",
+      "description": "La stazione base del TerraMow ha raggiunto l'intervallo di manutenzione consigliato di {days} giorni. Pulisci la stazione base, quindi reimposta il timer della stazione base per cancellare questo promemoria."
     }
   },
   "exceptions": {

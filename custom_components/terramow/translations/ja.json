@@ -61,6 +61,16 @@
         "name": "芝刈り機"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "芝刈り機イベント"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "芝刈りスケジュール"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "バッテリー"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "TerraMow インテグレーションの更新を推奨します",
       "description": "TerraMow ファームウェアの HA モジュールバージョン ({firmware_version}) は、このインテグレーションが対応するバージョン ({plugin_version}) より新しいです。最新機能を利用するには、HACS でインテグレーションを更新してください。"
+    },
+    "blade_maintenance_due": {
+      "title": "TerraMow のブレードのメンテナンス時期です",
+      "description": "TerraMow のブレードディスクが推奨メンテナンス間隔の {hours} 時間に達しました。ブレードを清掃または交換し、ブレードタイマーをリセットしてこの通知を消去してください。"
+    },
+    "base_station_maintenance_due": {
+      "title": "TerraMow のベースステーションのメンテナンス時期です",
+      "description": "TerraMow のベースステーションが推奨メンテナンス間隔の {days} 日に達しました。ベースステーションを清掃し、ベースステーションタイマーをリセットしてこの通知を消去してください。"
     }
   },
   "exceptions": {
