@@ -14,9 +14,8 @@ from homeassistant.const import (
     UnitOfArea
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 
-from . import TerraMowBasicData, DOMAIN
+from . import TerraMowBasicData, TerraMowConfigEntry
 from .const import to_ha_enum_state
 from .entity import TerraMowEntity
 from .entity_utils import safe_write_ha_state
@@ -24,11 +23,11 @@ from .entity_utils import safe_write_ha_state
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    config_entry: TerraMowConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up TerraMow map sensors."""
-    basic_data = hass.data[DOMAIN][config_entry.entry_id]
+    basic_data = config_entry.runtime_data
     
     # 创建地图传感器实体
     entities = [

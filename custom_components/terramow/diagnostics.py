@@ -5,21 +5,20 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.diagnostics import async_redact_data
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 
-from . import DOMAIN
+from . import TerraMowConfigEntry
 
 # 主机名/IP 与密码属于隐私信息，导出前打码。
 TO_REDACT = {CONF_HOST, CONF_PASSWORD, "host"}
 
 
 async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant, entry: ConfigEntry
+    hass: HomeAssistant, entry: TerraMowConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
-    basic_data = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    basic_data = getattr(entry, "runtime_data", None)
 
     diagnostics: dict[str, Any] = {
         "entry": {

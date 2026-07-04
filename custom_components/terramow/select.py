@@ -6,10 +6,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.select import SelectEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import Event, HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers import entity_component
 
-from . import TerraMowBasicData, DOMAIN
+from . import TerraMowBasicData, DOMAIN, TerraMowConfigEntry
 from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin, safe_write_ha_state
 from .const import (
@@ -31,11 +30,11 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    config_entry: TerraMowConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up TerraMow select entities."""
-    basic_data = hass.data[DOMAIN][config_entry.entry_id]
+    basic_data = config_entry.runtime_data
     
     # 创建选择实体
     entities = [

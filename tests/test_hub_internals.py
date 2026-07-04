@@ -404,8 +404,8 @@ def test_diagnostics_redacts_secrets_and_exports_hub_state() -> None:
     entry.data = {"host": "192.0.2.10", "password": "secret"}
     entry.options = {}
 
+    entry.runtime_data = hub.basic_data
     hass = MagicMock()
-    hass.data = {DOMAIN: {"entry-1": hub.basic_data}}
 
     diagnostics = asyncio.run(async_get_config_entry_diagnostics(hass, entry))
 
@@ -426,8 +426,8 @@ def test_diagnostics_without_loaded_data() -> None:
     entry.entry_id = "missing"
     entry.data = {}
     entry.options = {}
+    entry.runtime_data = None
     hass = MagicMock()
-    hass.data = {}
 
     diagnostics = asyncio.run(async_get_config_entry_diagnostics(hass, entry))
     assert diagnostics["error"] == "integration data not loaded"
