@@ -90,6 +90,10 @@ Devices on the local network are discovered automatically via Zeroconf — accep
 - TerraMow APP version 1.6.0 or later
 - Live map and mowing path require firmware HA module version 3; on version 2 (e.g. S800) everything else works and the version compatibility sensor reports it
 
+### Supported devices
+
+This integration works with TerraMow robotic lawn mowers that expose the local MQTT/HTTP interface — i.e. any model on the required firmware. It has been used with the TerraMow S-series, including the **S800** (which reports firmware HA module version 2) and newer units on version 3. Any TerraMow mower on firmware 6.6.0+ and app 1.6.0+ should work; the version-compatibility sensor and a repair issue tell you if a specific unit's firmware is too old for a given feature.
+
 ### Services
 
 #### `terramow.start_select_region`
@@ -123,6 +127,26 @@ One-click importable blueprints for the most common notifications — each just 
 
 - **Diagnostics download**: Settings → Devices & Services → TerraMow → three-dot menu → *Download diagnostics* produces a redacted JSON snapshot (device state, firmware compatibility, raw data point caches) — please attach it to bug reports.
 - **Discovering unsupported features**: the mower publishes more data points than are documented. The first payload of every unknown data point is logged once at INFO level; enable debug logging for the `terramow` integration to record all of them. If you find a data point for a missing feature (e.g. lift alarm, schedule switch, error codes), please share it in an issue.
+
+### How data updates work
+
+TerraMow is a **local push** integration. The mower runs an on-device MQTT broker; Home Assistant connects to it directly over the LAN (no cloud) and subscribes to the device's data-point topics, so entity states update the instant the mower reports a change rather than on a polling interval. Larger payloads (the map, the live path) are announced over MQTT and fetched on demand over local HTTP. If the mower is asleep or off the network the connection is retried with exponential backoff, and the lawn-mower entity surfaces the connection loss as its `error` activity.
+
+### Known limitations
+
+- **No cloud / remote access** — Home Assistant must be on the same LAN as the mower; there is no cloud fallback.
+- **Firmware-gated features** — the live map and mowing-path view require firmware HA module version 3; on version 2 (e.g. the S800) everything else works and the compatibility sensor / repair issue reports the limitation.
+- **Firmware updates** are performed through the TerraMow app, not from Home Assistant; the firmware `update` entity is informational only.
+- **The pose sensor and the clean-mode map camera are disabled by default** (the pose sensor updates at ~2 Hz); enable them from the entity settings if you need them.
+- Some device data points are undocumented; unknown ones are logged once to help discover missing features.
+
+### Use cases
+
+- **Rain-aware notifications** — get a push when the mower returns to its dock because of rain (see the blueprints above).
+- **Fault alerts** — be notified the moment the mower reports a problem (stuck, lifted, blocked).
+- **Zone mowing from automations** — call `terramow.start_select_region` to mow specific sub-regions on a schedule or from a dashboard button.
+- **Maintenance reminders** — the remaining blade / base-station time sensors and the reset buttons let you automate maintenance reminders.
+- **Live map on a dashboard** — show the map camera with the robot position and mowing path (see the dashboard guide).
 
 ### Languages
 
