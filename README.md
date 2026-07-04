@@ -4,6 +4,7 @@
   <p>
     <a href="https://github.com/TerraMow/TerraMowHA/actions/workflows/validate.yml"><img src="https://github.com/TerraMow/TerraMowHA/actions/workflows/validate.yml/badge.svg" alt="Validate"/></a>
     <a href="https://github.com/TerraMow/TerraMowHA/actions/workflows/release.yml"><img src="https://github.com/TerraMow/TerraMowHA/actions/workflows/release.yml/badge.svg" alt="Release"/></a>
+    <a href="https://codecov.io/gh/it-rec/TerraMowHA"><img src="https://codecov.io/gh/it-rec/TerraMowHA/branch/main/graph/badge.svg" alt="Coverage"/></a>
   </p>
   <img src="docs/images/terramow_logo.png" alt="TerraMow Logo" width="400">
 </div>
