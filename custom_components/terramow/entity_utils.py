@@ -3,10 +3,19 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.helpers.entity import Entity
 
 _LOGGER = logging.getLogger(__name__)
+
+# PushUpdateMixin is always combined with an Entity subclass at runtime, but as
+# a standalone class it has no Entity base. Give mypy an Entity base (dropped at
+# runtime) so it can resolve async_added_to_hass and treat ``self`` as an Entity.
+if TYPE_CHECKING:
+    _MixinBase = Entity
+else:
+    _MixinBase = object
 
 
 def _can_write_state(entity: Entity) -> bool:
@@ -40,7 +49,7 @@ def safe_schedule_update_ha_state(entity: Entity) -> None:
         _LOGGER.debug("Skipping state update for %s: %s", entity.entity_id, err)
 
 
-class PushUpdateMixin:
+class PushUpdateMixin(_MixinBase):
     """Refresh entity state as soon as the relevant MQTT data arrives.
 
     Entities that only read cached data point payloads otherwise rely on
@@ -49,6 +58,9 @@ class PushUpdateMixin:
     data point IDs the entity reads (and/or ``_push_map_info`` for the
     map/current/info topic) and every message triggers a state write.
     """
+
+    # Provided by the concrete TerraMowEntity subclass this mixin is used with.
+    basic_data: Any
 
     _push_dp_ids: tuple[int, ...] = ()
     _push_map_info: bool = False

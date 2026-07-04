@@ -52,10 +52,22 @@ ignore = [
 known-first-party = ["custom_components.terramow"]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
+# Incremental typing: only the modules listed here are gated in CI. Untyped
+# modules they import are resolved but not reported (follow_imports = silent),
+# so the checked surface can grow one module at a time. Add a module here once
+# it is fully typed.
+follow_imports = "silent"
+files = [
+    "custom_components/terramow/const.py",
+    "custom_components/terramow/diagnostics.py",
+    "custom_components/terramow/entity.py",
+    "custom_components/terramow/entity_utils.py",
+    "custom_components/terramow/issues.py",
+]
 
 [[tool.mypy.overrides]]
 module = [
