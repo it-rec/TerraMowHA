@@ -72,6 +72,7 @@ files = [
     "custom_components/terramow/issues.py",
     "custom_components/terramow/lawn_mower.py",
     "custom_components/terramow/map_sensor.py",
+    "custom_components/terramow/number.py",
     "custom_components/terramow/switch.py",
     "custom_components/terramow/update.py",
 ]
