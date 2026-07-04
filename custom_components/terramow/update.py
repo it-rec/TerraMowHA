@@ -6,12 +6,11 @@ from homeassistant.components.update import (
     UpdateEntity,
     UpdateEntityFeature,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import TerraMowBasicData, DOMAIN
+from . import TerraMowBasicData, TerraMowConfigEntry
 from .entity import TerraMowEntity
 from .entity_utils import safe_write_ha_state
 from .const import COMPATIBILITY_INFO_DP
@@ -24,11 +23,11 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    config_entry: TerraMowConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the TerraMow update entities."""
-    basic_data = hass.data[DOMAIN][config_entry.entry_id]
+    basic_data = config_entry.runtime_data
 
     entities = [
         TerraMowFirmwareUpdate(basic_data, hass),

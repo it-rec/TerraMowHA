@@ -20,8 +20,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 
 from typing import Any, cast
-from homeassistant.config_entries import ConfigEntry
-from . import TerraMowBasicData, DOMAIN
+from . import TerraMowBasicData, TerraMowConfigEntry
 from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin, safe_write_ha_state
 from .const import (
@@ -757,10 +756,10 @@ class TerraMowPoseSensor(TerraMowEntity, SensorEntity):
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    config_entry: TerraMowConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    basic_data = hass.data[DOMAIN][config_entry.entry_id]
+    basic_data = config_entry.runtime_data
 
     # 导入地图相关传感器类
     from .map_sensor import (

@@ -142,7 +142,12 @@ class TerraMowBasicData:
             return "Version incompatible, cannot work properly"
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+# The config entry carries the live integration state (hub, compatibility,
+# firmware) in its runtime_data instead of hass.data.
+type TerraMowConfigEntry = ConfigEntry[TerraMowBasicData]
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> bool:
     host = entry.data[CONF_HOST]
     password = entry.data[CONF_PASSWORD]
 
@@ -186,9 +191,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     basic_data = TerraMowBasicData(host=host, password=password, entry_id=entry.entry_id)
 
-    # Use hass.data instead of entry.runtime_data
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = basic_data
+    # Stash the live integration state on the config entry itself; Home
+    # Assistant clears runtime_data automatically when the entry unloads.
+    entry.runtime_data = basic_data
 
     # The hub owns the MQTT connection and all protocol state. Starting it
     # before the platforms are forwarded guarantees every entity can
@@ -205,7 +210,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def _async_options_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def _async_options_updated(hass: HomeAssistant, entry: TerraMowConfigEntry) -> None:
     """Reload integration when options change."""
     await hass.config_entries.async_reload(entry.entry_id)
 
@@ -220,7 +225,6 @@ def _async_register_services(hass: HomeAssistant) -> None:
         region_ids: list[int] = call.data[ATTR_REGION_IDS]
 
         registry = er.async_get(hass)
-        domain_data: dict[str, TerraMowBasicData] = hass.data.get(DOMAIN, {})
 
         targets: list[TerraMowBasicData] = []
         for entity_id in entity_ids:
@@ -231,7 +235,8 @@ def _async_register_services(hass: HomeAssistant) -> None:
                     translation_key="entity_not_registered",
                     translation_placeholders={"entity_id": entity_id},
                 )
-            basic_data = domain_data.get(entry.config_entry_id)
+            config_entry = hass.config_entries.async_get_entry(entry.config_entry_id)
+            basic_data = getattr(config_entry, "runtime_data", None)
             if basic_data is None or basic_data.lawn_mower is None:
                 raise HomeAssistantError(
                     translation_domain=DOMAIN,
@@ -251,19 +256,23 @@ def _async_register_services(hass: HomeAssistant) -> None:
     )
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> bool:
     """Unload a config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
-    # If unloading is successful, stop the hub and clear the data
+    # If unloading is successful, stop the hub. runtime_data is cleared by HA.
     if unload_ok:
         async_clear_compatibility_issue(hass, entry.entry_id)
-        basic_data = hass.data[DOMAIN].pop(entry.entry_id)
+        basic_data = entry.runtime_data
         if basic_data.lawn_mower is not None:
             await basic_data.lawn_mower.async_stop()
-        if not hass.data[DOMAIN]:
-            hass.data.pop(DOMAIN)
-            if hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION):
-                hass.services.async_remove(DOMAIN, SERVICE_START_SELECT_REGION)
+        # Drop the shared service once the last entry is gone.
+        remaining = [
+            other
+            for other in hass.config_entries.async_loaded_entries(DOMAIN)
+            if other.entry_id != entry.entry_id
+        ]
+        if not remaining and hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION):
+            hass.services.async_remove(DOMAIN, SERVICE_START_SELECT_REGION)
 
     return unload_ok

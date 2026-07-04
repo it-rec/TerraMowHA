@@ -15,9 +15,8 @@ from homeassistant.const import (
     UnitOfLength
 )
 from homeassistant.core import Event, HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 
-from . import TerraMowBasicData, DOMAIN
+from . import TerraMowBasicData, DOMAIN, TerraMowConfigEntry
 from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin
 
@@ -29,11 +28,11 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    config_entry: TerraMowConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up TerraMow number entities."""
-    basic_data = hass.data[DOMAIN][config_entry.entry_id]
+    basic_data = config_entry.runtime_data
     
     # 创建数值控制实体
     entities = [

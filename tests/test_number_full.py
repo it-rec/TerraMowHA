@@ -48,9 +48,8 @@ def _state(value: str):
 
 def test_async_setup_entry_creates_all_numbers() -> None:
     hub = _hub()
-    hub.hass.data = {DOMAIN: {"e1": hub.basic_data}}
     added: list = []
-    entry = SimpleNamespace(entry_id="e1")
+    entry = SimpleNamespace(entry_id="e1", runtime_data=hub.basic_data)
     asyncio.run(async_setup_entry(hub.hass, entry, added.extend))
     assert len(added) == 7
 

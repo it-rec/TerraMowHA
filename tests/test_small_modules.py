@@ -60,9 +60,8 @@ def _feed(handler, payload: dict) -> None:
 
 
 def _run_setup(setup, hub) -> list:
-    hub.hass.data = {DOMAIN: {"e1": hub.basic_data}}
     added: list = []
-    entry = SimpleNamespace(entry_id="e1")
+    entry = SimpleNamespace(entry_id="e1", runtime_data=hub.basic_data)
     asyncio.run(setup(hub.hass, entry, added.extend))
     return added
 
@@ -328,11 +327,11 @@ def test_diagnostics_without_lawn_mower() -> None:
     hub = _hub()
     hub.basic_data.lawn_mower = None
     hass = hub.hass
-    hass.data = {DOMAIN: {"e1": hub.basic_data}}
     entry = SimpleNamespace(
         entry_id="e1",
         data={CONF_HOST: "192.0.2.1", CONF_PASSWORD: "secret"},
         options={},
+        runtime_data=hub.basic_data,
     )
     diag = asyncio.run(async_get_config_entry_diagnostics(hass, entry))
     assert diag["device"] is None
@@ -343,8 +342,7 @@ def test_diagnostics_without_lawn_mower() -> None:
 def test_diagnostics_missing_integration_data() -> None:
     hub = _hub()
     hass = hub.hass
-    hass.data = {DOMAIN: {}}
-    entry = SimpleNamespace(entry_id="missing", data={}, options={})
+    entry = SimpleNamespace(entry_id="missing", data={}, options={}, runtime_data=None)
     diag = asyncio.run(async_get_config_entry_diagnostics(hass, entry))
     assert diag["error"] == "integration data not loaded"
 

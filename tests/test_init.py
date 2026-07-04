@@ -94,7 +94,7 @@ async def test_unload_entry_stops_hub_and_clears_data(hass: HomeAssistant) -> No
         host="192.0.2.10", password="secret", entry_id=entry.entry_id
     )
     basic_data.lawn_mower = hub
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = basic_data
+    entry.runtime_data = basic_data
 
     with patch("custom_components.terramow.async_clear_compatibility_issue") as clear:
         result = await async_unload_entry(hass, entry)
@@ -102,8 +102,8 @@ async def test_unload_entry_stops_hub_and_clears_data(hass: HomeAssistant) -> No
     assert result is True
     hub.async_stop.assert_awaited_once()
     clear.assert_called_once()
-    # It was the only entry, so the whole domain bucket is cleaned up.
-    assert entry.entry_id not in hass.data.get(DOMAIN, {})
+    # It was the only entry, so the shared service is removed.
+    assert not hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION)
 
 
 # ---------------------------------------------------------------------------
@@ -122,7 +122,7 @@ async def test_start_select_region_service_dispatches_to_hub(
         host="192.0.2.10", password="secret", entry_id=entry.entry_id
     )
     basic_data.lawn_mower = hub
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = basic_data
+    entry.runtime_data = basic_data
 
     ent_reg = er.async_get(hass)
     ent_reg.async_get_or_create(
