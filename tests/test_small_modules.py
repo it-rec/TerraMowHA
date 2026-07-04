@@ -357,3 +357,23 @@ def test_diagnostics_missing_integration_data() -> None:
 def test_reason_version_parser() -> None:
     assert _reason_version("ha_version_low:1.2.3") == "1.2.3"
     assert _reason_version("no-colon-here") == "unknown"
+
+
+# ---------------------------------------------------------------------------
+# entity-disabled-by-default (Gold quality scale)
+# ---------------------------------------------------------------------------
+
+
+def test_high_frequency_entities_are_disabled_by_default() -> None:
+    import sys
+
+    sys.modules.setdefault("turbojpeg", MagicMock())
+    from custom_components.terramow.camera import TerraMowMapCamera
+    from custom_components.terramow.sensor import TerraMowPoseSensor
+
+    hub = _hub()
+    # the 2 Hz pose sensor is opt-in
+    assert TerraMowPoseSensor(hub.basic_data, hub.hass).entity_registry_enabled_default is False
+    # the clean-mode camera is opt-in, the main map camera stays enabled
+    assert TerraMowMapCamera(hub.basic_data, hub.hass, clean_mode=True).entity_registry_enabled_default is False
+    assert TerraMowMapCamera(hub.basic_data, hub.hass).entity_registry_enabled_default is True
