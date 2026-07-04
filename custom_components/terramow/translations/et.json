@@ -407,5 +407,13 @@
       "title": "TerraMowi sidumise värskendus on soovitatav",
       "description": "TerraMowi püsivara HA mooduli versioon ({firmware_version}) on uuem, kui see sidumine toetab ({plugin_version}). Värskenda sidumist HACSis, et saada uusimad funktsioonid."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} ei ole registreeritud TerraMow olem."
+    },
+    "lawn_mower_not_ready": {
+      "message": "{entity_id} TerraMow muruniiduk ei ole veel valmis."
+    }
   }
 }

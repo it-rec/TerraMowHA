@@ -407,5 +407,13 @@
       "title": "Рекомендуется обновить интеграцию TerraMow",
       "description": "Версия HA-модуля в прошивке TerraMow ({firmware_version}) новее, чем поддерживает эта интеграция ({plugin_version}). Обновите интеграцию в HACS, чтобы получить новейшие функции."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} не является зарегистрированной сущностью TerraMow."
+    },
+    "lawn_mower_not_ready": {
+      "message": "Газонокосилка TerraMow для {entity_id} ещё не готова."
+    }
   }
 }

@@ -407,5 +407,13 @@
       "title": "TerraMow integration update recommended",
       "description": "The TerraMow's firmware HA module version ({firmware_version}) is newer than this integration supports ({plugin_version}). Update the integration in HACS to get the latest features."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} is not a registered TerraMow entity."
+    },
+    "lawn_mower_not_ready": {
+      "message": "The TerraMow lawn mower for {entity_id} is not ready yet."
+    }
   }
 }

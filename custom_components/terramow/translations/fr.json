@@ -407,5 +407,13 @@
       "title": "Mise à jour de l'intégration TerraMow recommandée",
       "description": "La version du module HA du micrologiciel TerraMow ({firmware_version}) est plus récente que ce que cette intégration prend en charge ({plugin_version}). Mettez à jour l'intégration dans HACS pour obtenir les dernières fonctionnalités."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} n'est pas une entité TerraMow enregistrée."
+    },
+    "lawn_mower_not_ready": {
+      "message": "La tondeuse TerraMow pour {entity_id} n'est pas encore prête."
+    }
   }
 }

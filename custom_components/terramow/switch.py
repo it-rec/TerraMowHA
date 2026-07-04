@@ -45,7 +45,6 @@ class ThoroughCornerCuttingSwitch(PushUpdateMixin, TerraMowEntity, SwitchEntity)
 
     _push_map_info = True
 
-    _attr_icon = "mdi:vector-polyline"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "thorough_corner_cutting"
 

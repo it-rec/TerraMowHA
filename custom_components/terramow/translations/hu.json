@@ -407,5 +407,13 @@
       "title": "A TerraMow integráció frissítése ajánlott",
       "description": "A TerraMow firmware HA moduljának verziója ({firmware_version}) újabb, mint amit ez az integráció támogat ({plugin_version}). Frissítse az integrációt a HACS-ban a legújabb funkciók eléréséhez."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "A(z) {entity_id} nem regisztrált TerraMow entitás."
+    },
+    "lawn_mower_not_ready": {
+      "message": "A(z) {entity_id} TerraMow fűnyírója még nem áll készen."
+    }
   }
 }

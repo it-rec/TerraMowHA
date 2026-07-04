@@ -407,5 +407,13 @@
       "title": "TerraMow entegrasyonu güncellemesi önerilir",
       "description": "TerraMow bellenimindeki HA modülü sürümü ({firmware_version}), bu entegrasyonun desteklediğinden ({plugin_version}) daha yeni. En son özellikleri almak için entegrasyonu HACS'te güncelleyin."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} kayıtlı bir TerraMow varlığı değil."
+    },
+    "lawn_mower_not_ready": {
+      "message": "{entity_id} için TerraMow çim biçme makinesi henüz hazır değil."
+    }
   }
 }

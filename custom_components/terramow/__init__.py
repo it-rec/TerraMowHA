@@ -227,12 +227,16 @@ def _async_register_services(hass: HomeAssistant) -> None:
             entry = registry.async_get(entity_id)
             if entry is None or entry.config_entry_id is None:
                 raise HomeAssistantError(
-                    f"Entity {entity_id} is not a registered TerraMow entity"
+                    translation_domain=DOMAIN,
+                    translation_key="entity_not_registered",
+                    translation_placeholders={"entity_id": entity_id},
                 )
             basic_data = domain_data.get(entry.config_entry_id)
             if basic_data is None or basic_data.lawn_mower is None:
                 raise HomeAssistantError(
-                    f"TerraMow lawn mower for {entity_id} is not ready"
+                    translation_domain=DOMAIN,
+                    translation_key="lawn_mower_not_ready",
+                    translation_placeholders={"entity_id": entity_id},
                 )
             targets.append(basic_data)
 

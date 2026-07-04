@@ -272,3 +272,41 @@ async def test_reconfigure_flow_updates_host(hass: HomeAssistant) -> None:
     assert result["type"] == FlowResultType.ABORT
     assert result["reason"] == "reconfigure_successful"
     assert entry.data[CONF_HOST] == "192.0.2.88"
+
+
+# ---------------------------------------------------------------------------
+# exception translations (Gold quality scale)
+# ---------------------------------------------------------------------------
+
+
+def test_strings_json_defines_exception_messages() -> None:
+    import json
+    from pathlib import Path
+
+    strings = json.loads(
+        Path("custom_components/terramow/strings.json").read_text(encoding="utf-8")
+    )
+    exceptions = strings["exceptions"]
+    assert "entity_not_registered" in exceptions
+    assert "lawn_mower_not_ready" in exceptions
+    assert "{entity_id}" in exceptions["entity_not_registered"]["message"]
+
+
+async def test_service_error_carries_translation_key(hass: HomeAssistant) -> None:
+    from homeassistant.exceptions import HomeAssistantError
+
+    from custom_components.terramow import (
+        SERVICE_START_SELECT_REGION,
+        _async_register_services,
+    )
+
+    _async_register_services(hass)
+    with pytest.raises(HomeAssistantError) as err:
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_START_SELECT_REGION,
+            {"entity_id": "lawn_mower.does_not_exist", "region_ids": [1]},
+            blocking=True,
+        )
+    assert err.value.translation_key == "entity_not_registered"
+    assert err.value.translation_domain == DOMAIN

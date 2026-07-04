@@ -62,7 +62,6 @@ class TerraMowMapSensorBase(TerraMowEntity, SensorEntity):
 class TerraMowMapStatusSensor(TerraMowEntity, SensorEntity):
     """地图状态传感器 - 使用dp_117数据"""
     
-    _attr_icon = "mdi:map"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "map_status"
     _attr_device_class = SensorDeviceClass.ENUM
@@ -108,7 +107,6 @@ class TerraMowMapStatusSensor(TerraMowEntity, SensorEntity):
 class TerraMowMapAreaSensor(TerraMowMapSensorBase):
     """地图面积传感器"""
     
-    _attr_icon = "mdi:texture-box"
     _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
     _attr_device_class = None  # 没有标准的面积设备类
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -131,7 +129,6 @@ class TerraMowMapAreaSensor(TerraMowMapSensorBase):
 class TerraMowCleanModeSensor(TerraMowMapSensorBase):
     """清洁模式传感器"""
     
-    _attr_icon = "mdi:broom"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "clean_mode"
     _attr_device_class = SensorDeviceClass.ENUM

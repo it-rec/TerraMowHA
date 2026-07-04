@@ -52,7 +52,6 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
     """The lawn mower entity, fed by the shared hub."""
 
     # 使用默认图标
-    _attr_icon = "mdi:robot-mower"
     _attr_translation_key = "lawn_mower"
 
     def __init__(

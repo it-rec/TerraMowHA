@@ -407,5 +407,13 @@
       "title": "Rekomenduojama atnaujinti „TerraMow“ integraciją",
       "description": "„TerraMow“ programinės aparatinės įrangos HA modulio versija ({firmware_version}) yra naujesnė nei palaiko ši integracija ({plugin_version}). Atnaujinkite integraciją per HACS, kad gautumėte naujausias funkcijas."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} nėra registruota TerraMow esybė."
+    },
+    "lawn_mower_not_ready": {
+      "message": "{entity_id} skirta TerraMow vejapjovė dar neparuošta."
+    }
   }
 }
