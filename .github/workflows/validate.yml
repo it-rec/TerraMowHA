@@ -100,3 +100,25 @@ jobs:
       - name: Run ruff
         continue-on-error: true
         run: ruff check custom_components/terramow
+
+  mypy:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements_test.txt mypy
+
+      # Type-checks the fully-typed modules declared in pyproject's
+      # [tool.mypy] files list. The list grows as more modules are typed.
+      - name: Run mypy
+        run: mypy
