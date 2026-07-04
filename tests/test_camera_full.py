@@ -187,6 +187,81 @@ def test_map_extent_and_all_points() -> None:
     assert pts
 
 
+def test_coerce_float_non_convertible_and_ellipse_without_center() -> None:
+    # neither a number nor a convertible string -> None (final fallthrough)
+    assert _coerce_float([1, 2]) is None
+    # a string that float() rejects -> None
+    assert _coerce_float("nan-ish!!") is None
+    # an ellipse with radii but no resolvable centre yields no polygon
+    assert _ellipse_points({"radius_x": 1, "radius_y": 1}) == []
+
+
+def test_ellipse_points_key_fallbacks() -> None:
+    # center inferred from the ellipse dict itself (no "center" key)
+    assert len(_ellipse_points({"x": 0, "y": 0, "radius_x": 1, "radius_y": 1})) == 36
+    # center found by recursively searching for a nested point
+    assert len(
+        _ellipse_points({"pts": [{"x": 1, "y": 1}], "radius_x": 1, "radius_y": 1})
+    ) == 36
+    # rx/ry aliases
+    assert len(_ellipse_points({"center": {"x": 0, "y": 0}, "rx": 1, "ry": 2})) == 36
+    # major/minor aliases
+    assert len(
+        _ellipse_points({"center": {"x": 0, "y": 0}, "major_radius": 2, "minor_radius": 1})
+    ) == 36
+    # a single radius mirrors onto the missing axis (both directions)
+    assert len(_ellipse_points({"center": {"x": 0, "y": 0}, "radius_x": 2})) == 36
+    assert len(_ellipse_points({"center": {"x": 0, "y": 0}, "radius_y": 2})) == 36
+    # a large theta is read as milli-radians and converted to degrees
+    assert len(
+        _ellipse_points(
+            {"center": {"x": 0, "y": 0}, "radius_x": 1, "radius_y": 1, "theta": 100000}
+        )
+    ) == 36
+
+
+def test_feature_points_includes_bare_point_and_pose() -> None:
+    # a bare point and a pose both contribute their coordinates
+    assert _feature_points({"x": 1.0, "y": 2.0, "theta": 0.5})
+
+
+def test_extract_polylines_direct_line_fallback() -> None:
+    # no line/polyline/center_line key -> the item itself is treated as a line
+    assert len(_extract_polylines(_poly((0, 0), (1, 1)))) == 1
+
+
+def test_extract_all_map_points_covers_every_feature() -> None:
+    pts = _extract_all_map_points(
+        {
+            "width": 10,
+            "height": 10,
+            "resolution": 0.1,
+            "origin": {"x": 0, "y": 0},
+            "regions": [
+                {
+                    "boundary": _poly((0, 0), (2, 0), (2, 2)),
+                    "sub_regions": [
+                        {
+                            "boundary": _poly((0, 0), (1, 0), (1, 1)),
+                            "inner_boundarys": [_poly((0.2, 0.2), (0.4, 0.2), (0.4, 0.4))],
+                        }
+                    ],
+                    "obstacles": [_poly((1.5, 1.5), (1.7, 1.5), (1.7, 1.7))],
+                }
+            ],
+            "forbidden_zones": [_poly((3, 3), (3.2, 3), (3.2, 3.2))],
+            "virtual_walls": [{"line": _poly((0, 5), (5, 5))}],
+            "cross_boundary_markers": [_poly((1, 1), (1.1, 1), (1.05, 1.1))],
+            "station_pose": {"x": 0, "y": 0, "theta": 0},
+            "clean_info": {
+                "draw_region": {"regions": [_poly((4, 4), (4.5, 4), (4.5, 4.5))]},
+                "move_to_target_point": {"target_point": {"x": 2.5, "y": 2.5}},
+            },
+        }
+    )
+    assert pts
+
+
 def test_formatting_helpers() -> None:
     assert _enum_label("MAP_STATE_COMPLETE") == "Complete"
     assert _enum_label("") == "-"
