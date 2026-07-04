@@ -1,393 +1,411 @@
 {
-    "config": {
-        "flow_title": "TerraMow ({host})",
-        "abort": {
-            "already_configured": "Device is already configured",
-            "cannot_connect": "Failed to connect",
-            "reauth_successful": "Re-authentication was successful",
-            "reconfigure_successful": "Re-configuration was successful"
-        },
-        "error": {
-            "cannot_connect": "Failed to connect",
-            "invalid_auth": "Invalid authentication",
-            "unknown": "Unexpected error"
-        },
-        "step": {
-            "user": {
-                "data": {
-                    "host": "Host",
-                    "password": "Password",
-                    "username": "Username"
-                }
-            },
-            "user_pass": {
-                "title": "TerraMow",
-                "description": "Discovered TerraMow at {host}. Enter the MQTT password to complete setup.",
-                "data": {
-                    "password": "Password"
-                }
-            },
-            "reauth_confirm": {
-                "data": {
-                    "password": "Password"
-                }
-            },
-            "reconfigure": {
-                "title": "Reconfigure TerraMow",
-                "description": "Update the IP address / hostname or password of your TerraMow.",
-                "data": {
-                    "host": "Host",
-                    "password": "Password"
-                }
-            }
-        }
+  "config": {
+    "flow_title": "TerraMow ({host})",
+    "abort": {
+      "already_configured": "Device is already configured",
+      "cannot_connect": "Failed to connect",
+      "reauth_successful": "Re-authentication was successful",
+      "reconfigure_successful": "Re-configuration was successful"
     },
-    "options": {
-        "step": {
-            "init": {
-                "title": "TerraMow options",
-                "data": {
-                    "map_resolution": "Map output resolution (px)"
-                },
-                "data_description": {
-                    "map_resolution": "Output side length of the map camera PNG. Higher values give a sharper image when embedded in dashboards but increase bandwidth and CPU on each render."
-                }
-            }
-        }
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "invalid_auth": "Invalid authentication",
+      "unknown": "Unexpected error"
     },
-    "entity": {
-        "lawn_mower": {
-            "lawn_mower": {
-                "name": "Lawn Mower"
-            }
-        },
-        "sensor": {
-            "battery": {
-                "name": "Battery"
-            },
-            "battery_state": {
-                "name": "Battery State",
-                "state": {
-                    "battery_state_discharge": "Discharging",
-                    "battery_state_charging": "Charging",
-                    "battery_state_charged": "Fully Charged"
-                }
-            },
-            "battery_temperature_state": {
-                "name": "Battery Temperature State",
-                "state": {
-                    "battery_tempreture_normal": "Normal",
-                    "battery_tempreture_overheat": "Overheat",
-                    "battery_tempreture_underheat": "Underheat"
-                }
-            },
-            "map_status": {
-                "name": "Map Status",
-                "state": {
-                    "map_state_empty": "No Map",
-                    "map_state_incomplete": "Map Incomplete",
-                    "map_state_complete": "Map Complete"
-                }
-            },
-            "map_area": {
-                "name": "Map Area"
-            },
-            "mow_height": {
-                "name": "Mow Height"
-            },
-            "mow_speed": {
-                "name": "Mow Speed",
-                "state": {
-                    "mow_speed_type_low": "Low",
-                    "mow_speed_type_medium": "Medium",
-                    "mow_speed_type_adaptive_high": "Adaptive High",
-                    "mow_speed_type_auto": "Auto"
-                }
-            },
-            "clean_mode": {
-                "name": "Operation Mode",
-                "state": {
-                    "map_clean_info_mode_global": "Global Operation",
-                    "map_clean_info_mode_select_region": "Select Region Operation",
-                    "map_clean_info_mode_draw_region": "Draw Region Operation",
-                    "map_clean_info_mode_move_to_target_point": "Move to Target Point"
-                }
-            },
-            "pose": {
-                "name": "Pose"
-            },
-            "total_mowing_time": {
-                "name": "Total Mowing Time"
-            },
-            "total_mowing_jobs": {
-                "name": "Total Mowing Jobs"
-            },
-            "total_mowed_area": {
-                "name": "Total Mowed Area"
-            },
-            "current_session_area": {
-                "name": "Current Session Area"
-            },
-            "current_session_progress": {
-                "name": "Current Session Progress"
-            },
-            "current_session_time": {
-                "name": "Current Session Time"
-            },
-            "current_job_type": {
-                "name": "Current Job Type",
-                "state": {
-                    "map_area_type_none": "None",
-                    "map_area_type_build_map": "Building Map",
-                    "map_area_type_cleaning": "Mowing",
-                    "map_area_type_build_map_and_cleaning": "Building Map and Mowing",
-                    "map_area_type_select_region_cleaning": "Select Region Mowing",
-                    "map_area_type_draw_region_cleaning": "Draw Region Mowing",
-                    "map_area_type_edge_trim_cleaning": "Edge Trim Mowing"
-                }
-            },
-            "remaining_blade_time": {
-                "name": "Remaining Blade Time"
-            },
-            "remaining_base_station_time": {
-                "name": "Remaining Base Station Time"
-            },
-            "next_scheduled_start": {
-                "name": "Next Scheduled Start"
-            },
-            "version_compatibility": {
-                "name": "Version Compatibility",
-                "state": {
-                    "compatible": "Compatible",
-                    "upgrade_required": "Upgrade Required",
-                    "downgrade_recommended": "Downgrade Recommended",
-                    "incompatible": "Incompatible",
-                    "unknown": "Unknown"
-                }
-            },
-            "main_direction_status": {
-                "name": "Main Direction Status",
-                "state": {
-                    "main_direction_mode_single": "Single Direction",
-                    "main_direction_mode_multiple": "Multiple Directions",
-                    "main_direction_mode_auto_rotate": "Auto Rotate Direction",
-                    "unavailable": "Unavailable",
-                    "no_config": "No Configuration"
-                }
-            },
-            "power_mode": {
-                "name": "Power Mode",
-                "state": {
-                    "power_mode_running": "Running",
-                    "power_mode_standby": "Standby",
-                    "power_mode_hibernate": "Hibernate"
-                }
-            },
-            "back_to_station_reason": {
-                "name": "Back to Station Reason",
-                "state": {
-                    "back_to_station_reason_none": "None",
-                    "back_to_station_reason_low_battery": "Low Battery",
-                    "back_to_station_reason_raining": "Raining",
-                    "back_to_station_reason_mow_motor_overheat": "Mowing Motor Overheating",
-                    "back_to_station_reason_wheel_overheat": "Drive Wheel Overheating",
-                    "back_to_station_reason_night_time": "Darkness"
-                }
-            },
-            "mission": {
-                "name": "Mission",
-                "state": {
-                    "mission_idle": "Idle",
-                    "mission_recharge": "Recharging",
-                    "mission_global_clean": "Global Mowing",
-                    "mission_build_map": "Building Map",
-                    "mission_build_map_and_clean": "Building Map and Mowing",
-                    "mission_temporary_clean": "Temporary Mowing",
-                    "mission_back_to_starting_point": "Returning to Start Point",
-                    "mission_remote_control_clean": "Remote Control Mowing",
-                    "mission_schedule_global_clean": "Scheduled Global Mowing",
-                    "mission_schedule_build_map_and_clean": "Scheduled Map Build and Mow",
-                    "mission_select_region_clean": "Zone Mowing",
-                    "mission_create_custom_passage": "Creating Custom Passage",
-                    "mission_backup_map": "Backing Up Map",
-                    "mission_relocate_base_station": "Relocating Base Station",
-                    "mission_user_auto_calibration": "Auto Calibration",
-                    "mission_restore_backup_map": "Restoring Backup Map",
-                    "mission_schedule_select_region_clean": "Scheduled Zone Mowing",
-                    "mission_draw_region_clean": "Drawn Zone Mowing",
-                    "mission_edge_trim_clean": "Edge Trim Mowing",
-                    "mission_update_backup_map": "Updating Backup Map"
-                }
-            },
-            "sub_mission": {
-                "name": "Sub-mission",
-                "state": {
-                    "sub_mission_idle": "Idle",
-                    "sub_mission_relocation": "Relocating",
-                    "sub_mission_return_to_base": "Returning to Base",
-                    "sub_mission_out_of_station": "Leaving Base Station",
-                    "sub_mission_remote_control": "Remote Control",
-                    "sub_mission_saving_map": "Saving Map",
-                    "sub_mission_setting_blade_height": "Adjusting Blade Height",
-                    "sub_mission_charging": "Charging",
-                    "sub_mission_remote_control_clean": "Remote Control Mowing",
-                    "sub_mission_defogging": "Defogging",
-                    "sub_mission_wait_for_daylight": "Waiting for Daylight",
-                    "sub_mission_cooling_down_motor": "Cooling Down Motor",
-                    "sub_mission_wait_for_rain_to_stop": "Waiting for Rain to Stop",
-                    "sub_mission_flexible_station_wait": "Waiting at Base Station"
-                }
-            },
-            "mission_state": {
-                "name": "Mission State",
-                "state": {
-                    "mission_state_idle": "Idle",
-                    "mission_state_running": "Running",
-                    "mission_state_pause": "Paused",
-                    "mission_state_abort": "Aborted",
-                    "mission_state_complete": "Completed"
-                }
-            }
-        },
-        "camera": {
-            "map_camera": {
-                "name": "Map"
-            },
-            "map_camera_clean": {
-                "name": "Map (Clean)"
-            }
-        },
-        "binary_sensor": {
-            "charging_state": {
-                "name": "Charging State"
-            },
-            "navigation_located": {
-                "name": "Navigation Located"
-            },
-            "firmware_upgrading": {
-                "name": "Firmware Upgrading"
-            },
-            "power_switch": {
-                "name": "Power Switch"
-            },
-            "problem": {
-                "name": "Problem"
-            },
-            "rain_detected": {
-                "name": "Rain Detected"
-            },
-            "map_detected": {
-                "name": "Map Detected"
-            },
-            "map_buildable": {
-                "name": "Map Buildable"
-            },
-            "map_backing_up": {
-                "name": "Map Backing Up"
-            },
-            "saving_data": {
-                "name": "Saving Data"
-            },
-            "data_conversion": {
-                "name": "Data Conversion in Progress"
-            }
-        },
-        "button": {
-            "reset_blade_timer": {
-                "name": "Reset Blade Timer"
-            },
-            "reset_base_station_timer": {
-                "name": "Reset Base Station Timer"
-            },
-            "edge_trim": {
-                "name": "Edge Trim"
-            }
-        },
-        "select": {
-            "region_select": {
-                "name": "Zone Select",
-                "state": {
-                    "no_zones_available": "No zones available",
-                    "all_zones": "All zones"
-                }
-            },
-            "mow_speed_setting": {
-                "name": "Mow Speed Setting",
-                "state": {
-                    "mow_speed_type_low": "Low Speed",
-                    "mow_speed_type_medium": "Medium Speed",
-                    "mow_speed_type_adaptive_high": "Adaptive High Speed",
-                    "mow_speed_type_auto": "Auto Speed"
-                }
-            },
-            "blade_speed": {
-                "name": "Blade Speed Setting",
-                "state": {
-                    "blade_disk_speed_type_low": "Low Speed",
-                    "blade_disk_speed_type_medium": "Medium Speed",
-                    "blade_disk_speed_type_high": "High Speed"
-                }
-            },
-            "main_direction_mode": {
-                "name": "Main Direction Mode",
-                "state": {
-                    "main_direction_mode_single": "Single Direction",
-                    "main_direction_mode_multiple": "Multiple Directions",
-                    "main_direction_mode_auto_rotate": "Auto Rotate Direction"
-                }
-            },
-            "high_grass_edge_trim_mode": {
-                "name": "High Grass Edge Trim Mode",
-                "state": {
-                    "high_grass_edge_trim_standard": "Standard",
-                    "high_grass_edge_trim_intensive": "Intensive"
-                }
-            }
-        },
-        "switch": {
-            "thorough_corner_cutting": {
-                "name": "Thorough Corner Cutting"
-            }
-        },
-        "number": {
-            "mowing_height": {
-                "name": "Mowing Height Setting"
-            },
-            "edge_cutting_distance": {
-                "name": "Edge Cutting Distance"
-            },
-            "mowing_spacing": {
-                "name": "Mowing Spacing Setting"
-            },
-            "main_direction_single_angle": {
-                "name": "Single Direction Angle"
-            },
-            "main_direction_auto_rotate_interval": {
-                "name": "Auto Rotate Angle Interval"
-            },
-            "multiple_direction_angle1": {
-                "name": "First Direction Angle"
-            },
-            "multiple_direction_angle2": {
-                "name": "Second Direction Angle"
-            }
-        },
-        "update": {
-            "firmware": {
-                "name": "Firmware"
-            }
+    "step": {
+      "user": {
+        "data": {
+          "host": "Host",
+          "password": "Password",
+          "username": "Username"
         }
-    },
-    "services": {
-        "start_select_region": {
-            "name": "Start Select Region Mowing",
-            "description": "Start mowing for the specified sub-region IDs.",
-            "fields": {
-                "region_ids": {
-                    "name": "Region IDs",
-                    "description": "List of sub-region IDs to mow."
-                }
-            }
+      },
+      "user_pass": {
+        "title": "TerraMow",
+        "description": "Discovered TerraMow at {host}. Enter the MQTT password to complete setup.",
+        "data": {
+          "password": "Password"
         }
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "Password"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure TerraMow",
+        "description": "Update the IP address / hostname or password of your TerraMow.",
+        "data": {
+          "host": "Host",
+          "password": "Password"
+        }
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "TerraMow options",
+        "data": {
+          "map_resolution": "Map output resolution (px)"
+        },
+        "data_description": {
+          "map_resolution": "Output side length of the map camera PNG. Higher values give a sharper image when embedded in dashboards but increase bandwidth and CPU on each render."
+        }
+      }
+    }
+  },
+  "entity": {
+    "lawn_mower": {
+      "lawn_mower": {
+        "name": "Lawn Mower"
+      }
+    },
+    "sensor": {
+      "battery": {
+        "name": "Battery"
+      },
+      "battery_state": {
+        "name": "Battery State",
+        "state": {
+          "battery_state_discharge": "Discharging",
+          "battery_state_charging": "Charging",
+          "battery_state_charged": "Fully Charged"
+        }
+      },
+      "battery_temperature_state": {
+        "name": "Battery Temperature State",
+        "state": {
+          "battery_tempreture_normal": "Normal",
+          "battery_tempreture_overheat": "Overheat",
+          "battery_tempreture_underheat": "Underheat"
+        }
+      },
+      "map_status": {
+        "name": "Map Status",
+        "state": {
+          "map_state_empty": "No Map",
+          "map_state_incomplete": "Map Incomplete",
+          "map_state_complete": "Map Complete"
+        }
+      },
+      "map_area": {
+        "name": "Map Area"
+      },
+      "mow_height": {
+        "name": "Mow Height"
+      },
+      "mow_speed": {
+        "name": "Mow Speed",
+        "state": {
+          "mow_speed_type_low": "Low",
+          "mow_speed_type_medium": "Medium",
+          "mow_speed_type_adaptive_high": "Adaptive High",
+          "mow_speed_type_auto": "Auto"
+        }
+      },
+      "clean_mode": {
+        "name": "Operation Mode",
+        "state": {
+          "map_clean_info_mode_global": "Global Operation",
+          "map_clean_info_mode_select_region": "Select Region Operation",
+          "map_clean_info_mode_draw_region": "Draw Region Operation",
+          "map_clean_info_mode_move_to_target_point": "Move to Target Point"
+        }
+      },
+      "pose": {
+        "name": "Pose"
+      },
+      "total_mowing_time": {
+        "name": "Total Mowing Time"
+      },
+      "total_mowing_jobs": {
+        "name": "Total Mowing Jobs"
+      },
+      "total_mowed_area": {
+        "name": "Total Mowed Area"
+      },
+      "current_session_area": {
+        "name": "Current Session Area"
+      },
+      "current_session_progress": {
+        "name": "Current Session Progress"
+      },
+      "current_session_time": {
+        "name": "Current Session Time"
+      },
+      "current_job_type": {
+        "name": "Current Job Type",
+        "state": {
+          "map_area_type_none": "None",
+          "map_area_type_build_map": "Building Map",
+          "map_area_type_cleaning": "Mowing",
+          "map_area_type_build_map_and_cleaning": "Building Map and Mowing",
+          "map_area_type_select_region_cleaning": "Select Region Mowing",
+          "map_area_type_draw_region_cleaning": "Draw Region Mowing",
+          "map_area_type_edge_trim_cleaning": "Edge Trim Mowing"
+        }
+      },
+      "remaining_blade_time": {
+        "name": "Remaining Blade Time"
+      },
+      "remaining_base_station_time": {
+        "name": "Remaining Base Station Time"
+      },
+      "next_scheduled_start": {
+        "name": "Next Scheduled Start"
+      },
+      "version_compatibility": {
+        "name": "Version Compatibility",
+        "state": {
+          "compatible": "Compatible",
+          "upgrade_required": "Upgrade Required",
+          "downgrade_recommended": "Downgrade Recommended",
+          "incompatible": "Incompatible",
+          "unknown": "Unknown"
+        }
+      },
+      "main_direction_status": {
+        "name": "Main Direction Status",
+        "state": {
+          "main_direction_mode_single": "Single Direction",
+          "main_direction_mode_multiple": "Multiple Directions",
+          "main_direction_mode_auto_rotate": "Auto Rotate Direction",
+          "unavailable": "Unavailable",
+          "no_config": "No Configuration"
+        }
+      },
+      "power_mode": {
+        "name": "Power Mode",
+        "state": {
+          "power_mode_running": "Running",
+          "power_mode_standby": "Standby",
+          "power_mode_hibernate": "Hibernate"
+        }
+      },
+      "back_to_station_reason": {
+        "name": "Back to Station Reason",
+        "state": {
+          "back_to_station_reason_none": "None",
+          "back_to_station_reason_low_battery": "Low Battery",
+          "back_to_station_reason_raining": "Raining",
+          "back_to_station_reason_mow_motor_overheat": "Mowing Motor Overheating",
+          "back_to_station_reason_wheel_overheat": "Drive Wheel Overheating",
+          "back_to_station_reason_night_time": "Darkness"
+        }
+      },
+      "mission": {
+        "name": "Mission",
+        "state": {
+          "mission_idle": "Idle",
+          "mission_recharge": "Recharging",
+          "mission_global_clean": "Global Mowing",
+          "mission_build_map": "Building Map",
+          "mission_build_map_and_clean": "Building Map and Mowing",
+          "mission_temporary_clean": "Temporary Mowing",
+          "mission_back_to_starting_point": "Returning to Start Point",
+          "mission_remote_control_clean": "Remote Control Mowing",
+          "mission_schedule_global_clean": "Scheduled Global Mowing",
+          "mission_schedule_build_map_and_clean": "Scheduled Map Build and Mow",
+          "mission_select_region_clean": "Zone Mowing",
+          "mission_create_custom_passage": "Creating Custom Passage",
+          "mission_backup_map": "Backing Up Map",
+          "mission_relocate_base_station": "Relocating Base Station",
+          "mission_user_auto_calibration": "Auto Calibration",
+          "mission_restore_backup_map": "Restoring Backup Map",
+          "mission_schedule_select_region_clean": "Scheduled Zone Mowing",
+          "mission_draw_region_clean": "Drawn Zone Mowing",
+          "mission_edge_trim_clean": "Edge Trim Mowing",
+          "mission_update_backup_map": "Updating Backup Map"
+        }
+      },
+      "sub_mission": {
+        "name": "Sub-mission",
+        "state": {
+          "sub_mission_idle": "Idle",
+          "sub_mission_relocation": "Relocating",
+          "sub_mission_return_to_base": "Returning to Base",
+          "sub_mission_out_of_station": "Leaving Base Station",
+          "sub_mission_remote_control": "Remote Control",
+          "sub_mission_saving_map": "Saving Map",
+          "sub_mission_setting_blade_height": "Adjusting Blade Height",
+          "sub_mission_charging": "Charging",
+          "sub_mission_remote_control_clean": "Remote Control Mowing",
+          "sub_mission_defogging": "Defogging",
+          "sub_mission_wait_for_daylight": "Waiting for Daylight",
+          "sub_mission_cooling_down_motor": "Cooling Down Motor",
+          "sub_mission_wait_for_rain_to_stop": "Waiting for Rain to Stop",
+          "sub_mission_flexible_station_wait": "Waiting at Base Station"
+        }
+      },
+      "mission_state": {
+        "name": "Mission State",
+        "state": {
+          "mission_state_idle": "Idle",
+          "mission_state_running": "Running",
+          "mission_state_pause": "Paused",
+          "mission_state_abort": "Aborted",
+          "mission_state_complete": "Completed"
+        }
+      }
+    },
+    "camera": {
+      "map_camera": {
+        "name": "Map"
+      },
+      "map_camera_clean": {
+        "name": "Map (Clean)"
+      }
+    },
+    "binary_sensor": {
+      "charging_state": {
+        "name": "Charging State"
+      },
+      "navigation_located": {
+        "name": "Navigation Located"
+      },
+      "firmware_upgrading": {
+        "name": "Firmware Upgrading"
+      },
+      "power_switch": {
+        "name": "Power Switch"
+      },
+      "problem": {
+        "name": "Problem"
+      },
+      "rain_detected": {
+        "name": "Rain Detected"
+      },
+      "map_detected": {
+        "name": "Map Detected"
+      },
+      "map_buildable": {
+        "name": "Map Buildable"
+      },
+      "map_backing_up": {
+        "name": "Map Backing Up"
+      },
+      "saving_data": {
+        "name": "Saving Data"
+      },
+      "data_conversion": {
+        "name": "Data Conversion in Progress"
+      }
+    },
+    "button": {
+      "reset_blade_timer": {
+        "name": "Reset Blade Timer"
+      },
+      "reset_base_station_timer": {
+        "name": "Reset Base Station Timer"
+      },
+      "edge_trim": {
+        "name": "Edge Trim"
+      }
+    },
+    "select": {
+      "region_select": {
+        "name": "Zone Select",
+        "state": {
+          "no_zones_available": "No zones available",
+          "all_zones": "All zones"
+        }
+      },
+      "mow_speed_setting": {
+        "name": "Mow Speed Setting",
+        "state": {
+          "mow_speed_type_low": "Low Speed",
+          "mow_speed_type_medium": "Medium Speed",
+          "mow_speed_type_adaptive_high": "Adaptive High Speed",
+          "mow_speed_type_auto": "Auto Speed"
+        }
+      },
+      "blade_speed": {
+        "name": "Blade Speed Setting",
+        "state": {
+          "blade_disk_speed_type_low": "Low Speed",
+          "blade_disk_speed_type_medium": "Medium Speed",
+          "blade_disk_speed_type_high": "High Speed"
+        }
+      },
+      "main_direction_mode": {
+        "name": "Main Direction Mode",
+        "state": {
+          "main_direction_mode_single": "Single Direction",
+          "main_direction_mode_multiple": "Multiple Directions",
+          "main_direction_mode_auto_rotate": "Auto Rotate Direction"
+        }
+      },
+      "high_grass_edge_trim_mode": {
+        "name": "High Grass Edge Trim Mode",
+        "state": {
+          "high_grass_edge_trim_standard": "Standard",
+          "high_grass_edge_trim_intensive": "Intensive"
+        }
+      }
+    },
+    "switch": {
+      "thorough_corner_cutting": {
+        "name": "Thorough Corner Cutting"
+      }
+    },
+    "number": {
+      "mowing_height": {
+        "name": "Mowing Height Setting"
+      },
+      "edge_cutting_distance": {
+        "name": "Edge Cutting Distance"
+      },
+      "mowing_spacing": {
+        "name": "Mowing Spacing Setting"
+      },
+      "main_direction_single_angle": {
+        "name": "Single Direction Angle"
+      },
+      "main_direction_auto_rotate_interval": {
+        "name": "Auto Rotate Angle Interval"
+      },
+      "multiple_direction_angle1": {
+        "name": "First Direction Angle"
+      },
+      "multiple_direction_angle2": {
+        "name": "Second Direction Angle"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    }
+  },
+  "services": {
+    "start_select_region": {
+      "name": "Start Select Region Mowing",
+      "description": "Start mowing for the specified sub-region IDs.",
+      "fields": {
+        "region_ids": {
+          "name": "Region IDs",
+          "description": "List of sub-region IDs to mow."
+        }
+      }
+    }
+  },
+  "issues": {
+    "firmware_ha_module_too_low": {
+      "title": "TerraMow firmware update required",
+      "description": "The TerraMow's firmware HA module version ({firmware_version}) is too old for this integration, which needs version {required_version}. Update the mower firmware from the TerraMow app to restore full functionality."
+    },
+    "firmware_overall_too_low": {
+      "title": "TerraMow firmware update required",
+      "description": "The TerraMow's firmware is older than the minimum supported version ({required_version}). Update the mower firmware from the TerraMow app to use this integration."
+    },
+    "firmware_incompatible": {
+      "title": "TerraMow firmware incompatible",
+      "description": "The integration could not confirm the TerraMow's firmware is compatible. Check that both the mower firmware and this integration are up to date, then download the diagnostics and open an issue if the problem persists."
+    },
+    "plugin_downgrade_recommended": {
+      "title": "TerraMow integration update recommended",
+      "description": "The TerraMow's firmware HA module version ({firmware_version}) is newer than this integration supports ({plugin_version}). Update the integration in HACS to get the latest features."
+    }
+  }
 }

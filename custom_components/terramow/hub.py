@@ -43,6 +43,8 @@ from .const import (
     CompatibilityStatus,
 )
 
+from .issues import async_sync_compatibility_issue
+
 if TYPE_CHECKING:
     from . import TerraMowBasicData
 
@@ -506,6 +508,13 @@ class TerraMowHub:
             # 如果版本不兼容，可以考虑禁用某些功能或显示警告
             if compatibility_status == CompatibilityStatus.INCOMPATIBLE:
                 _LOGGER.error("Version completely incompatible, recommend checking firmware and plugin versions")
+
+            # 把兼容性结果同步为 Home Assistant 的 Repair Issue，
+            # 让不兼容固件以可操作的修复卡片形式呈现，而不仅仅是传感器。
+            if self.basic_data.entry_id is not None:
+                async_sync_compatibility_issue(
+                    self.hass, self.basic_data.entry_id, self.basic_data
+                )
 
         except json.JSONDecodeError:
             _LOGGER.error("Failed to parse compatibility info JSON: %s", payload)

@@ -1,393 +1,411 @@
 {
-    "config": {
-        "flow_title": "TerraMow ({host})",
-        "abort": {
-            "already_configured": "Das Gerät ist bereits konfiguriert",
-            "cannot_connect": "Verbindung fehlgeschlagen",
-            "reauth_successful": "Erneute Authentifizierung war erfolgreich",
-            "reconfigure_successful": "Die Neukonfiguration war erfolgreich"
-        },
-        "error": {
-            "cannot_connect": "Verbindung fehlgeschlagen",
-            "invalid_auth": "Ungültige Authentifizierung",
-            "unknown": "Unerwarteter Fehler"
-        },
-        "step": {
-            "user": {
-                "data": {
-                    "host": "Host",
-                    "password": "Passwort",
-                    "username": "Benutzername"
-                }
-            },
-            "user_pass": {
-                "title": "TerraMow",
-                "description": "TerraMow unter {host} gefunden. Bitte das MQTT-Passwort eingeben, um die Einrichtung abzuschließen.",
-                "data": {
-                    "password": "Passwort"
-                }
-            },
-            "reauth_confirm": {
-                "data": {
-                    "password": "Passwort"
-                }
-            },
-            "reconfigure": {
-                "title": "TerraMow neu konfigurieren",
-                "description": "IP-Adresse / Hostname oder Passwort deiner TerraMow aktualisieren.",
-                "data": {
-                    "host": "Host",
-                    "password": "Passwort"
-                }
-            }
-        }
+  "config": {
+    "flow_title": "TerraMow ({host})",
+    "abort": {
+      "already_configured": "Das Gerät ist bereits konfiguriert",
+      "cannot_connect": "Verbindung fehlgeschlagen",
+      "reauth_successful": "Erneute Authentifizierung war erfolgreich",
+      "reconfigure_successful": "Die Neukonfiguration war erfolgreich"
     },
-    "options": {
-        "step": {
-            "init": {
-                "title": "TerraMow Optionen",
-                "data": {
-                    "map_resolution": "Karten-Ausgabeauflösung (px)"
-                },
-                "data_description": {
-                    "map_resolution": "Seitenlänge des Karten-PNGs. Höhere Werte ergeben ein schärferes Bild beim Einbetten in Dashboards, erhöhen aber Bandbreite und CPU-Last pro Render-Zyklus."
-                }
-            }
-        }
+    "error": {
+      "cannot_connect": "Verbindung fehlgeschlagen",
+      "invalid_auth": "Ungültige Authentifizierung",
+      "unknown": "Unerwarteter Fehler"
     },
-    "entity": {
-        "lawn_mower": {
-            "lawn_mower": {
-                "name": "Mähroboter"
-            }
-        },
-        "sensor": {
-            "battery": {
-                "name": "Akku"
-            },
-            "battery_state": {
-                "name": "Akkustatus",
-                "state": {
-                    "battery_state_discharge": "Entlädt",
-                    "battery_state_charging": "Lädt",
-                    "battery_state_charged": "Vollständig geladen"
-                }
-            },
-            "battery_temperature_state": {
-                "name": "Akkutemperaturstatus",
-                "state": {
-                    "battery_tempreture_normal": "Normal",
-                    "battery_tempreture_overheat": "Überhitzt",
-                    "battery_tempreture_underheat": "Unterkühlt"
-                }
-            },
-            "map_status": {
-                "name": "Kartenstatus",
-                "state": {
-                    "map_state_empty": "Keine Karte",
-                    "map_state_incomplete": "Karte unvollständig",
-                    "map_state_complete": "Karte vollständig"
-                }
-            },
-            "map_area": {
-                "name": "Kartenfläche"
-            },
-            "mow_height": {
-                "name": "Schnitthöhe"
-            },
-            "mow_speed": {
-                "name": "Mähgeschwindigkeit",
-                "state": {
-                    "mow_speed_type_low": "Fein",
-                    "mow_speed_type_medium": "Standard",
-                    "mow_speed_type_adaptive_high": "Adaptiv / Schnell",
-                    "mow_speed_type_auto": "Automatik"
-                }
-            },
-            "clean_mode": {
-                "name": "Betriebsmodus",
-                "state": {
-                    "map_clean_info_mode_global": "Auto",
-                    "map_clean_info_mode_select_region": "Zone",
-                    "map_clean_info_mode_draw_region": "Box",
-                    "map_clean_info_mode_move_to_target_point": "Zum Zielpunkt bewegen"
-                }
-            },
-            "pose": {
-                "name": "Pose"
-            },
-            "total_mowing_time": {
-                "name": "Gesamte Mähzeit"
-            },
-            "total_mowing_jobs": {
-                "name": "Gesamtanzahl Mäheinsätze"
-            },
-            "total_mowed_area": {
-                "name": "Insgesamt gemähte Fläche"
-            },
-            "current_session_area": {
-                "name": "Fläche der aktuellen Sitzung"
-            },
-            "current_session_progress": {
-                "name": "Fortschritt der aktuellen Sitzung"
-            },
-            "current_session_time": {
-                "name": "Dauer der aktuellen Sitzung"
-            },
-            "current_job_type": {
-                "name": "Aktueller Auftragstyp",
-                "state": {
-                    "map_area_type_none": "Kein",
-                    "map_area_type_build_map": "Karte erstellen",
-                    "map_area_type_cleaning": "Mähen",
-                    "map_area_type_build_map_and_cleaning": "Karte erstellen und Mähen",
-                    "map_area_type_select_region_cleaning": "Zone mähen",
-                    "map_area_type_draw_region_cleaning": "Bereich mähen",
-                    "map_area_type_edge_trim_cleaning": "Kantenmähen"
-                }
-            },
-            "remaining_blade_time": {
-                "name": "Verbleibende Laufzeit der Klingen"
-            },
-            "remaining_base_station_time": {
-                "name": "Verbleibende Laufzeit der Basisstation"
-            },
-            "next_scheduled_start": {
-                "name": "Nächster geplanter Start"
-            },
-            "version_compatibility": {
-                "name": "Versionskompatibilität",
-                "state": {
-                    "compatible": "Kompatibel",
-                    "upgrade_required": "Upgrade erforderlich",
-                    "downgrade_recommended": "Downgrade empfohlen",
-                    "incompatible": "Inkompatibel",
-                    "unknown": "Unbekannt"
-                }
-            },
-            "main_direction_status": {
-                "name": "Mährichtung",
-                "state": {
-                    "main_direction_mode_single": "Einzeln",
-                    "main_direction_mode_multiple": "Doppelt",
-                    "main_direction_mode_auto_rotate": "Automatisch drehend",
-                    "unavailable": "Nicht verfügbar",
-                    "no_config": "Keine Konfiguration"
-                }
-            },
-            "power_mode": {
-                "name": "Energiemodus",
-                "state": {
-                    "power_mode_running": "In Betrieb",
-                    "power_mode_standby": "Bereitschaft",
-                    "power_mode_hibernate": "Ruhezustand"
-                }
-            },
-            "back_to_station_reason": {
-                "name": "Grund für Rückkehr zur Basis",
-                "state": {
-                    "back_to_station_reason_none": "Keiner",
-                    "back_to_station_reason_low_battery": "Niedriger Akkustand",
-                    "back_to_station_reason_raining": "Regen",
-                    "back_to_station_reason_mow_motor_overheat": "Mähmotor überhitzt",
-                    "back_to_station_reason_wheel_overheat": "Antriebsmotor überhitzt",
-                    "back_to_station_reason_night_time": "Dunkelheit"
-                }
-            },
-            "mission": {
-                "name": "Auftrag",
-                "state": {
-                    "mission_idle": "Bereit",
-                    "mission_recharge": "Lädt",
-                    "mission_global_clean": "Komplettmähen",
-                    "mission_build_map": "Karte erstellen",
-                    "mission_build_map_and_clean": "Karte erstellen und mähen",
-                    "mission_temporary_clean": "Temporäres Mähen",
-                    "mission_back_to_starting_point": "Zurück zum Startpunkt",
-                    "mission_remote_control_clean": "Mähen per Fernsteuerung",
-                    "mission_schedule_global_clean": "Geplantes Komplettmähen",
-                    "mission_schedule_build_map_and_clean": "Geplantes Karte erstellen und Mähen",
-                    "mission_select_region_clean": "Zonenmähen",
-                    "mission_create_custom_passage": "Benutzerdefinierte Passage erstellen",
-                    "mission_backup_map": "Karte sichern",
-                    "mission_relocate_base_station": "Basisstation neu positionieren",
-                    "mission_user_auto_calibration": "Automatische Kalibrierung",
-                    "mission_restore_backup_map": "Karten-Sicherung wiederherstellen",
-                    "mission_schedule_select_region_clean": "Geplantes Zonenmähen",
-                    "mission_draw_region_clean": "Mähen gezeichneter Zone",
-                    "mission_edge_trim_clean": "Kantentrimmen",
-                    "mission_update_backup_map": "Karten-Sicherung aktualisieren"
-                }
-            },
-            "sub_mission": {
-                "name": "Teilauftrag",
-                "state": {
-                    "sub_mission_idle": "Bereit",
-                    "sub_mission_relocation": "Lokalisiert",
-                    "sub_mission_return_to_base": "Rückkehr zur Basis",
-                    "sub_mission_out_of_station": "Verlässt Basisstation",
-                    "sub_mission_remote_control": "Fernsteuerung",
-                    "sub_mission_saving_map": "Karte wird gespeichert",
-                    "sub_mission_setting_blade_height": "Schnitthöhe wird eingestellt",
-                    "sub_mission_charging": "Lädt",
-                    "sub_mission_remote_control_clean": "Mähen per Fernsteuerung",
-                    "sub_mission_defogging": "Entfeuchten",
-                    "sub_mission_wait_for_daylight": "Wartet auf Tageslicht",
-                    "sub_mission_cooling_down_motor": "Motor kühlt ab",
-                    "sub_mission_wait_for_rain_to_stop": "Wartet auf Ende des Regens",
-                    "sub_mission_flexible_station_wait": "Wartet an der Basisstation"
-                }
-            },
-            "mission_state": {
-                "name": "Auftragsstatus",
-                "state": {
-                    "mission_state_idle": "Bereit",
-                    "mission_state_running": "Läuft",
-                    "mission_state_pause": "Pausiert",
-                    "mission_state_abort": "Abgebrochen",
-                    "mission_state_complete": "Abgeschlossen"
-                }
-            }
-        },
-        "camera": {
-            "map_camera": {
-                "name": "Karte"
-            },
-            "map_camera_clean": {
-                "name": "Karte (Ohne UI)"
-            }
-        },
-        "binary_sensor": {
-            "charging_state": {
-                "name": "Ladestatus"
-            },
-            "navigation_located": {
-                "name": "Navigation lokalisiert"
-            },
-            "firmware_upgrading": {
-                "name": "Firmware-Aktualisierung"
-            },
-            "power_switch": {
-                "name": "Netzschalter"
-            },
-            "problem": {
-                "name": "Problem"
-            },
-            "rain_detected": {
-                "name": "Regen erkannt"
-            },
-            "map_detected": {
-                "name": "Karte erkannt"
-            },
-            "map_buildable": {
-                "name": "Karte kann erstellt werden"
-            },
-            "map_backing_up": {
-                "name": "Karte wird gesichert"
-            },
-            "saving_data": {
-                "name": "Daten werden gespeichert"
-            },
-            "data_conversion": {
-                "name": "Datenkonvertierung läuft"
-            }
-        },
-        "button": {
-            "reset_blade_timer": {
-                "name": "Klingen-Zähler zurücksetzen"
-            },
-            "reset_base_station_timer": {
-                "name": "Basisstation-Zähler zurücksetzen"
-            },
-            "edge_trim": {
-                "name": "Kantenschnitt"
-            }
-        },
-        "select": {
-            "region_select": {
-                "name": "Zonenauswahl",
-                "state": {
-                    "no_zones_available": "Keine Zonen verfügbar",
-                    "all_zones": "Alle Zonen"
-                }
-            },
-            "mow_speed_setting": {
-                "name": "Mähgeschwindigkeit",
-                "state": {
-                    "mow_speed_type_low": "Fein",
-                    "mow_speed_type_medium": "Standard",
-                    "mow_speed_type_adaptive_high": "Adaptiv / Schnell",
-                    "mow_speed_type_auto": "Automatik"
-                }
-            },
-            "blade_speed": {
-                "name": "Drehgeschwindigkeit",
-                "state": {
-                    "blade_disk_speed_type_low": "Eco",
-                    "blade_disk_speed_type_medium": "Standard",
-                    "blade_disk_speed_type_high": "Schnell"
-                }
-            },
-            "main_direction_mode": {
-                "name": "Mährichtung",
-                "state": {
-                    "main_direction_mode_single": "Einzeln",
-                    "main_direction_mode_multiple": "Doppelt",
-                    "main_direction_mode_auto_rotate": "Automatisch drehend"
-                }
-            },
-            "high_grass_edge_trim_mode": {
-                "name": "Kantenmodus bei hohem Gras",
-                "state": {
-                    "high_grass_edge_trim_standard": "Standard",
-                    "high_grass_edge_trim_intensive": "Intensiv"
-                }
-            }
-        },
-        "switch": {
-            "thorough_corner_cutting": {
-                "name": "Gründliches Eckenmähen"
-            }
-        },
-        "number": {
-            "mowing_height": {
-                "name": "Schnitthöhe"
-            },
-            "edge_cutting_distance": {
-                "name": "Schnittdistanz am Rand"
-            },
-            "mowing_spacing": {
-                "name": "Abstand der Mähwege"
-            },
-            "main_direction_single_angle": {
-                "name": "Winkel einzelne Mährichtung"
-            },
-            "main_direction_auto_rotate_interval": {
-                "name": "Intervall für automatische Drehung"
-            },
-            "multiple_direction_angle1": {
-                "name": "Erster Richtungswinkel"
-            },
-            "multiple_direction_angle2": {
-                "name": "Zweiter Richtungswinkel"
-            }
-        },
-        "update": {
-            "firmware": {
-                "name": "Firmware"
-            }
+    "step": {
+      "user": {
+        "data": {
+          "host": "Host",
+          "password": "Passwort",
+          "username": "Benutzername"
         }
-    },
-    "services": {
-        "start_select_region": {
-            "name": "Mähen ausgewählter Zonen starten",
-            "description": "Startet das Mähen für die angegebenen Teilbereich-IDs.",
-            "fields": {
-                "region_ids": {
-                    "name": "Zonen-IDs",
-                    "description": "Liste der Teilbereich-IDs, die gemäht werden sollen."
-                }
-            }
+      },
+      "user_pass": {
+        "title": "TerraMow",
+        "description": "TerraMow unter {host} gefunden. Bitte das MQTT-Passwort eingeben, um die Einrichtung abzuschließen.",
+        "data": {
+          "password": "Passwort"
         }
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "Passwort"
+        }
+      },
+      "reconfigure": {
+        "title": "TerraMow neu konfigurieren",
+        "description": "IP-Adresse / Hostname oder Passwort deiner TerraMow aktualisieren.",
+        "data": {
+          "host": "Host",
+          "password": "Passwort"
+        }
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "TerraMow Optionen",
+        "data": {
+          "map_resolution": "Karten-Ausgabeauflösung (px)"
+        },
+        "data_description": {
+          "map_resolution": "Seitenlänge des Karten-PNGs. Höhere Werte ergeben ein schärferes Bild beim Einbetten in Dashboards, erhöhen aber Bandbreite und CPU-Last pro Render-Zyklus."
+        }
+      }
+    }
+  },
+  "entity": {
+    "lawn_mower": {
+      "lawn_mower": {
+        "name": "Mähroboter"
+      }
+    },
+    "sensor": {
+      "battery": {
+        "name": "Akku"
+      },
+      "battery_state": {
+        "name": "Akkustatus",
+        "state": {
+          "battery_state_discharge": "Entlädt",
+          "battery_state_charging": "Lädt",
+          "battery_state_charged": "Vollständig geladen"
+        }
+      },
+      "battery_temperature_state": {
+        "name": "Akkutemperaturstatus",
+        "state": {
+          "battery_tempreture_normal": "Normal",
+          "battery_tempreture_overheat": "Überhitzt",
+          "battery_tempreture_underheat": "Unterkühlt"
+        }
+      },
+      "map_status": {
+        "name": "Kartenstatus",
+        "state": {
+          "map_state_empty": "Keine Karte",
+          "map_state_incomplete": "Karte unvollständig",
+          "map_state_complete": "Karte vollständig"
+        }
+      },
+      "map_area": {
+        "name": "Kartenfläche"
+      },
+      "mow_height": {
+        "name": "Schnitthöhe"
+      },
+      "mow_speed": {
+        "name": "Mähgeschwindigkeit",
+        "state": {
+          "mow_speed_type_low": "Fein",
+          "mow_speed_type_medium": "Standard",
+          "mow_speed_type_adaptive_high": "Adaptiv / Schnell",
+          "mow_speed_type_auto": "Automatik"
+        }
+      },
+      "clean_mode": {
+        "name": "Betriebsmodus",
+        "state": {
+          "map_clean_info_mode_global": "Auto",
+          "map_clean_info_mode_select_region": "Zone",
+          "map_clean_info_mode_draw_region": "Box",
+          "map_clean_info_mode_move_to_target_point": "Zum Zielpunkt bewegen"
+        }
+      },
+      "pose": {
+        "name": "Pose"
+      },
+      "total_mowing_time": {
+        "name": "Gesamte Mähzeit"
+      },
+      "total_mowing_jobs": {
+        "name": "Gesamtanzahl Mäheinsätze"
+      },
+      "total_mowed_area": {
+        "name": "Insgesamt gemähte Fläche"
+      },
+      "current_session_area": {
+        "name": "Fläche der aktuellen Sitzung"
+      },
+      "current_session_progress": {
+        "name": "Fortschritt der aktuellen Sitzung"
+      },
+      "current_session_time": {
+        "name": "Dauer der aktuellen Sitzung"
+      },
+      "current_job_type": {
+        "name": "Aktueller Auftragstyp",
+        "state": {
+          "map_area_type_none": "Kein",
+          "map_area_type_build_map": "Karte erstellen",
+          "map_area_type_cleaning": "Mähen",
+          "map_area_type_build_map_and_cleaning": "Karte erstellen und Mähen",
+          "map_area_type_select_region_cleaning": "Zone mähen",
+          "map_area_type_draw_region_cleaning": "Bereich mähen",
+          "map_area_type_edge_trim_cleaning": "Kantenmähen"
+        }
+      },
+      "remaining_blade_time": {
+        "name": "Verbleibende Laufzeit der Klingen"
+      },
+      "remaining_base_station_time": {
+        "name": "Verbleibende Laufzeit der Basisstation"
+      },
+      "next_scheduled_start": {
+        "name": "Nächster geplanter Start"
+      },
+      "version_compatibility": {
+        "name": "Versionskompatibilität",
+        "state": {
+          "compatible": "Kompatibel",
+          "upgrade_required": "Upgrade erforderlich",
+          "downgrade_recommended": "Downgrade empfohlen",
+          "incompatible": "Inkompatibel",
+          "unknown": "Unbekannt"
+        }
+      },
+      "main_direction_status": {
+        "name": "Mährichtung",
+        "state": {
+          "main_direction_mode_single": "Einzeln",
+          "main_direction_mode_multiple": "Doppelt",
+          "main_direction_mode_auto_rotate": "Automatisch drehend",
+          "unavailable": "Nicht verfügbar",
+          "no_config": "Keine Konfiguration"
+        }
+      },
+      "power_mode": {
+        "name": "Energiemodus",
+        "state": {
+          "power_mode_running": "In Betrieb",
+          "power_mode_standby": "Bereitschaft",
+          "power_mode_hibernate": "Ruhezustand"
+        }
+      },
+      "back_to_station_reason": {
+        "name": "Grund für Rückkehr zur Basis",
+        "state": {
+          "back_to_station_reason_none": "Keiner",
+          "back_to_station_reason_low_battery": "Niedriger Akkustand",
+          "back_to_station_reason_raining": "Regen",
+          "back_to_station_reason_mow_motor_overheat": "Mähmotor überhitzt",
+          "back_to_station_reason_wheel_overheat": "Antriebsmotor überhitzt",
+          "back_to_station_reason_night_time": "Dunkelheit"
+        }
+      },
+      "mission": {
+        "name": "Auftrag",
+        "state": {
+          "mission_idle": "Bereit",
+          "mission_recharge": "Lädt",
+          "mission_global_clean": "Komplettmähen",
+          "mission_build_map": "Karte erstellen",
+          "mission_build_map_and_clean": "Karte erstellen und mähen",
+          "mission_temporary_clean": "Temporäres Mähen",
+          "mission_back_to_starting_point": "Zurück zum Startpunkt",
+          "mission_remote_control_clean": "Mähen per Fernsteuerung",
+          "mission_schedule_global_clean": "Geplantes Komplettmähen",
+          "mission_schedule_build_map_and_clean": "Geplantes Karte erstellen und Mähen",
+          "mission_select_region_clean": "Zonenmähen",
+          "mission_create_custom_passage": "Benutzerdefinierte Passage erstellen",
+          "mission_backup_map": "Karte sichern",
+          "mission_relocate_base_station": "Basisstation neu positionieren",
+          "mission_user_auto_calibration": "Automatische Kalibrierung",
+          "mission_restore_backup_map": "Karten-Sicherung wiederherstellen",
+          "mission_schedule_select_region_clean": "Geplantes Zonenmähen",
+          "mission_draw_region_clean": "Mähen gezeichneter Zone",
+          "mission_edge_trim_clean": "Kantentrimmen",
+          "mission_update_backup_map": "Karten-Sicherung aktualisieren"
+        }
+      },
+      "sub_mission": {
+        "name": "Teilauftrag",
+        "state": {
+          "sub_mission_idle": "Bereit",
+          "sub_mission_relocation": "Lokalisiert",
+          "sub_mission_return_to_base": "Rückkehr zur Basis",
+          "sub_mission_out_of_station": "Verlässt Basisstation",
+          "sub_mission_remote_control": "Fernsteuerung",
+          "sub_mission_saving_map": "Karte wird gespeichert",
+          "sub_mission_setting_blade_height": "Schnitthöhe wird eingestellt",
+          "sub_mission_charging": "Lädt",
+          "sub_mission_remote_control_clean": "Mähen per Fernsteuerung",
+          "sub_mission_defogging": "Entfeuchten",
+          "sub_mission_wait_for_daylight": "Wartet auf Tageslicht",
+          "sub_mission_cooling_down_motor": "Motor kühlt ab",
+          "sub_mission_wait_for_rain_to_stop": "Wartet auf Ende des Regens",
+          "sub_mission_flexible_station_wait": "Wartet an der Basisstation"
+        }
+      },
+      "mission_state": {
+        "name": "Auftragsstatus",
+        "state": {
+          "mission_state_idle": "Bereit",
+          "mission_state_running": "Läuft",
+          "mission_state_pause": "Pausiert",
+          "mission_state_abort": "Abgebrochen",
+          "mission_state_complete": "Abgeschlossen"
+        }
+      }
+    },
+    "camera": {
+      "map_camera": {
+        "name": "Karte"
+      },
+      "map_camera_clean": {
+        "name": "Karte (Ohne UI)"
+      }
+    },
+    "binary_sensor": {
+      "charging_state": {
+        "name": "Ladestatus"
+      },
+      "navigation_located": {
+        "name": "Navigation lokalisiert"
+      },
+      "firmware_upgrading": {
+        "name": "Firmware-Aktualisierung"
+      },
+      "power_switch": {
+        "name": "Netzschalter"
+      },
+      "problem": {
+        "name": "Problem"
+      },
+      "rain_detected": {
+        "name": "Regen erkannt"
+      },
+      "map_detected": {
+        "name": "Karte erkannt"
+      },
+      "map_buildable": {
+        "name": "Karte kann erstellt werden"
+      },
+      "map_backing_up": {
+        "name": "Karte wird gesichert"
+      },
+      "saving_data": {
+        "name": "Daten werden gespeichert"
+      },
+      "data_conversion": {
+        "name": "Datenkonvertierung läuft"
+      }
+    },
+    "button": {
+      "reset_blade_timer": {
+        "name": "Klingen-Zähler zurücksetzen"
+      },
+      "reset_base_station_timer": {
+        "name": "Basisstation-Zähler zurücksetzen"
+      },
+      "edge_trim": {
+        "name": "Kantenschnitt"
+      }
+    },
+    "select": {
+      "region_select": {
+        "name": "Zonenauswahl",
+        "state": {
+          "no_zones_available": "Keine Zonen verfügbar",
+          "all_zones": "Alle Zonen"
+        }
+      },
+      "mow_speed_setting": {
+        "name": "Mähgeschwindigkeit",
+        "state": {
+          "mow_speed_type_low": "Fein",
+          "mow_speed_type_medium": "Standard",
+          "mow_speed_type_adaptive_high": "Adaptiv / Schnell",
+          "mow_speed_type_auto": "Automatik"
+        }
+      },
+      "blade_speed": {
+        "name": "Drehgeschwindigkeit",
+        "state": {
+          "blade_disk_speed_type_low": "Eco",
+          "blade_disk_speed_type_medium": "Standard",
+          "blade_disk_speed_type_high": "Schnell"
+        }
+      },
+      "main_direction_mode": {
+        "name": "Mährichtung",
+        "state": {
+          "main_direction_mode_single": "Einzeln",
+          "main_direction_mode_multiple": "Doppelt",
+          "main_direction_mode_auto_rotate": "Automatisch drehend"
+        }
+      },
+      "high_grass_edge_trim_mode": {
+        "name": "Kantenmodus bei hohem Gras",
+        "state": {
+          "high_grass_edge_trim_standard": "Standard",
+          "high_grass_edge_trim_intensive": "Intensiv"
+        }
+      }
+    },
+    "switch": {
+      "thorough_corner_cutting": {
+        "name": "Gründliches Eckenmähen"
+      }
+    },
+    "number": {
+      "mowing_height": {
+        "name": "Schnitthöhe"
+      },
+      "edge_cutting_distance": {
+        "name": "Schnittdistanz am Rand"
+      },
+      "mowing_spacing": {
+        "name": "Abstand der Mähwege"
+      },
+      "main_direction_single_angle": {
+        "name": "Winkel einzelne Mährichtung"
+      },
+      "main_direction_auto_rotate_interval": {
+        "name": "Intervall für automatische Drehung"
+      },
+      "multiple_direction_angle1": {
+        "name": "Erster Richtungswinkel"
+      },
+      "multiple_direction_angle2": {
+        "name": "Zweiter Richtungswinkel"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    }
+  },
+  "services": {
+    "start_select_region": {
+      "name": "Mähen ausgewählter Zonen starten",
+      "description": "Startet das Mähen für die angegebenen Teilbereich-IDs.",
+      "fields": {
+        "region_ids": {
+          "name": "Zonen-IDs",
+          "description": "Liste der Teilbereich-IDs, die gemäht werden sollen."
+        }
+      }
+    }
+  },
+  "issues": {
+    "firmware_ha_module_too_low": {
+      "title": "TerraMow-Firmware-Update erforderlich",
+      "description": "Die HA-Modulversion der TerraMow-Firmware ({firmware_version}) ist zu alt für diese Integration, die Version {required_version} benötigt. Aktualisiere die Mäher-Firmware in der TerraMow-App, um den vollen Funktionsumfang wiederherzustellen."
+    },
+    "firmware_overall_too_low": {
+      "title": "TerraMow-Firmware-Update erforderlich",
+      "description": "Die TerraMow-Firmware ist älter als die mindestens unterstützte Version ({required_version}). Aktualisiere die Mäher-Firmware in der TerraMow-App, um diese Integration zu nutzen."
+    },
+    "firmware_incompatible": {
+      "title": "TerraMow-Firmware inkompatibel",
+      "description": "Die Integration konnte die Kompatibilität der TerraMow-Firmware nicht bestätigen. Prüfe, ob sowohl die Mäher-Firmware als auch diese Integration aktuell sind, lade dann die Diagnose herunter und eröffne ein Issue, falls das Problem bestehen bleibt."
+    },
+    "plugin_downgrade_recommended": {
+      "title": "TerraMow-Integrationsupdate empfohlen",
+      "description": "Die HA-Modulversion der TerraMow-Firmware ({firmware_version}) ist neuer als diese Integration unterstützt ({plugin_version}). Aktualisiere die Integration in HACS, um die neuesten Funktionen zu erhalten."
+    }
+  }
 }

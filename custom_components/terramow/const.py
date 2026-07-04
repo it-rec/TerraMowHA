@@ -1,9 +1,11 @@
 """Constants for the TerraMow integration."""
 
+from __future__ import annotations
+
 DOMAIN = "terramow"
 
 
-def to_ha_enum_state(value):
+def to_ha_enum_state(value: str | None) -> str | None:
     """Convert a device enum string to a Home Assistant state/option token.
 
     Device protocol enums are UPPERCASE (e.g. ``"MISSION_IDLE"``). Home Assistant
@@ -14,7 +16,7 @@ def to_ha_enum_state(value):
     return value.lower() if isinstance(value, str) and value else None
 
 
-def to_device_enum(value):
+def to_device_enum(value: str | None) -> str | None:
     """Convert a Home Assistant enum option back to the device UPPERCASE form.
 
     The inverse of :func:`to_ha_enum_state`, used when a select option chosen in
