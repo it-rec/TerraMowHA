@@ -689,7 +689,7 @@ class TerraMowHub:
         try:
             dp_id = int(match.group(1))
             _LOGGER.debug("Parsed dp_id: %d from topic: %s", dp_id, topic)
-        except ValueError:
+        except ValueError:  # pragma: no cover - regex guarantees \d+ parses
             _LOGGER.warning("Invalid dp_id in topic: %s", topic)
             return
 
