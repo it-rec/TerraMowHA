@@ -812,7 +812,6 @@ def _render_placeholder(text: str = "Waiting for map data...") -> bytes:
 class TerraMowMapCamera(TerraMowEntity, Camera):
     """地图摄像头实体。"""
 
-    _attr_icon = "mdi:map"
 
     def __init__(
         self,

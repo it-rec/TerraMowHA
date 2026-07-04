@@ -85,7 +85,6 @@ class NavigationLocatedSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntit
 
     _attr_translation_key = "navigation_located"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_icon = "mdi:crosshairs-gps"
 
     _unique_id_suffix = "navigation_located"
 
@@ -230,7 +229,6 @@ class TerraMowMapDetectedBinarySensor(_MapStatusBinarySensorBase):
     """True when the device reports an active/detected map."""
 
     _attr_translation_key = "map_detected"
-    _attr_icon = "mdi:map-check"
     _map_status_field = "is_map_detected"
     _unique_id_suffix = "map_detected"
 
@@ -239,7 +237,6 @@ class TerraMowMapBuildableBinarySensor(_MapStatusBinarySensorBase):
     """True when the device is in a state where a build-map command would be accepted."""
 
     _attr_translation_key = "map_buildable"
-    _attr_icon = "mdi:map-plus"
     _map_status_field = "is_able_to_run_build_map"
     _unique_id_suffix = "map_buildable"
 
@@ -248,7 +245,6 @@ class TerraMowMapBackingUpBinarySensor(_MapStatusBinarySensorBase):
     """True while a map backup is in progress."""
 
     _attr_translation_key = "map_backing_up"
-    _attr_icon = "mdi:cloud-upload-outline"
     _map_status_field = "is_backing_up_map"
     _unique_id_suffix = "map_backing_up"
 
@@ -288,7 +284,6 @@ class TerraMowSavingDataBinarySensor(_TaskStatusBinarySensorBase):
     """
 
     _attr_translation_key = "saving_data"
-    _attr_icon = "mdi:content-save-cog"
     _task_status_field = "is_saving_data"
     _unique_id_suffix = "saving_data"
 
@@ -297,6 +292,5 @@ class TerraMowDataConversionBinarySensor(_TaskStatusBinarySensorBase):
     """True while a data compatibility conversion is in progress."""
 
     _attr_translation_key = "data_conversion"
-    _attr_icon = "mdi:database-sync"
     _task_status_field = "is_data_conversion_in_progress"
     _unique_id_suffix = "data_conversion"

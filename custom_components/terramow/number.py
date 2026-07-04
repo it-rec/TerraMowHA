@@ -63,7 +63,6 @@ class TerraMowNumberBase(PushUpdateMixin, TerraMowEntity, NumberEntity):
 class MowingHeightNumber(TerraMowNumberBase):
     """割草高度设置控制器 - 使用dp_155数据"""
     
-    _attr_icon = "mdi:arrow-up-down"
     _attr_native_unit_of_measurement = UnitOfLength.MILLIMETERS
     _attr_device_class = NumberDeviceClass.DISTANCE
     _attr_entity_category = EntityCategory.CONFIG
@@ -109,7 +108,6 @@ class MowingHeightNumber(TerraMowNumberBase):
 class EdgeCuttingDistanceNumber(TerraMowNumberBase):
     """边缘割草距离设置控制器 - 使用dp_155数据"""
     
-    _attr_icon = "mdi:border-outside"
     _attr_native_unit_of_measurement = UnitOfLength.MILLIMETERS
     _attr_device_class = NumberDeviceClass.DISTANCE
     _attr_entity_category = EntityCategory.CONFIG
@@ -155,7 +153,6 @@ class EdgeCuttingDistanceNumber(TerraMowNumberBase):
 class MowingSpacingNumber(TerraMowNumberBase):
     """割草间距设置控制器 - 使用dp_155数据"""
     
-    _attr_icon = "mdi:ruler"
     _attr_native_unit_of_measurement = UnitOfLength.MILLIMETERS
     _attr_device_class = NumberDeviceClass.DISTANCE
     _attr_entity_category = EntityCategory.CONFIG
@@ -224,7 +221,6 @@ class MowingSpacingNumber(TerraMowNumberBase):
 class MainDirectionSingleAngleNumber(TerraMowNumberBase):
     """单主方向角度设置控制器 - 使用dp_155数据"""
     
-    _attr_icon = "mdi:compass-outline"
     _attr_native_unit_of_measurement = "°"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "main_direction_single_angle"
@@ -362,7 +358,6 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
 class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
     """自动旋转主方向间隔设置控制器 - 使用dp_155数据"""
     
-    _attr_icon = "mdi:rotate-right"
     _attr_native_unit_of_measurement = "°"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "main_direction_auto_rotate_interval"
@@ -499,7 +494,6 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
 class MultipleDirectionAngle1Number(TerraMowNumberBase):
     """多主方向第一角度设置控制器 - 使用dp_155数据"""
     
-    _attr_icon = "mdi:compass-outline"
     _attr_native_unit_of_measurement = "°"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "multiple_direction_angle1"
@@ -660,7 +654,6 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
 class MultipleDirectionAngle2Number(TerraMowNumberBase):
     """多主方向第二角度设置控制器 - 使用dp_155数据"""
     
-    _attr_icon = "mdi:compass"
     _attr_native_unit_of_measurement = "°"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "multiple_direction_angle2"
