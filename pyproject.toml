@@ -62,11 +62,17 @@ disallow_untyped_defs = true
 # it is fully typed.
 follow_imports = "silent"
 files = [
+    "custom_components/terramow/binary_sensor.py",
+    "custom_components/terramow/button.py",
     "custom_components/terramow/const.py",
     "custom_components/terramow/diagnostics.py",
     "custom_components/terramow/entity.py",
     "custom_components/terramow/entity_utils.py",
     "custom_components/terramow/issues.py",
+    "custom_components/terramow/lawn_mower.py",
+    "custom_components/terramow/map_sensor.py",
+    "custom_components/terramow/switch.py",
+    "custom_components/terramow/update.py",
 ]
 
 [[tool.mypy.overrides]]

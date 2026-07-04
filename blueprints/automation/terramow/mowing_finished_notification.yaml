@@ -1,0 +1,34 @@
+blueprint:
+  name: TerraMow – Mowing finished
+  description: >
+    Send a notification when the TerraMow finishes a mowing job (the
+    "Mission state" sensor reaches the "complete" state). Pick the
+    TerraMow *Mission state* sensor below.
+  domain: automation
+  source_url: https://github.com/it-rec/TerraMowHA/blob/main/blueprints/automation/terramow/mowing_finished_notification.yaml
+  input:
+    mission_state_sensor:
+      name: Mission state sensor
+      description: The TerraMow "Mission state" sensor.
+      selector:
+        entity:
+          filter:
+            - integration: terramow
+              domain: sensor
+    notify_action:
+      name: Notification action
+      description: The action to run — e.g. a mobile app notification.
+      selector:
+        action: {}
+
+mode: single
+max_exceeded: silent
+
+trigger:
+  - platform: state
+    entity_id: !input mission_state_sensor
+    to: "mission_state_complete"
+
+action:
+  - choose: []
+    default: !input notify_action

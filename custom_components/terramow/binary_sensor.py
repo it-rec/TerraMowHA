@@ -193,7 +193,10 @@ class TerraMowRainSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
         """Return true if the back-to-station reason is raining."""
         if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
             return None
-        return self.basic_data.lawn_mower.back_to_station_reason == "BACK_TO_STATION_REASON_RAINING"
+        return bool(
+            self.basic_data.lawn_mower.back_to_station_reason
+            == "BACK_TO_STATION_REASON_RAINING"
+        )
 
 
 class _MapStatusBinarySensorBase(TerraMowEntity, BinarySensorEntity):
