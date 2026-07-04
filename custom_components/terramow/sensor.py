@@ -40,7 +40,6 @@ _LOGGER = logging.getLogger(__name__)
 class BatterySensor(TerraMowEntity, SensorEntity):
     """Representation of the battery sensor."""
 
-    _attr_icon = "mdi:battery"
     _attr_translation_key = "battery"
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_device_class = SensorDeviceClass.BATTERY
@@ -106,7 +105,6 @@ class BatteryStateSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (108,)
 
-    _attr_icon = "mdi:battery-charging"
     _attr_translation_key = "battery_state"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = [
@@ -139,7 +137,6 @@ class BatteryTemperatureStateSensor(PushUpdateMixin, TerraMowEntity, SensorEntit
 
     _push_dp_ids = (108,)
 
-    _attr_icon = "mdi:thermometer"
     _attr_translation_key = "battery_temperature_state"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = [
@@ -173,7 +170,6 @@ class TotalMowingTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (124,)
 
-    _attr_icon = "mdi:clock"
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
@@ -200,7 +196,6 @@ class TotalMowingJobsSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (124,)
 
-    _attr_icon = "mdi:counter"
     _attr_native_unit_of_measurement = None
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -226,7 +221,6 @@ class TotalMowedAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (124,)
 
-    _attr_icon = "mdi:texture-box"
     _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -256,7 +250,6 @@ class CurrentSessionAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (113,)
 
-    _attr_icon = "mdi:vector-square"
     _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
     _attr_device_class = None
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -308,7 +301,6 @@ class CurrentSessionAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 class CurrentSessionProgressSensor(TerraMowEntity, SensorEntity):
     """Progress (%) of the current session, derived from dp_113 clean_area/total_area."""
 
-    _attr_icon = "mdi:progress-check"
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -346,7 +338,6 @@ class CurrentSessionTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (113,)
 
-    _attr_icon = "mdi:timer"
     _attr_native_unit_of_measurement = UnitOfTime.SECONDS
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -373,7 +364,6 @@ class CurrentJobTypeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (113,)
 
-    _attr_icon = "mdi:format-list-bulleted-type"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = [
         "map_area_type_none",
@@ -410,7 +400,6 @@ class RemainingBladeTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (126,)
 
-    _attr_icon = "mdi:saw-blade"
     _attr_native_unit_of_measurement = UnitOfTime.MINUTES
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -458,7 +447,6 @@ class RemainingBaseStationTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEnti
 
     _push_dp_ids = (125,)
 
-    _attr_icon = "mdi:home-clock"
     _attr_native_unit_of_measurement = UnitOfTime.MINUTES
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -506,7 +494,6 @@ class TerraMowMowHeightSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (155,)
 
-    _attr_icon = "mdi:arrow-up-down"
     _attr_native_unit_of_measurement = UnitOfLength.MILLIMETERS
     _attr_device_class = SensorDeviceClass.DISTANCE
     _attr_state_class = SensorStateClass.MEASUREMENT
@@ -534,7 +521,6 @@ class TerraMowMowSpeedSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (155,)
 
-    _attr_icon = "mdi:speedometer"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "mow_speed"
     _attr_device_class = SensorDeviceClass.ENUM
@@ -618,7 +604,6 @@ class NextScheduledStartSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (138,)
 
-    _attr_icon = "mdi:calendar-clock"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "next_scheduled_start"
     _attr_device_class = None  # 使用字符串显示时间
@@ -680,7 +665,6 @@ class VersionCompatibilitySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (127,)
 
-    _attr_icon = "mdi:update"
     _attr_translation_key = "version_compatibility"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
@@ -725,7 +709,6 @@ class VersionCompatibilitySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 class TerraMowPoseSensor(TerraMowEntity, SensorEntity):
     """实时姿态传感器（2Hz）"""
 
-    _attr_icon = "mdi:crosshairs-gps"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "pose"
 
@@ -867,7 +850,6 @@ class MainDirectionStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (155,)
 
-    _attr_icon = "mdi:compass"
     _attr_translation_key = "main_direction_status"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
@@ -962,7 +944,6 @@ class BackToStationReasonSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (107,)
 
-    _attr_icon = "mdi:home-import-outline"
     _attr_translation_key = "back_to_station_reason"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_device_class = SensorDeviceClass.ENUM
@@ -1015,7 +996,6 @@ class _MissionEnumSensorBase(TerraMowEntity, SensorEntity):
 class TerraMowMissionSensor(_MissionEnumSensorBase):
     """Current top-level mission (dp_107)."""
 
-    _attr_icon = "mdi:robot-mower-outline"
     _attr_translation_key = "mission"
     _attr_options = [to_ha_enum_state(member.value) for member in Mission]
     _enum_attr = "mission"
@@ -1025,7 +1005,6 @@ class TerraMowMissionSensor(_MissionEnumSensorBase):
 class TerraMowSubMissionSensor(_MissionEnumSensorBase):
     """Current sub-mission (dp_107) — surfaces transient states like waiting for rain."""
 
-    _attr_icon = "mdi:list-status"
     _attr_translation_key = "sub_mission"
     _attr_options = [to_ha_enum_state(member.value) for member in SubMission]
     _enum_attr = "sub_mission"
@@ -1035,7 +1014,6 @@ class TerraMowSubMissionSensor(_MissionEnumSensorBase):
 class TerraMowMissionStateSensor(_MissionEnumSensorBase):
     """Mission lifecycle state (dp_107): idle / running / paused / abort / complete."""
 
-    _attr_icon = "mdi:state-machine"
     _attr_translation_key = "mission_state"
     _attr_options = [to_ha_enum_state(member.value) for member in MissionState]
     _enum_attr = "mission_state"

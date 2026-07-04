@@ -42,7 +42,6 @@ class ResetBladeTimerButton(TerraMowResetButtonBase):
     """Button to reset the mowing blade disk usage time."""
 
     _attr_translation_key = "reset_blade_timer"
-    _attr_icon = "mdi:saw-blade"
 
     _unique_id_suffix = "reset_blade_timer"
 
@@ -55,7 +54,6 @@ class ResetBaseStationTimerButton(TerraMowResetButtonBase):
     """Button to reset the base station usage time."""
 
     _attr_translation_key = "reset_base_station_timer"
-    _attr_icon = "mdi:home-lightning-bolt"
 
     _unique_id_suffix = "reset_base_station_timer"
 
@@ -68,7 +66,6 @@ class EdgeTrimButton(TerraMowEntity, ButtonEntity):
     """Button that starts the TerraMow in edge-trim mode."""
 
     _attr_translation_key = "edge_trim"
-    _attr_icon = "mdi:vector-square"
 
     _unique_id_suffix = "edge_trim"
 

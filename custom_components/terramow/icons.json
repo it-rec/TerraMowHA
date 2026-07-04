@@ -1,0 +1,70 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "navigation_located": { "default": "mdi:crosshairs-gps" },
+      "map_detected": { "default": "mdi:map-check" },
+      "map_buildable": { "default": "mdi:map-plus" },
+      "map_backing_up": { "default": "mdi:cloud-upload-outline" },
+      "saving_data": { "default": "mdi:content-save-cog" },
+      "data_conversion": { "default": "mdi:database-sync" }
+    },
+    "button": {
+      "reset_blade_timer": { "default": "mdi:saw-blade" },
+      "reset_base_station_timer": { "default": "mdi:home-lightning-bolt" },
+      "edge_trim": { "default": "mdi:vector-square" }
+    },
+    "camera": {
+      "map_camera": { "default": "mdi:map" },
+      "map_camera_clean": { "default": "mdi:map" }
+    },
+    "lawn_mower": {
+      "lawn_mower": { "default": "mdi:robot-mower" }
+    },
+    "number": {
+      "mowing_height": { "default": "mdi:arrow-up-down" },
+      "edge_cutting_distance": { "default": "mdi:border-outside" },
+      "mowing_spacing": { "default": "mdi:ruler" },
+      "main_direction_single_angle": { "default": "mdi:compass-outline" },
+      "main_direction_auto_rotate_interval": { "default": "mdi:rotate-right" },
+      "multiple_direction_angle1": { "default": "mdi:compass-outline" },
+      "multiple_direction_angle2": { "default": "mdi:compass" }
+    },
+    "select": {
+      "region_select": { "default": "mdi:map-marker-multiple" },
+      "mow_speed_setting": { "default": "mdi:speedometer" },
+      "blade_speed": { "default": "mdi:fan" },
+      "main_direction_mode": { "default": "mdi:compass" },
+      "high_grass_edge_trim_mode": { "default": "mdi:grass" }
+    },
+    "sensor": {
+      "battery": { "default": "mdi:battery" },
+      "battery_state": { "default": "mdi:battery-charging" },
+      "battery_temperature_state": { "default": "mdi:thermometer" },
+      "total_mowing_time": { "default": "mdi:clock" },
+      "total_mowing_jobs": { "default": "mdi:counter" },
+      "total_mowed_area": { "default": "mdi:texture-box" },
+      "current_session_area": { "default": "mdi:vector-square" },
+      "current_session_progress": { "default": "mdi:progress-check" },
+      "current_session_time": { "default": "mdi:timer" },
+      "current_job_type": { "default": "mdi:format-list-bulleted-type" },
+      "remaining_blade_time": { "default": "mdi:saw-blade" },
+      "remaining_base_station_time": { "default": "mdi:home-clock" },
+      "mow_height": { "default": "mdi:arrow-up-down" },
+      "mow_speed": { "default": "mdi:speedometer" },
+      "next_scheduled_start": { "default": "mdi:calendar-clock" },
+      "version_compatibility": { "default": "mdi:update" },
+      "pose": { "default": "mdi:crosshairs-gps" },
+      "main_direction_status": { "default": "mdi:compass" },
+      "back_to_station_reason": { "default": "mdi:home-import-outline" },
+      "mission": { "default": "mdi:robot-mower-outline" },
+      "sub_mission": { "default": "mdi:list-status" },
+      "mission_state": { "default": "mdi:state-machine" },
+      "map_status": { "default": "mdi:map" },
+      "map_area": { "default": "mdi:texture-box" },
+      "clean_mode": { "default": "mdi:broom" }
+    },
+    "switch": {
+      "thorough_corner_cutting": { "default": "mdi:vector-polyline" }
+    }
+  }
+}

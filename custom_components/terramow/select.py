@@ -51,7 +51,6 @@ async def async_setup_entry(
 class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
     """地图分区选择器 - Zone selector for mowing specific areas"""
     
-    _attr_icon = "mdi:map-marker-multiple"
     _attr_entity_category = EntityCategory.CONFIG
 
     # 注意: translation_key 保持使用 "region_select" 而不是 "zone_select"
@@ -220,7 +219,6 @@ class MowSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
 
     _push_dp_ids = (155,)
     
-    _attr_icon = "mdi:speedometer"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "mow_speed_setting"
 
@@ -393,7 +391,6 @@ class BladeSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
 
     _push_dp_ids = (155,)
     
-    _attr_icon = "mdi:fan"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "blade_speed"
     
@@ -478,7 +475,6 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
 
     _push_dp_ids = (155,)
     
-    _attr_icon = "mdi:compass"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "main_direction_mode"
     
@@ -733,7 +729,6 @@ class HighGrassEdgeTrimModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity)
 
     _push_map_info = True
 
-    _attr_icon = "mdi:grass"
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "high_grass_edge_trim_mode"
 
