@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import threading
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import paho.mqtt.client as mqtt_client
 import voluptuous as vol
@@ -17,6 +17,12 @@ from homeassistant.config_entries import (
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
+
+if TYPE_CHECKING:
+    # Imported lazily for typing only: ConfigFlowResult is not present on the
+    # oldest supported Home Assistant versions, and ``from __future__ import
+    # annotations`` keeps these annotations from being evaluated at runtime.
+    from homeassistant.config_entries import ConfigFlowResult
 
 from .const import (
     CONF_MAP_RESOLUTION,
@@ -62,7 +68,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         auth_failed = False
         event = threading.Event()
 
-        def on_connect(client, userdata, flags, rc):
+        def on_connect(client: Any, userdata: Any, flags: Any, rc: int) -> None:
             nonlocal connected, auth_failed
             # rc 4 = bad username/password, rc 5 = not authorized
             if rc == 0:
@@ -112,7 +118,7 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ):
+    ) -> ConfigFlowResult:
         """Handle the initial step."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -141,7 +147,7 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
             errors=errors
         )
 
-    async def async_step_zeroconf(self, discovery_info):
+    async def async_step_zeroconf(self, discovery_info: Any) -> ConfigFlowResult:
         """Handle a flow initialized by zeroconf discovery."""
         host = getattr(discovery_info, "host", None)
         if host is None and isinstance(discovery_info, dict):
@@ -161,7 +167,7 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
 
     async def async_step_user_pass(
         self, user_input: dict[str, Any] | None = None
-    ):
+    ) -> ConfigFlowResult:
         """Ask the user for the password after zeroconf discovery."""
         errors: dict[str, str] = {}
 
@@ -198,17 +204,20 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_reauth(self, entry_data: dict[str, Any]):
+    async def async_step_reauth(self, entry_data: dict[str, Any]) -> ConfigFlowResult:
         """Trigger the re-authentication flow."""
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(
         self, user_input: dict[str, Any] | None = None
-    ):
+    ) -> ConfigFlowResult:
         """Handle re-authentication confirmation."""
         errors: dict[str, str] = {}
-        entry = self.hass.config_entries.async_get_entry(
-            self.context.get("entry_id")
+        entry_id = self.context.get("entry_id")
+        entry = (
+            self.hass.config_entries.async_get_entry(entry_id)
+            if entry_id is not None
+            else None
         )
 
         if user_input is not None and entry is not None:
@@ -240,7 +249,7 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
-    ):
+    ) -> ConfigFlowResult:
         """Handle reconfiguration of an existing entry (e.g. a changed IP/host)."""
         errors: dict[str, str] = {}
         entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
@@ -295,7 +304,7 @@ class TerraMowOptionsFlow(OptionsFlow):
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ):
+    ) -> ConfigFlowResult:
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
