@@ -1,393 +1,411 @@
 {
-    "config": {
-        "flow_title": "TerraMow ({host})",
-        "abort": {
-            "already_configured": "Ierīce jau ir konfigurēta",
-            "cannot_connect": "Neizdevās izveidot savienojumu",
-            "reauth_successful": "Atkārtotā autentifikācija bija veiksmīga",
-            "reconfigure_successful": "Pārkonfigurēšana bija veiksmīga"
-        },
-        "error": {
-            "cannot_connect": "Neizdevās izveidot savienojumu",
-            "invalid_auth": "Nederīga autentifikācija",
-            "unknown": "Negaidīta kļūda"
-        },
-        "step": {
-            "user": {
-                "data": {
-                    "host": "Resursdators",
-                    "password": "Parole",
-                    "username": "Lietotājvārds"
-                }
-            },
-            "user_pass": {
-                "title": "TerraMow",
-                "description": "Atrasts TerraMow adresē {host}. Ievadiet MQTT paroli, lai pabeigtu iestatīšanu.",
-                "data": {
-                    "password": "Parole"
-                }
-            },
-            "reauth_confirm": {
-                "data": {
-                    "password": "Parole"
-                }
-            },
-            "reconfigure": {
-                "title": "Pārkonfigurēt TerraMow",
-                "description": "Atjauniniet sava TerraMow IP adresi / resursdatora nosaukumu vai paroli.",
-                "data": {
-                    "host": "Resursdators",
-                    "password": "Parole"
-                }
-            }
-        }
+  "config": {
+    "flow_title": "TerraMow ({host})",
+    "abort": {
+      "already_configured": "Ierīce jau ir konfigurēta",
+      "cannot_connect": "Neizdevās izveidot savienojumu",
+      "reauth_successful": "Atkārtotā autentifikācija bija veiksmīga",
+      "reconfigure_successful": "Pārkonfigurēšana bija veiksmīga"
     },
-    "options": {
-        "step": {
-            "init": {
-                "title": "TerraMow opcijas",
-                "data": {
-                    "map_resolution": "Kartes izvades izšķirtspēja (px)"
-                },
-                "data_description": {
-                    "map_resolution": "Kartes kameras PNG attēla malas garums. Lielākas vērtības nodrošina asāku attēlu, iegulstot to informācijas paneļos, bet palielina joslas platumu un CPU noslodzi katrā renderēšanas reizē."
-                }
-            }
-        }
+    "error": {
+      "cannot_connect": "Neizdevās izveidot savienojumu",
+      "invalid_auth": "Nederīga autentifikācija",
+      "unknown": "Negaidīta kļūda"
     },
-    "entity": {
-        "lawn_mower": {
-            "lawn_mower": {
-                "name": "Zāliena pļāvējs"
-            }
-        },
-        "sensor": {
-            "battery": {
-                "name": "Akumulators"
-            },
-            "battery_state": {
-                "name": "Akumulatora stāvoklis",
-                "state": {
-                    "battery_state_discharge": "Izlādējas",
-                    "battery_state_charging": "Uzlādējas",
-                    "battery_state_charged": "Pilnībā uzlādēts"
-                }
-            },
-            "battery_temperature_state": {
-                "name": "Akumulatora temperatūras stāvoklis",
-                "state": {
-                    "battery_tempreture_normal": "Normāla",
-                    "battery_tempreture_overheat": "Pārkarsis",
-                    "battery_tempreture_underheat": "Pārāk auksts"
-                }
-            },
-            "map_status": {
-                "name": "Kartes statuss",
-                "state": {
-                    "map_state_empty": "Nav kartes",
-                    "map_state_incomplete": "Karte nepilnīga",
-                    "map_state_complete": "Karte pabeigta"
-                }
-            },
-            "map_area": {
-                "name": "Kartes platība"
-            },
-            "mow_height": {
-                "name": "Pļaušanas augstums"
-            },
-            "mow_speed": {
-                "name": "Pļaušanas ātrums",
-                "state": {
-                    "mow_speed_type_low": "Zems",
-                    "mow_speed_type_medium": "Vidējs",
-                    "mow_speed_type_adaptive_high": "Adaptīvi augsts",
-                    "mow_speed_type_auto": "Automātisks"
-                }
-            },
-            "clean_mode": {
-                "name": "Darbības režīms",
-                "state": {
-                    "map_clean_info_mode_global": "Globālā darbība",
-                    "map_clean_info_mode_select_region": "Darbība izvēlētajā zonā",
-                    "map_clean_info_mode_draw_region": "Darbība uzzīmētajā zonā",
-                    "map_clean_info_mode_move_to_target_point": "Pārvietošanās uz mērķa punktu"
-                }
-            },
-            "pose": {
-                "name": "Pozīcija"
-            },
-            "total_mowing_time": {
-                "name": "Kopējais pļaušanas laiks"
-            },
-            "total_mowing_jobs": {
-                "name": "Kopējais pļaušanas darbu skaits"
-            },
-            "total_mowed_area": {
-                "name": "Kopējā nopļautā platība"
-            },
-            "current_session_area": {
-                "name": "Pašreizējās sesijas platība"
-            },
-            "current_session_progress": {
-                "name": "Pašreizējās sesijas progress"
-            },
-            "current_session_time": {
-                "name": "Pašreizējās sesijas laiks"
-            },
-            "current_job_type": {
-                "name": "Pašreizējā darba veids",
-                "state": {
-                    "map_area_type_none": "Nav",
-                    "map_area_type_build_map": "Kartes veidošana",
-                    "map_area_type_cleaning": "Pļaušana",
-                    "map_area_type_build_map_and_cleaning": "Kartes veidošana un pļaušana",
-                    "map_area_type_select_region_cleaning": "Izvēlētās zonas pļaušana",
-                    "map_area_type_draw_region_cleaning": "Uzzīmētās zonas pļaušana",
-                    "map_area_type_edge_trim_cleaning": "Malu apgriešana"
-                }
-            },
-            "remaining_blade_time": {
-                "name": "Atlikušais asmeņu laiks"
-            },
-            "remaining_base_station_time": {
-                "name": "Atlikušais bāzes stacijas laiks"
-            },
-            "next_scheduled_start": {
-                "name": "Nākamā plānotā palaišana"
-            },
-            "version_compatibility": {
-                "name": "Versiju saderība",
-                "state": {
-                    "compatible": "Saderīga",
-                    "upgrade_required": "Nepieciešams jauninājums",
-                    "downgrade_recommended": "Ieteicama vecāka versija",
-                    "incompatible": "Nesaderīga",
-                    "unknown": "Nezināma"
-                }
-            },
-            "main_direction_status": {
-                "name": "Galvenā virziena statuss",
-                "state": {
-                    "main_direction_mode_single": "Viens virziens",
-                    "main_direction_mode_multiple": "Vairāki virzieni",
-                    "main_direction_mode_auto_rotate": "Automātiska virziena maiņa",
-                    "unavailable": "Nav pieejams",
-                    "no_config": "Nav konfigurācijas"
-                }
-            },
-            "power_mode": {
-                "name": "Barošanas režīms",
-                "state": {
-                    "power_mode_running": "Darbojas",
-                    "power_mode_standby": "Gaidstāve",
-                    "power_mode_hibernate": "Hibernācija"
-                }
-            },
-            "back_to_station_reason": {
-                "name": "Atgriešanās stacijā iemesls",
-                "state": {
-                    "back_to_station_reason_none": "Nav",
-                    "back_to_station_reason_low_battery": "Zems akumulatora līmenis",
-                    "back_to_station_reason_raining": "Lietus",
-                    "back_to_station_reason_mow_motor_overheat": "Pļaušanas motora pārkaršana",
-                    "back_to_station_reason_wheel_overheat": "Piedziņas riteņu pārkaršana",
-                    "back_to_station_reason_night_time": "Tumsa"
-                }
-            },
-            "mission": {
-                "name": "Misija",
-                "state": {
-                    "mission_idle": "Dīkstāve",
-                    "mission_recharge": "Uzlāde",
-                    "mission_global_clean": "Globālā pļaušana",
-                    "mission_build_map": "Kartes veidošana",
-                    "mission_build_map_and_clean": "Kartes veidošana un pļaušana",
-                    "mission_temporary_clean": "Pagaidu pļaušana",
-                    "mission_back_to_starting_point": "Atgriešanās sākuma punktā",
-                    "mission_remote_control_clean": "Pļaušana ar tālvadību",
-                    "mission_schedule_global_clean": "Plānotā globālā pļaušana",
-                    "mission_schedule_build_map_and_clean": "Plānotā kartes veidošana un pļaušana",
-                    "mission_select_region_clean": "Zonu pļaušana",
-                    "mission_create_custom_passage": "Pielāgotas ejas izveide",
-                    "mission_backup_map": "Kartes dublēšana",
-                    "mission_relocate_base_station": "Bāzes stacijas pārvietošana",
-                    "mission_user_auto_calibration": "Automātiskā kalibrēšana",
-                    "mission_restore_backup_map": "Kartes rezerves kopijas atjaunošana",
-                    "mission_schedule_select_region_clean": "Plānotā zonu pļaušana",
-                    "mission_draw_region_clean": "Uzzīmētās zonas pļaušana",
-                    "mission_edge_trim_clean": "Malu apgriešana",
-                    "mission_update_backup_map": "Kartes rezerves kopijas atjaunināšana"
-                }
-            },
-            "sub_mission": {
-                "name": "Apakšmisija",
-                "state": {
-                    "sub_mission_idle": "Dīkstāve",
-                    "sub_mission_relocation": "Atkārtota lokalizācija",
-                    "sub_mission_return_to_base": "Atgriešanās bāzē",
-                    "sub_mission_out_of_station": "Izbraukšana no bāzes stacijas",
-                    "sub_mission_remote_control": "Tālvadība",
-                    "sub_mission_saving_map": "Kartes saglabāšana",
-                    "sub_mission_setting_blade_height": "Asmeņu augstuma regulēšana",
-                    "sub_mission_charging": "Uzlāde",
-                    "sub_mission_remote_control_clean": "Pļaušana ar tālvadību",
-                    "sub_mission_defogging": "Aizsvīduma noņemšana",
-                    "sub_mission_wait_for_daylight": "Dienasgaismas gaidīšana",
-                    "sub_mission_cooling_down_motor": "Motora dzesēšana",
-                    "sub_mission_wait_for_rain_to_stop": "Gaidīšana, līdz beigsies lietus",
-                    "sub_mission_flexible_station_wait": "Gaidīšana bāzes stacijā"
-                }
-            },
-            "mission_state": {
-                "name": "Misijas stāvoklis",
-                "state": {
-                    "mission_state_idle": "Dīkstāve",
-                    "mission_state_running": "Darbojas",
-                    "mission_state_pause": "Pauzēta",
-                    "mission_state_abort": "Pārtraukta",
-                    "mission_state_complete": "Pabeigta"
-                }
-            }
-        },
-        "camera": {
-            "map_camera": {
-                "name": "Karte"
-            },
-            "map_camera_clean": {
-                "name": "Karte (tīra)"
-            }
-        },
-        "binary_sensor": {
-            "charging_state": {
-                "name": "Uzlādes stāvoklis"
-            },
-            "navigation_located": {
-                "name": "Navigācijas pozīcija noteikta"
-            },
-            "firmware_upgrading": {
-                "name": "Notiek programmaparatūras jaunināšana"
-            },
-            "power_switch": {
-                "name": "Barošanas slēdzis"
-            },
-            "problem": {
-                "name": "Problēma"
-            },
-            "rain_detected": {
-                "name": "Konstatēts lietus"
-            },
-            "map_detected": {
-                "name": "Karte konstatēta"
-            },
-            "map_buildable": {
-                "name": "Karti var izveidot"
-            },
-            "map_backing_up": {
-                "name": "Notiek kartes dublēšana"
-            },
-            "saving_data": {
-                "name": "Notiek datu saglabāšana"
-            },
-            "data_conversion": {
-                "name": "Notiek datu konvertēšana"
-            }
-        },
-        "button": {
-            "reset_blade_timer": {
-                "name": "Atiestatīt asmeņu taimeri"
-            },
-            "reset_base_station_timer": {
-                "name": "Atiestatīt bāzes stacijas taimeri"
-            },
-            "edge_trim": {
-                "name": "Malu apgriešana"
-            }
-        },
-        "select": {
-            "region_select": {
-                "name": "Zonas izvēle",
-                "state": {
-                    "no_zones_available": "Nav pieejamu zonu",
-                    "all_zones": "Visas zonas"
-                }
-            },
-            "mow_speed_setting": {
-                "name": "Pļaušanas ātruma iestatījums",
-                "state": {
-                    "mow_speed_type_low": "Zems ātrums",
-                    "mow_speed_type_medium": "Vidējs ātrums",
-                    "mow_speed_type_adaptive_high": "Adaptīvi augsts ātrums",
-                    "mow_speed_type_auto": "Automātisks ātrums"
-                }
-            },
-            "blade_speed": {
-                "name": "Asmeņu ātruma iestatījums",
-                "state": {
-                    "blade_disk_speed_type_low": "Zems ātrums",
-                    "blade_disk_speed_type_medium": "Vidējs ātrums",
-                    "blade_disk_speed_type_high": "Augsts ātrums"
-                }
-            },
-            "main_direction_mode": {
-                "name": "Galvenā virziena režīms",
-                "state": {
-                    "main_direction_mode_single": "Viens virziens",
-                    "main_direction_mode_multiple": "Vairāki virzieni",
-                    "main_direction_mode_auto_rotate": "Automātiska virziena maiņa"
-                }
-            },
-            "high_grass_edge_trim_mode": {
-                "name": "Malu apgriešanas režīms garā zālē",
-                "state": {
-                    "high_grass_edge_trim_standard": "Standarta",
-                    "high_grass_edge_trim_intensive": "Intensīvs"
-                }
-            }
-        },
-        "switch": {
-            "thorough_corner_cutting": {
-                "name": "Rūpīga stūru pļaušana"
-            }
-        },
-        "number": {
-            "mowing_height": {
-                "name": "Pļaušanas augstuma iestatījums"
-            },
-            "edge_cutting_distance": {
-                "name": "Malu pļaušanas attālums"
-            },
-            "mowing_spacing": {
-                "name": "Pļaušanas atstatuma iestatījums"
-            },
-            "main_direction_single_angle": {
-                "name": "Viena virziena leņķis"
-            },
-            "main_direction_auto_rotate_interval": {
-                "name": "Automātiskās virziena maiņas leņķa intervāls"
-            },
-            "multiple_direction_angle1": {
-                "name": "Pirmā virziena leņķis"
-            },
-            "multiple_direction_angle2": {
-                "name": "Otrā virziena leņķis"
-            }
-        },
-        "update": {
-            "firmware": {
-                "name": "Programmaparatūra"
-            }
+    "step": {
+      "user": {
+        "data": {
+          "host": "Resursdators",
+          "password": "Parole",
+          "username": "Lietotājvārds"
         }
-    },
-    "services": {
-        "start_select_region": {
-            "name": "Sākt izvēlēto zonu pļaušanu",
-            "description": "Sāk pļaušanu norādītajiem apakšzonu ID.",
-            "fields": {
-                "region_ids": {
-                    "name": "Zonu ID",
-                    "description": "Pļaujamo apakšzonu ID saraksts."
-                }
-            }
+      },
+      "user_pass": {
+        "title": "TerraMow",
+        "description": "Atrasts TerraMow adresē {host}. Ievadiet MQTT paroli, lai pabeigtu iestatīšanu.",
+        "data": {
+          "password": "Parole"
         }
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "Parole"
+        }
+      },
+      "reconfigure": {
+        "title": "Pārkonfigurēt TerraMow",
+        "description": "Atjauniniet sava TerraMow IP adresi / resursdatora nosaukumu vai paroli.",
+        "data": {
+          "host": "Resursdators",
+          "password": "Parole"
+        }
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "TerraMow opcijas",
+        "data": {
+          "map_resolution": "Kartes izvades izšķirtspēja (px)"
+        },
+        "data_description": {
+          "map_resolution": "Kartes kameras PNG attēla malas garums. Lielākas vērtības nodrošina asāku attēlu, iegulstot to informācijas paneļos, bet palielina joslas platumu un CPU noslodzi katrā renderēšanas reizē."
+        }
+      }
+    }
+  },
+  "entity": {
+    "lawn_mower": {
+      "lawn_mower": {
+        "name": "Zāliena pļāvējs"
+      }
+    },
+    "sensor": {
+      "battery": {
+        "name": "Akumulators"
+      },
+      "battery_state": {
+        "name": "Akumulatora stāvoklis",
+        "state": {
+          "battery_state_discharge": "Izlādējas",
+          "battery_state_charging": "Uzlādējas",
+          "battery_state_charged": "Pilnībā uzlādēts"
+        }
+      },
+      "battery_temperature_state": {
+        "name": "Akumulatora temperatūras stāvoklis",
+        "state": {
+          "battery_tempreture_normal": "Normāla",
+          "battery_tempreture_overheat": "Pārkarsis",
+          "battery_tempreture_underheat": "Pārāk auksts"
+        }
+      },
+      "map_status": {
+        "name": "Kartes statuss",
+        "state": {
+          "map_state_empty": "Nav kartes",
+          "map_state_incomplete": "Karte nepilnīga",
+          "map_state_complete": "Karte pabeigta"
+        }
+      },
+      "map_area": {
+        "name": "Kartes platība"
+      },
+      "mow_height": {
+        "name": "Pļaušanas augstums"
+      },
+      "mow_speed": {
+        "name": "Pļaušanas ātrums",
+        "state": {
+          "mow_speed_type_low": "Zems",
+          "mow_speed_type_medium": "Vidējs",
+          "mow_speed_type_adaptive_high": "Adaptīvi augsts",
+          "mow_speed_type_auto": "Automātisks"
+        }
+      },
+      "clean_mode": {
+        "name": "Darbības režīms",
+        "state": {
+          "map_clean_info_mode_global": "Globālā darbība",
+          "map_clean_info_mode_select_region": "Darbība izvēlētajā zonā",
+          "map_clean_info_mode_draw_region": "Darbība uzzīmētajā zonā",
+          "map_clean_info_mode_move_to_target_point": "Pārvietošanās uz mērķa punktu"
+        }
+      },
+      "pose": {
+        "name": "Pozīcija"
+      },
+      "total_mowing_time": {
+        "name": "Kopējais pļaušanas laiks"
+      },
+      "total_mowing_jobs": {
+        "name": "Kopējais pļaušanas darbu skaits"
+      },
+      "total_mowed_area": {
+        "name": "Kopējā nopļautā platība"
+      },
+      "current_session_area": {
+        "name": "Pašreizējās sesijas platība"
+      },
+      "current_session_progress": {
+        "name": "Pašreizējās sesijas progress"
+      },
+      "current_session_time": {
+        "name": "Pašreizējās sesijas laiks"
+      },
+      "current_job_type": {
+        "name": "Pašreizējā darba veids",
+        "state": {
+          "map_area_type_none": "Nav",
+          "map_area_type_build_map": "Kartes veidošana",
+          "map_area_type_cleaning": "Pļaušana",
+          "map_area_type_build_map_and_cleaning": "Kartes veidošana un pļaušana",
+          "map_area_type_select_region_cleaning": "Izvēlētās zonas pļaušana",
+          "map_area_type_draw_region_cleaning": "Uzzīmētās zonas pļaušana",
+          "map_area_type_edge_trim_cleaning": "Malu apgriešana"
+        }
+      },
+      "remaining_blade_time": {
+        "name": "Atlikušais asmeņu laiks"
+      },
+      "remaining_base_station_time": {
+        "name": "Atlikušais bāzes stacijas laiks"
+      },
+      "next_scheduled_start": {
+        "name": "Nākamā plānotā palaišana"
+      },
+      "version_compatibility": {
+        "name": "Versiju saderība",
+        "state": {
+          "compatible": "Saderīga",
+          "upgrade_required": "Nepieciešams jauninājums",
+          "downgrade_recommended": "Ieteicama vecāka versija",
+          "incompatible": "Nesaderīga",
+          "unknown": "Nezināma"
+        }
+      },
+      "main_direction_status": {
+        "name": "Galvenā virziena statuss",
+        "state": {
+          "main_direction_mode_single": "Viens virziens",
+          "main_direction_mode_multiple": "Vairāki virzieni",
+          "main_direction_mode_auto_rotate": "Automātiska virziena maiņa",
+          "unavailable": "Nav pieejams",
+          "no_config": "Nav konfigurācijas"
+        }
+      },
+      "power_mode": {
+        "name": "Barošanas režīms",
+        "state": {
+          "power_mode_running": "Darbojas",
+          "power_mode_standby": "Gaidstāve",
+          "power_mode_hibernate": "Hibernācija"
+        }
+      },
+      "back_to_station_reason": {
+        "name": "Atgriešanās stacijā iemesls",
+        "state": {
+          "back_to_station_reason_none": "Nav",
+          "back_to_station_reason_low_battery": "Zems akumulatora līmenis",
+          "back_to_station_reason_raining": "Lietus",
+          "back_to_station_reason_mow_motor_overheat": "Pļaušanas motora pārkaršana",
+          "back_to_station_reason_wheel_overheat": "Piedziņas riteņu pārkaršana",
+          "back_to_station_reason_night_time": "Tumsa"
+        }
+      },
+      "mission": {
+        "name": "Misija",
+        "state": {
+          "mission_idle": "Dīkstāve",
+          "mission_recharge": "Uzlāde",
+          "mission_global_clean": "Globālā pļaušana",
+          "mission_build_map": "Kartes veidošana",
+          "mission_build_map_and_clean": "Kartes veidošana un pļaušana",
+          "mission_temporary_clean": "Pagaidu pļaušana",
+          "mission_back_to_starting_point": "Atgriešanās sākuma punktā",
+          "mission_remote_control_clean": "Pļaušana ar tālvadību",
+          "mission_schedule_global_clean": "Plānotā globālā pļaušana",
+          "mission_schedule_build_map_and_clean": "Plānotā kartes veidošana un pļaušana",
+          "mission_select_region_clean": "Zonu pļaušana",
+          "mission_create_custom_passage": "Pielāgotas ejas izveide",
+          "mission_backup_map": "Kartes dublēšana",
+          "mission_relocate_base_station": "Bāzes stacijas pārvietošana",
+          "mission_user_auto_calibration": "Automātiskā kalibrēšana",
+          "mission_restore_backup_map": "Kartes rezerves kopijas atjaunošana",
+          "mission_schedule_select_region_clean": "Plānotā zonu pļaušana",
+          "mission_draw_region_clean": "Uzzīmētās zonas pļaušana",
+          "mission_edge_trim_clean": "Malu apgriešana",
+          "mission_update_backup_map": "Kartes rezerves kopijas atjaunināšana"
+        }
+      },
+      "sub_mission": {
+        "name": "Apakšmisija",
+        "state": {
+          "sub_mission_idle": "Dīkstāve",
+          "sub_mission_relocation": "Atkārtota lokalizācija",
+          "sub_mission_return_to_base": "Atgriešanās bāzē",
+          "sub_mission_out_of_station": "Izbraukšana no bāzes stacijas",
+          "sub_mission_remote_control": "Tālvadība",
+          "sub_mission_saving_map": "Kartes saglabāšana",
+          "sub_mission_setting_blade_height": "Asmeņu augstuma regulēšana",
+          "sub_mission_charging": "Uzlāde",
+          "sub_mission_remote_control_clean": "Pļaušana ar tālvadību",
+          "sub_mission_defogging": "Aizsvīduma noņemšana",
+          "sub_mission_wait_for_daylight": "Dienasgaismas gaidīšana",
+          "sub_mission_cooling_down_motor": "Motora dzesēšana",
+          "sub_mission_wait_for_rain_to_stop": "Gaidīšana, līdz beigsies lietus",
+          "sub_mission_flexible_station_wait": "Gaidīšana bāzes stacijā"
+        }
+      },
+      "mission_state": {
+        "name": "Misijas stāvoklis",
+        "state": {
+          "mission_state_idle": "Dīkstāve",
+          "mission_state_running": "Darbojas",
+          "mission_state_pause": "Pauzēta",
+          "mission_state_abort": "Pārtraukta",
+          "mission_state_complete": "Pabeigta"
+        }
+      }
+    },
+    "camera": {
+      "map_camera": {
+        "name": "Karte"
+      },
+      "map_camera_clean": {
+        "name": "Karte (tīra)"
+      }
+    },
+    "binary_sensor": {
+      "charging_state": {
+        "name": "Uzlādes stāvoklis"
+      },
+      "navigation_located": {
+        "name": "Navigācijas pozīcija noteikta"
+      },
+      "firmware_upgrading": {
+        "name": "Notiek programmaparatūras jaunināšana"
+      },
+      "power_switch": {
+        "name": "Barošanas slēdzis"
+      },
+      "problem": {
+        "name": "Problēma"
+      },
+      "rain_detected": {
+        "name": "Konstatēts lietus"
+      },
+      "map_detected": {
+        "name": "Karte konstatēta"
+      },
+      "map_buildable": {
+        "name": "Karti var izveidot"
+      },
+      "map_backing_up": {
+        "name": "Notiek kartes dublēšana"
+      },
+      "saving_data": {
+        "name": "Notiek datu saglabāšana"
+      },
+      "data_conversion": {
+        "name": "Notiek datu konvertēšana"
+      }
+    },
+    "button": {
+      "reset_blade_timer": {
+        "name": "Atiestatīt asmeņu taimeri"
+      },
+      "reset_base_station_timer": {
+        "name": "Atiestatīt bāzes stacijas taimeri"
+      },
+      "edge_trim": {
+        "name": "Malu apgriešana"
+      }
+    },
+    "select": {
+      "region_select": {
+        "name": "Zonas izvēle",
+        "state": {
+          "no_zones_available": "Nav pieejamu zonu",
+          "all_zones": "Visas zonas"
+        }
+      },
+      "mow_speed_setting": {
+        "name": "Pļaušanas ātruma iestatījums",
+        "state": {
+          "mow_speed_type_low": "Zems ātrums",
+          "mow_speed_type_medium": "Vidējs ātrums",
+          "mow_speed_type_adaptive_high": "Adaptīvi augsts ātrums",
+          "mow_speed_type_auto": "Automātisks ātrums"
+        }
+      },
+      "blade_speed": {
+        "name": "Asmeņu ātruma iestatījums",
+        "state": {
+          "blade_disk_speed_type_low": "Zems ātrums",
+          "blade_disk_speed_type_medium": "Vidējs ātrums",
+          "blade_disk_speed_type_high": "Augsts ātrums"
+        }
+      },
+      "main_direction_mode": {
+        "name": "Galvenā virziena režīms",
+        "state": {
+          "main_direction_mode_single": "Viens virziens",
+          "main_direction_mode_multiple": "Vairāki virzieni",
+          "main_direction_mode_auto_rotate": "Automātiska virziena maiņa"
+        }
+      },
+      "high_grass_edge_trim_mode": {
+        "name": "Malu apgriešanas režīms garā zālē",
+        "state": {
+          "high_grass_edge_trim_standard": "Standarta",
+          "high_grass_edge_trim_intensive": "Intensīvs"
+        }
+      }
+    },
+    "switch": {
+      "thorough_corner_cutting": {
+        "name": "Rūpīga stūru pļaušana"
+      }
+    },
+    "number": {
+      "mowing_height": {
+        "name": "Pļaušanas augstuma iestatījums"
+      },
+      "edge_cutting_distance": {
+        "name": "Malu pļaušanas attālums"
+      },
+      "mowing_spacing": {
+        "name": "Pļaušanas atstatuma iestatījums"
+      },
+      "main_direction_single_angle": {
+        "name": "Viena virziena leņķis"
+      },
+      "main_direction_auto_rotate_interval": {
+        "name": "Automātiskās virziena maiņas leņķa intervāls"
+      },
+      "multiple_direction_angle1": {
+        "name": "Pirmā virziena leņķis"
+      },
+      "multiple_direction_angle2": {
+        "name": "Otrā virziena leņķis"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Programmaparatūra"
+      }
+    }
+  },
+  "services": {
+    "start_select_region": {
+      "name": "Sākt izvēlēto zonu pļaušanu",
+      "description": "Sāk pļaušanu norādītajiem apakšzonu ID.",
+      "fields": {
+        "region_ids": {
+          "name": "Zonu ID",
+          "description": "Pļaujamo apakšzonu ID saraksts."
+        }
+      }
+    }
+  },
+  "issues": {
+    "firmware_ha_module_too_low": {
+      "title": "Nepieciešams TerraMow programmaparatūras atjauninājums",
+      "description": "TerraMow programmaparatūras HA moduļa versija ({firmware_version}) ir pārāk veca šai integrācijai, kurai nepieciešama versija {required_version}. Atjauniniet pļaujmašīnas programmaparatūru TerraMow lietotnē, lai atjaunotu pilnu funkcionalitāti."
+    },
+    "firmware_overall_too_low": {
+      "title": "Nepieciešams TerraMow programmaparatūras atjauninājums",
+      "description": "TerraMow programmaparatūra ir vecāka par minimāli atbalstīto versiju ({required_version}). Atjauniniet pļaujmašīnas programmaparatūru TerraMow lietotnē, lai izmantotu šo integrāciju."
+    },
+    "firmware_incompatible": {
+      "title": "Nesaderīga TerraMow programmaparatūra",
+      "description": "Integrācija nevarēja apstiprināt, ka TerraMow programmaparatūra ir saderīga. Pārbaudiet, vai gan pļaujmašīnas programmaparatūra, gan šī integrācija ir atjauninātas, pēc tam lejupielādējiet diagnostiku un atveriet issue, ja problēma saglabājas."
+    },
+    "plugin_downgrade_recommended": {
+      "title": "Ieteicams atjaunināt TerraMow integrāciju",
+      "description": "TerraMow programmaparatūras HA moduļa versija ({firmware_version}) ir jaunāka, nekā atbalsta šī integrācija ({plugin_version}). Atjauniniet integrāciju HACS, lai iegūtu jaunākās funkcijas."
+    }
+  }
 }

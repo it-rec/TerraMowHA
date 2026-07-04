@@ -1,393 +1,411 @@
 {
-    "config": {
-        "flow_title": "TerraMow ({host})",
-        "abort": {
-            "already_configured": "Пристрій уже налаштовано",
-            "cannot_connect": "Не вдалося підключитися",
-            "reauth_successful": "Повторну автентифікацію виконано успішно",
-            "reconfigure_successful": "Повторне налаштування виконано успішно"
-        },
-        "error": {
-            "cannot_connect": "Не вдалося підключитися",
-            "invalid_auth": "Невірна автентифікація",
-            "unknown": "Неочікувана помилка"
-        },
-        "step": {
-            "user": {
-                "data": {
-                    "host": "Хост",
-                    "password": "Пароль",
-                    "username": "Ім'я користувача"
-                }
-            },
-            "user_pass": {
-                "title": "TerraMow",
-                "description": "Виявлено TerraMow за адресою {host}. Введіть пароль MQTT, щоб завершити налаштування.",
-                "data": {
-                    "password": "Пароль"
-                }
-            },
-            "reauth_confirm": {
-                "data": {
-                    "password": "Пароль"
-                }
-            },
-            "reconfigure": {
-                "title": "Переналаштувати TerraMow",
-                "description": "Оновіть IP-адресу / ім'я хоста або пароль вашого TerraMow.",
-                "data": {
-                    "host": "Хост",
-                    "password": "Пароль"
-                }
-            }
-        }
+  "config": {
+    "flow_title": "TerraMow ({host})",
+    "abort": {
+      "already_configured": "Пристрій уже налаштовано",
+      "cannot_connect": "Не вдалося підключитися",
+      "reauth_successful": "Повторну автентифікацію виконано успішно",
+      "reconfigure_successful": "Повторне налаштування виконано успішно"
     },
-    "options": {
-        "step": {
-            "init": {
-                "title": "Параметри TerraMow",
-                "data": {
-                    "map_resolution": "Роздільна здатність виводу карти (пкс)"
-                },
-                "data_description": {
-                    "map_resolution": "Довжина сторони вихідного PNG-зображення камери карти. Вищі значення дають чіткіше зображення під час вбудовування в панелі, але збільшують трафік і навантаження на CPU під час кожного рендерингу."
-                }
-            }
-        }
+    "error": {
+      "cannot_connect": "Не вдалося підключитися",
+      "invalid_auth": "Невірна автентифікація",
+      "unknown": "Неочікувана помилка"
     },
-    "entity": {
-        "lawn_mower": {
-            "lawn_mower": {
-                "name": "Газонокосарка"
-            }
-        },
-        "sensor": {
-            "battery": {
-                "name": "Батарея"
-            },
-            "battery_state": {
-                "name": "Стан батареї",
-                "state": {
-                    "battery_state_discharge": "Розряджається",
-                    "battery_state_charging": "Заряджається",
-                    "battery_state_charged": "Повністю заряджена"
-                }
-            },
-            "battery_temperature_state": {
-                "name": "Температурний стан батареї",
-                "state": {
-                    "battery_tempreture_normal": "Нормальний",
-                    "battery_tempreture_overheat": "Перегрів",
-                    "battery_tempreture_underheat": "Переохолодження"
-                }
-            },
-            "map_status": {
-                "name": "Статус карти",
-                "state": {
-                    "map_state_empty": "Немає карти",
-                    "map_state_incomplete": "Карта не завершена",
-                    "map_state_complete": "Карта завершена"
-                }
-            },
-            "map_area": {
-                "name": "Площа карти"
-            },
-            "mow_height": {
-                "name": "Висота скошування"
-            },
-            "mow_speed": {
-                "name": "Швидкість скошування",
-                "state": {
-                    "mow_speed_type_low": "Низька",
-                    "mow_speed_type_medium": "Середня",
-                    "mow_speed_type_adaptive_high": "Адаптивна висока",
-                    "mow_speed_type_auto": "Авто"
-                }
-            },
-            "clean_mode": {
-                "name": "Режим роботи",
-                "state": {
-                    "map_clean_info_mode_global": "Глобальна робота",
-                    "map_clean_info_mode_select_region": "Робота у вибраній зоні",
-                    "map_clean_info_mode_draw_region": "Робота в намальованій зоні",
-                    "map_clean_info_mode_move_to_target_point": "Рух до цільової точки"
-                }
-            },
-            "pose": {
-                "name": "Положення"
-            },
-            "total_mowing_time": {
-                "name": "Загальний час скошування"
-            },
-            "total_mowing_jobs": {
-                "name": "Усього завдань скошування"
-            },
-            "total_mowed_area": {
-                "name": "Загальна скошена площа"
-            },
-            "current_session_area": {
-                "name": "Площа поточного сеансу"
-            },
-            "current_session_progress": {
-                "name": "Прогрес поточного сеансу"
-            },
-            "current_session_time": {
-                "name": "Час поточного сеансу"
-            },
-            "current_job_type": {
-                "name": "Тип поточного завдання",
-                "state": {
-                    "map_area_type_none": "Немає",
-                    "map_area_type_build_map": "Побудова карти",
-                    "map_area_type_cleaning": "Скошування",
-                    "map_area_type_build_map_and_cleaning": "Побудова карти та скошування",
-                    "map_area_type_select_region_cleaning": "Скошування вибраної зони",
-                    "map_area_type_draw_region_cleaning": "Скошування намальованої зони",
-                    "map_area_type_edge_trim_cleaning": "Скошування країв"
-                }
-            },
-            "remaining_blade_time": {
-                "name": "Залишковий ресурс ножів"
-            },
-            "remaining_base_station_time": {
-                "name": "Залишковий ресурс базової станції"
-            },
-            "next_scheduled_start": {
-                "name": "Наступний запуск за розкладом"
-            },
-            "version_compatibility": {
-                "name": "Сумісність версій",
-                "state": {
-                    "compatible": "Сумісно",
-                    "upgrade_required": "Потрібне оновлення",
-                    "downgrade_recommended": "Рекомендується відкат версії",
-                    "incompatible": "Несумісно",
-                    "unknown": "Невідомо"
-                }
-            },
-            "main_direction_status": {
-                "name": "Статус основного напрямку",
-                "state": {
-                    "main_direction_mode_single": "Один напрямок",
-                    "main_direction_mode_multiple": "Кілька напрямків",
-                    "main_direction_mode_auto_rotate": "Автоповорот напрямку",
-                    "unavailable": "Недоступно",
-                    "no_config": "Немає конфігурації"
-                }
-            },
-            "power_mode": {
-                "name": "Режим живлення",
-                "state": {
-                    "power_mode_running": "Працює",
-                    "power_mode_standby": "Очікування",
-                    "power_mode_hibernate": "Режим глибокого сну"
-                }
-            },
-            "back_to_station_reason": {
-                "name": "Причина повернення на станцію",
-                "state": {
-                    "back_to_station_reason_none": "Немає",
-                    "back_to_station_reason_low_battery": "Низький заряд батареї",
-                    "back_to_station_reason_raining": "Дощ",
-                    "back_to_station_reason_mow_motor_overheat": "Перегрів мотора ножів",
-                    "back_to_station_reason_wheel_overheat": "Перегрів привідного колеса",
-                    "back_to_station_reason_night_time": "Темрява"
-                }
-            },
-            "mission": {
-                "name": "Завдання",
-                "state": {
-                    "mission_idle": "Простій",
-                    "mission_recharge": "Заряджання",
-                    "mission_global_clean": "Глобальне скошування",
-                    "mission_build_map": "Побудова карти",
-                    "mission_build_map_and_clean": "Побудова карти та скошування",
-                    "mission_temporary_clean": "Тимчасове скошування",
-                    "mission_back_to_starting_point": "Повернення до початкової точки",
-                    "mission_remote_control_clean": "Скошування з дистанційним керуванням",
-                    "mission_schedule_global_clean": "Глобальне скошування за розкладом",
-                    "mission_schedule_build_map_and_clean": "Побудова карти та скошування за розкладом",
-                    "mission_select_region_clean": "Скошування зони",
-                    "mission_create_custom_passage": "Створення користувацького проходу",
-                    "mission_backup_map": "Резервне копіювання карти",
-                    "mission_relocate_base_station": "Переміщення базової станції",
-                    "mission_user_auto_calibration": "Автокалібрування",
-                    "mission_restore_backup_map": "Відновлення резервної копії карти",
-                    "mission_schedule_select_region_clean": "Скошування зони за розкладом",
-                    "mission_draw_region_clean": "Скошування намальованої зони",
-                    "mission_edge_trim_clean": "Скошування країв",
-                    "mission_update_backup_map": "Оновлення резервної копії карти"
-                }
-            },
-            "sub_mission": {
-                "name": "Підзавдання",
-                "state": {
-                    "sub_mission_idle": "Простій",
-                    "sub_mission_relocation": "Повторна локалізація",
-                    "sub_mission_return_to_base": "Повернення на базу",
-                    "sub_mission_out_of_station": "Виїзд із базової станції",
-                    "sub_mission_remote_control": "Дистанційне керування",
-                    "sub_mission_saving_map": "Збереження карти",
-                    "sub_mission_setting_blade_height": "Регулювання висоти ножів",
-                    "sub_mission_charging": "Заряджання",
-                    "sub_mission_remote_control_clean": "Скошування з дистанційним керуванням",
-                    "sub_mission_defogging": "Усунення запотівання",
-                    "sub_mission_wait_for_daylight": "Очікування денного світла",
-                    "sub_mission_cooling_down_motor": "Охолодження мотора",
-                    "sub_mission_wait_for_rain_to_stop": "Очікування завершення дощу",
-                    "sub_mission_flexible_station_wait": "Очікування на базовій станції"
-                }
-            },
-            "mission_state": {
-                "name": "Стан завдання",
-                "state": {
-                    "mission_state_idle": "Простій",
-                    "mission_state_running": "Виконується",
-                    "mission_state_pause": "Призупинено",
-                    "mission_state_abort": "Перервано",
-                    "mission_state_complete": "Завершено"
-                }
-            }
-        },
-        "camera": {
-            "map_camera": {
-                "name": "Карта"
-            },
-            "map_camera_clean": {
-                "name": "Карта (чиста)"
-            }
-        },
-        "binary_sensor": {
-            "charging_state": {
-                "name": "Стан заряджання"
-            },
-            "navigation_located": {
-                "name": "Навігація: положення визначено"
-            },
-            "firmware_upgrading": {
-                "name": "Оновлення прошивки"
-            },
-            "power_switch": {
-                "name": "Вимикач живлення"
-            },
-            "problem": {
-                "name": "Проблема"
-            },
-            "rain_detected": {
-                "name": "Виявлено дощ"
-            },
-            "map_detected": {
-                "name": "Карту виявлено"
-            },
-            "map_buildable": {
-                "name": "Побудова карти можлива"
-            },
-            "map_backing_up": {
-                "name": "Резервне копіювання карти"
-            },
-            "saving_data": {
-                "name": "Збереження даних"
-            },
-            "data_conversion": {
-                "name": "Виконується перетворення даних"
-            }
-        },
-        "button": {
-            "reset_blade_timer": {
-                "name": "Скинути таймер ножів"
-            },
-            "reset_base_station_timer": {
-                "name": "Скинути таймер базової станції"
-            },
-            "edge_trim": {
-                "name": "Підстригання країв"
-            }
-        },
-        "select": {
-            "region_select": {
-                "name": "Вибір зони",
-                "state": {
-                    "no_zones_available": "Немає доступних зон",
-                    "all_zones": "Усі зони"
-                }
-            },
-            "mow_speed_setting": {
-                "name": "Налаштування швидкості скошування",
-                "state": {
-                    "mow_speed_type_low": "Низька швидкість",
-                    "mow_speed_type_medium": "Середня швидкість",
-                    "mow_speed_type_adaptive_high": "Адаптивна висока швидкість",
-                    "mow_speed_type_auto": "Автоматична швидкість"
-                }
-            },
-            "blade_speed": {
-                "name": "Налаштування швидкості ножів",
-                "state": {
-                    "blade_disk_speed_type_low": "Низька швидкість",
-                    "blade_disk_speed_type_medium": "Середня швидкість",
-                    "blade_disk_speed_type_high": "Висока швидкість"
-                }
-            },
-            "main_direction_mode": {
-                "name": "Режим основного напрямку",
-                "state": {
-                    "main_direction_mode_single": "Один напрямок",
-                    "main_direction_mode_multiple": "Кілька напрямків",
-                    "main_direction_mode_auto_rotate": "Автоповорот напрямку"
-                }
-            },
-            "high_grass_edge_trim_mode": {
-                "name": "Режим підстригання країв у високій траві",
-                "state": {
-                    "high_grass_edge_trim_standard": "Стандартний",
-                    "high_grass_edge_trim_intensive": "Інтенсивний"
-                }
-            }
-        },
-        "switch": {
-            "thorough_corner_cutting": {
-                "name": "Ретельне скошування кутів"
-            }
-        },
-        "number": {
-            "mowing_height": {
-                "name": "Налаштування висоти скошування"
-            },
-            "edge_cutting_distance": {
-                "name": "Відстань скошування країв"
-            },
-            "mowing_spacing": {
-                "name": "Налаштування інтервалу скошування"
-            },
-            "main_direction_single_angle": {
-                "name": "Кут одного напрямку"
-            },
-            "main_direction_auto_rotate_interval": {
-                "name": "Крок кута автоповороту"
-            },
-            "multiple_direction_angle1": {
-                "name": "Кут першого напрямку"
-            },
-            "multiple_direction_angle2": {
-                "name": "Кут другого напрямку"
-            }
-        },
-        "update": {
-            "firmware": {
-                "name": "Прошивка"
-            }
+    "step": {
+      "user": {
+        "data": {
+          "host": "Хост",
+          "password": "Пароль",
+          "username": "Ім'я користувача"
         }
-    },
-    "services": {
-        "start_select_region": {
-            "name": "Запустити скошування вибраних зон",
-            "description": "Запустити скошування для вказаних ідентифікаторів підзон.",
-            "fields": {
-                "region_ids": {
-                    "name": "Ідентифікатори зон",
-                    "description": "Список ідентифікаторів підзон для скошування."
-                }
-            }
+      },
+      "user_pass": {
+        "title": "TerraMow",
+        "description": "Виявлено TerraMow за адресою {host}. Введіть пароль MQTT, щоб завершити налаштування.",
+        "data": {
+          "password": "Пароль"
         }
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "Пароль"
+        }
+      },
+      "reconfigure": {
+        "title": "Переналаштувати TerraMow",
+        "description": "Оновіть IP-адресу / ім'я хоста або пароль вашого TerraMow.",
+        "data": {
+          "host": "Хост",
+          "password": "Пароль"
+        }
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Параметри TerraMow",
+        "data": {
+          "map_resolution": "Роздільна здатність виводу карти (пкс)"
+        },
+        "data_description": {
+          "map_resolution": "Довжина сторони вихідного PNG-зображення камери карти. Вищі значення дають чіткіше зображення під час вбудовування в панелі, але збільшують трафік і навантаження на CPU під час кожного рендерингу."
+        }
+      }
+    }
+  },
+  "entity": {
+    "lawn_mower": {
+      "lawn_mower": {
+        "name": "Газонокосарка"
+      }
+    },
+    "sensor": {
+      "battery": {
+        "name": "Батарея"
+      },
+      "battery_state": {
+        "name": "Стан батареї",
+        "state": {
+          "battery_state_discharge": "Розряджається",
+          "battery_state_charging": "Заряджається",
+          "battery_state_charged": "Повністю заряджена"
+        }
+      },
+      "battery_temperature_state": {
+        "name": "Температурний стан батареї",
+        "state": {
+          "battery_tempreture_normal": "Нормальний",
+          "battery_tempreture_overheat": "Перегрів",
+          "battery_tempreture_underheat": "Переохолодження"
+        }
+      },
+      "map_status": {
+        "name": "Статус карти",
+        "state": {
+          "map_state_empty": "Немає карти",
+          "map_state_incomplete": "Карта не завершена",
+          "map_state_complete": "Карта завершена"
+        }
+      },
+      "map_area": {
+        "name": "Площа карти"
+      },
+      "mow_height": {
+        "name": "Висота скошування"
+      },
+      "mow_speed": {
+        "name": "Швидкість скошування",
+        "state": {
+          "mow_speed_type_low": "Низька",
+          "mow_speed_type_medium": "Середня",
+          "mow_speed_type_adaptive_high": "Адаптивна висока",
+          "mow_speed_type_auto": "Авто"
+        }
+      },
+      "clean_mode": {
+        "name": "Режим роботи",
+        "state": {
+          "map_clean_info_mode_global": "Глобальна робота",
+          "map_clean_info_mode_select_region": "Робота у вибраній зоні",
+          "map_clean_info_mode_draw_region": "Робота в намальованій зоні",
+          "map_clean_info_mode_move_to_target_point": "Рух до цільової точки"
+        }
+      },
+      "pose": {
+        "name": "Положення"
+      },
+      "total_mowing_time": {
+        "name": "Загальний час скошування"
+      },
+      "total_mowing_jobs": {
+        "name": "Усього завдань скошування"
+      },
+      "total_mowed_area": {
+        "name": "Загальна скошена площа"
+      },
+      "current_session_area": {
+        "name": "Площа поточного сеансу"
+      },
+      "current_session_progress": {
+        "name": "Прогрес поточного сеансу"
+      },
+      "current_session_time": {
+        "name": "Час поточного сеансу"
+      },
+      "current_job_type": {
+        "name": "Тип поточного завдання",
+        "state": {
+          "map_area_type_none": "Немає",
+          "map_area_type_build_map": "Побудова карти",
+          "map_area_type_cleaning": "Скошування",
+          "map_area_type_build_map_and_cleaning": "Побудова карти та скошування",
+          "map_area_type_select_region_cleaning": "Скошування вибраної зони",
+          "map_area_type_draw_region_cleaning": "Скошування намальованої зони",
+          "map_area_type_edge_trim_cleaning": "Скошування країв"
+        }
+      },
+      "remaining_blade_time": {
+        "name": "Залишковий ресурс ножів"
+      },
+      "remaining_base_station_time": {
+        "name": "Залишковий ресурс базової станції"
+      },
+      "next_scheduled_start": {
+        "name": "Наступний запуск за розкладом"
+      },
+      "version_compatibility": {
+        "name": "Сумісність версій",
+        "state": {
+          "compatible": "Сумісно",
+          "upgrade_required": "Потрібне оновлення",
+          "downgrade_recommended": "Рекомендується відкат версії",
+          "incompatible": "Несумісно",
+          "unknown": "Невідомо"
+        }
+      },
+      "main_direction_status": {
+        "name": "Статус основного напрямку",
+        "state": {
+          "main_direction_mode_single": "Один напрямок",
+          "main_direction_mode_multiple": "Кілька напрямків",
+          "main_direction_mode_auto_rotate": "Автоповорот напрямку",
+          "unavailable": "Недоступно",
+          "no_config": "Немає конфігурації"
+        }
+      },
+      "power_mode": {
+        "name": "Режим живлення",
+        "state": {
+          "power_mode_running": "Працює",
+          "power_mode_standby": "Очікування",
+          "power_mode_hibernate": "Режим глибокого сну"
+        }
+      },
+      "back_to_station_reason": {
+        "name": "Причина повернення на станцію",
+        "state": {
+          "back_to_station_reason_none": "Немає",
+          "back_to_station_reason_low_battery": "Низький заряд батареї",
+          "back_to_station_reason_raining": "Дощ",
+          "back_to_station_reason_mow_motor_overheat": "Перегрів мотора ножів",
+          "back_to_station_reason_wheel_overheat": "Перегрів привідного колеса",
+          "back_to_station_reason_night_time": "Темрява"
+        }
+      },
+      "mission": {
+        "name": "Завдання",
+        "state": {
+          "mission_idle": "Простій",
+          "mission_recharge": "Заряджання",
+          "mission_global_clean": "Глобальне скошування",
+          "mission_build_map": "Побудова карти",
+          "mission_build_map_and_clean": "Побудова карти та скошування",
+          "mission_temporary_clean": "Тимчасове скошування",
+          "mission_back_to_starting_point": "Повернення до початкової точки",
+          "mission_remote_control_clean": "Скошування з дистанційним керуванням",
+          "mission_schedule_global_clean": "Глобальне скошування за розкладом",
+          "mission_schedule_build_map_and_clean": "Побудова карти та скошування за розкладом",
+          "mission_select_region_clean": "Скошування зони",
+          "mission_create_custom_passage": "Створення користувацького проходу",
+          "mission_backup_map": "Резервне копіювання карти",
+          "mission_relocate_base_station": "Переміщення базової станції",
+          "mission_user_auto_calibration": "Автокалібрування",
+          "mission_restore_backup_map": "Відновлення резервної копії карти",
+          "mission_schedule_select_region_clean": "Скошування зони за розкладом",
+          "mission_draw_region_clean": "Скошування намальованої зони",
+          "mission_edge_trim_clean": "Скошування країв",
+          "mission_update_backup_map": "Оновлення резервної копії карти"
+        }
+      },
+      "sub_mission": {
+        "name": "Підзавдання",
+        "state": {
+          "sub_mission_idle": "Простій",
+          "sub_mission_relocation": "Повторна локалізація",
+          "sub_mission_return_to_base": "Повернення на базу",
+          "sub_mission_out_of_station": "Виїзд із базової станції",
+          "sub_mission_remote_control": "Дистанційне керування",
+          "sub_mission_saving_map": "Збереження карти",
+          "sub_mission_setting_blade_height": "Регулювання висоти ножів",
+          "sub_mission_charging": "Заряджання",
+          "sub_mission_remote_control_clean": "Скошування з дистанційним керуванням",
+          "sub_mission_defogging": "Усунення запотівання",
+          "sub_mission_wait_for_daylight": "Очікування денного світла",
+          "sub_mission_cooling_down_motor": "Охолодження мотора",
+          "sub_mission_wait_for_rain_to_stop": "Очікування завершення дощу",
+          "sub_mission_flexible_station_wait": "Очікування на базовій станції"
+        }
+      },
+      "mission_state": {
+        "name": "Стан завдання",
+        "state": {
+          "mission_state_idle": "Простій",
+          "mission_state_running": "Виконується",
+          "mission_state_pause": "Призупинено",
+          "mission_state_abort": "Перервано",
+          "mission_state_complete": "Завершено"
+        }
+      }
+    },
+    "camera": {
+      "map_camera": {
+        "name": "Карта"
+      },
+      "map_camera_clean": {
+        "name": "Карта (чиста)"
+      }
+    },
+    "binary_sensor": {
+      "charging_state": {
+        "name": "Стан заряджання"
+      },
+      "navigation_located": {
+        "name": "Навігація: положення визначено"
+      },
+      "firmware_upgrading": {
+        "name": "Оновлення прошивки"
+      },
+      "power_switch": {
+        "name": "Вимикач живлення"
+      },
+      "problem": {
+        "name": "Проблема"
+      },
+      "rain_detected": {
+        "name": "Виявлено дощ"
+      },
+      "map_detected": {
+        "name": "Карту виявлено"
+      },
+      "map_buildable": {
+        "name": "Побудова карти можлива"
+      },
+      "map_backing_up": {
+        "name": "Резервне копіювання карти"
+      },
+      "saving_data": {
+        "name": "Збереження даних"
+      },
+      "data_conversion": {
+        "name": "Виконується перетворення даних"
+      }
+    },
+    "button": {
+      "reset_blade_timer": {
+        "name": "Скинути таймер ножів"
+      },
+      "reset_base_station_timer": {
+        "name": "Скинути таймер базової станції"
+      },
+      "edge_trim": {
+        "name": "Підстригання країв"
+      }
+    },
+    "select": {
+      "region_select": {
+        "name": "Вибір зони",
+        "state": {
+          "no_zones_available": "Немає доступних зон",
+          "all_zones": "Усі зони"
+        }
+      },
+      "mow_speed_setting": {
+        "name": "Налаштування швидкості скошування",
+        "state": {
+          "mow_speed_type_low": "Низька швидкість",
+          "mow_speed_type_medium": "Середня швидкість",
+          "mow_speed_type_adaptive_high": "Адаптивна висока швидкість",
+          "mow_speed_type_auto": "Автоматична швидкість"
+        }
+      },
+      "blade_speed": {
+        "name": "Налаштування швидкості ножів",
+        "state": {
+          "blade_disk_speed_type_low": "Низька швидкість",
+          "blade_disk_speed_type_medium": "Середня швидкість",
+          "blade_disk_speed_type_high": "Висока швидкість"
+        }
+      },
+      "main_direction_mode": {
+        "name": "Режим основного напрямку",
+        "state": {
+          "main_direction_mode_single": "Один напрямок",
+          "main_direction_mode_multiple": "Кілька напрямків",
+          "main_direction_mode_auto_rotate": "Автоповорот напрямку"
+        }
+      },
+      "high_grass_edge_trim_mode": {
+        "name": "Режим підстригання країв у високій траві",
+        "state": {
+          "high_grass_edge_trim_standard": "Стандартний",
+          "high_grass_edge_trim_intensive": "Інтенсивний"
+        }
+      }
+    },
+    "switch": {
+      "thorough_corner_cutting": {
+        "name": "Ретельне скошування кутів"
+      }
+    },
+    "number": {
+      "mowing_height": {
+        "name": "Налаштування висоти скошування"
+      },
+      "edge_cutting_distance": {
+        "name": "Відстань скошування країв"
+      },
+      "mowing_spacing": {
+        "name": "Налаштування інтервалу скошування"
+      },
+      "main_direction_single_angle": {
+        "name": "Кут одного напрямку"
+      },
+      "main_direction_auto_rotate_interval": {
+        "name": "Крок кута автоповороту"
+      },
+      "multiple_direction_angle1": {
+        "name": "Кут першого напрямку"
+      },
+      "multiple_direction_angle2": {
+        "name": "Кут другого напрямку"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Прошивка"
+      }
+    }
+  },
+  "services": {
+    "start_select_region": {
+      "name": "Запустити скошування вибраних зон",
+      "description": "Запустити скошування для вказаних ідентифікаторів підзон.",
+      "fields": {
+        "region_ids": {
+          "name": "Ідентифікатори зон",
+          "description": "Список ідентифікаторів підзон для скошування."
+        }
+      }
+    }
+  },
+  "issues": {
+    "firmware_ha_module_too_low": {
+      "title": "Потрібне оновлення прошивки TerraMow",
+      "description": "Версія HA-модуля у прошивці TerraMow ({firmware_version}) застара для цієї інтеграції, якій потрібна версія {required_version}. Оновіть прошивку газонокосарки в застосунку TerraMow, щоб відновити повну функціональність."
+    },
+    "firmware_overall_too_low": {
+      "title": "Потрібне оновлення прошивки TerraMow",
+      "description": "Прошивка TerraMow старіша за мінімально підтримувану версію ({required_version}). Оновіть прошивку газонокосарки в застосунку TerraMow, щоб використовувати цю інтеграцію."
+    },
+    "firmware_incompatible": {
+      "title": "Несумісна прошивка TerraMow",
+      "description": "Інтеграції не вдалося підтвердити сумісність прошивки TerraMow. Переконайтеся, що і прошивка газонокосарки, і ця інтеграція оновлені, потім завантажте діагностику та створіть issue, якщо проблема не зникає."
+    },
+    "plugin_downgrade_recommended": {
+      "title": "Рекомендовано оновити інтеграцію TerraMow",
+      "description": "Версія HA-модуля у прошивці TerraMow ({firmware_version}) новіша, ніж підтримує ця інтеграція ({plugin_version}). Оновіть інтеграцію в HACS, щоб отримати найновіші функції."
+    }
+  }
 }

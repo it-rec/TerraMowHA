@@ -22,6 +22,7 @@ from homeassistant.helpers import config_validation as cv, device_registry as dr
 
 from .config_flow import CannotConnect, InvalidAuth, validate_input
 from .hub import TerraMowHub
+from .issues import async_clear_compatibility_issue
 from .const import (
     DOMAIN,
     CURRENT_HA_VERSION,
@@ -54,6 +55,7 @@ class TerraMowBasicData:
     compatibility_status: str = CompatibilityStatus.COMPATIBLE
     firmware_version: Optional[dict] = None
     compatibility_reason: str = ""  # Store the specific reason for compatibility check failure
+    entry_id: Optional[str] = None  # Config entry id, used to scope repair issues
 
     def check_version_compatibility(self, compatibility_info: dict) -> str:
         """Check version compatibility and return status."""
@@ -182,7 +184,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             f"Unable to connect to TerraMow at {host}"
         ) from err
 
-    basic_data = TerraMowBasicData(host=host, password=password)
+    basic_data = TerraMowBasicData(host=host, password=password, entry_id=entry.entry_id)
 
     # Use hass.data instead of entry.runtime_data
     hass.data.setdefault(DOMAIN, {})
@@ -251,6 +253,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # If unloading is successful, stop the hub and clear the data
     if unload_ok:
+        async_clear_compatibility_issue(hass, entry.entry_id)
         basic_data = hass.data[DOMAIN].pop(entry.entry_id)
         if basic_data.lawn_mower is not None:
             await basic_data.lawn_mower.async_stop()

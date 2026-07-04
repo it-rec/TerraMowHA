@@ -1,393 +1,411 @@
 {
-    "config": {
-        "flow_title": "TerraMow ({host})",
-        "abort": {
-            "already_configured": "Az eszköz már konfigurálva van",
-            "cannot_connect": "Nem sikerült csatlakozni",
-            "reauth_successful": "Az újrahitelesítés sikeres volt",
-            "reconfigure_successful": "Az újrakonfigurálás sikeres volt"
-        },
-        "error": {
-            "cannot_connect": "Nem sikerült csatlakozni",
-            "invalid_auth": "Érvénytelen hitelesítés",
-            "unknown": "Váratlan hiba"
-        },
-        "step": {
-            "user": {
-                "data": {
-                    "host": "Kiszolgáló",
-                    "password": "Jelszó",
-                    "username": "Felhasználónév"
-                }
-            },
-            "user_pass": {
-                "title": "TerraMow",
-                "description": "TerraMow észlelve a következő címen: {host}. A beállítás befejezéséhez adja meg az MQTT jelszót.",
-                "data": {
-                    "password": "Jelszó"
-                }
-            },
-            "reauth_confirm": {
-                "data": {
-                    "password": "Jelszó"
-                }
-            },
-            "reconfigure": {
-                "title": "TerraMow újrakonfigurálása",
-                "description": "Frissítse a TerraMow IP-címét / gazdagépnevét vagy jelszavát.",
-                "data": {
-                    "host": "Kiszolgáló",
-                    "password": "Jelszó"
-                }
-            }
-        }
+  "config": {
+    "flow_title": "TerraMow ({host})",
+    "abort": {
+      "already_configured": "Az eszköz már konfigurálva van",
+      "cannot_connect": "Nem sikerült csatlakozni",
+      "reauth_successful": "Az újrahitelesítés sikeres volt",
+      "reconfigure_successful": "Az újrakonfigurálás sikeres volt"
     },
-    "options": {
-        "step": {
-            "init": {
-                "title": "TerraMow beállítások",
-                "data": {
-                    "map_resolution": "Térkép kimeneti felbontása (px)"
-                },
-                "data_description": {
-                    "map_resolution": "A térképkamera PNG kimenetének oldalhossza. A magasabb értékek élesebb képet adnak az irányítópultokba ágyazva, de minden megjelenítésnél növelik a sávszélesség- és CPU-használatot."
-                }
-            }
-        }
+    "error": {
+      "cannot_connect": "Nem sikerült csatlakozni",
+      "invalid_auth": "Érvénytelen hitelesítés",
+      "unknown": "Váratlan hiba"
     },
-    "entity": {
-        "lawn_mower": {
-            "lawn_mower": {
-                "name": "Robotfűnyíró"
-            }
-        },
-        "sensor": {
-            "battery": {
-                "name": "Akkumulátor"
-            },
-            "battery_state": {
-                "name": "Akkumulátor Állapota",
-                "state": {
-                    "battery_state_discharge": "Merül",
-                    "battery_state_charging": "Töltés",
-                    "battery_state_charged": "Teljesen Feltöltve"
-                }
-            },
-            "battery_temperature_state": {
-                "name": "Akkumulátor Hőmérsékleti Állapota",
-                "state": {
-                    "battery_tempreture_normal": "Normál",
-                    "battery_tempreture_overheat": "Túlmelegedés",
-                    "battery_tempreture_underheat": "Túl Alacsony Hőmérséklet"
-                }
-            },
-            "map_status": {
-                "name": "Térkép Állapota",
-                "state": {
-                    "map_state_empty": "Nincs Térkép",
-                    "map_state_incomplete": "Hiányos Térkép",
-                    "map_state_complete": "Kész Térkép"
-                }
-            },
-            "map_area": {
-                "name": "Térkép Területe"
-            },
-            "mow_height": {
-                "name": "Nyírási Magasság"
-            },
-            "mow_speed": {
-                "name": "Nyírási Sebesség",
-                "state": {
-                    "mow_speed_type_low": "Alacsony",
-                    "mow_speed_type_medium": "Közepes",
-                    "mow_speed_type_adaptive_high": "Adaptív Magas",
-                    "mow_speed_type_auto": "Automatikus"
-                }
-            },
-            "clean_mode": {
-                "name": "Működési Mód",
-                "state": {
-                    "map_clean_info_mode_global": "Teljes Területű Működés",
-                    "map_clean_info_mode_select_region": "Kiválasztott Zónás Működés",
-                    "map_clean_info_mode_draw_region": "Rajzolt Zónás Működés",
-                    "map_clean_info_mode_move_to_target_point": "Mozgás a Célpontra"
-                }
-            },
-            "pose": {
-                "name": "Pozíció és Irány"
-            },
-            "total_mowing_time": {
-                "name": "Teljes Nyírási Idő"
-            },
-            "total_mowing_jobs": {
-                "name": "Összes Nyírási Feladat"
-            },
-            "total_mowed_area": {
-                "name": "Összes Lenyírt Terület"
-            },
-            "current_session_area": {
-                "name": "Aktuális Munkamenet Területe"
-            },
-            "current_session_progress": {
-                "name": "Aktuális Munkamenet Előrehaladása"
-            },
-            "current_session_time": {
-                "name": "Aktuális Munkamenet Ideje"
-            },
-            "current_job_type": {
-                "name": "Aktuális Feladattípus",
-                "state": {
-                    "map_area_type_none": "Nincs",
-                    "map_area_type_build_map": "Térképkészítés",
-                    "map_area_type_cleaning": "Fűnyírás",
-                    "map_area_type_build_map_and_cleaning": "Térképkészítés és Fűnyírás",
-                    "map_area_type_select_region_cleaning": "Kiválasztott Zóna Nyírása",
-                    "map_area_type_draw_region_cleaning": "Rajzolt Zóna Nyírása",
-                    "map_area_type_edge_trim_cleaning": "Szegélynyírás"
-                }
-            },
-            "remaining_blade_time": {
-                "name": "Hátralévő Késidő"
-            },
-            "remaining_base_station_time": {
-                "name": "Hátralévő Bázisállomás-idő"
-            },
-            "next_scheduled_start": {
-                "name": "Következő Ütemezett Indítás"
-            },
-            "version_compatibility": {
-                "name": "Verziókompatibilitás",
-                "state": {
-                    "compatible": "Kompatibilis",
-                    "upgrade_required": "Frissítés Szükséges",
-                    "downgrade_recommended": "Visszaállítás Ajánlott",
-                    "incompatible": "Nem Kompatibilis",
-                    "unknown": "Ismeretlen"
-                }
-            },
-            "main_direction_status": {
-                "name": "Fő Irány Állapota",
-                "state": {
-                    "main_direction_mode_single": "Egy Irány",
-                    "main_direction_mode_multiple": "Több Irány",
-                    "main_direction_mode_auto_rotate": "Automatikusan Forgó Irány",
-                    "unavailable": "Nem Elérhető",
-                    "no_config": "Nincs Konfiguráció"
-                }
-            },
-            "power_mode": {
-                "name": "Energiamód",
-                "state": {
-                    "power_mode_running": "Működik",
-                    "power_mode_standby": "Készenlét",
-                    "power_mode_hibernate": "Hibernálás"
-                }
-            },
-            "back_to_station_reason": {
-                "name": "Állomásra Visszatérés Oka",
-                "state": {
-                    "back_to_station_reason_none": "Nincs",
-                    "back_to_station_reason_low_battery": "Alacsony Akkumulátorszint",
-                    "back_to_station_reason_raining": "Eső",
-                    "back_to_station_reason_mow_motor_overheat": "Nyírómotor Túlmelegedése",
-                    "back_to_station_reason_wheel_overheat": "Hajtókerék Túlmelegedése",
-                    "back_to_station_reason_night_time": "Sötétség"
-                }
-            },
-            "mission": {
-                "name": "Küldetés",
-                "state": {
-                    "mission_idle": "Tétlen",
-                    "mission_recharge": "Töltés",
-                    "mission_global_clean": "Teljes Területű Nyírás",
-                    "mission_build_map": "Térképkészítés",
-                    "mission_build_map_and_clean": "Térképkészítés és Fűnyírás",
-                    "mission_temporary_clean": "Ideiglenes Nyírás",
-                    "mission_back_to_starting_point": "Visszatérés a Kiindulópontra",
-                    "mission_remote_control_clean": "Távirányításos Nyírás",
-                    "mission_schedule_global_clean": "Ütemezett Teljes Területű Nyírás",
-                    "mission_schedule_build_map_and_clean": "Ütemezett Térképkészítés és Nyírás",
-                    "mission_select_region_clean": "Zónanyírás",
-                    "mission_create_custom_passage": "Egyéni Átjáró Létrehozása",
-                    "mission_backup_map": "Térkép Biztonsági Mentése",
-                    "mission_relocate_base_station": "Bázisállomás Áthelyezése",
-                    "mission_user_auto_calibration": "Automatikus Kalibrálás",
-                    "mission_restore_backup_map": "Térkép-biztonsági Mentés Visszaállítása",
-                    "mission_schedule_select_region_clean": "Ütemezett Zónanyírás",
-                    "mission_draw_region_clean": "Rajzolt Zóna Nyírása",
-                    "mission_edge_trim_clean": "Szegélynyírás",
-                    "mission_update_backup_map": "Térkép-biztonsági Mentés Frissítése"
-                }
-            },
-            "sub_mission": {
-                "name": "Részfeladat",
-                "state": {
-                    "sub_mission_idle": "Tétlen",
-                    "sub_mission_relocation": "Helymeghatározás",
-                    "sub_mission_return_to_base": "Visszatérés a Bázisra",
-                    "sub_mission_out_of_station": "Bázisállomás Elhagyása",
-                    "sub_mission_remote_control": "Távirányítás",
-                    "sub_mission_saving_map": "Térkép Mentése",
-                    "sub_mission_setting_blade_height": "Késmagasság Beállítása",
-                    "sub_mission_charging": "Töltés",
-                    "sub_mission_remote_control_clean": "Távirányításos Nyírás",
-                    "sub_mission_defogging": "Páramentesítés",
-                    "sub_mission_wait_for_daylight": "Várakozás a Nappali Fényre",
-                    "sub_mission_cooling_down_motor": "Motor Hűtése",
-                    "sub_mission_wait_for_rain_to_stop": "Várakozás az Eső Elálltára",
-                    "sub_mission_flexible_station_wait": "Várakozás a Bázisállomáson"
-                }
-            },
-            "mission_state": {
-                "name": "Küldetés Állapota",
-                "state": {
-                    "mission_state_idle": "Tétlen",
-                    "mission_state_running": "Fut",
-                    "mission_state_pause": "Szüneteltetve",
-                    "mission_state_abort": "Megszakítva",
-                    "mission_state_complete": "Befejezve"
-                }
-            }
-        },
-        "camera": {
-            "map_camera": {
-                "name": "Térkép"
-            },
-            "map_camera_clean": {
-                "name": "Térkép (Letisztult)"
-            }
-        },
-        "binary_sensor": {
-            "charging_state": {
-                "name": "Töltési Állapot"
-            },
-            "navigation_located": {
-                "name": "Navigáció Bemérve"
-            },
-            "firmware_upgrading": {
-                "name": "Firmware Frissítése"
-            },
-            "power_switch": {
-                "name": "Főkapcsoló"
-            },
-            "problem": {
-                "name": "Probléma"
-            },
-            "rain_detected": {
-                "name": "Eső Észlelve"
-            },
-            "map_detected": {
-                "name": "Térkép Észlelve"
-            },
-            "map_buildable": {
-                "name": "Térkép Készíthető"
-            },
-            "map_backing_up": {
-                "name": "Térkép Biztonsági Mentése Folyamatban"
-            },
-            "saving_data": {
-                "name": "Adatok Mentése"
-            },
-            "data_conversion": {
-                "name": "Adatátalakítás Folyamatban"
-            }
-        },
-        "button": {
-            "reset_blade_timer": {
-                "name": "Késszámláló Nullázása"
-            },
-            "reset_base_station_timer": {
-                "name": "Bázisállomás-számláló Nullázása"
-            },
-            "edge_trim": {
-                "name": "Szegélynyírás"
-            }
-        },
-        "select": {
-            "region_select": {
-                "name": "Zónaválasztás",
-                "state": {
-                    "no_zones_available": "Nincs elérhető zóna",
-                    "all_zones": "Összes zóna"
-                }
-            },
-            "mow_speed_setting": {
-                "name": "Nyírási Sebesség Beállítása",
-                "state": {
-                    "mow_speed_type_low": "Alacsony Sebesség",
-                    "mow_speed_type_medium": "Közepes Sebesség",
-                    "mow_speed_type_adaptive_high": "Adaptív Magas Sebesség",
-                    "mow_speed_type_auto": "Automatikus Sebesség"
-                }
-            },
-            "blade_speed": {
-                "name": "Késsebesség Beállítása",
-                "state": {
-                    "blade_disk_speed_type_low": "Alacsony Sebesség",
-                    "blade_disk_speed_type_medium": "Közepes Sebesség",
-                    "blade_disk_speed_type_high": "Magas Sebesség"
-                }
-            },
-            "main_direction_mode": {
-                "name": "Fő Irány Módja",
-                "state": {
-                    "main_direction_mode_single": "Egy Irány",
-                    "main_direction_mode_multiple": "Több Irány",
-                    "main_direction_mode_auto_rotate": "Automatikusan Forgó Irány"
-                }
-            },
-            "high_grass_edge_trim_mode": {
-                "name": "Magas Fű Szegélynyírási Mód",
-                "state": {
-                    "high_grass_edge_trim_standard": "Normál",
-                    "high_grass_edge_trim_intensive": "Intenzív"
-                }
-            }
-        },
-        "switch": {
-            "thorough_corner_cutting": {
-                "name": "Alapos Sarokvágás"
-            }
-        },
-        "number": {
-            "mowing_height": {
-                "name": "Nyírási Magasság Beállítása"
-            },
-            "edge_cutting_distance": {
-                "name": "Szegélyvágási Távolság"
-            },
-            "mowing_spacing": {
-                "name": "Nyírási Sávtávolság Beállítása"
-            },
-            "main_direction_single_angle": {
-                "name": "Egyirányú Szög"
-            },
-            "main_direction_auto_rotate_interval": {
-                "name": "Automatikus Forgatási Szöglépés"
-            },
-            "multiple_direction_angle1": {
-                "name": "Első Irány Szöge"
-            },
-            "multiple_direction_angle2": {
-                "name": "Második Irány Szöge"
-            }
-        },
-        "update": {
-            "firmware": {
-                "name": "Firmware"
-            }
+    "step": {
+      "user": {
+        "data": {
+          "host": "Kiszolgáló",
+          "password": "Jelszó",
+          "username": "Felhasználónév"
         }
-    },
-    "services": {
-        "start_select_region": {
-            "name": "Kiválasztott Zóna Nyírásának Indítása",
-            "description": "Fűnyírás indítása a megadott alzóna-azonosítókhoz.",
-            "fields": {
-                "region_ids": {
-                    "name": "Zónaazonosítók",
-                    "description": "A nyírandó alzónák azonosítóinak listája."
-                }
-            }
+      },
+      "user_pass": {
+        "title": "TerraMow",
+        "description": "TerraMow észlelve a következő címen: {host}. A beállítás befejezéséhez adja meg az MQTT jelszót.",
+        "data": {
+          "password": "Jelszó"
         }
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "Jelszó"
+        }
+      },
+      "reconfigure": {
+        "title": "TerraMow újrakonfigurálása",
+        "description": "Frissítse a TerraMow IP-címét / gazdagépnevét vagy jelszavát.",
+        "data": {
+          "host": "Kiszolgáló",
+          "password": "Jelszó"
+        }
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "TerraMow beállítások",
+        "data": {
+          "map_resolution": "Térkép kimeneti felbontása (px)"
+        },
+        "data_description": {
+          "map_resolution": "A térképkamera PNG kimenetének oldalhossza. A magasabb értékek élesebb képet adnak az irányítópultokba ágyazva, de minden megjelenítésnél növelik a sávszélesség- és CPU-használatot."
+        }
+      }
+    }
+  },
+  "entity": {
+    "lawn_mower": {
+      "lawn_mower": {
+        "name": "Robotfűnyíró"
+      }
+    },
+    "sensor": {
+      "battery": {
+        "name": "Akkumulátor"
+      },
+      "battery_state": {
+        "name": "Akkumulátor Állapota",
+        "state": {
+          "battery_state_discharge": "Merül",
+          "battery_state_charging": "Töltés",
+          "battery_state_charged": "Teljesen Feltöltve"
+        }
+      },
+      "battery_temperature_state": {
+        "name": "Akkumulátor Hőmérsékleti Állapota",
+        "state": {
+          "battery_tempreture_normal": "Normál",
+          "battery_tempreture_overheat": "Túlmelegedés",
+          "battery_tempreture_underheat": "Túl Alacsony Hőmérséklet"
+        }
+      },
+      "map_status": {
+        "name": "Térkép Állapota",
+        "state": {
+          "map_state_empty": "Nincs Térkép",
+          "map_state_incomplete": "Hiányos Térkép",
+          "map_state_complete": "Kész Térkép"
+        }
+      },
+      "map_area": {
+        "name": "Térkép Területe"
+      },
+      "mow_height": {
+        "name": "Nyírási Magasság"
+      },
+      "mow_speed": {
+        "name": "Nyírási Sebesség",
+        "state": {
+          "mow_speed_type_low": "Alacsony",
+          "mow_speed_type_medium": "Közepes",
+          "mow_speed_type_adaptive_high": "Adaptív Magas",
+          "mow_speed_type_auto": "Automatikus"
+        }
+      },
+      "clean_mode": {
+        "name": "Működési Mód",
+        "state": {
+          "map_clean_info_mode_global": "Teljes Területű Működés",
+          "map_clean_info_mode_select_region": "Kiválasztott Zónás Működés",
+          "map_clean_info_mode_draw_region": "Rajzolt Zónás Működés",
+          "map_clean_info_mode_move_to_target_point": "Mozgás a Célpontra"
+        }
+      },
+      "pose": {
+        "name": "Pozíció és Irány"
+      },
+      "total_mowing_time": {
+        "name": "Teljes Nyírási Idő"
+      },
+      "total_mowing_jobs": {
+        "name": "Összes Nyírási Feladat"
+      },
+      "total_mowed_area": {
+        "name": "Összes Lenyírt Terület"
+      },
+      "current_session_area": {
+        "name": "Aktuális Munkamenet Területe"
+      },
+      "current_session_progress": {
+        "name": "Aktuális Munkamenet Előrehaladása"
+      },
+      "current_session_time": {
+        "name": "Aktuális Munkamenet Ideje"
+      },
+      "current_job_type": {
+        "name": "Aktuális Feladattípus",
+        "state": {
+          "map_area_type_none": "Nincs",
+          "map_area_type_build_map": "Térképkészítés",
+          "map_area_type_cleaning": "Fűnyírás",
+          "map_area_type_build_map_and_cleaning": "Térképkészítés és Fűnyírás",
+          "map_area_type_select_region_cleaning": "Kiválasztott Zóna Nyírása",
+          "map_area_type_draw_region_cleaning": "Rajzolt Zóna Nyírása",
+          "map_area_type_edge_trim_cleaning": "Szegélynyírás"
+        }
+      },
+      "remaining_blade_time": {
+        "name": "Hátralévő Késidő"
+      },
+      "remaining_base_station_time": {
+        "name": "Hátralévő Bázisállomás-idő"
+      },
+      "next_scheduled_start": {
+        "name": "Következő Ütemezett Indítás"
+      },
+      "version_compatibility": {
+        "name": "Verziókompatibilitás",
+        "state": {
+          "compatible": "Kompatibilis",
+          "upgrade_required": "Frissítés Szükséges",
+          "downgrade_recommended": "Visszaállítás Ajánlott",
+          "incompatible": "Nem Kompatibilis",
+          "unknown": "Ismeretlen"
+        }
+      },
+      "main_direction_status": {
+        "name": "Fő Irány Állapota",
+        "state": {
+          "main_direction_mode_single": "Egy Irány",
+          "main_direction_mode_multiple": "Több Irány",
+          "main_direction_mode_auto_rotate": "Automatikusan Forgó Irány",
+          "unavailable": "Nem Elérhető",
+          "no_config": "Nincs Konfiguráció"
+        }
+      },
+      "power_mode": {
+        "name": "Energiamód",
+        "state": {
+          "power_mode_running": "Működik",
+          "power_mode_standby": "Készenlét",
+          "power_mode_hibernate": "Hibernálás"
+        }
+      },
+      "back_to_station_reason": {
+        "name": "Állomásra Visszatérés Oka",
+        "state": {
+          "back_to_station_reason_none": "Nincs",
+          "back_to_station_reason_low_battery": "Alacsony Akkumulátorszint",
+          "back_to_station_reason_raining": "Eső",
+          "back_to_station_reason_mow_motor_overheat": "Nyírómotor Túlmelegedése",
+          "back_to_station_reason_wheel_overheat": "Hajtókerék Túlmelegedése",
+          "back_to_station_reason_night_time": "Sötétség"
+        }
+      },
+      "mission": {
+        "name": "Küldetés",
+        "state": {
+          "mission_idle": "Tétlen",
+          "mission_recharge": "Töltés",
+          "mission_global_clean": "Teljes Területű Nyírás",
+          "mission_build_map": "Térképkészítés",
+          "mission_build_map_and_clean": "Térképkészítés és Fűnyírás",
+          "mission_temporary_clean": "Ideiglenes Nyírás",
+          "mission_back_to_starting_point": "Visszatérés a Kiindulópontra",
+          "mission_remote_control_clean": "Távirányításos Nyírás",
+          "mission_schedule_global_clean": "Ütemezett Teljes Területű Nyírás",
+          "mission_schedule_build_map_and_clean": "Ütemezett Térképkészítés és Nyírás",
+          "mission_select_region_clean": "Zónanyírás",
+          "mission_create_custom_passage": "Egyéni Átjáró Létrehozása",
+          "mission_backup_map": "Térkép Biztonsági Mentése",
+          "mission_relocate_base_station": "Bázisállomás Áthelyezése",
+          "mission_user_auto_calibration": "Automatikus Kalibrálás",
+          "mission_restore_backup_map": "Térkép-biztonsági Mentés Visszaállítása",
+          "mission_schedule_select_region_clean": "Ütemezett Zónanyírás",
+          "mission_draw_region_clean": "Rajzolt Zóna Nyírása",
+          "mission_edge_trim_clean": "Szegélynyírás",
+          "mission_update_backup_map": "Térkép-biztonsági Mentés Frissítése"
+        }
+      },
+      "sub_mission": {
+        "name": "Részfeladat",
+        "state": {
+          "sub_mission_idle": "Tétlen",
+          "sub_mission_relocation": "Helymeghatározás",
+          "sub_mission_return_to_base": "Visszatérés a Bázisra",
+          "sub_mission_out_of_station": "Bázisállomás Elhagyása",
+          "sub_mission_remote_control": "Távirányítás",
+          "sub_mission_saving_map": "Térkép Mentése",
+          "sub_mission_setting_blade_height": "Késmagasság Beállítása",
+          "sub_mission_charging": "Töltés",
+          "sub_mission_remote_control_clean": "Távirányításos Nyírás",
+          "sub_mission_defogging": "Páramentesítés",
+          "sub_mission_wait_for_daylight": "Várakozás a Nappali Fényre",
+          "sub_mission_cooling_down_motor": "Motor Hűtése",
+          "sub_mission_wait_for_rain_to_stop": "Várakozás az Eső Elálltára",
+          "sub_mission_flexible_station_wait": "Várakozás a Bázisállomáson"
+        }
+      },
+      "mission_state": {
+        "name": "Küldetés Állapota",
+        "state": {
+          "mission_state_idle": "Tétlen",
+          "mission_state_running": "Fut",
+          "mission_state_pause": "Szüneteltetve",
+          "mission_state_abort": "Megszakítva",
+          "mission_state_complete": "Befejezve"
+        }
+      }
+    },
+    "camera": {
+      "map_camera": {
+        "name": "Térkép"
+      },
+      "map_camera_clean": {
+        "name": "Térkép (Letisztult)"
+      }
+    },
+    "binary_sensor": {
+      "charging_state": {
+        "name": "Töltési Állapot"
+      },
+      "navigation_located": {
+        "name": "Navigáció Bemérve"
+      },
+      "firmware_upgrading": {
+        "name": "Firmware Frissítése"
+      },
+      "power_switch": {
+        "name": "Főkapcsoló"
+      },
+      "problem": {
+        "name": "Probléma"
+      },
+      "rain_detected": {
+        "name": "Eső Észlelve"
+      },
+      "map_detected": {
+        "name": "Térkép Észlelve"
+      },
+      "map_buildable": {
+        "name": "Térkép Készíthető"
+      },
+      "map_backing_up": {
+        "name": "Térkép Biztonsági Mentése Folyamatban"
+      },
+      "saving_data": {
+        "name": "Adatok Mentése"
+      },
+      "data_conversion": {
+        "name": "Adatátalakítás Folyamatban"
+      }
+    },
+    "button": {
+      "reset_blade_timer": {
+        "name": "Késszámláló Nullázása"
+      },
+      "reset_base_station_timer": {
+        "name": "Bázisállomás-számláló Nullázása"
+      },
+      "edge_trim": {
+        "name": "Szegélynyírás"
+      }
+    },
+    "select": {
+      "region_select": {
+        "name": "Zónaválasztás",
+        "state": {
+          "no_zones_available": "Nincs elérhető zóna",
+          "all_zones": "Összes zóna"
+        }
+      },
+      "mow_speed_setting": {
+        "name": "Nyírási Sebesség Beállítása",
+        "state": {
+          "mow_speed_type_low": "Alacsony Sebesség",
+          "mow_speed_type_medium": "Közepes Sebesség",
+          "mow_speed_type_adaptive_high": "Adaptív Magas Sebesség",
+          "mow_speed_type_auto": "Automatikus Sebesség"
+        }
+      },
+      "blade_speed": {
+        "name": "Késsebesség Beállítása",
+        "state": {
+          "blade_disk_speed_type_low": "Alacsony Sebesség",
+          "blade_disk_speed_type_medium": "Közepes Sebesség",
+          "blade_disk_speed_type_high": "Magas Sebesség"
+        }
+      },
+      "main_direction_mode": {
+        "name": "Fő Irány Módja",
+        "state": {
+          "main_direction_mode_single": "Egy Irány",
+          "main_direction_mode_multiple": "Több Irány",
+          "main_direction_mode_auto_rotate": "Automatikusan Forgó Irány"
+        }
+      },
+      "high_grass_edge_trim_mode": {
+        "name": "Magas Fű Szegélynyírási Mód",
+        "state": {
+          "high_grass_edge_trim_standard": "Normál",
+          "high_grass_edge_trim_intensive": "Intenzív"
+        }
+      }
+    },
+    "switch": {
+      "thorough_corner_cutting": {
+        "name": "Alapos Sarokvágás"
+      }
+    },
+    "number": {
+      "mowing_height": {
+        "name": "Nyírási Magasság Beállítása"
+      },
+      "edge_cutting_distance": {
+        "name": "Szegélyvágási Távolság"
+      },
+      "mowing_spacing": {
+        "name": "Nyírási Sávtávolság Beállítása"
+      },
+      "main_direction_single_angle": {
+        "name": "Egyirányú Szög"
+      },
+      "main_direction_auto_rotate_interval": {
+        "name": "Automatikus Forgatási Szöglépés"
+      },
+      "multiple_direction_angle1": {
+        "name": "Első Irány Szöge"
+      },
+      "multiple_direction_angle2": {
+        "name": "Második Irány Szöge"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmware"
+      }
+    }
+  },
+  "services": {
+    "start_select_region": {
+      "name": "Kiválasztott Zóna Nyírásának Indítása",
+      "description": "Fűnyírás indítása a megadott alzóna-azonosítókhoz.",
+      "fields": {
+        "region_ids": {
+          "name": "Zónaazonosítók",
+          "description": "A nyírandó alzónák azonosítóinak listája."
+        }
+      }
+    }
+  },
+  "issues": {
+    "firmware_ha_module_too_low": {
+      "title": "TerraMow firmware-frissítés szükséges",
+      "description": "A TerraMow firmware HA moduljának verziója ({firmware_version}) túl régi ehhez az integrációhoz, amelyhez a(z) {required_version} verzió szükséges. Frissítse a fűnyíró firmware-ét a TerraMow alkalmazásból a teljes működés helyreállításához."
+    },
+    "firmware_overall_too_low": {
+      "title": "TerraMow firmware-frissítés szükséges",
+      "description": "A TerraMow firmware régebbi a minimálisan támogatott verziónál ({required_version}). Frissítse a fűnyíró firmware-ét a TerraMow alkalmazásból az integráció használatához."
+    },
+    "firmware_incompatible": {
+      "title": "Nem kompatibilis TerraMow firmware",
+      "description": "Az integráció nem tudta megerősíteni, hogy a TerraMow firmware kompatibilis. Ellenőrizze, hogy a fűnyíró firmware-e és ez az integráció is naprakész-e, majd töltse le a diagnosztikát, és nyisson egy issue-t, ha a probléma továbbra is fennáll."
+    },
+    "plugin_downgrade_recommended": {
+      "title": "A TerraMow integráció frissítése ajánlott",
+      "description": "A TerraMow firmware HA moduljának verziója ({firmware_version}) újabb, mint amit ez az integráció támogat ({plugin_version}). Frissítse az integrációt a HACS-ban a legújabb funkciók eléréséhez."
+    }
+  }
 }
