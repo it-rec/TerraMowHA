@@ -66,6 +66,11 @@
         "name": "Mower event"
       }
     },
+    "calendar": {
+      "schedule": {
+        "name": "Mowing schedule"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Battery"
