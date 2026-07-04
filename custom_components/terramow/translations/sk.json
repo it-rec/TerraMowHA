@@ -1,393 +1,411 @@
 {
-    "config": {
-        "flow_title": "TerraMow ({host})",
-        "abort": {
-            "already_configured": "Zariadenie je už nakonfigurované",
-            "cannot_connect": "Pripojenie zlyhalo",
-            "reauth_successful": "Opätovné overenie bolo úspešné",
-            "reconfigure_successful": "Zmena konfigurácie bola úspešná"
-        },
-        "error": {
-            "cannot_connect": "Pripojenie zlyhalo",
-            "invalid_auth": "Neplatné overenie",
-            "unknown": "Neočakávaná chyba"
-        },
-        "step": {
-            "user": {
-                "data": {
-                    "host": "Hostiteľ",
-                    "password": "Heslo",
-                    "username": "Používateľské meno"
-                }
-            },
-            "user_pass": {
-                "title": "TerraMow",
-                "description": "Bol nájdený TerraMow na {host}. Zadajte heslo MQTT na dokončenie nastavenia.",
-                "data": {
-                    "password": "Heslo"
-                }
-            },
-            "reauth_confirm": {
-                "data": {
-                    "password": "Heslo"
-                }
-            },
-            "reconfigure": {
-                "title": "Znova nakonfigurovať TerraMow",
-                "description": "Aktualizujte IP adresu / názov hostiteľa alebo heslo vášho zariadenia TerraMow.",
-                "data": {
-                    "host": "Hostiteľ",
-                    "password": "Heslo"
-                }
-            }
-        }
+  "config": {
+    "flow_title": "TerraMow ({host})",
+    "abort": {
+      "already_configured": "Zariadenie je už nakonfigurované",
+      "cannot_connect": "Pripojenie zlyhalo",
+      "reauth_successful": "Opätovné overenie bolo úspešné",
+      "reconfigure_successful": "Zmena konfigurácie bola úspešná"
     },
-    "options": {
-        "step": {
-            "init": {
-                "title": "Možnosti TerraMow",
-                "data": {
-                    "map_resolution": "Výstupné rozlíšenie mapy (px)"
-                },
-                "data_description": {
-                    "map_resolution": "Dĺžka strany výstupného PNG obrázka kamery mapy. Vyššie hodnoty poskytujú ostrejší obraz pri vložení do panelov, ale zvyšujú nároky na šírku pásma a CPU pri každom vykreslení."
-                }
-            }
-        }
+    "error": {
+      "cannot_connect": "Pripojenie zlyhalo",
+      "invalid_auth": "Neplatné overenie",
+      "unknown": "Neočakávaná chyba"
     },
-    "entity": {
-        "lawn_mower": {
-            "lawn_mower": {
-                "name": "Robotická kosačka"
-            }
-        },
-        "sensor": {
-            "battery": {
-                "name": "Batéria"
-            },
-            "battery_state": {
-                "name": "Stav batérie",
-                "state": {
-                    "battery_state_discharge": "Vybíja sa",
-                    "battery_state_charging": "Nabíja sa",
-                    "battery_state_charged": "Plne nabitá"
-                }
-            },
-            "battery_temperature_state": {
-                "name": "Stav teploty batérie",
-                "state": {
-                    "battery_tempreture_normal": "Normálna",
-                    "battery_tempreture_overheat": "Prehriata",
-                    "battery_tempreture_underheat": "Podchladená"
-                }
-            },
-            "map_status": {
-                "name": "Stav mapy",
-                "state": {
-                    "map_state_empty": "Žiadna mapa",
-                    "map_state_incomplete": "Neúplná mapa",
-                    "map_state_complete": "Kompletná mapa"
-                }
-            },
-            "map_area": {
-                "name": "Plocha mapy"
-            },
-            "mow_height": {
-                "name": "Výška kosenia"
-            },
-            "mow_speed": {
-                "name": "Rýchlosť kosenia",
-                "state": {
-                    "mow_speed_type_low": "Nízka",
-                    "mow_speed_type_medium": "Stredná",
-                    "mow_speed_type_adaptive_high": "Adaptívna vysoká",
-                    "mow_speed_type_auto": "Automatická"
-                }
-            },
-            "clean_mode": {
-                "name": "Režim prevádzky",
-                "state": {
-                    "map_clean_info_mode_global": "Kosenie celej plochy",
-                    "map_clean_info_mode_select_region": "Kosenie vybranej zóny",
-                    "map_clean_info_mode_draw_region": "Kosenie nakreslenej zóny",
-                    "map_clean_info_mode_move_to_target_point": "Presun na cieľový bod"
-                }
-            },
-            "pose": {
-                "name": "Poloha"
-            },
-            "total_mowing_time": {
-                "name": "Celkový čas kosenia"
-            },
-            "total_mowing_jobs": {
-                "name": "Celkový počet kosení"
-            },
-            "total_mowed_area": {
-                "name": "Celková pokosená plocha"
-            },
-            "current_session_area": {
-                "name": "Plocha aktuálnej relácie"
-            },
-            "current_session_progress": {
-                "name": "Priebeh aktuálnej relácie"
-            },
-            "current_session_time": {
-                "name": "Trvanie aktuálnej relácie"
-            },
-            "current_job_type": {
-                "name": "Typ aktuálnej úlohy",
-                "state": {
-                    "map_area_type_none": "Žiadny",
-                    "map_area_type_build_map": "Vytváranie mapy",
-                    "map_area_type_cleaning": "Kosenie",
-                    "map_area_type_build_map_and_cleaning": "Vytváranie mapy a kosenie",
-                    "map_area_type_select_region_cleaning": "Kosenie vybranej zóny",
-                    "map_area_type_draw_region_cleaning": "Kosenie nakreslenej zóny",
-                    "map_area_type_edge_trim_cleaning": "Kosenie okrajov"
-                }
-            },
-            "remaining_blade_time": {
-                "name": "Zostávajúci čas nožov"
-            },
-            "remaining_base_station_time": {
-                "name": "Zostávajúci čas základňovej stanice"
-            },
-            "next_scheduled_start": {
-                "name": "Ďalší plánovaný štart"
-            },
-            "version_compatibility": {
-                "name": "Kompatibilita verzií",
-                "state": {
-                    "compatible": "Kompatibilné",
-                    "upgrade_required": "Vyžaduje sa aktualizácia",
-                    "downgrade_recommended": "Odporúča sa staršia verzia",
-                    "incompatible": "Nekompatibilné",
-                    "unknown": "Neznáme"
-                }
-            },
-            "main_direction_status": {
-                "name": "Stav hlavného smeru",
-                "state": {
-                    "main_direction_mode_single": "Jeden smer",
-                    "main_direction_mode_multiple": "Viacero smerov",
-                    "main_direction_mode_auto_rotate": "Automatické otáčanie smeru",
-                    "unavailable": "Nedostupné",
-                    "no_config": "Bez konfigurácie"
-                }
-            },
-            "power_mode": {
-                "name": "Režim napájania",
-                "state": {
-                    "power_mode_running": "V prevádzke",
-                    "power_mode_standby": "Pohotovostný režim",
-                    "power_mode_hibernate": "Hibernácia"
-                }
-            },
-            "back_to_station_reason": {
-                "name": "Dôvod návratu do stanice",
-                "state": {
-                    "back_to_station_reason_none": "Žiadny",
-                    "back_to_station_reason_low_battery": "Slabá batéria",
-                    "back_to_station_reason_raining": "Dážď",
-                    "back_to_station_reason_mow_motor_overheat": "Prehriatie žacieho motora",
-                    "back_to_station_reason_wheel_overheat": "Prehriatie hnacích kolies",
-                    "back_to_station_reason_night_time": "Tma"
-                }
-            },
-            "mission": {
-                "name": "Misia",
-                "state": {
-                    "mission_idle": "Nečinná",
-                    "mission_recharge": "Nabíjanie",
-                    "mission_global_clean": "Kosenie celej plochy",
-                    "mission_build_map": "Vytváranie mapy",
-                    "mission_build_map_and_clean": "Vytváranie mapy a kosenie",
-                    "mission_temporary_clean": "Dočasné kosenie",
-                    "mission_back_to_starting_point": "Návrat na východiskový bod",
-                    "mission_remote_control_clean": "Kosenie na diaľkové ovládanie",
-                    "mission_schedule_global_clean": "Plánované kosenie celej plochy",
-                    "mission_schedule_build_map_and_clean": "Plánované mapovanie a kosenie",
-                    "mission_select_region_clean": "Kosenie zón",
-                    "mission_create_custom_passage": "Vytváranie vlastného priechodu",
-                    "mission_backup_map": "Zálohovanie mapy",
-                    "mission_relocate_base_station": "Premiestňovanie základňovej stanice",
-                    "mission_user_auto_calibration": "Automatická kalibrácia",
-                    "mission_restore_backup_map": "Obnovovanie zálohy mapy",
-                    "mission_schedule_select_region_clean": "Plánované kosenie zón",
-                    "mission_draw_region_clean": "Kosenie nakreslenej zóny",
-                    "mission_edge_trim_clean": "Kosenie okrajov",
-                    "mission_update_backup_map": "Aktualizácia zálohy mapy"
-                }
-            },
-            "sub_mission": {
-                "name": "Podmisia",
-                "state": {
-                    "sub_mission_idle": "Nečinná",
-                    "sub_mission_relocation": "Určovanie polohy",
-                    "sub_mission_return_to_base": "Návrat na základňu",
-                    "sub_mission_out_of_station": "Opúšťanie základňovej stanice",
-                    "sub_mission_remote_control": "Diaľkové ovládanie",
-                    "sub_mission_saving_map": "Ukladanie mapy",
-                    "sub_mission_setting_blade_height": "Nastavovanie výšky nožov",
-                    "sub_mission_charging": "Nabíjanie",
-                    "sub_mission_remote_control_clean": "Kosenie na diaľkové ovládanie",
-                    "sub_mission_defogging": "Odhmlievanie",
-                    "sub_mission_wait_for_daylight": "Čakanie na denné svetlo",
-                    "sub_mission_cooling_down_motor": "Chladenie motora",
-                    "sub_mission_wait_for_rain_to_stop": "Čakanie na koniec dažďa",
-                    "sub_mission_flexible_station_wait": "Čakanie v základňovej stanici"
-                }
-            },
-            "mission_state": {
-                "name": "Stav misie",
-                "state": {
-                    "mission_state_idle": "Nečinná",
-                    "mission_state_running": "Prebieha",
-                    "mission_state_pause": "Pozastavená",
-                    "mission_state_abort": "Prerušená",
-                    "mission_state_complete": "Dokončená"
-                }
-            }
-        },
-        "camera": {
-            "map_camera": {
-                "name": "Mapa"
-            },
-            "map_camera_clean": {
-                "name": "Mapa (čistá)"
-            }
-        },
-        "binary_sensor": {
-            "charging_state": {
-                "name": "Stav nabíjania"
-            },
-            "navigation_located": {
-                "name": "Navigácia lokalizovaná"
-            },
-            "firmware_upgrading": {
-                "name": "Prebieha aktualizácia firmvéru"
-            },
-            "power_switch": {
-                "name": "Hlavný vypínač"
-            },
-            "problem": {
-                "name": "Problém"
-            },
-            "rain_detected": {
-                "name": "Zistený dážď"
-            },
-            "map_detected": {
-                "name": "Zistená mapa"
-            },
-            "map_buildable": {
-                "name": "Mapu je možné vytvoriť"
-            },
-            "map_backing_up": {
-                "name": "Prebieha zálohovanie mapy"
-            },
-            "saving_data": {
-                "name": "Ukladanie údajov"
-            },
-            "data_conversion": {
-                "name": "Prebieha konverzia údajov"
-            }
-        },
-        "button": {
-            "reset_blade_timer": {
-                "name": "Vynulovať počítadlo nožov"
-            },
-            "reset_base_station_timer": {
-                "name": "Vynulovať počítadlo základňovej stanice"
-            },
-            "edge_trim": {
-                "name": "Kosenie okrajov"
-            }
-        },
-        "select": {
-            "region_select": {
-                "name": "Výber zóny",
-                "state": {
-                    "no_zones_available": "Žiadne dostupné zóny",
-                    "all_zones": "Všetky zóny"
-                }
-            },
-            "mow_speed_setting": {
-                "name": "Nastavenie rýchlosti kosenia",
-                "state": {
-                    "mow_speed_type_low": "Nízka rýchlosť",
-                    "mow_speed_type_medium": "Stredná rýchlosť",
-                    "mow_speed_type_adaptive_high": "Adaptívna vysoká rýchlosť",
-                    "mow_speed_type_auto": "Automatická rýchlosť"
-                }
-            },
-            "blade_speed": {
-                "name": "Nastavenie rýchlosti nožov",
-                "state": {
-                    "blade_disk_speed_type_low": "Nízka rýchlosť",
-                    "blade_disk_speed_type_medium": "Stredná rýchlosť",
-                    "blade_disk_speed_type_high": "Vysoká rýchlosť"
-                }
-            },
-            "main_direction_mode": {
-                "name": "Režim hlavného smeru",
-                "state": {
-                    "main_direction_mode_single": "Jeden smer",
-                    "main_direction_mode_multiple": "Viacero smerov",
-                    "main_direction_mode_auto_rotate": "Automatické otáčanie smeru"
-                }
-            },
-            "high_grass_edge_trim_mode": {
-                "name": "Režim kosenia okrajov vo vysokej tráve",
-                "state": {
-                    "high_grass_edge_trim_standard": "Štandardný",
-                    "high_grass_edge_trim_intensive": "Intenzívny"
-                }
-            }
-        },
-        "switch": {
-            "thorough_corner_cutting": {
-                "name": "Dôkladné kosenie rohov"
-            }
-        },
-        "number": {
-            "mowing_height": {
-                "name": "Nastavenie výšky kosenia"
-            },
-            "edge_cutting_distance": {
-                "name": "Vzdialenosť kosenia okrajov"
-            },
-            "mowing_spacing": {
-                "name": "Nastavenie rozstupu kosenia"
-            },
-            "main_direction_single_angle": {
-                "name": "Uhol jedného smeru"
-            },
-            "main_direction_auto_rotate_interval": {
-                "name": "Interval automatického otáčania uhla"
-            },
-            "multiple_direction_angle1": {
-                "name": "Uhol prvého smeru"
-            },
-            "multiple_direction_angle2": {
-                "name": "Uhol druhého smeru"
-            }
-        },
-        "update": {
-            "firmware": {
-                "name": "Firmvér"
-            }
+    "step": {
+      "user": {
+        "data": {
+          "host": "Hostiteľ",
+          "password": "Heslo",
+          "username": "Používateľské meno"
         }
-    },
-    "services": {
-        "start_select_region": {
-            "name": "Spustiť kosenie vybraných zón",
-            "description": "Spustí kosenie pre zadané ID podzón.",
-            "fields": {
-                "region_ids": {
-                    "name": "ID zón",
-                    "description": "Zoznam ID podzón na kosenie."
-                }
-            }
+      },
+      "user_pass": {
+        "title": "TerraMow",
+        "description": "Bol nájdený TerraMow na {host}. Zadajte heslo MQTT na dokončenie nastavenia.",
+        "data": {
+          "password": "Heslo"
         }
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "Heslo"
+        }
+      },
+      "reconfigure": {
+        "title": "Znova nakonfigurovať TerraMow",
+        "description": "Aktualizujte IP adresu / názov hostiteľa alebo heslo vášho zariadenia TerraMow.",
+        "data": {
+          "host": "Hostiteľ",
+          "password": "Heslo"
+        }
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Možnosti TerraMow",
+        "data": {
+          "map_resolution": "Výstupné rozlíšenie mapy (px)"
+        },
+        "data_description": {
+          "map_resolution": "Dĺžka strany výstupného PNG obrázka kamery mapy. Vyššie hodnoty poskytujú ostrejší obraz pri vložení do panelov, ale zvyšujú nároky na šírku pásma a CPU pri každom vykreslení."
+        }
+      }
+    }
+  },
+  "entity": {
+    "lawn_mower": {
+      "lawn_mower": {
+        "name": "Robotická kosačka"
+      }
+    },
+    "sensor": {
+      "battery": {
+        "name": "Batéria"
+      },
+      "battery_state": {
+        "name": "Stav batérie",
+        "state": {
+          "battery_state_discharge": "Vybíja sa",
+          "battery_state_charging": "Nabíja sa",
+          "battery_state_charged": "Plne nabitá"
+        }
+      },
+      "battery_temperature_state": {
+        "name": "Stav teploty batérie",
+        "state": {
+          "battery_tempreture_normal": "Normálna",
+          "battery_tempreture_overheat": "Prehriata",
+          "battery_tempreture_underheat": "Podchladená"
+        }
+      },
+      "map_status": {
+        "name": "Stav mapy",
+        "state": {
+          "map_state_empty": "Žiadna mapa",
+          "map_state_incomplete": "Neúplná mapa",
+          "map_state_complete": "Kompletná mapa"
+        }
+      },
+      "map_area": {
+        "name": "Plocha mapy"
+      },
+      "mow_height": {
+        "name": "Výška kosenia"
+      },
+      "mow_speed": {
+        "name": "Rýchlosť kosenia",
+        "state": {
+          "mow_speed_type_low": "Nízka",
+          "mow_speed_type_medium": "Stredná",
+          "mow_speed_type_adaptive_high": "Adaptívna vysoká",
+          "mow_speed_type_auto": "Automatická"
+        }
+      },
+      "clean_mode": {
+        "name": "Režim prevádzky",
+        "state": {
+          "map_clean_info_mode_global": "Kosenie celej plochy",
+          "map_clean_info_mode_select_region": "Kosenie vybranej zóny",
+          "map_clean_info_mode_draw_region": "Kosenie nakreslenej zóny",
+          "map_clean_info_mode_move_to_target_point": "Presun na cieľový bod"
+        }
+      },
+      "pose": {
+        "name": "Poloha"
+      },
+      "total_mowing_time": {
+        "name": "Celkový čas kosenia"
+      },
+      "total_mowing_jobs": {
+        "name": "Celkový počet kosení"
+      },
+      "total_mowed_area": {
+        "name": "Celková pokosená plocha"
+      },
+      "current_session_area": {
+        "name": "Plocha aktuálnej relácie"
+      },
+      "current_session_progress": {
+        "name": "Priebeh aktuálnej relácie"
+      },
+      "current_session_time": {
+        "name": "Trvanie aktuálnej relácie"
+      },
+      "current_job_type": {
+        "name": "Typ aktuálnej úlohy",
+        "state": {
+          "map_area_type_none": "Žiadny",
+          "map_area_type_build_map": "Vytváranie mapy",
+          "map_area_type_cleaning": "Kosenie",
+          "map_area_type_build_map_and_cleaning": "Vytváranie mapy a kosenie",
+          "map_area_type_select_region_cleaning": "Kosenie vybranej zóny",
+          "map_area_type_draw_region_cleaning": "Kosenie nakreslenej zóny",
+          "map_area_type_edge_trim_cleaning": "Kosenie okrajov"
+        }
+      },
+      "remaining_blade_time": {
+        "name": "Zostávajúci čas nožov"
+      },
+      "remaining_base_station_time": {
+        "name": "Zostávajúci čas základňovej stanice"
+      },
+      "next_scheduled_start": {
+        "name": "Ďalší plánovaný štart"
+      },
+      "version_compatibility": {
+        "name": "Kompatibilita verzií",
+        "state": {
+          "compatible": "Kompatibilné",
+          "upgrade_required": "Vyžaduje sa aktualizácia",
+          "downgrade_recommended": "Odporúča sa staršia verzia",
+          "incompatible": "Nekompatibilné",
+          "unknown": "Neznáme"
+        }
+      },
+      "main_direction_status": {
+        "name": "Stav hlavného smeru",
+        "state": {
+          "main_direction_mode_single": "Jeden smer",
+          "main_direction_mode_multiple": "Viacero smerov",
+          "main_direction_mode_auto_rotate": "Automatické otáčanie smeru",
+          "unavailable": "Nedostupné",
+          "no_config": "Bez konfigurácie"
+        }
+      },
+      "power_mode": {
+        "name": "Režim napájania",
+        "state": {
+          "power_mode_running": "V prevádzke",
+          "power_mode_standby": "Pohotovostný režim",
+          "power_mode_hibernate": "Hibernácia"
+        }
+      },
+      "back_to_station_reason": {
+        "name": "Dôvod návratu do stanice",
+        "state": {
+          "back_to_station_reason_none": "Žiadny",
+          "back_to_station_reason_low_battery": "Slabá batéria",
+          "back_to_station_reason_raining": "Dážď",
+          "back_to_station_reason_mow_motor_overheat": "Prehriatie žacieho motora",
+          "back_to_station_reason_wheel_overheat": "Prehriatie hnacích kolies",
+          "back_to_station_reason_night_time": "Tma"
+        }
+      },
+      "mission": {
+        "name": "Misia",
+        "state": {
+          "mission_idle": "Nečinná",
+          "mission_recharge": "Nabíjanie",
+          "mission_global_clean": "Kosenie celej plochy",
+          "mission_build_map": "Vytváranie mapy",
+          "mission_build_map_and_clean": "Vytváranie mapy a kosenie",
+          "mission_temporary_clean": "Dočasné kosenie",
+          "mission_back_to_starting_point": "Návrat na východiskový bod",
+          "mission_remote_control_clean": "Kosenie na diaľkové ovládanie",
+          "mission_schedule_global_clean": "Plánované kosenie celej plochy",
+          "mission_schedule_build_map_and_clean": "Plánované mapovanie a kosenie",
+          "mission_select_region_clean": "Kosenie zón",
+          "mission_create_custom_passage": "Vytváranie vlastného priechodu",
+          "mission_backup_map": "Zálohovanie mapy",
+          "mission_relocate_base_station": "Premiestňovanie základňovej stanice",
+          "mission_user_auto_calibration": "Automatická kalibrácia",
+          "mission_restore_backup_map": "Obnovovanie zálohy mapy",
+          "mission_schedule_select_region_clean": "Plánované kosenie zón",
+          "mission_draw_region_clean": "Kosenie nakreslenej zóny",
+          "mission_edge_trim_clean": "Kosenie okrajov",
+          "mission_update_backup_map": "Aktualizácia zálohy mapy"
+        }
+      },
+      "sub_mission": {
+        "name": "Podmisia",
+        "state": {
+          "sub_mission_idle": "Nečinná",
+          "sub_mission_relocation": "Určovanie polohy",
+          "sub_mission_return_to_base": "Návrat na základňu",
+          "sub_mission_out_of_station": "Opúšťanie základňovej stanice",
+          "sub_mission_remote_control": "Diaľkové ovládanie",
+          "sub_mission_saving_map": "Ukladanie mapy",
+          "sub_mission_setting_blade_height": "Nastavovanie výšky nožov",
+          "sub_mission_charging": "Nabíjanie",
+          "sub_mission_remote_control_clean": "Kosenie na diaľkové ovládanie",
+          "sub_mission_defogging": "Odhmlievanie",
+          "sub_mission_wait_for_daylight": "Čakanie na denné svetlo",
+          "sub_mission_cooling_down_motor": "Chladenie motora",
+          "sub_mission_wait_for_rain_to_stop": "Čakanie na koniec dažďa",
+          "sub_mission_flexible_station_wait": "Čakanie v základňovej stanici"
+        }
+      },
+      "mission_state": {
+        "name": "Stav misie",
+        "state": {
+          "mission_state_idle": "Nečinná",
+          "mission_state_running": "Prebieha",
+          "mission_state_pause": "Pozastavená",
+          "mission_state_abort": "Prerušená",
+          "mission_state_complete": "Dokončená"
+        }
+      }
+    },
+    "camera": {
+      "map_camera": {
+        "name": "Mapa"
+      },
+      "map_camera_clean": {
+        "name": "Mapa (čistá)"
+      }
+    },
+    "binary_sensor": {
+      "charging_state": {
+        "name": "Stav nabíjania"
+      },
+      "navigation_located": {
+        "name": "Navigácia lokalizovaná"
+      },
+      "firmware_upgrading": {
+        "name": "Prebieha aktualizácia firmvéru"
+      },
+      "power_switch": {
+        "name": "Hlavný vypínač"
+      },
+      "problem": {
+        "name": "Problém"
+      },
+      "rain_detected": {
+        "name": "Zistený dážď"
+      },
+      "map_detected": {
+        "name": "Zistená mapa"
+      },
+      "map_buildable": {
+        "name": "Mapu je možné vytvoriť"
+      },
+      "map_backing_up": {
+        "name": "Prebieha zálohovanie mapy"
+      },
+      "saving_data": {
+        "name": "Ukladanie údajov"
+      },
+      "data_conversion": {
+        "name": "Prebieha konverzia údajov"
+      }
+    },
+    "button": {
+      "reset_blade_timer": {
+        "name": "Vynulovať počítadlo nožov"
+      },
+      "reset_base_station_timer": {
+        "name": "Vynulovať počítadlo základňovej stanice"
+      },
+      "edge_trim": {
+        "name": "Kosenie okrajov"
+      }
+    },
+    "select": {
+      "region_select": {
+        "name": "Výber zóny",
+        "state": {
+          "no_zones_available": "Žiadne dostupné zóny",
+          "all_zones": "Všetky zóny"
+        }
+      },
+      "mow_speed_setting": {
+        "name": "Nastavenie rýchlosti kosenia",
+        "state": {
+          "mow_speed_type_low": "Nízka rýchlosť",
+          "mow_speed_type_medium": "Stredná rýchlosť",
+          "mow_speed_type_adaptive_high": "Adaptívna vysoká rýchlosť",
+          "mow_speed_type_auto": "Automatická rýchlosť"
+        }
+      },
+      "blade_speed": {
+        "name": "Nastavenie rýchlosti nožov",
+        "state": {
+          "blade_disk_speed_type_low": "Nízka rýchlosť",
+          "blade_disk_speed_type_medium": "Stredná rýchlosť",
+          "blade_disk_speed_type_high": "Vysoká rýchlosť"
+        }
+      },
+      "main_direction_mode": {
+        "name": "Režim hlavného smeru",
+        "state": {
+          "main_direction_mode_single": "Jeden smer",
+          "main_direction_mode_multiple": "Viacero smerov",
+          "main_direction_mode_auto_rotate": "Automatické otáčanie smeru"
+        }
+      },
+      "high_grass_edge_trim_mode": {
+        "name": "Režim kosenia okrajov vo vysokej tráve",
+        "state": {
+          "high_grass_edge_trim_standard": "Štandardný",
+          "high_grass_edge_trim_intensive": "Intenzívny"
+        }
+      }
+    },
+    "switch": {
+      "thorough_corner_cutting": {
+        "name": "Dôkladné kosenie rohov"
+      }
+    },
+    "number": {
+      "mowing_height": {
+        "name": "Nastavenie výšky kosenia"
+      },
+      "edge_cutting_distance": {
+        "name": "Vzdialenosť kosenia okrajov"
+      },
+      "mowing_spacing": {
+        "name": "Nastavenie rozstupu kosenia"
+      },
+      "main_direction_single_angle": {
+        "name": "Uhol jedného smeru"
+      },
+      "main_direction_auto_rotate_interval": {
+        "name": "Interval automatického otáčania uhla"
+      },
+      "multiple_direction_angle1": {
+        "name": "Uhol prvého smeru"
+      },
+      "multiple_direction_angle2": {
+        "name": "Uhol druhého smeru"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Firmvér"
+      }
+    }
+  },
+  "services": {
+    "start_select_region": {
+      "name": "Spustiť kosenie vybraných zón",
+      "description": "Spustí kosenie pre zadané ID podzón.",
+      "fields": {
+        "region_ids": {
+          "name": "ID zón",
+          "description": "Zoznam ID podzón na kosenie."
+        }
+      }
+    }
+  },
+  "issues": {
+    "firmware_ha_module_too_low": {
+      "title": "Vyžaduje sa aktualizácia firmvéru TerraMow",
+      "description": "Verzia HA modulu vo firmvéri TerraMow ({firmware_version}) je pre túto integráciu príliš stará, vyžaduje verziu {required_version}. Aktualizujte firmvér kosačky v aplikácii TerraMow, aby ste obnovili plnú funkčnosť."
+    },
+    "firmware_overall_too_low": {
+      "title": "Vyžaduje sa aktualizácia firmvéru TerraMow",
+      "description": "Firmvér TerraMow je starší než minimálna podporovaná verzia ({required_version}). Aktualizujte firmvér kosačky v aplikácii TerraMow, aby ste mohli túto integráciu používať."
+    },
+    "firmware_incompatible": {
+      "title": "Nekompatibilný firmvér TerraMow",
+      "description": "Integrácia nedokázala potvrdiť, že firmvér TerraMow je kompatibilný. Skontrolujte, či sú firmvér kosačky aj táto integrácia aktuálne, potom stiahnite diagnostiku a založte issue, ak problém pretrváva."
+    },
+    "plugin_downgrade_recommended": {
+      "title": "Odporúča sa aktualizácia integrácie TerraMow",
+      "description": "Verzia HA modulu vo firmvéri TerraMow ({firmware_version}) je novšia, než táto integrácia podporuje ({plugin_version}). Aktualizujte integráciu v HACS, aby ste získali najnovšie funkcie."
+    }
+  }
 }

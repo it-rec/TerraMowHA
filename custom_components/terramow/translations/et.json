@@ -1,393 +1,411 @@
 {
-    "config": {
-        "flow_title": "TerraMow ({host})",
-        "abort": {
-            "already_configured": "Seade on juba seadistatud",
-            "cannot_connect": "Ühendamine nurjus",
-            "reauth_successful": "Taasautentimine õnnestus",
-            "reconfigure_successful": "Ümberseadistamine õnnestus"
-        },
-        "error": {
-            "cannot_connect": "Ühendamine nurjus",
-            "invalid_auth": "Vigane autentimine",
-            "unknown": "Ootamatu viga"
-        },
-        "step": {
-            "user": {
-                "data": {
-                    "host": "Host",
-                    "password": "Parool",
-                    "username": "Kasutajanimi"
-                }
-            },
-            "user_pass": {
-                "title": "TerraMow",
-                "description": "Leiti TerraMow aadressil {host}. Seadistamise lõpuleviimiseks sisesta MQTT parool.",
-                "data": {
-                    "password": "Parool"
-                }
-            },
-            "reauth_confirm": {
-                "data": {
-                    "password": "Parool"
-                }
-            },
-            "reconfigure": {
-                "title": "Seadista TerraMow uuesti",
-                "description": "Uuenda oma TerraMow IP-aadressi / hostinime või parooli.",
-                "data": {
-                    "host": "Host",
-                    "password": "Parool"
-                }
-            }
-        }
+  "config": {
+    "flow_title": "TerraMow ({host})",
+    "abort": {
+      "already_configured": "Seade on juba seadistatud",
+      "cannot_connect": "Ühendamine nurjus",
+      "reauth_successful": "Taasautentimine õnnestus",
+      "reconfigure_successful": "Ümberseadistamine õnnestus"
     },
-    "options": {
-        "step": {
-            "init": {
-                "title": "TerraMow valikud",
-                "data": {
-                    "map_resolution": "Kaardi väljundi eraldusvõime (px)"
-                },
-                "data_description": {
-                    "map_resolution": "Kaardikaamera PNG väljundi külje pikkus. Suuremad väärtused annavad armatuurlaudadele manustamisel teravama pildi, kuid suurendavad ribalaiust ja CPU koormust igal renderdamisel."
-                }
-            }
-        }
+    "error": {
+      "cannot_connect": "Ühendamine nurjus",
+      "invalid_auth": "Vigane autentimine",
+      "unknown": "Ootamatu viga"
     },
-    "entity": {
-        "lawn_mower": {
-            "lawn_mower": {
-                "name": "Robotniiduk"
-            }
-        },
-        "sensor": {
-            "battery": {
-                "name": "Aku"
-            },
-            "battery_state": {
-                "name": "Aku olek",
-                "state": {
-                    "battery_state_discharge": "Tühjeneb",
-                    "battery_state_charging": "Laeb",
-                    "battery_state_charged": "Täis laetud"
-                }
-            },
-            "battery_temperature_state": {
-                "name": "Aku temperatuuri olek",
-                "state": {
-                    "battery_tempreture_normal": "Normaalne",
-                    "battery_tempreture_overheat": "Ülekuumenenud",
-                    "battery_tempreture_underheat": "Liiga külm"
-                }
-            },
-            "map_status": {
-                "name": "Kaardi olek",
-                "state": {
-                    "map_state_empty": "Kaart puudub",
-                    "map_state_incomplete": "Kaart on poolik",
-                    "map_state_complete": "Kaart on valmis"
-                }
-            },
-            "map_area": {
-                "name": "Kaardi pindala"
-            },
-            "mow_height": {
-                "name": "Niitmiskõrgus"
-            },
-            "mow_speed": {
-                "name": "Niitmiskiirus",
-                "state": {
-                    "mow_speed_type_low": "Väike",
-                    "mow_speed_type_medium": "Keskmine",
-                    "mow_speed_type_adaptive_high": "Adaptiivne suur",
-                    "mow_speed_type_auto": "Automaatne"
-                }
-            },
-            "clean_mode": {
-                "name": "Töörežiim",
-                "state": {
-                    "map_clean_info_mode_global": "Kogu ala töö",
-                    "map_clean_info_mode_select_region": "Töö valitud alal",
-                    "map_clean_info_mode_draw_region": "Töö joonistatud alal",
-                    "map_clean_info_mode_move_to_target_point": "Liikumine sihtpunkti"
-                }
-            },
-            "pose": {
-                "name": "Asend"
-            },
-            "total_mowing_time": {
-                "name": "Niitmise koguaeg"
-            },
-            "total_mowing_jobs": {
-                "name": "Niitmistööde koguarv"
-            },
-            "total_mowed_area": {
-                "name": "Niidetud kogupindala"
-            },
-            "current_session_area": {
-                "name": "Praeguse seansi pindala"
-            },
-            "current_session_progress": {
-                "name": "Praeguse seansi edenemine"
-            },
-            "current_session_time": {
-                "name": "Praeguse seansi kestus"
-            },
-            "current_job_type": {
-                "name": "Praeguse töö tüüp",
-                "state": {
-                    "map_area_type_none": "Puudub",
-                    "map_area_type_build_map": "Kaardi koostamine",
-                    "map_area_type_cleaning": "Niitmine",
-                    "map_area_type_build_map_and_cleaning": "Kaardi koostamine ja niitmine",
-                    "map_area_type_select_region_cleaning": "Valitud ala niitmine",
-                    "map_area_type_draw_region_cleaning": "Joonistatud ala niitmine",
-                    "map_area_type_edge_trim_cleaning": "Servade pügamine"
-                }
-            },
-            "remaining_blade_time": {
-                "name": "Terade järelejäänud aeg"
-            },
-            "remaining_base_station_time": {
-                "name": "Baasjaama järelejäänud aeg"
-            },
-            "next_scheduled_start": {
-                "name": "Järgmine plaanitud käivitus"
-            },
-            "version_compatibility": {
-                "name": "Versioonide ühilduvus",
-                "state": {
-                    "compatible": "Ühilduv",
-                    "upgrade_required": "Vajalik on uuendus",
-                    "downgrade_recommended": "Soovitatav on varasem versioon",
-                    "incompatible": "Ei ühildu",
-                    "unknown": "Teadmata"
-                }
-            },
-            "main_direction_status": {
-                "name": "Põhisuuna olek",
-                "state": {
-                    "main_direction_mode_single": "Üks suund",
-                    "main_direction_mode_multiple": "Mitu suunda",
-                    "main_direction_mode_auto_rotate": "Automaatne suuna pööramine",
-                    "unavailable": "Pole saadaval",
-                    "no_config": "Seadistus puudub"
-                }
-            },
-            "power_mode": {
-                "name": "Toiterežiim",
-                "state": {
-                    "power_mode_running": "Töötab",
-                    "power_mode_standby": "Ooterežiim",
-                    "power_mode_hibernate": "Talveuni"
-                }
-            },
-            "back_to_station_reason": {
-                "name": "Jaama naasmise põhjus",
-                "state": {
-                    "back_to_station_reason_none": "Puudub",
-                    "back_to_station_reason_low_battery": "Aku tühjenemas",
-                    "back_to_station_reason_raining": "Vihm",
-                    "back_to_station_reason_mow_motor_overheat": "Niitmismootori ülekuumenemine",
-                    "back_to_station_reason_wheel_overheat": "Veorataste ülekuumenemine",
-                    "back_to_station_reason_night_time": "Pimedus"
-                }
-            },
-            "mission": {
-                "name": "Missioon",
-                "state": {
-                    "mission_idle": "Jõude",
-                    "mission_recharge": "Laadimine",
-                    "mission_global_clean": "Kogu ala niitmine",
-                    "mission_build_map": "Kaardi koostamine",
-                    "mission_build_map_and_clean": "Kaardi koostamine ja niitmine",
-                    "mission_temporary_clean": "Ajutine niitmine",
-                    "mission_back_to_starting_point": "Naasmine alguspunkti",
-                    "mission_remote_control_clean": "Kaugjuhtimisega niitmine",
-                    "mission_schedule_global_clean": "Plaanitud kogu ala niitmine",
-                    "mission_schedule_build_map_and_clean": "Plaanitud kaardi koostamine ja niitmine",
-                    "mission_select_region_clean": "Alade niitmine",
-                    "mission_create_custom_passage": "Kohandatud läbipääsu loomine",
-                    "mission_backup_map": "Kaardi varundamine",
-                    "mission_relocate_base_station": "Baasjaama ümberpaigutamine",
-                    "mission_user_auto_calibration": "Automaatne kalibreerimine",
-                    "mission_restore_backup_map": "Varukaardi taastamine",
-                    "mission_schedule_select_region_clean": "Plaanitud alade niitmine",
-                    "mission_draw_region_clean": "Joonistatud ala niitmine",
-                    "mission_edge_trim_clean": "Servade pügamine",
-                    "mission_update_backup_map": "Varukaardi uuendamine"
-                }
-            },
-            "sub_mission": {
-                "name": "Alammissioon",
-                "state": {
-                    "sub_mission_idle": "Jõude",
-                    "sub_mission_relocation": "Asukoha taastuvastamine",
-                    "sub_mission_return_to_base": "Naasmine baasjaama",
-                    "sub_mission_out_of_station": "Baasjaamast väljumine",
-                    "sub_mission_remote_control": "Kaugjuhtimine",
-                    "sub_mission_saving_map": "Kaardi salvestamine",
-                    "sub_mission_setting_blade_height": "Terade kõrguse reguleerimine",
-                    "sub_mission_charging": "Laadimine",
-                    "sub_mission_remote_control_clean": "Kaugjuhtimisega niitmine",
-                    "sub_mission_defogging": "Udu eemaldamine",
-                    "sub_mission_wait_for_daylight": "Päevavalguse ootamine",
-                    "sub_mission_cooling_down_motor": "Mootori jahutamine",
-                    "sub_mission_wait_for_rain_to_stop": "Vihma lõppemise ootamine",
-                    "sub_mission_flexible_station_wait": "Ootamine baasjaamas"
-                }
-            },
-            "mission_state": {
-                "name": "Missiooni olek",
-                "state": {
-                    "mission_state_idle": "Jõude",
-                    "mission_state_running": "Töötab",
-                    "mission_state_pause": "Peatatud",
-                    "mission_state_abort": "Katkestatud",
-                    "mission_state_complete": "Lõpetatud"
-                }
-            }
-        },
-        "camera": {
-            "map_camera": {
-                "name": "Kaart"
-            },
-            "map_camera_clean": {
-                "name": "Kaart (puhas)"
-            }
-        },
-        "binary_sensor": {
-            "charging_state": {
-                "name": "Laadimisolek"
-            },
-            "navigation_located": {
-                "name": "Navigatsiooni asukoht tuvastatud"
-            },
-            "firmware_upgrading": {
-                "name": "Püsivara uuendamine käib"
-            },
-            "power_switch": {
-                "name": "Toitelüliti"
-            },
-            "problem": {
-                "name": "Probleem"
-            },
-            "rain_detected": {
-                "name": "Vihm tuvastatud"
-            },
-            "map_detected": {
-                "name": "Kaart tuvastatud"
-            },
-            "map_buildable": {
-                "name": "Kaarti saab koostada"
-            },
-            "map_backing_up": {
-                "name": "Kaardi varundamine käib"
-            },
-            "saving_data": {
-                "name": "Andmete salvestamine"
-            },
-            "data_conversion": {
-                "name": "Andmete teisendamine käib"
-            }
-        },
-        "button": {
-            "reset_blade_timer": {
-                "name": "Lähtesta terade taimer"
-            },
-            "reset_base_station_timer": {
-                "name": "Lähtesta baasjaama taimer"
-            },
-            "edge_trim": {
-                "name": "Servade pügamine"
-            }
-        },
-        "select": {
-            "region_select": {
-                "name": "Ala valik",
-                "state": {
-                    "no_zones_available": "Alasid pole saadaval",
-                    "all_zones": "Kõik alad"
-                }
-            },
-            "mow_speed_setting": {
-                "name": "Niitmiskiiruse seadistus",
-                "state": {
-                    "mow_speed_type_low": "Väike kiirus",
-                    "mow_speed_type_medium": "Keskmine kiirus",
-                    "mow_speed_type_adaptive_high": "Adaptiivne suur kiirus",
-                    "mow_speed_type_auto": "Automaatne kiirus"
-                }
-            },
-            "blade_speed": {
-                "name": "Terade kiiruse seadistus",
-                "state": {
-                    "blade_disk_speed_type_low": "Väike kiirus",
-                    "blade_disk_speed_type_medium": "Keskmine kiirus",
-                    "blade_disk_speed_type_high": "Suur kiirus"
-                }
-            },
-            "main_direction_mode": {
-                "name": "Põhisuuna režiim",
-                "state": {
-                    "main_direction_mode_single": "Üks suund",
-                    "main_direction_mode_multiple": "Mitu suunda",
-                    "main_direction_mode_auto_rotate": "Automaatne suuna pööramine"
-                }
-            },
-            "high_grass_edge_trim_mode": {
-                "name": "Kõrge rohu servade pügamise režiim",
-                "state": {
-                    "high_grass_edge_trim_standard": "Tavaline",
-                    "high_grass_edge_trim_intensive": "Intensiivne"
-                }
-            }
-        },
-        "switch": {
-            "thorough_corner_cutting": {
-                "name": "Põhjalik nurkade niitmine"
-            }
-        },
-        "number": {
-            "mowing_height": {
-                "name": "Niitmiskõrguse seadistus"
-            },
-            "edge_cutting_distance": {
-                "name": "Servade lõikamise kaugus"
-            },
-            "mowing_spacing": {
-                "name": "Niitmisvahe seadistus"
-            },
-            "main_direction_single_angle": {
-                "name": "Ühe suuna nurk"
-            },
-            "main_direction_auto_rotate_interval": {
-                "name": "Automaatse pööramise nurga intervall"
-            },
-            "multiple_direction_angle1": {
-                "name": "Esimese suuna nurk"
-            },
-            "multiple_direction_angle2": {
-                "name": "Teise suuna nurk"
-            }
-        },
-        "update": {
-            "firmware": {
-                "name": "Püsivara"
-            }
+    "step": {
+      "user": {
+        "data": {
+          "host": "Host",
+          "password": "Parool",
+          "username": "Kasutajanimi"
         }
-    },
-    "services": {
-        "start_select_region": {
-            "name": "Käivita valitud alade niitmine",
-            "description": "Käivitab niitmise määratud alamalade ID-de jaoks.",
-            "fields": {
-                "region_ids": {
-                    "name": "Alade ID-d",
-                    "description": "Niidetavate alamalade ID-de loend."
-                }
-            }
+      },
+      "user_pass": {
+        "title": "TerraMow",
+        "description": "Leiti TerraMow aadressil {host}. Seadistamise lõpuleviimiseks sisesta MQTT parool.",
+        "data": {
+          "password": "Parool"
         }
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "Parool"
+        }
+      },
+      "reconfigure": {
+        "title": "Seadista TerraMow uuesti",
+        "description": "Uuenda oma TerraMow IP-aadressi / hostinime või parooli.",
+        "data": {
+          "host": "Host",
+          "password": "Parool"
+        }
+      }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "TerraMow valikud",
+        "data": {
+          "map_resolution": "Kaardi väljundi eraldusvõime (px)"
+        },
+        "data_description": {
+          "map_resolution": "Kaardikaamera PNG väljundi külje pikkus. Suuremad väärtused annavad armatuurlaudadele manustamisel teravama pildi, kuid suurendavad ribalaiust ja CPU koormust igal renderdamisel."
+        }
+      }
+    }
+  },
+  "entity": {
+    "lawn_mower": {
+      "lawn_mower": {
+        "name": "Robotniiduk"
+      }
+    },
+    "sensor": {
+      "battery": {
+        "name": "Aku"
+      },
+      "battery_state": {
+        "name": "Aku olek",
+        "state": {
+          "battery_state_discharge": "Tühjeneb",
+          "battery_state_charging": "Laeb",
+          "battery_state_charged": "Täis laetud"
+        }
+      },
+      "battery_temperature_state": {
+        "name": "Aku temperatuuri olek",
+        "state": {
+          "battery_tempreture_normal": "Normaalne",
+          "battery_tempreture_overheat": "Ülekuumenenud",
+          "battery_tempreture_underheat": "Liiga külm"
+        }
+      },
+      "map_status": {
+        "name": "Kaardi olek",
+        "state": {
+          "map_state_empty": "Kaart puudub",
+          "map_state_incomplete": "Kaart on poolik",
+          "map_state_complete": "Kaart on valmis"
+        }
+      },
+      "map_area": {
+        "name": "Kaardi pindala"
+      },
+      "mow_height": {
+        "name": "Niitmiskõrgus"
+      },
+      "mow_speed": {
+        "name": "Niitmiskiirus",
+        "state": {
+          "mow_speed_type_low": "Väike",
+          "mow_speed_type_medium": "Keskmine",
+          "mow_speed_type_adaptive_high": "Adaptiivne suur",
+          "mow_speed_type_auto": "Automaatne"
+        }
+      },
+      "clean_mode": {
+        "name": "Töörežiim",
+        "state": {
+          "map_clean_info_mode_global": "Kogu ala töö",
+          "map_clean_info_mode_select_region": "Töö valitud alal",
+          "map_clean_info_mode_draw_region": "Töö joonistatud alal",
+          "map_clean_info_mode_move_to_target_point": "Liikumine sihtpunkti"
+        }
+      },
+      "pose": {
+        "name": "Asend"
+      },
+      "total_mowing_time": {
+        "name": "Niitmise koguaeg"
+      },
+      "total_mowing_jobs": {
+        "name": "Niitmistööde koguarv"
+      },
+      "total_mowed_area": {
+        "name": "Niidetud kogupindala"
+      },
+      "current_session_area": {
+        "name": "Praeguse seansi pindala"
+      },
+      "current_session_progress": {
+        "name": "Praeguse seansi edenemine"
+      },
+      "current_session_time": {
+        "name": "Praeguse seansi kestus"
+      },
+      "current_job_type": {
+        "name": "Praeguse töö tüüp",
+        "state": {
+          "map_area_type_none": "Puudub",
+          "map_area_type_build_map": "Kaardi koostamine",
+          "map_area_type_cleaning": "Niitmine",
+          "map_area_type_build_map_and_cleaning": "Kaardi koostamine ja niitmine",
+          "map_area_type_select_region_cleaning": "Valitud ala niitmine",
+          "map_area_type_draw_region_cleaning": "Joonistatud ala niitmine",
+          "map_area_type_edge_trim_cleaning": "Servade pügamine"
+        }
+      },
+      "remaining_blade_time": {
+        "name": "Terade järelejäänud aeg"
+      },
+      "remaining_base_station_time": {
+        "name": "Baasjaama järelejäänud aeg"
+      },
+      "next_scheduled_start": {
+        "name": "Järgmine plaanitud käivitus"
+      },
+      "version_compatibility": {
+        "name": "Versioonide ühilduvus",
+        "state": {
+          "compatible": "Ühilduv",
+          "upgrade_required": "Vajalik on uuendus",
+          "downgrade_recommended": "Soovitatav on varasem versioon",
+          "incompatible": "Ei ühildu",
+          "unknown": "Teadmata"
+        }
+      },
+      "main_direction_status": {
+        "name": "Põhisuuna olek",
+        "state": {
+          "main_direction_mode_single": "Üks suund",
+          "main_direction_mode_multiple": "Mitu suunda",
+          "main_direction_mode_auto_rotate": "Automaatne suuna pööramine",
+          "unavailable": "Pole saadaval",
+          "no_config": "Seadistus puudub"
+        }
+      },
+      "power_mode": {
+        "name": "Toiterežiim",
+        "state": {
+          "power_mode_running": "Töötab",
+          "power_mode_standby": "Ooterežiim",
+          "power_mode_hibernate": "Talveuni"
+        }
+      },
+      "back_to_station_reason": {
+        "name": "Jaama naasmise põhjus",
+        "state": {
+          "back_to_station_reason_none": "Puudub",
+          "back_to_station_reason_low_battery": "Aku tühjenemas",
+          "back_to_station_reason_raining": "Vihm",
+          "back_to_station_reason_mow_motor_overheat": "Niitmismootori ülekuumenemine",
+          "back_to_station_reason_wheel_overheat": "Veorataste ülekuumenemine",
+          "back_to_station_reason_night_time": "Pimedus"
+        }
+      },
+      "mission": {
+        "name": "Missioon",
+        "state": {
+          "mission_idle": "Jõude",
+          "mission_recharge": "Laadimine",
+          "mission_global_clean": "Kogu ala niitmine",
+          "mission_build_map": "Kaardi koostamine",
+          "mission_build_map_and_clean": "Kaardi koostamine ja niitmine",
+          "mission_temporary_clean": "Ajutine niitmine",
+          "mission_back_to_starting_point": "Naasmine alguspunkti",
+          "mission_remote_control_clean": "Kaugjuhtimisega niitmine",
+          "mission_schedule_global_clean": "Plaanitud kogu ala niitmine",
+          "mission_schedule_build_map_and_clean": "Plaanitud kaardi koostamine ja niitmine",
+          "mission_select_region_clean": "Alade niitmine",
+          "mission_create_custom_passage": "Kohandatud läbipääsu loomine",
+          "mission_backup_map": "Kaardi varundamine",
+          "mission_relocate_base_station": "Baasjaama ümberpaigutamine",
+          "mission_user_auto_calibration": "Automaatne kalibreerimine",
+          "mission_restore_backup_map": "Varukaardi taastamine",
+          "mission_schedule_select_region_clean": "Plaanitud alade niitmine",
+          "mission_draw_region_clean": "Joonistatud ala niitmine",
+          "mission_edge_trim_clean": "Servade pügamine",
+          "mission_update_backup_map": "Varukaardi uuendamine"
+        }
+      },
+      "sub_mission": {
+        "name": "Alammissioon",
+        "state": {
+          "sub_mission_idle": "Jõude",
+          "sub_mission_relocation": "Asukoha taastuvastamine",
+          "sub_mission_return_to_base": "Naasmine baasjaama",
+          "sub_mission_out_of_station": "Baasjaamast väljumine",
+          "sub_mission_remote_control": "Kaugjuhtimine",
+          "sub_mission_saving_map": "Kaardi salvestamine",
+          "sub_mission_setting_blade_height": "Terade kõrguse reguleerimine",
+          "sub_mission_charging": "Laadimine",
+          "sub_mission_remote_control_clean": "Kaugjuhtimisega niitmine",
+          "sub_mission_defogging": "Udu eemaldamine",
+          "sub_mission_wait_for_daylight": "Päevavalguse ootamine",
+          "sub_mission_cooling_down_motor": "Mootori jahutamine",
+          "sub_mission_wait_for_rain_to_stop": "Vihma lõppemise ootamine",
+          "sub_mission_flexible_station_wait": "Ootamine baasjaamas"
+        }
+      },
+      "mission_state": {
+        "name": "Missiooni olek",
+        "state": {
+          "mission_state_idle": "Jõude",
+          "mission_state_running": "Töötab",
+          "mission_state_pause": "Peatatud",
+          "mission_state_abort": "Katkestatud",
+          "mission_state_complete": "Lõpetatud"
+        }
+      }
+    },
+    "camera": {
+      "map_camera": {
+        "name": "Kaart"
+      },
+      "map_camera_clean": {
+        "name": "Kaart (puhas)"
+      }
+    },
+    "binary_sensor": {
+      "charging_state": {
+        "name": "Laadimisolek"
+      },
+      "navigation_located": {
+        "name": "Navigatsiooni asukoht tuvastatud"
+      },
+      "firmware_upgrading": {
+        "name": "Püsivara uuendamine käib"
+      },
+      "power_switch": {
+        "name": "Toitelüliti"
+      },
+      "problem": {
+        "name": "Probleem"
+      },
+      "rain_detected": {
+        "name": "Vihm tuvastatud"
+      },
+      "map_detected": {
+        "name": "Kaart tuvastatud"
+      },
+      "map_buildable": {
+        "name": "Kaarti saab koostada"
+      },
+      "map_backing_up": {
+        "name": "Kaardi varundamine käib"
+      },
+      "saving_data": {
+        "name": "Andmete salvestamine"
+      },
+      "data_conversion": {
+        "name": "Andmete teisendamine käib"
+      }
+    },
+    "button": {
+      "reset_blade_timer": {
+        "name": "Lähtesta terade taimer"
+      },
+      "reset_base_station_timer": {
+        "name": "Lähtesta baasjaama taimer"
+      },
+      "edge_trim": {
+        "name": "Servade pügamine"
+      }
+    },
+    "select": {
+      "region_select": {
+        "name": "Ala valik",
+        "state": {
+          "no_zones_available": "Alasid pole saadaval",
+          "all_zones": "Kõik alad"
+        }
+      },
+      "mow_speed_setting": {
+        "name": "Niitmiskiiruse seadistus",
+        "state": {
+          "mow_speed_type_low": "Väike kiirus",
+          "mow_speed_type_medium": "Keskmine kiirus",
+          "mow_speed_type_adaptive_high": "Adaptiivne suur kiirus",
+          "mow_speed_type_auto": "Automaatne kiirus"
+        }
+      },
+      "blade_speed": {
+        "name": "Terade kiiruse seadistus",
+        "state": {
+          "blade_disk_speed_type_low": "Väike kiirus",
+          "blade_disk_speed_type_medium": "Keskmine kiirus",
+          "blade_disk_speed_type_high": "Suur kiirus"
+        }
+      },
+      "main_direction_mode": {
+        "name": "Põhisuuna režiim",
+        "state": {
+          "main_direction_mode_single": "Üks suund",
+          "main_direction_mode_multiple": "Mitu suunda",
+          "main_direction_mode_auto_rotate": "Automaatne suuna pööramine"
+        }
+      },
+      "high_grass_edge_trim_mode": {
+        "name": "Kõrge rohu servade pügamise režiim",
+        "state": {
+          "high_grass_edge_trim_standard": "Tavaline",
+          "high_grass_edge_trim_intensive": "Intensiivne"
+        }
+      }
+    },
+    "switch": {
+      "thorough_corner_cutting": {
+        "name": "Põhjalik nurkade niitmine"
+      }
+    },
+    "number": {
+      "mowing_height": {
+        "name": "Niitmiskõrguse seadistus"
+      },
+      "edge_cutting_distance": {
+        "name": "Servade lõikamise kaugus"
+      },
+      "mowing_spacing": {
+        "name": "Niitmisvahe seadistus"
+      },
+      "main_direction_single_angle": {
+        "name": "Ühe suuna nurk"
+      },
+      "main_direction_auto_rotate_interval": {
+        "name": "Automaatse pööramise nurga intervall"
+      },
+      "multiple_direction_angle1": {
+        "name": "Esimese suuna nurk"
+      },
+      "multiple_direction_angle2": {
+        "name": "Teise suuna nurk"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Püsivara"
+      }
+    }
+  },
+  "services": {
+    "start_select_region": {
+      "name": "Käivita valitud alade niitmine",
+      "description": "Käivitab niitmise määratud alamalade ID-de jaoks.",
+      "fields": {
+        "region_ids": {
+          "name": "Alade ID-d",
+          "description": "Niidetavate alamalade ID-de loend."
+        }
+      }
+    }
+  },
+  "issues": {
+    "firmware_ha_module_too_low": {
+      "title": "TerraMowi püsivara värskendus on vajalik",
+      "description": "TerraMowi püsivara HA mooduli versioon ({firmware_version}) on selle sidumise jaoks liiga vana, see vajab versiooni {required_version}. Värskenda niiduki püsivara TerraMowi rakendusest, et taastada täisfunktsionaalsus."
+    },
+    "firmware_overall_too_low": {
+      "title": "TerraMowi püsivara värskendus on vajalik",
+      "description": "TerraMowi püsivara on vanem kui minimaalne toetatud versioon ({required_version}). Värskenda niiduki püsivara TerraMowi rakendusest, et seda sidumist kasutada."
+    },
+    "firmware_incompatible": {
+      "title": "TerraMowi püsivara ei ühildu",
+      "description": "Sidumine ei suutnud kinnitada, et TerraMowi püsivara ühildub. Kontrolli, et nii niiduki püsivara kui ka see sidumine on ajakohased, seejärel laadi alla diagnostika ja ava probleem (issue), kui tõrge püsib."
+    },
+    "plugin_downgrade_recommended": {
+      "title": "TerraMowi sidumise värskendus on soovitatav",
+      "description": "TerraMowi püsivara HA mooduli versioon ({firmware_version}) on uuem, kui see sidumine toetab ({plugin_version}). Värskenda sidumist HACSis, et saada uusimad funktsioonid."
+    }
+  }
 }
