@@ -275,7 +275,9 @@ def _pose_tuple(obj: Any) -> dict[str, float] | None:
     return {
         "x": point[0],
         "y": point[1],
-        "theta": theta if theta is not None else yaw,
+        # Fall back to yaw, then to 0.0 so the pose always carries a concrete
+        # angle; a missing theta must not propagate None into the rotation math.
+        "theta": theta if theta is not None else (yaw if yaw is not None else 0.0),
     }
 
 
@@ -1097,7 +1099,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             if not isinstance(region, dict):
                 continue
             region_boundary = _polygon_points(region.get("boundary"))
-            region_record = {
+            region_record: dict[str, Any] = {
                 "id": _coerce_int(region.get("id")),
                 "name": region.get("name"),
                 "boundary": region_boundary,
@@ -1934,6 +1936,8 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         )
 
         theta = _coerce_angle_radians(pose.get("theta"), milli_radian=True)
+        if theta is None:
+            theta = 0.0
         deg = theta * 180 / math.pi
         deg = deg - 90
 
@@ -1988,6 +1992,9 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         deg = yaw * 180 / math.pi
         deg = deg - 90
 
+        # _robot_image and its mask are always built together above.
+        assert self._robot_image is not None
+        assert self._robot_image_mask is not None
         robot_rotated = self._robot_image.rotate(-deg, expand=True, fillcolor=COLOR_TRANSPARENT)
         robot_mask_rotated = self._robot_image_mask.rotate(-deg, expand=True, fillcolor=COLOR_TRANSPARENT)
 
@@ -2092,7 +2099,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         ]
         for chip in count_chips:
             box = draw.textbbox((0, 0), chip, font=chip_font)
-            chip_width = box[2] - box[0] + 20
+            chip_width = int(box[2] - box[0]) + 20
             if chip_x + chip_width > right - 22:
                 break
             draw.rounded_rectangle(
@@ -2122,7 +2129,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         if self._output_resolution != IMAGE_WIDTH:
             image = image.resize(
                 (self._output_resolution, self._output_resolution),
-                Image.LANCZOS,
+                Image.Resampling.LANCZOS,
             )
 
         buffer = io.BytesIO()

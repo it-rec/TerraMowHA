@@ -64,6 +64,7 @@ follow_imports = "silent"
 files = [
     "custom_components/terramow/binary_sensor.py",
     "custom_components/terramow/button.py",
+    "custom_components/terramow/camera.py",
     "custom_components/terramow/config_flow.py",
     "custom_components/terramow/const.py",
     "custom_components/terramow/diagnostics.py",
