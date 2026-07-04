@@ -64,7 +64,7 @@ jobs:
             --cov=custom_components/terramow \
             --cov-report=term-missing \
             --cov-report=xml \
-            --cov-fail-under=68
+            --cov-fail-under=85
 
       - name: Add coverage summary
         if: always()
