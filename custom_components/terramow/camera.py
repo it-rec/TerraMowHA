@@ -826,6 +826,9 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         self._clean_mode = clean_mode
         self._attr_translation_key = "map_camera_clean" if clean_mode else "map_camera"
         self._unique_id_suffix = "map_camera_clean" if clean_mode else "map_camera"
+        # The clean-mode camera is a borderless dashboard-only variant of the
+        # main map camera; keep it opt-in so a fresh install shows one camera.
+        self._attr_entity_registry_enabled_default = not clean_mode
         self._map_rect: tuple[int, int, int, int] = (
             (0, 0, IMAGE_WIDTH, IMAGE_HEIGHT) if clean_mode else MAP_RECT
         )

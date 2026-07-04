@@ -728,6 +728,10 @@ class TerraMowPoseSensor(TerraMowEntity, SensorEntity):
     _attr_icon = "mdi:crosshairs-gps"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "pose"
+    # The device pushes pose at ~2 Hz; enabling it floods the recorder, so it
+    # is opt-in (mainly useful for the map camera overlay, which reads the raw
+    # hub pose directly rather than this entity's state).
+    _attr_entity_registry_enabled_default = False
 
     def __init__(
         self,
