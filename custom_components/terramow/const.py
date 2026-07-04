@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+from typing import overload
+
 DOMAIN = "terramow"
 
 
+@overload
+def to_ha_enum_state(value: str) -> str: ...
+@overload
+def to_ha_enum_state(value: None) -> None: ...
 def to_ha_enum_state(value: str | None) -> str | None:
     """Convert a device enum string to a Home Assistant state/option token.
 
@@ -12,10 +18,17 @@ def to_ha_enum_state(value: str | None) -> str | None:
     requires entity state/option tokens (and their translation keys) to match
     ``[a-z0-9-_]+``. Device-facing code keeps the original UPPERCASE values; this
     helper is applied only at the entity surface (native_value / options).
+
+    Callers always pass non-empty enum constants; the empty-string degenerate
+    input still yields ``None`` at runtime.
     """
     return value.lower() if isinstance(value, str) and value else None
 
 
+@overload
+def to_device_enum(value: str) -> str: ...
+@overload
+def to_device_enum(value: None) -> None: ...
 def to_device_enum(value: str | None) -> str | None:
     """Convert a Home Assistant enum option back to the device UPPERCASE form.
 
