@@ -1,0 +1,91 @@
+rules:
+  # Bronze
+  action-setup: done
+  appropriate-polling:
+    status: exempt
+    comment: >
+      Local-push integration; the hub subscribes to the device's MQTT
+      data-point topics and never polls (PARALLEL_UPDATES = 0).
+  brands: done
+  common-modules: done
+  config-flow: done
+  config-flow-test-coverage: done
+  dependency-transparency: done
+  docs-actions: done
+  docs-conditions:
+    status: exempt
+    comment: The integration does not provide any conditions.
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: done
+  docs-triggers:
+    status: exempt
+    comment: The integration does not provide any triggers.
+  entity-event-setup: done
+  entity-unique-id: done
+  has-entity-name: done
+  runtime-data:
+    status: done
+    comment: >
+      Per-entry runtime state lives in a dedicated hass.data[DOMAIN][entry_id]
+      store (the shared hub), created on setup and removed on unload; no mutable
+      state is stashed on the module or the config entry object.
+  test-before-configure: done
+  test-before-setup: done
+  unique-config-entry: done
+
+  # Silver
+  action-exceptions: done
+  config-entry-unloading: done
+  docs-configuration-parameters: done
+  docs-installation-parameters: done
+  entity-unavailable: done
+  integration-owner: done
+  log-when-unavailable: done
+  parallel-updates: done
+  reauthentication-flow: done
+  test-coverage: done
+
+  # Gold
+  devices: done
+  diagnostics: done
+  discovery: done
+  discovery-update-info: done
+  docs-data-update: done
+  docs-examples: done
+  docs-known-limitations: done
+  docs-supported-devices: done
+  docs-supported-functions: done
+  docs-troubleshooting: done
+  docs-use-cases: done
+  dynamic-devices:
+    status: exempt
+    comment: >
+      A config entry represents a single physical mower; there are no
+      dynamically-added sub-devices to discover at runtime.
+  entity-category: done
+  entity-device-class: done
+  entity-disabled-by-default: done
+  entity-translations: done
+  exception-translations: done
+  icon-translations: done
+  reconfiguration-flow: done
+  repair-issues: done
+  stale-devices:
+    status: exempt
+    comment: >
+      The single mower device is bound to its config entry and removed on
+      unload; there are no stale sub-devices to prune.
+
+  # Platinum
+  async-dependency:
+    status: exempt
+    comment: The paho-mqtt client runs in its own thread; work is offloaded via async_add_executor_job.
+  inject-websession:
+    status: exempt
+    comment: HTTP map/path fetches use Home Assistant's shared aiohttp session (async_get_clientsession).
+  strict-typing:
+    status: todo
+    comment: >
+      The whole package is type-checked in CI (mypy over custom_components/terramow),
+      but strict-typing additionally requires the runtime dependencies to ship types.

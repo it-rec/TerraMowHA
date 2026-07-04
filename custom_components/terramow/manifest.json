@@ -14,7 +14,7 @@
   "loggers": [
     "paho.mqtt"
   ],
-  "quality_scale": "silver",
+  "quality_scale": "gold",
   "requirements": [
     "paho-mqtt>=1.6.1",
     "Pillow>=9.1.0"
