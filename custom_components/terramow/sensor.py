@@ -19,7 +19,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 
-from typing import Any
+from typing import Any, cast
 from homeassistant.config_entries import ConfigEntry
 from . import TerraMowBasicData, DOMAIN
 from .entity import TerraMowEntity
@@ -130,7 +130,7 @@ class BatteryStateSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
         state = to_ha_enum_state(battery_status.get('state'))
         if state in self._attr_options:
-            return state
+            return cast("str", state)
         return None
 
 
@@ -164,7 +164,7 @@ class BatteryTemperatureStateSensor(PushUpdateMixin, TerraMowEntity, SensorEntit
         # Firmware reports the field as 'tempreture' (typo preserved).
         value = to_ha_enum_state(battery_status.get('tempreture'))
         if value in self._attr_options:
-            return value
+            return cast("str", value)
         return None
 
 
@@ -192,7 +192,7 @@ class TotalMowingTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         if not statistics_data:
             return None
 
-        return statistics_data.get('duration')
+        return cast("int | None", statistics_data.get('duration'))
 
 
 class TotalMowingJobsSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
@@ -218,7 +218,7 @@ class TotalMowingJobsSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         if not statistics_data:
             return None
 
-        return statistics_data.get('clean_times')
+        return cast("int | None", statistics_data.get('clean_times'))
 
 
 class TotalMowedAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
@@ -248,7 +248,7 @@ class TotalMowedAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         if clean_area is None:
             return None
         # 协议单位为 0.1 平方米
-        return round(clean_area / 10, 1)
+        return round(float(clean_area) / 10, 1)
 
 
 class CurrentSessionAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
@@ -365,7 +365,7 @@ class CurrentSessionTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         if not current_work_data:
             return None
 
-        return current_work_data.get('work_duration')
+        return cast("int | None", current_work_data.get('work_duration'))
 
 
 class CurrentJobTypeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
@@ -401,7 +401,7 @@ class CurrentJobTypeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
         job_type = to_ha_enum_state(current_work_data.get('type'))
         if job_type in self._attr_options:
-            return job_type
+            return cast("str", job_type)
         return None
 
 
@@ -429,7 +429,7 @@ class RemainingBladeTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         if not blade_time:
             return None
 
-        used_time = blade_time.get('int_value', 0)
+        used_time = int(blade_time.get('int_value', 0))
         # 刀盘推荐清洁周期为240小时,即14400分钟
         remaining_time = BLADE_MAINTENANCE_CYCLE_MINUTES - used_time
         return max(0, remaining_time)
@@ -477,7 +477,7 @@ class RemainingBaseStationTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEnti
         if not base_station_time:
             return None
 
-        used_time = base_station_time.get('int_value', 0)
+        used_time = int(base_station_time.get('int_value', 0))
         # 基站推荐清洁周期为30天，即43200分钟
         remaining_time = BASE_STATION_MAINTENANCE_CYCLE_MINUTES - used_time
         return max(0, remaining_time)
@@ -526,7 +526,7 @@ class TerraMowMowHeightSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
             return None
 
         mow_height = global_params.get('mow_height', {})
-        return mow_height.get('value')
+        return cast("int | None", mow_height.get('value'))
 
 
 class TerraMowMowSpeedSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
@@ -569,7 +569,7 @@ class TerraMowMowSpeedSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         normalized = to_ha_enum_state(speed_type)
         if normalized in self._attr_options:
             self._unknown_speed_type = None
-            return normalized
+            return cast("str", normalized)
 
         if speed_type != self._unknown_speed_type:
             _LOGGER.warning(
@@ -658,7 +658,7 @@ class NextScheduledStartSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         if not schedule_data:
             return {}
 
-        attrs = {}
+        attrs: dict[str, Any] = {}
 
         if schedule_data.get('exist', False):
             attrs['has_schedule'] = True
@@ -685,7 +685,7 @@ class VersionCompatibilitySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     @property
-    def unique_id(self):
+    def unique_id(self) -> str:
         """Return a unique ID for this entity.
 
         Keeps the historical ``version_compatibility.terramow@...`` format
@@ -694,14 +694,14 @@ class VersionCompatibilitySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         return f"version_compatibility.terramow@{self.basic_data.host}"
 
     @property
-    def native_value(self):
+    def native_value(self) -> str | None:
         """Return the state of the sensor."""
-        return self.basic_data.compatibility_status
+        return cast("str", self.basic_data.compatibility_status)
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Return the state attributes."""
-        attributes = {}
+        attributes: dict[str, Any] = {}
 
         # 获取兼容性消息
         attributes["message"] = self.basic_data.get_compatibility_message()
@@ -858,7 +858,7 @@ class PowerModeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
         power_mode = to_ha_enum_state(self.basic_data.lawn_mower.power_mode)
         if power_mode in self._attr_options:
-            return power_mode
+            return cast("str", power_mode)
         return None
 
 
@@ -887,12 +887,12 @@ class MainDirectionStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         mode = main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE')
 
         # 返回当前模式作为传感器值（小写 token 以匹配翻译键）
-        return to_ha_enum_state(mode)
+        return cast("str | None", to_ha_enum_state(mode))
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
-        attrs = {}
+        attrs: dict[str, Any] = {}
 
         if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
             return attrs
@@ -977,7 +977,7 @@ class BackToStationReasonSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
             return None
         reason = to_ha_enum_state(self.basic_data.lawn_mower.back_to_station_reason)
         if reason in self._attr_options:
-            return reason
+            return cast("str", reason)
         return None
 
 
@@ -1007,7 +1007,9 @@ class _MissionEnumSensorBase(TerraMowEntity, SensorEntity):
             return None
         value = member.value if hasattr(member, "value") else str(member)
         value = to_ha_enum_state(value)
-        return value if value in self._attr_options else None
+        if self._attr_options is not None and value in self._attr_options:
+            return cast("str", value)
+        return None
 
 
 class TerraMowMissionSensor(_MissionEnumSensorBase):
