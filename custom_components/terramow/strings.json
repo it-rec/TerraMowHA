@@ -61,6 +61,11 @@
         "name": "Lawn Mower"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Mower event"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Battery"

@@ -61,6 +61,11 @@
         "name": "Mähroboter"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Mähroboter-Ereignis"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Akku"

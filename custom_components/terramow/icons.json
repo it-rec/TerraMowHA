@@ -1,5 +1,8 @@
 {
   "entity": {
+    "event": {
+      "mower_event": { "default": "mdi:robot-mower" }
+    },
     "binary_sensor": {
       "navigation_located": { "default": "mdi:crosshairs-gps" },
       "map_detected": { "default": "mdi:map-check" },
