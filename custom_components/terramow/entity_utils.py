@@ -78,5 +78,5 @@ class PushUpdateMixin(_MixinBase):
     async def _handle_push_update(self, _payload: str) -> None:
         safe_write_ha_state(self)
 
-    async def _handle_map_push_update(self, _map_info: dict) -> None:
+    async def _handle_map_push_update(self, _map_info: dict[str, Any]) -> None:
         safe_write_ha_state(self)

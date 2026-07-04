@@ -281,7 +281,7 @@ def _pose_tuple(obj: Any) -> dict[str, float] | None:
     }
 
 
-def _polygon_points(polygon: dict | None) -> list[tuple[float, float]]:
+def _polygon_points(polygon: dict[str, Any] | None) -> list[tuple[float, float]]:
     """从 Polygon 对象提取点列表。"""
     if not isinstance(polygon, dict):
         return []
@@ -497,7 +497,7 @@ def _extract_marker_points(items: list[Any]) -> list[tuple[float, float]]:
     return _dedupe_points(markers)
 
 
-def _extract_path_points(path_data: dict) -> list[dict[str, Any]]:
+def _extract_path_points(path_data: dict[str, Any]) -> list[dict[str, Any]]:
     """从 ha_path_v1 提取 PathPoint 列表。"""
     raw = path_data.get("points")
     if not isinstance(raw, list):
@@ -643,7 +643,7 @@ def _extract_map_extent(map_data: dict[str, Any]) -> list[tuple[float, float]]:
     ]
 
 
-def _extract_all_map_points(map_data: dict) -> list[tuple[float, float]]:
+def _extract_all_map_points(map_data: dict[str, Any]) -> list[tuple[float, float]]:
     """收集地图中的所有已知坐标点。"""
     points: list[tuple[float, float]] = []
     points.extend(_extract_map_extent(map_data))

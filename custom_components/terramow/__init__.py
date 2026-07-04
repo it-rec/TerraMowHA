@@ -23,8 +23,8 @@ from homeassistant.helpers import config_validation as cv, device_registry as dr
 from .config_flow import CannotConnect, InvalidAuth, validate_input
 from .hub import TerraMowHub
 from .issues import async_clear_compatibility_issue
+from .const import DOMAIN as DOMAIN
 from .const import (
-    DOMAIN,
     CURRENT_HA_VERSION,
     MIN_SUPPORTED_HA_VERSION,
     MIN_REQUIRED_OVERALL_VERSION,
@@ -53,11 +53,11 @@ class TerraMowBasicData:
     password: str
     lawn_mower: Any = None
     compatibility_status: str = CompatibilityStatus.COMPATIBLE
-    firmware_version: Optional[dict] = None
+    firmware_version: Optional[dict[str, Any]] = None
     compatibility_reason: str = ""  # Store the specific reason for compatibility check failure
     entry_id: Optional[str] = None  # Config entry id, used to scope repair issues
 
-    def check_version_compatibility(self, compatibility_info: dict) -> str:
+    def check_version_compatibility(self, compatibility_info: dict[str, Any]) -> str:
         """Check version compatibility and return status."""
         try:
             overall_version = compatibility_info.get("overall", 0)

@@ -993,7 +993,7 @@ class _MissionEnumSensorBase(TerraMowEntity, SensorEntity):
         value = member.value if hasattr(member, "value") else str(member)
         value = to_ha_enum_state(value)
         if self._attr_options is not None and value in self._attr_options:
-            return cast("str", value)
+            return value
         return None
 
 
