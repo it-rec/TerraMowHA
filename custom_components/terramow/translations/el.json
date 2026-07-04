@@ -407,5 +407,13 @@
       "title": "Συνιστάται ενημέρωση της ενσωμάτωσης TerraMow",
       "description": "Η έκδοση του module HA στο υλικολογισμικό του TerraMow ({firmware_version}) είναι νεότερη από αυτήν που υποστηρίζει η ενσωμάτωση ({plugin_version}). Ενημερώστε την ενσωμάτωση στο HACS για να αποκτήσετε τις πιο πρόσφατες λειτουργίες."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "Το {entity_id} δεν είναι καταχωρημένη οντότητα TerraMow."
+    },
+    "lawn_mower_not_ready": {
+      "message": "Το χλοοκοπτικό TerraMow για το {entity_id} δεν είναι ακόμη έτοιμο."
+    }
   }
 }

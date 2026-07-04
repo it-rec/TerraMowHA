@@ -407,5 +407,13 @@
       "title": "Odporúča sa aktualizácia integrácie TerraMow",
       "description": "Verzia HA modulu vo firmvéri TerraMow ({firmware_version}) je novšia, než táto integrácia podporuje ({plugin_version}). Aktualizujte integráciu v HACS, aby ste získali najnovšie funkcie."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} nie je registrovaná entita TerraMow."
+    },
+    "lawn_mower_not_ready": {
+      "message": "Kosačka TerraMow pre {entity_id} ešte nie je pripravená."
+    }
   }
 }

@@ -407,5 +407,13 @@
       "title": "Aggiornamento dell'integrazione TerraMow consigliato",
       "description": "La versione del modulo HA nel firmware TerraMow ({firmware_version}) è più recente di quella supportata da questa integrazione ({plugin_version}). Aggiorna l'integrazione in HACS per ottenere le funzionalità più recenti."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} non è un'entità TerraMow registrata."
+    },
+    "lawn_mower_not_ready": {
+      "message": "Il tosaerba TerraMow per {entity_id} non è ancora pronto."
+    }
   }
 }

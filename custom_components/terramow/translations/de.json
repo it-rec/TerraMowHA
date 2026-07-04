@@ -407,5 +407,13 @@
       "title": "TerraMow-Integrationsupdate empfohlen",
       "description": "Die HA-Modulversion der TerraMow-Firmware ({firmware_version}) ist neuer als diese Integration unterstützt ({plugin_version}). Aktualisiere die Integration in HACS, um die neuesten Funktionen zu erhalten."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} ist keine registrierte TerraMow-Entität."
+    },
+    "lawn_mower_not_ready": {
+      "message": "Der TerraMow-Rasenmäher für {entity_id} ist noch nicht bereit."
+    }
   }
 }

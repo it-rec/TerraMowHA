@@ -407,5 +407,13 @@
       "title": "TerraMow インテグレーションの更新を推奨します",
       "description": "TerraMow ファームウェアの HA モジュールバージョン ({firmware_version}) は、このインテグレーションが対応するバージョン ({plugin_version}) より新しいです。最新機能を利用するには、HACS でインテグレーションを更新してください。"
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} は登録された TerraMow エンティティではありません。"
+    },
+    "lawn_mower_not_ready": {
+      "message": "{entity_id} の TerraMow 芝刈り機はまだ準備ができていません。"
+    }
   }
 }

@@ -407,5 +407,13 @@
       "title": "Update van TerraMow-integratie aanbevolen",
       "description": "De HA-moduleversie in de TerraMow-firmware ({firmware_version}) is nieuwer dan deze integratie ondersteunt ({plugin_version}). Werk de integratie bij in HACS om de nieuwste functies te krijgen."
     }
+  },
+  "exceptions": {
+    "entity_not_registered": {
+      "message": "{entity_id} is geen geregistreerde TerraMow-entiteit."
+    },
+    "lawn_mower_not_ready": {
+      "message": "De TerraMow-maaier voor {entity_id} is nog niet gereed."
+    }
   }
 }
