@@ -175,3 +175,60 @@ def test_render_long_mixed_path() -> None:
     assert _render(camera).startswith(PNG_MAGIC)
     scene = camera._build_scene()
     assert scene["current_path_points"]
+
+
+# ---------------------------------------------------------------------------
+# _build_scene: path/map-id inference, mismatch dropping, region params
+# ---------------------------------------------------------------------------
+
+
+def _cleaning(x, y):
+    return {"position": {"x": x, "y": y}, "type": "PATH_POINT_TYPE_CLEANING"}
+
+
+def test_build_scene_drops_current_path_on_map_mismatch() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    # map has an id (target); mow_param.regions feeds region_param_ids
+    camera._map_data = {
+        "id": 1,
+        "map_state": "MAP_STATE_COMPLETE",
+        "mow_param": {"regions": [{"id": 5}, "not-a-dict", {"id": None}]},
+    }
+    # current path belongs to a different map -> dropped as a mismatch
+    camera._path_data = {"map_id": 2, "points": [_cleaning(0.0, 0.0)]}
+    # history path matches the target map -> kept
+    camera._history_path_data = {"map_id": 1, "points": [_cleaning(1.0, 1.0)]}
+
+    scene = camera._build_scene()
+    assert scene["path_map_mismatch"] is True
+    assert scene["current_path_points"] == []
+    assert scene["history_path_points"]
+
+
+def test_build_scene_infers_target_map_from_current_path() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    # map without an id -> target map is inferred from the current path
+    camera._map_data = {"map_state": "MAP_STATE_COMPLETE"}
+    camera._path_data = {"map_id": 3, "points": [_cleaning(0.0, 0.0)]}
+    # history path on another map -> dropped once the target is known
+    camera._history_path_data = {"map_id": 9, "points": [_cleaning(2.0, 2.0)]}
+
+    scene = camera._build_scene()
+    assert scene["current_path_points"]
+    assert scene["history_path_points"] == []
+    assert scene["path_map_mismatch"] is True
+
+
+def test_build_scene_infers_target_map_from_history_path() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    # map without an id, no current path -> target inferred from history path
+    camera._map_data = {"map_state": "MAP_STATE_COMPLETE"}
+    camera._path_data = {}
+    camera._history_path_data = {"map_id": 4, "points": [_cleaning(0.0, 0.0)]}
+
+    scene = camera._build_scene()
+    assert scene["history_path_points"]
+    assert scene["current_path_points"] == []
