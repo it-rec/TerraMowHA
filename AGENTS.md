@@ -1,0 +1,68 @@
+# AGENTS.md
+
+Guidance for AI coding agents working in this repository.
+
+## Project overview
+
+TerraMowHA is a [Home Assistant](https://www.home-assistant.io/) custom integration (HACS-compatible) for TerraMow robotic lawn mowers. It communicates locally over MQTT — the mower runs its own lightweight MQTT broker (port 1883, no TLS), so no cloud and no Home Assistant broker are required. The integration is `local_push`: entities update on device pushes, there is no polling.
+
+- Integration code: `custom_components/terramow/`
+- Tests: `tests/` (pytest with `pytest-homeassistant-custom-component`)
+- Developer protocol docs: `docs/en/developers.md` (MQTT topics, data points, map/path capabilities)
+- Minimum Python: 3.12 (CI tests on 3.13)
+
+## Architecture
+
+- `hub.py` — `TerraMowHub`: the central MQTT client and state holder. Subscribes to `data_point/{dp_id}/robot` topics, publishes commands to `data_point/{dp_id}/app`, and handles special topics (`map/current/info`, `map/current/meta`, `path/*/meta`, `model/name`). Contains the state enums (`Mission`, `SubMission`, `MissionState`, `PowerMode`, `BackToStationReason`).
+- `__init__.py` — config entry setup/unload, `TerraMowBasicData` (runtime data), service registration (`terramow.start_select_region`).
+- `entity.py` — `TerraMowEntity`: common base class for all entities.
+- Platform modules — one file per platform: `lawn_mower.py`, `camera.py`, `sensor.py`, `binary_sensor.py`, `select.py`, `number.py`, `switch.py`, `button.py`, `update.py`. `map_sensor.py` renders the live map.
+- `config_flow.py` — config, options, reconfigure, reauth, and Zeroconf discovery flows.
+- `const.py`, `entity_utils.py` — constants and shared entity helpers.
+- `diagnostics.py` — diagnostics download support.
+
+The device protocol is data-point based: each feature maps to a numeric data point ID (0–200). See `docs/en/developers/data_point.md` before adding entities for new data points.
+
+## Development commands
+
+```bash
+# Install test dependencies
+pip install -r requirements_test.txt
+
+# Run the test suite (what CI runs)
+pytest tests/ -v --cov=custom_components/terramow --cov-report=term-missing
+
+# Lint
+ruff check custom_components/terramow
+
+# Sanity-compile
+python -m compileall custom_components/terramow
+```
+
+`pyproject.toml` configures pytest (`asyncio_mode = "auto"`), ruff, mypy, black, and coverage. Line length is 88.
+
+## CI (must stay green)
+
+`.github/workflows/validate.yml` runs on every PR:
+
+1. **Hassfest** — Home Assistant manifest/integration validation.
+2. **HACS validation** — integration category checks.
+3. **Tests** — full pytest suite with coverage.
+4. **Python Lint** — `compileall` + `ruff check`.
+
+Run the tests and ruff locally before pushing.
+
+## Conventions
+
+- **Translations**: user-facing entity/config strings live in `custom_components/terramow/strings.json` and are mirrored in `custom_components/terramow/translations/*.json` (33 languages). When adding or renaming a translation key, update `strings.json` **and** every translation file — at minimum copy the English text so all files stay key-complete. The same applies to the localized READMEs in `docs/README_*.md` when changing user-facing docs.
+- **Manifest**: `custom_components/terramow/manifest.json` holds the integration version; releases bump it there. Keep `requirements` in sync with actual imports.
+- **Entities**: subclass `TerraMowEntity`, register state via the hub's data-point callbacks, and never poll. New entities need tests (see `tests/test_dp_entities.py` and `tests/test_platform_entities.py` for patterns).
+- **Typing**: code is fully typed; mypy is configured with `disallow_untyped_defs = true`.
+- **Logging**: keep logs quiet at INFO level; use DEBUG for protocol chatter.
+- **Version compatibility**: device-side features are gated by an HA compatibility version (see "Version Compatibility Note" in `docs/en/developers.md`). Guard new protocol features behind the appropriate minimum version.
+
+## Testing notes
+
+- Tests use `pytest-homeassistant-custom-component`; fixtures live in `tests/conftest.py`. MQTT is mocked — tests never need a real device.
+- Async tests need no decorator (`asyncio_mode = "auto"`).
+- Coverage is measured over `custom_components/terramow` with branch coverage enabled; CI publishes the report, so avoid dropping coverage on touched files.
