@@ -5,8 +5,9 @@ from typing import Any
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.select import SelectEntity
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Event, HomeAssistant
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers import entity_component
 
 from . import TerraMowBasicData, DOMAIN
 from .entity import TerraMowEntity
@@ -116,7 +117,7 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
         except (ValueError, IndexError) as e:
             _LOGGER.error("Error parsing zone option %s: %s", option, e)
     
-    async def _start_zone_clean(self, zone_id: int):
+    async def _start_zone_clean(self, zone_id: int) -> None:
         """发送选区清洁命令"""
         _LOGGER.info("Starting zone clean for zone ID: %d", zone_id)
 
@@ -236,7 +237,7 @@ class MowSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         hass: HomeAssistant,
     ) -> None:
         super().__init__(basic_data, hass)
-        self._current_option = MOW_SPEED_TYPE_MEDIUM  # 默认中速
+        self._current_option: str | None = MOW_SPEED_TYPE_MEDIUM  # 默认中速
         self._unknown_speed_type: str | None = None
 
     def _get_mow_speed_feature_version(self) -> int | None:
@@ -502,7 +503,7 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
     
     def _register_device_confirmation_listener(self) -> None:
         """注册设备确认事件监听器"""
-        async def on_device_confirmed(event):
+        async def on_device_confirmed(event: Event) -> None:
             if event.data.get("device_host") == self.host:
                 confirmed_mode = event.data.get("confirmed_mode")
                 if confirmed_mode:
@@ -525,7 +526,7 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
                 main_direction_config = global_params.get('main_direction_angle_config', {})
                 device_mode = main_direction_config.get('mode')
                 if device_mode and device_mode in self._attr_options:
-                    return device_mode
+                    return str(device_mode)
         
         return self._current_option
     
@@ -617,7 +618,7 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         })
         
         # 延迟触发所有相关实体的状态更新
-        async def delayed_update():
+        async def delayed_update() -> None:
             await self.hass.async_add_executor_job(self._force_update_related_entities)
         
         self.hass.async_create_task(delayed_update())
@@ -648,7 +649,7 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
                 try:
                     # 使用异步方式调度更新
                     self.hass.async_create_task(
-                        self.hass.helpers.entity_component.async_update_entity(entity_id)
+                        entity_component.async_update_entity(self.hass, entity_id)
                     )
                 except Exception as update_error:
                     _LOGGER.debug("Could not update entity %s: %s", entity_id, update_error)
