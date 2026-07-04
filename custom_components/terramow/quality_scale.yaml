@@ -81,11 +81,5 @@ rules:
   async-dependency:
     status: exempt
     comment: The paho-mqtt client runs in its own thread; work is offloaded via async_add_executor_job.
-  inject-websession:
-    status: exempt
-    comment: HTTP map/path fetches use Home Assistant's shared aiohttp session (async_get_clientsession).
-  strict-typing:
-    status: todo
-    comment: >
-      The whole package is type-checked in CI (mypy over custom_components/terramow),
-      but strict-typing additionally requires the runtime dependencies to ship types.
+  inject-websession: done
+  strict-typing: done

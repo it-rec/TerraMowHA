@@ -1,4 +1,4 @@
-"""Assert the quality_scale.yaml is complete and consistent (Gold audit)."""
+"""Assert the quality_scale.yaml is complete and consistent (Platinum audit)."""
 
 import yaml
 from pathlib import Path
@@ -11,6 +11,8 @@ _GOLD = {
     "entity-disabled-by-default", "entity-translations", "exception-translations",
     "icon-translations", "reconfiguration-flow", "repair-issues", "stale-devices",
 }
+
+_PLATINUM = {"async-dependency", "inject-websession", "strict-typing"}
 
 
 def _rules() -> dict:
@@ -31,10 +33,17 @@ def test_all_gold_rules_are_done_or_exempt() -> None:
         assert _status(rules[rule]) in ("done", "exempt"), rule
 
 
-def test_manifest_declares_gold() -> None:
+def test_all_platinum_rules_are_done_or_exempt() -> None:
+    rules = _rules()
+    for rule in _PLATINUM:
+        assert rule in rules, f"{rule} missing from quality_scale.yaml"
+        assert _status(rules[rule]) in ("done", "exempt"), rule
+
+
+def test_manifest_declares_platinum() -> None:
     import json
 
     manifest = json.loads(
         Path("custom_components/terramow/manifest.json").read_text(encoding="utf-8")
     )
-    assert manifest["quality_scale"] == "gold"
+    assert manifest["quality_scale"] == "platinum"

@@ -53,13 +53,14 @@ known-first-party = ["custom_components.terramow"]
 
 [tool.mypy]
 python_version = "3.13"
+# Platinum quality scale: the shipped package passes mypy --strict. External
+# imports (homeassistant, paho, …) are resolved but not reported
+# (follow_imports = silent) so third-party gaps don't break the gate; every
+# module we ship is fully typed and any new module is picked up automatically.
+strict = true
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
-# The whole integration package is type-checked. External imports
-# (homeassistant, paho, …) are resolved but not reported (follow_imports =
-# silent) so third-party gaps don't break the gate; every module we ship is
-# fully typed and any new module is picked up automatically.
 follow_imports = "silent"
 files = ["custom_components/terramow"]
 
