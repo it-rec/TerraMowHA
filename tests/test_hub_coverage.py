@@ -17,6 +17,7 @@ from custom_components.terramow.const import (
     MAP_INFO_TOPIC,
     MAP_META_TOPIC,
     MODEL_NAME_TOPIC,
+    MQTT_PORT,
     PATH_HISTORY_META_TOPIC,
     PATH_META_TOPIC,
     POSE_TOPIC,
@@ -310,7 +311,7 @@ def test_commands_blocked_by_rate_limiter() -> None:
 
 def test_start_mowing_while_running_does_not_republish() -> None:
     hub = _hub()
-    _feed(hub, {"mission": "MISSION_GLOBAL_CLEAN", "mission_state": "MISSION_STATE_RUNNING"})
+    _feed(hub, {"mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_RUNNING"})
     hub._last_control_time = 0.0
     hub.mqtt_client.publish.reset_mock()
     hub.start_mowing()
@@ -324,7 +325,7 @@ def test_pause_station_wait_is_ignored() -> None:
         {
             "mission": "MISSION_GLOBAL_CLEAN",
             "sub_mission": "SUB_MISSION_FLEXIBLE_STATION_WAIT",
-            "mission_state": "MISSION_STATE_RUNNING",
+            "state": "MISSION_STATE_RUNNING",
         },
     )
     hub._last_control_time = 0.0
@@ -335,7 +336,7 @@ def test_pause_station_wait_is_ignored() -> None:
 
 def test_pause_already_paused_is_ignored() -> None:
     hub = _hub()
-    _feed(hub, {"mission": "MISSION_GLOBAL_CLEAN", "mission_state": "MISSION_STATE_PAUSE"})
+    _feed(hub, {"mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_PAUSE"})
     hub._last_control_time = 0.0
     hub.mqtt_client.publish.reset_mock()
     hub.pause()
@@ -344,7 +345,7 @@ def test_pause_already_paused_is_ignored() -> None:
 
 def test_pause_non_mow_paused_is_ignored() -> None:
     hub = _hub()
-    _feed(hub, {"mission": "MISSION_IDLE", "mission_state": "MISSION_STATE_PAUSE"})
+    _feed(hub, {"mission": "MISSION_IDLE", "state": "MISSION_STATE_PAUSE"})
     hub._last_control_time = 0.0
     hub.mqtt_client.publish.reset_mock()
     hub.pause()
@@ -353,7 +354,7 @@ def test_pause_non_mow_paused_is_ignored() -> None:
 
 def test_dock_while_recharging_running_is_ignored() -> None:
     hub = _hub()
-    _feed(hub, {"mission": "MISSION_RECHARGE", "mission_state": "MISSION_STATE_RUNNING"})
+    _feed(hub, {"mission": "MISSION_RECHARGE", "state": "MISSION_STATE_RUNNING"})
     hub._last_control_time = 0.0
     hub.mqtt_client.publish.reset_mock()
     hub.dock()
@@ -471,3 +472,136 @@ def test_async_retry_history_path_cancelled_returns_cleanly() -> None:
     with patch("asyncio.sleep", AsyncMock(side_effect=asyncio.CancelledError)):
         asyncio.run(hub._async_retry_history_path(1.0))
     assert hub.history_path_data == {}
+
+
+# ---------------------------------------------------------------------------
+# mqtt_loop auto-reconnect
+# ---------------------------------------------------------------------------
+
+
+def test_mqtt_loop_connects_then_runs_forever() -> None:
+    hub = _hub()
+    client = hub.mqtt_client
+    client.is_connected.return_value = False
+
+    def stop(*_a):
+        # loop_forever returning ends one iteration; stop the loop after it
+        hub._stop_event.set()
+
+    client.loop_forever.side_effect = stop
+    hub.mqtt_loop()
+
+    client.connect.assert_called_once_with(hub.host, MQTT_PORT, 60)
+    client.loop_forever.assert_called_once()
+
+
+def test_mqtt_loop_first_failure_warns_and_backs_off() -> None:
+    hub = _hub()
+    client = hub.mqtt_client
+    client.is_connected.return_value = False
+    client.connect.side_effect = OSError("no route to host")
+
+    def stop_wait(_delay):
+        hub._stop_event.set()
+
+    with patch.object(hub._stop_event, "wait", side_effect=stop_wait) as wait:
+        hub.mqtt_loop()
+
+    client.connect.assert_called_once()
+    wait.assert_called_once()
+    assert hub.connection_error is True
+
+
+def test_mqtt_loop_second_failure_drops_to_debug() -> None:
+    hub = _hub()
+    client = hub.mqtt_client
+    client.is_connected.return_value = False
+    client.connect.side_effect = OSError("still down")
+    waits = {"n": 0}
+
+    def stop_after_two(_delay):
+        waits["n"] += 1
+        if waits["n"] >= 2:
+            hub._stop_event.set()
+
+    with patch.object(hub._stop_event, "wait", side_effect=stop_after_two):
+        hub.mqtt_loop()
+
+    # two failed attempts: the first warns, the second logs at debug
+    assert waits["n"] == 2
+    assert client.connect.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# register_*_callback: validation + immediate replay of cached data
+# ---------------------------------------------------------------------------
+
+
+def test_register_callbacks_reject_non_callable() -> None:
+    hub = _hub()
+    for register in (
+        hub.register_map_callback,
+        hub.register_pose_callback,
+        hub.register_path_callback,
+        hub.register_history_path_callback,
+    ):
+        try:
+            register("not-callable")  # type: ignore[arg-type]
+        except ValueError:
+            continue
+        raise AssertionError(f"{register.__name__} accepted a non-callable")
+
+
+def test_register_callbacks_replay_cached_data() -> None:
+    hub = _hub()
+    hub._map_info = {"id": 1}
+    hub._pose = {"x": 1}
+    hub._path_data = {"id": 2, "points": []}
+    hub._history_path_data = {"id": 3, "points": []}
+
+    cb = MagicMock()
+    hub.register_map_callback(cb)
+    hub.register_pose_callback(cb)
+    hub.register_path_callback(cb)
+    hub.register_history_path_callback(cb)
+
+    # each register replays its cached payload via hass.add_job
+    assert hub.hass.add_job.call_count == 4
+
+
+def test_schedule_path_and_history_retry_noop_when_task_running() -> None:
+    hub = _hub()
+    for attr, schedule, meta in (
+        ("_path_retry_task", hub._schedule_path_retry, META_P),
+        ("_history_path_retry_task", hub._schedule_history_path_retry, META_H),
+    ):
+        task = MagicMock()
+        task.done.return_value = False
+        setattr(hub, attr, task)
+        schedule(meta)
+        # the running task is preserved; no replacement scheduled
+        assert getattr(hub, attr) is task
+
+
+def test_request_compatibility_info_publishes_request() -> None:
+    hub = _hub()
+    hub._request_compatibility_info()
+    assert hub.mqtt_client.publish.called
+
+
+def test_notify_mode_selector_fires_event_on_change() -> None:
+    hub = _hub()
+    hub._notify_mode_selector_if_changed(
+        {"main_direction_angle_config": {"mode": "AUTO"}},
+        {"main_direction_angle_config": {"mode": "MANUAL"}},
+    )
+    assert hub.hass.bus.fire.called
+
+
+def test_notify_mode_selector_swallows_malformed_params() -> None:
+    hub = _hub()
+    # a non-dict config makes .get() raise; the handler must swallow it
+    hub._notify_mode_selector_if_changed(
+        {"main_direction_angle_config": "bad"},
+        {"main_direction_angle_config": "worse"},
+    )
