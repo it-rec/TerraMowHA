@@ -44,7 +44,11 @@ from .const import (
     CompatibilityStatus,
 )
 
-from .issues import async_sync_compatibility_issue
+from .issues import (
+    async_sync_base_station_maintenance_issue,
+    async_sync_blade_maintenance_issue,
+    async_sync_compatibility_issue,
+)
 
 if TYPE_CHECKING:
     from . import TerraMowBasicData
@@ -394,6 +398,11 @@ class TerraMowHub:
             _LOGGER.debug("Base station time updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_125: %s", payload)
+            return
+        if self.basic_data.entry_id is not None:
+            async_sync_base_station_maintenance_issue(
+                self.hass, self.basic_data.entry_id, data
+            )
 
     async def on_blade_time(self, payload: str) -> None:
         """Handle blade time updates (dp_126)."""
@@ -404,6 +413,11 @@ class TerraMowHub:
             _LOGGER.debug("Blade time updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_126: %s", payload)
+            return
+        if self.basic_data.entry_id is not None:
+            async_sync_blade_maintenance_issue(
+                self.hass, self.basic_data.entry_id, data
+            )
 
     async def on_schedule_data(self, payload: str) -> None:
         """Handle schedule data updates (dp_138)."""
