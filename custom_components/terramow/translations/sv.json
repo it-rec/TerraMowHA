@@ -61,6 +61,16 @@
         "name": "Robotgräsklippare"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Gräsklipparhändelse"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Klippschema"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Batteri"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "Uppdatering av TerraMow-integrationen rekommenderas",
       "description": "HA-modulversionen i TerraMow-firmwaren ({firmware_version}) är nyare än vad den här integrationen stöder ({plugin_version}). Uppdatera integrationen i HACS för att få de senaste funktionerna."
+    },
+    "blade_maintenance_due": {
+      "title": "Underhåll av TerraMow-knivar krävs",
+      "description": "TerraMows knivskiva har nått det rekommenderade serviceintervallet på {hours} timmar. Rengör eller byt ut knivarna och återställ sedan knivtimern för att ta bort denna påminnelse."
+    },
+    "base_station_maintenance_due": {
+      "title": "Underhåll av TerraMow-basstation krävs",
+      "description": "TerraMows basstation har nått det rekommenderade serviceintervallet på {days} dagar. Rengör basstationen och återställ sedan basstationstimern för att ta bort denna påminnelse."
     }
   },
   "exceptions": {

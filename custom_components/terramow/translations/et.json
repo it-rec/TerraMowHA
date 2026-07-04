@@ -61,6 +61,16 @@
         "name": "Robotniiduk"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Muruniiduki sündmus"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Niitmisgraafik"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Aku"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "TerraMowi sidumise värskendus on soovitatav",
       "description": "TerraMowi püsivara HA mooduli versioon ({firmware_version}) on uuem, kui see sidumine toetab ({plugin_version}). Värskenda sidumist HACSis, et saada uusimad funktsioonid."
+    },
+    "blade_maintenance_due": {
+      "title": "TerraMow' tera hooldus on vajalik",
+      "description": "TerraMow' teraketas on saavutanud soovitatud hooldusintervalli {hours} tundi. Puhastage või vahetage terad ja seejärel lähtestage tera taimer selle meeldetuletuse eemaldamiseks."
+    },
+    "base_station_maintenance_due": {
+      "title": "TerraMow' baasjaama hooldus on vajalik",
+      "description": "TerraMow' baasjaam on saavutanud soovitatud hooldusintervalli {days} päeva. Puhastage baasjaam ja seejärel lähtestage baasjaama taimer selle meeldetuletuse eemaldamiseks."
     }
   },
   "exceptions": {

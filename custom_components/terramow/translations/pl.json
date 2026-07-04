@@ -61,6 +61,16 @@
         "name": "Kosiarka automatyczna"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Zdarzenie kosiarki"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Harmonogram koszenia"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Bateria"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "Zalecana aktualizacja integracji TerraMow",
       "description": "Wersja modułu HA w oprogramowaniu układowym TerraMow ({firmware_version}) jest nowsza niż obsługuje ta integracja ({plugin_version}). Zaktualizuj integrację w HACS, aby uzyskać najnowsze funkcje."
+    },
+    "blade_maintenance_due": {
+      "title": "Wymagana konserwacja ostrzy TerraMow",
+      "description": "Tarcza z ostrzami TerraMow osiągnęła zalecany interwał serwisowy {hours} godzin. Wyczyść lub wymień ostrza, a następnie zresetuj licznik czasu ostrzy, aby usunąć to przypomnienie."
+    },
+    "base_station_maintenance_due": {
+      "title": "Wymagana konserwacja stacji bazowej TerraMow",
+      "description": "Stacja bazowa TerraMow osiągnęła zalecany interwał serwisowy {days} dni. Wyczyść stację bazową, a następnie zresetuj licznik czasu stacji bazowej, aby usunąć to przypomnienie."
     }
   },
   "exceptions": {

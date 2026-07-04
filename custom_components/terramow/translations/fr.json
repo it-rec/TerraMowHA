@@ -61,6 +61,16 @@
         "name": "Robot tondeuse"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Événement du robot tondeuse"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Planning de tonte"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Batterie"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "Mise à jour de l'intégration TerraMow recommandée",
       "description": "La version du module HA du micrologiciel TerraMow ({firmware_version}) est plus récente que ce que cette intégration prend en charge ({plugin_version}). Mettez à jour l'intégration dans HACS pour obtenir les dernières fonctionnalités."
+    },
+    "blade_maintenance_due": {
+      "title": "Entretien des lames TerraMow requis",
+      "description": "Le disque de lames du TerraMow a atteint l'intervalle d'entretien recommandé de {hours} heures. Nettoyez ou remplacez les lames, puis réinitialisez le minuteur des lames pour effacer ce rappel."
+    },
+    "base_station_maintenance_due": {
+      "title": "Entretien de la station de base TerraMow requis",
+      "description": "La station de base du TerraMow a atteint l'intervalle d'entretien recommandé de {days} jours. Nettoyez la station de base, puis réinitialisez le minuteur de la station de base pour effacer ce rappel."
     }
   },
   "exceptions": {

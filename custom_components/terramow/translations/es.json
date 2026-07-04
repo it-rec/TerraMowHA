@@ -61,6 +61,16 @@
         "name": "Robot cortacésped"
       }
     },
+    "event": {
+      "mower_event": {
+        "name": "Evento del robot cortacésped"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Programación de corte"
+      }
+    },
     "sensor": {
       "battery": {
         "name": "Batería"
@@ -406,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "Se recomienda actualizar la integración TerraMow",
       "description": "La versión del módulo HA del firmware de TerraMow ({firmware_version}) es más reciente de lo que admite esta integración ({plugin_version}). Actualiza la integración en HACS para obtener las últimas funciones."
+    },
+    "blade_maintenance_due": {
+      "title": "Mantenimiento de las cuchillas de TerraMow pendiente",
+      "description": "El disco de cuchillas de TerraMow ha alcanzado el intervalo de servicio recomendado de {hours} horas. Limpia o sustituye las cuchillas y luego reinicia el temporizador de las cuchillas para borrar este aviso."
+    },
+    "base_station_maintenance_due": {
+      "title": "Mantenimiento de la estación base de TerraMow pendiente",
+      "description": "La estación base de TerraMow ha alcanzado el intervalo de servicio recomendado de {days} días. Limpia la estación base y luego reinicia el temporizador de la estación base para borrar este aviso."
     }
   },
   "exceptions": {
