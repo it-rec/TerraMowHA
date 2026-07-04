@@ -8,12 +8,17 @@ disconnected, no yaw) and a long mixed-type path.
 import asyncio
 import json
 import sys
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 sys.modules.setdefault("turbojpeg", MagicMock())
 
 from custom_components.terramow import TerraMowBasicData  # noqa: E402
-from custom_components.terramow.camera import TerraMowMapCamera  # noqa: E402
+from custom_components.terramow.camera import (  # noqa: E402
+    TerraMowMapCamera,
+    async_setup_entry,
+)
+from custom_components.terramow.const import CONF_MAP_RESOLUTION  # noqa: E402
 from custom_components.terramow.hub import TerraMowHub  # noqa: E402
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
@@ -232,3 +237,99 @@ def test_build_scene_infers_target_map_from_history_path() -> None:
     scene = camera._build_scene()
     assert scene["history_path_points"]
     assert scene["current_path_points"] == []
+
+
+# ---------------------------------------------------------------------------
+# camera platform setup
+# ---------------------------------------------------------------------------
+
+
+def test_camera_setup_creates_normal_and_clean_cameras() -> None:
+    hub = _hub()
+    added: list = []
+    entry = SimpleNamespace(runtime_data=hub.basic_data, options={})
+    asyncio.run(async_setup_entry(hub.hass, entry, added.extend))
+    # one full-map camera + one clean-mode camera
+    assert len(added) == 2
+    assert any(cam._clean_mode for cam in added)
+    assert any(not cam._clean_mode for cam in added)
+
+
+def test_camera_setup_falls_back_on_invalid_resolution() -> None:
+    hub = _hub()
+    added: list = []
+    entry = SimpleNamespace(
+        runtime_data=hub.basic_data, options={CONF_MAP_RESOLUTION: "bogus"}
+    )
+    asyncio.run(async_setup_entry(hub.hass, entry, added.extend))
+    assert len(added) == 2
+
+
+# ---------------------------------------------------------------------------
+# _build_scene: region edges / obstacles / sub-region inner + centroid
+# ---------------------------------------------------------------------------
+
+
+def test_build_scene_region_edges_obstacles_and_subregion_details() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    camera._map_data = {
+        "id": 1,
+        "map_state": "MAP_STATE_COMPLETE",
+        "regions": [
+            {
+                "id": 100,
+                "boundary": _poly((0, 0), (4, 0), (4, 4), (0, 4)),
+                "edge_segments": [_poly((0, 0), (4, 0))],
+                "obstacles": [
+                    {"ellipse": {"center": {"x": 1, "y": 1}, "radius_x": 0.3, "radius_y": 0.3}}
+                ],
+                "sub_regions": [
+                    {
+                        "id": 7,
+                        "boundary": _poly((0, 0), (2, 0), (2, 2), (0, 2)),
+                        "inner_boundarys": [_poly((0.2, 0.2), (0.8, 0.2), (0.8, 0.8))],
+                        "edge_segments": [_poly((0, 0), (2, 0))],
+                        # no explicit center -> centroid is derived from the boundary
+                    }
+                ],
+            }
+        ],
+    }
+    camera._path_data = {}
+    camera._history_path_data = {}
+
+    scene = camera._build_scene()
+    assert scene["regions"]
+    assert scene["obstacles"]
+    assert scene["regions"][0]["edge_lines"]
+    assert scene["regions"][0]["sub_regions"][0]["inner_boundaries"]
+
+
+# ---------------------------------------------------------------------------
+# clean-mode camera render (transparent background, no chrome)
+# ---------------------------------------------------------------------------
+
+
+def test_render_clean_mode_camera() -> None:
+    hub = _hub()
+    camera = _camera(hub, clean_mode=True)
+    hub._map_data = MEGA_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    assert _render(camera).startswith(PNG_MAGIC)
+
+
+def test_draw_path_segment_legacy_interface() -> None:
+    from PIL import Image, ImageDraw
+
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = MEGA_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    _render(camera)  # a render establishes the coordinate transformer
+
+    img = Image.new("RGBA", (100, 100))
+    draw = ImageDraw.Draw(img)
+    # a real 2-point segment draws a stroke; a too-short one is a no-op
+    camera._draw_path_segment(draw, [{"x": 0.1, "y": 0.1}, {"x": 0.6, "y": 0.6}])
+    camera._draw_path_segment(draw, [{"x": 0.1, "y": 0.1}])
