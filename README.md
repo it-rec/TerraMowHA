@@ -108,6 +108,17 @@ data:
 
 A ready-made Lovelace view (live map, controls, progress gauge, status glance) plus notification automations: see the [dashboard guide](docs/en/dashboard.md).
 
+### Automation blueprints
+
+One-click importable blueprints for the most common notifications — each just asks for the relevant TerraMow entity and a notification action:
+
+- **Problem notification** — when the mower reports a fault
+  [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fit-rec%2FTerraMowHA%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fterramow%2Fproblem_notification.yaml)
+- **Returned because of rain** — when the mower docks due to rain
+  [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fit-rec%2FTerraMowHA%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fterramow%2Frain_returned_notification.yaml)
+- **Mowing finished** — when a mowing job completes
+  [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fit-rec%2FTerraMowHA%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fterramow%2Fmowing_finished_notification.yaml)
+
 ### Diagnostics & troubleshooting
 
 - **Diagnostics download**: Settings → Devices & Services → TerraMow → three-dot menu → *Download diagnostics* produces a redacted JSON snapshot (device state, firmware compatibility, raw data point caches) — please attach it to bug reports.
