@@ -155,11 +155,11 @@ class TerraMowHub:
         self.hass = hass
         self.mqtt_client: mqtt_client.Client | None = None
         self._stop_event = threading.Event()  # 用于停止重连循环
-        self.callbacks: dict[int, list[Callable]] = {}  # 存储 dp_id 和对应的回调函数列表
-        self.map_callbacks: list[Callable] = []  # 存储地图信息回调函数
-        self.pose_callbacks: list[Callable] = []  # 存储姿态回调函数
-        self.path_callbacks: list[Callable] = []  # 存储路径数据回调函数
-        self.history_path_callbacks: list[Callable] = []  # 存储历史路径数据回调函数
+        self.callbacks: dict[int, list[Callable[..., Any]]] = {}  # 存储 dp_id 和对应的回调函数列表
+        self.map_callbacks: list[Callable[..., Any]] = []  # 存储地图信息回调函数
+        self.pose_callbacks: list[Callable[..., Any]] = []  # 存储姿态回调函数
+        self.path_callbacks: list[Callable[..., Any]] = []  # 存储路径数据回调函数
+        self.history_path_callbacks: list[Callable[..., Any]] = []  # 存储历史路径数据回调函数
         self._state_listeners: list[Callable[[], None]] = []  # 状态变化监听（连接状态、dp_107、型号）
         self.connection_error = False  # MQTT 连接是否处于错误状态
         self._map_info: dict[str, Any] = {}  # 存储当前地图信息
@@ -179,9 +179,9 @@ class TerraMowHub:
         self._map_retry_count = 0
         self._path_retry_count = 0
         self._history_path_retry_count = 0
-        self._map_retry_task: asyncio.Task | None = None
-        self._path_retry_task: asyncio.Task | None = None
-        self._history_path_retry_task: asyncio.Task | None = None
+        self._map_retry_task: asyncio.Task[Any] | None = None
+        self._path_retry_task: asyncio.Task[Any] | None = None
+        self._history_path_retry_task: asyncio.Task[Any] | None = None
         self._map_no_seq_last_fetch = 0.0
         self._path_no_seq_last_fetch = 0.0
         self._history_path_no_seq_last_fetch = 0.0
@@ -335,7 +335,7 @@ class TerraMowHub:
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_155: %s", payload)
 
-    def _notify_mode_selector_if_changed(self, old_params: dict, new_params: dict) -> None:
+    def _notify_mode_selector_if_changed(self, old_params: dict[str, Any], new_params: dict[str, Any]) -> None:
         """如果主方向模式有变化，通知模式选择器"""
         try:
             old_mode = old_params.get('main_direction_angle_config', {}).get('mode') if old_params else None
@@ -564,7 +564,7 @@ class TerraMowHub:
                 )
                 self._stop_event.wait(delay)
 
-    def on_mqtt_connect(self, client: Any, _userdata: Any, _flags: Any, rc: int) -> None:  # type: ignore[misc]
+    def on_mqtt_connect(self, client: Any, _userdata: Any, _flags: Any, rc: int) -> None:
         """Callback when connected to MQTT Broker."""
         if rc == 0:
             _LOGGER.info("MQTT connected")
@@ -603,7 +603,7 @@ class TerraMowHub:
             # 设置错误状态
             self._set_connection_error(True)
 
-    def on_mqtt_disconnect(self, _client: Any, _userdata: Any, rc: int) -> None:  # type: ignore[misc]
+    def on_mqtt_disconnect(self, _client: Any, _userdata: Any, rc: int) -> None:
         """Callback when disconnected from MQTT Broker."""
         if rc != 0:
             _LOGGER.warning(f"Unexpected MQTT disconnection: {rc}")
@@ -611,7 +611,7 @@ class TerraMowHub:
             # 设置错误状态
             self._set_connection_error(True)
 
-    def on_mqtt_message(self, _client: Any, _userdata: Any, msg: Any) -> None:  # type: ignore[misc]
+    def on_mqtt_message(self, _client: Any, _userdata: Any, msg: Any) -> None:
         """Callback when a message is received."""
         topic = msg.topic
         payload = msg.payload.decode()
@@ -713,7 +713,7 @@ class TerraMowHub:
             else:
                 _LOGGER.debug("Unhandled data point %d payload: %s", dp_id, payload[:2000])
 
-    def register_callback(self, dp_id: int, callback: Callable) -> None:
+    def register_callback(self, dp_id: int, callback: Callable[..., Any]) -> None:
         """Register a callback function for a specific dp_id."""
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
@@ -722,7 +722,7 @@ class TerraMowHub:
         self.callbacks[dp_id].append(callback)
         _LOGGER.debug(f"Callback registered for dp_id: {dp_id}")
 
-    def register_map_callback(self, callback: Callable) -> None:
+    def register_map_callback(self, callback: Callable[..., Any]) -> None:
         """Register a callback function for map info updates."""
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
@@ -732,7 +732,7 @@ class TerraMowHub:
         if self._map_info:
             self.hass.add_job(callback, self._map_info)
 
-    def register_pose_callback(self, callback: Callable) -> None:
+    def register_pose_callback(self, callback: Callable[..., Any]) -> None:
         """Register a callback function for pose updates."""
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
@@ -741,7 +741,7 @@ class TerraMowHub:
         if self._pose:
             self.hass.add_job(callback, self._pose)
 
-    def register_path_callback(self, callback: Callable) -> None:
+    def register_path_callback(self, callback: Callable[..., Any]) -> None:
         """Register a callback function for path data updates."""
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
@@ -750,7 +750,7 @@ class TerraMowHub:
         if self._path_data:
             self.hass.add_job(callback, self._path_data)
 
-    def register_history_path_callback(self, callback: Callable) -> None:
+    def register_history_path_callback(self, callback: Callable[..., Any]) -> None:
         """Register a callback function for history path data updates."""
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
@@ -1128,7 +1128,7 @@ class TerraMowHub:
             return data, new_etag, True, False
 
     @staticmethod
-    def _format_firmware_version(info: dict) -> str | None:
+    def _format_firmware_version(info: dict[str, Any]) -> str | None:
         """Build the firmware version string shown on the device page."""
         overall = info.get("overall")
         if overall is None:
@@ -1193,67 +1193,67 @@ class TerraMowHub:
             _LOGGER.error("Error handling model name: %s", e)
 
     @property
-    def map_info(self) -> dict:
+    def map_info(self) -> dict[str, Any]:
         """Get current map info."""
         return self._map_info
 
     @property
-    def map_data(self) -> dict:
+    def map_data(self) -> dict[str, Any]:
         """Get HTTP-fetched map data."""
         return self._map_data
 
     @property
-    def path_data(self) -> dict:
+    def path_data(self) -> dict[str, Any]:
         """Get HTTP-fetched path data."""
         return self._path_data
 
     @property
-    def history_path_data(self) -> dict:
+    def history_path_data(self) -> dict[str, Any]:
         """Get HTTP-fetched history path data."""
         return self._history_path_data
 
     @property
-    def pose(self) -> dict:
+    def pose(self) -> dict[str, Any]:
         """Get current pose data."""
         return self._pose
 
     @property
-    def global_params(self) -> dict:
+    def global_params(self) -> dict[str, Any]:
         """Get current global parameters from dp_155."""
         return self._global_params
 
     @property
-    def map_status(self) -> dict:
+    def map_status(self) -> dict[str, Any]:
         """Get current map status from dp_117."""
         return self._map_status
 
     @property
-    def current_work_data(self) -> dict:
+    def current_work_data(self) -> dict[str, Any]:
         """Get current work data from dp_113."""
         return self._current_work_data
 
     @property
-    def statistics_data(self) -> dict:
+    def statistics_data(self) -> dict[str, Any]:
         """Get statistics data from dp_124."""
         return self._statistics_data
 
     @property
-    def base_station_time(self) -> dict:
+    def base_station_time(self) -> dict[str, Any]:
         """Get base station time from dp_125."""
         return self._base_station_time
 
     @property
-    def blade_time(self) -> dict:
+    def blade_time(self) -> dict[str, Any]:
         """Get blade time from dp_126."""
         return self._blade_time
 
     @property
-    def schedule_data(self) -> dict:
+    def schedule_data(self) -> dict[str, Any]:
         """Get schedule data from dp_138."""
         return self._schedule_data
 
     @property
-    def battery_status(self) -> dict:
+    def battery_status(self) -> dict[str, Any]:
         """Get current battery status from dp_108."""
         return self._battery_status
 
@@ -1273,7 +1273,7 @@ class TerraMowHub:
         return self._power_mode
 
     @property
-    def task_status(self) -> dict:
+    def task_status(self) -> dict[str, Any]:
         """Get current task status raw payload from dp_107."""
         return self._task_status
 
@@ -1311,11 +1311,11 @@ class TerraMowHub:
         return self.basic_data.get_compatibility_message()
 
     @property
-    def firmware_version_info(self) -> dict:
+    def firmware_version_info(self) -> dict[str, Any]:
         """Return firmware version information."""
         return self.basic_data.firmware_version or {}
 
-    def publish_data_point(self, dp_id: int, data: dict) -> None:
+    def publish_data_point(self, dp_id: int, data: dict[str, Any]) -> None:
         """Publish data to a specific data point."""
         topic = f"data_point/{dp_id}/app"
         _LOGGER.info(f"Publishing data to topic {topic}: {data}")
