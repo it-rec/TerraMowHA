@@ -8,6 +8,7 @@ forwards the start/pause/dock commands.
 from __future__ import annotations
 
 import logging
+from typing import cast
 
 from homeassistant.components.lawn_mower import LawnMowerEntity
 from homeassistant.components.lawn_mower.const import (
@@ -72,7 +73,7 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
     @property
     def hub(self) -> TerraMowHub:
         """Return the hub behind this entity."""
-        return self.basic_data.lawn_mower
+        return cast("TerraMowHub", self.basic_data.lawn_mower)
 
     async def async_added_to_hass(self) -> None:
         """Track hub state changes (connection, dp_107, model name)."""
@@ -92,7 +93,7 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
         return self._activity
 
     @activity.setter
-    def activity(self, value: LawnMowerActivity):
+    def activity(self, value: LawnMowerActivity) -> None:
         """Set the current activity of the lawn mower."""
         old_activity = self._activity
         self._activity = value
@@ -118,7 +119,7 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
         """Flag lawn mower features that are supported."""
         return LawnMowerEntityFeature.START_MOWING | LawnMowerEntityFeature.PAUSE | LawnMowerEntityFeature.DOCK
 
-    def update_activity_from_state(self):
+    def update_activity_from_state(self) -> None:
         """Update activity based on the hub's mission state."""
         hub = self.hub
         last_activity = self.activity
@@ -151,14 +152,14 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
         if last_activity != self.activity:
             safe_schedule_update_ha_state(self)
 
-    def start_mowing(self):
+    def start_mowing(self) -> None:
         """Start mowing implementation for lawn_mower entity."""
         self.hub.start_mowing()
 
-    def pause(self):
+    def pause(self) -> None:
         """Pause mowing implementation for lawn_mower entity."""
         self.hub.pause()
 
-    def dock(self):
+    def dock(self) -> None:
         """Docking implementation for lawn_mower entity."""
         self.hub.dock()
