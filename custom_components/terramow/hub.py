@@ -21,6 +21,7 @@ from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
+import aiohttp
 import paho.mqtt.client as mqtt_client
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
@@ -152,7 +153,7 @@ class TerraMowHub:
         self.host = basic_data.host
         self.password = basic_data.password
         self.hass = hass
-        self.mqtt_client = None
+        self.mqtt_client: mqtt_client.Client | None = None
         self._stop_event = threading.Event()  # 用于停止重连循环
         self.callbacks: dict[int, list[Callable]] = {}  # 存储 dp_id 和对应的回调函数列表
         self.map_callbacks: list[Callable] = []  # 存储地图信息回调函数
@@ -256,7 +257,7 @@ class TerraMowHub:
             self.connection_error = value
             self._notify_state_listeners()
 
-    def _can_accept_command(self):
+    def _can_accept_command(self) -> bool:
         """Check if control commands can be accepted"""
         now = time.monotonic()
         if now - self._last_control_time < self._control_interval:
@@ -265,7 +266,7 @@ class TerraMowHub:
         self._last_control_time = now
         return True
 
-    def start(self):
+    def start(self) -> None:
         """Start the MQTT client in a separate thread."""
         _LOGGER.info("Starting MQTT client, connecting to %s:%d", self.host, MQTT_PORT)
         _LOGGER.debug("MQTT connection params: username=%s, password=%s", MQTT_USERNAME, self.password)
@@ -285,7 +286,7 @@ class TerraMowHub:
         self.register_all_callbacks()
         _LOGGER.debug("MQTT client startup completed")
 
-    async def async_stop(self):
+    async def async_stop(self) -> None:
         """Stop the MQTT client and clean up resources."""
         _LOGGER.info("Stopping MQTT client")
         self._stop_event.set()
@@ -306,7 +307,7 @@ class TerraMowHub:
                     "MQTT worker thread did not stop within %ds", MQTT_THREAD_JOIN_TIMEOUT
                 )
 
-    def register_all_callbacks(self):
+    def register_all_callbacks(self) -> None:
         """Register all callbacks for data points."""
         self.register_callback(107, self.on_mission_status)
         self.register_callback(155, self.on_global_params)
@@ -319,7 +320,7 @@ class TerraMowHub:
         self.register_callback(108, self.on_battery_status)
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
 
-    async def on_global_params(self, payload: str):
+    async def on_global_params(self, payload: str) -> None:
         """Handle global parameter updates (dp_155)."""
         _LOGGER.debug("Raw global params payload: %s", payload)
         try:
@@ -354,7 +355,7 @@ class TerraMowHub:
         except Exception as e:
             _LOGGER.warning("Error notifying mode selector: %s", e)
 
-    async def on_map_status(self, payload: str):
+    async def on_map_status(self, payload: str) -> None:
         """Handle map status updates (dp_117)."""
         _LOGGER.debug("Raw map status payload: %s", payload)
         try:
@@ -364,7 +365,7 @@ class TerraMowHub:
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_117: %s", payload)
 
-    async def on_current_work_data(self, payload: str):
+    async def on_current_work_data(self, payload: str) -> None:
         """Handle current work data updates (dp_113)."""
         _LOGGER.debug("Raw current work data payload: %s", payload)
         try:
@@ -374,7 +375,7 @@ class TerraMowHub:
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_113: %s", payload)
 
-    async def on_statistics_data(self, payload: str):
+    async def on_statistics_data(self, payload: str) -> None:
         """Handle statistics data updates (dp_124)."""
         _LOGGER.debug("Raw statistics data payload: %s", payload)
         try:
@@ -384,7 +385,7 @@ class TerraMowHub:
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_124: %s", payload)
 
-    async def on_base_station_time(self, payload: str):
+    async def on_base_station_time(self, payload: str) -> None:
         """Handle base station time updates (dp_125)."""
         _LOGGER.debug("Raw base station time payload: %s", payload)
         try:
@@ -394,7 +395,7 @@ class TerraMowHub:
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_125: %s", payload)
 
-    async def on_blade_time(self, payload: str):
+    async def on_blade_time(self, payload: str) -> None:
         """Handle blade time updates (dp_126)."""
         _LOGGER.debug("Raw blade time payload: %s", payload)
         try:
@@ -404,7 +405,7 @@ class TerraMowHub:
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_126: %s", payload)
 
-    async def on_schedule_data(self, payload: str):
+    async def on_schedule_data(self, payload: str) -> None:
         """Handle schedule data updates (dp_138)."""
         _LOGGER.debug("Raw schedule data payload: %s", payload)
         try:
@@ -414,7 +415,7 @@ class TerraMowHub:
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_138: %s", payload)
 
-    async def on_battery_status(self, payload: str):
+    async def on_battery_status(self, payload: str) -> None:
         """Handle battery status updates (dp_108)."""
         _LOGGER.debug("Raw battery status payload: %s", payload)
         try:
@@ -424,7 +425,7 @@ class TerraMowHub:
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_108: %s", payload)
 
-    async def on_mission_status(self, payload: str):
+    async def on_mission_status(self, payload: str) -> None:
         """Handle mission status updates."""
         _LOGGER.debug("Raw mission status payload: %s", payload)
         try:
@@ -481,7 +482,7 @@ class TerraMowHub:
 
         self._notify_state_listeners()
 
-    async def on_compatibility_info(self, payload: str):
+    async def on_compatibility_info(self, payload: str) -> None:
         """Handle compatibility info updates (dp_112)."""
         _LOGGER.debug("Raw compatibility info payload: %s", payload)
         try:
@@ -521,7 +522,7 @@ class TerraMowHub:
         except Exception as e:
             _LOGGER.error("Error processing version compatibility info: %s", e)
 
-    def mqtt_loop(self):
+    def mqtt_loop(self) -> None:
         """MQTT main loop with auto-reconnect.
 
         Uses exponential backoff and throttled logging so an unreachable
@@ -563,7 +564,7 @@ class TerraMowHub:
                 )
                 self._stop_event.wait(delay)
 
-    def on_mqtt_connect(self, client, _userdata, _flags, rc):  # type: ignore[misc]
+    def on_mqtt_connect(self, client: Any, _userdata: Any, _flags: Any, rc: int) -> None:  # type: ignore[misc]
         """Callback when connected to MQTT Broker."""
         if rc == 0:
             _LOGGER.info("MQTT connected")
@@ -602,7 +603,7 @@ class TerraMowHub:
             # 设置错误状态
             self._set_connection_error(True)
 
-    def on_mqtt_disconnect(self, _client, _userdata, rc):  # type: ignore[misc]
+    def on_mqtt_disconnect(self, _client: Any, _userdata: Any, rc: int) -> None:  # type: ignore[misc]
         """Callback when disconnected from MQTT Broker."""
         if rc != 0:
             _LOGGER.warning(f"Unexpected MQTT disconnection: {rc}")
@@ -610,7 +611,7 @@ class TerraMowHub:
             # 设置错误状态
             self._set_connection_error(True)
 
-    def on_mqtt_message(self, _client, _userdata, msg):  # type: ignore[misc]
+    def on_mqtt_message(self, _client: Any, _userdata: Any, msg: Any) -> None:  # type: ignore[misc]
         """Callback when a message is received."""
         topic = msg.topic
         payload = msg.payload.decode()
@@ -712,7 +713,7 @@ class TerraMowHub:
             else:
                 _LOGGER.debug("Unhandled data point %d payload: %s", dp_id, payload[:2000])
 
-    def register_callback(self, dp_id: int, callback: Callable):
+    def register_callback(self, dp_id: int, callback: Callable) -> None:
         """Register a callback function for a specific dp_id."""
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
@@ -721,7 +722,7 @@ class TerraMowHub:
         self.callbacks[dp_id].append(callback)
         _LOGGER.debug(f"Callback registered for dp_id: {dp_id}")
 
-    def register_map_callback(self, callback: Callable):
+    def register_map_callback(self, callback: Callable) -> None:
         """Register a callback function for map info updates."""
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
@@ -731,7 +732,7 @@ class TerraMowHub:
         if self._map_info:
             self.hass.add_job(callback, self._map_info)
 
-    def register_pose_callback(self, callback: Callable):
+    def register_pose_callback(self, callback: Callable) -> None:
         """Register a callback function for pose updates."""
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
@@ -740,7 +741,7 @@ class TerraMowHub:
         if self._pose:
             self.hass.add_job(callback, self._pose)
 
-    def register_path_callback(self, callback: Callable):
+    def register_path_callback(self, callback: Callable) -> None:
         """Register a callback function for path data updates."""
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
@@ -749,7 +750,7 @@ class TerraMowHub:
         if self._path_data:
             self.hass.add_job(callback, self._path_data)
 
-    def register_history_path_callback(self, callback: Callable):
+    def register_history_path_callback(self, callback: Callable) -> None:
         """Register a callback function for history path data updates."""
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
@@ -919,7 +920,7 @@ class TerraMowHub:
         if meta:
             await self._async_handle_history_path_meta(meta)
 
-    def _handle_map_info(self, payload: str):
+    def _handle_map_info(self, payload: str) -> None:
         """Handle map info message."""
         try:
             map_info = json.loads(payload)
@@ -1109,7 +1110,9 @@ class TerraMowHub:
             headers["If-None-Match"] = etag
 
         session = async_get_clientsession(self.hass)
-        async with session.get(url, headers=headers, timeout=10) as resp:
+        async with session.get(
+            url, headers=headers, timeout=aiohttp.ClientTimeout(total=10)
+        ) as resp:
             if resp.status == 304:
                 return None, etag, True, True
             if resp.status >= 400:
@@ -1135,7 +1138,7 @@ class TerraMowHub:
             return f"{overall}.{ha_version}"
         return str(overall)
 
-    async def _async_update_device_sw_version(self, sw_version: str):
+    async def _async_update_device_sw_version(self, sw_version: str) -> None:
         """异步更新设备注册表中的固件版本信息."""
         try:
             device_registry = dr.async_get(self.hass)
@@ -1150,7 +1153,7 @@ class TerraMowHub:
         except Exception as e:
             _LOGGER.error("Error updating device firmware version: %s", e)
 
-    async def _async_update_device_model(self, model_name: str):
+    async def _async_update_device_model(self, model_name: str) -> None:
         """异步更新设备注册表中的模型信息."""
         try:
             device_registry = dr.async_get(self.hass)
@@ -1169,7 +1172,7 @@ class TerraMowHub:
         except Exception as e:
             _LOGGER.error("Error updating device registry: %s", e)
 
-    def _handle_model_name(self, payload: str):
+    def _handle_model_name(self, payload: str) -> None:
         """Handle device model name message."""
         try:
             # payload 直接是型号名称字符串
@@ -1312,7 +1315,7 @@ class TerraMowHub:
         """Return firmware version information."""
         return self.basic_data.firmware_version or {}
 
-    def publish_data_point(self, dp_id: int, data: dict):
+    def publish_data_point(self, dp_id: int, data: dict) -> None:
         """Publish data to a specific data point."""
         topic = f"data_point/{dp_id}/app"
         _LOGGER.info(f"Publishing data to topic {topic}: {data}")
@@ -1322,12 +1325,12 @@ class TerraMowHub:
         else:
             _LOGGER.error("MQTT client is not initialized")
 
-    def get_cmd_seq(self):
+    def get_cmd_seq(self) -> int:
         """Generate a new command sequence number."""
         self.cmd_seq += 1
         return self.cmd_seq
 
-    def start_mowing(self):
+    def start_mowing(self) -> None:
         """Start mowing, resuming a paused or station-waiting job."""
         if not self._can_accept_command():
             _LOGGER.warning("Request too quick, skip start mowing command")
@@ -1347,7 +1350,7 @@ class TerraMowHub:
             _LOGGER.info("START CLEAN : Sending start command")
             self._start_normal_mow()
 
-    def pause(self):
+    def pause(self) -> None:
         """Pause the running job."""
         if not self._can_accept_command():
             _LOGGER.warning("Request too quick, skip pause command")
@@ -1369,7 +1372,7 @@ class TerraMowHub:
             elif self.mission_state == MissionState.MISSION_STATE_PAUSE:
                 _LOGGER.info("Now is paused, can not pause mow again")
 
-    def dock(self):
+    def dock(self) -> None:
         """Send the mower back to the base station."""
         if not self._can_accept_command():
             _LOGGER.warning("Request too quick, skip dock command")
@@ -1385,7 +1388,7 @@ class TerraMowHub:
             _LOGGER.info("StartRecharge : Sending recharge command")
             self._start_normal_recharge()
 
-    def _start_normal_mow(self):
+    def _start_normal_mow(self) -> None:
         """Start normal mowing"""
         command = {
             'seq': self.get_cmd_seq(),
@@ -1394,7 +1397,7 @@ class TerraMowHub:
         }
         self.publish_data_point(103, command)
 
-    def start_select_region_clean(self, region_ids: list[int]):
+    def start_select_region_clean(self, region_ids: list[int]) -> None:
         """Start mowing for the specified sub-region IDs."""
         if not region_ids:
             _LOGGER.warning("start_select_region_clean called with empty region_ids")
@@ -1410,7 +1413,7 @@ class TerraMowHub:
         _LOGGER.info("START SELECT REGION CLEAN: regions=%s", region_ids)
         self.publish_data_point(103, command)
 
-    def _start_edge_trim(self):
+    def _start_edge_trim(self) -> None:
         """Start edge-trim mowing"""
         command = {
             'seq': self.get_cmd_seq(),
@@ -1418,7 +1421,7 @@ class TerraMowHub:
         }
         self.publish_data_point(103, command)
 
-    def start_edge_trim(self):
+    def start_edge_trim(self) -> None:
         """Public wrapper to start edge-trim mowing."""
         if not self._can_accept_command():
             _LOGGER.warning("Request too quick, skip start edge trim command")
@@ -1427,17 +1430,17 @@ class TerraMowHub:
         _LOGGER.info("START EDGE TRIM : Sending edge trim command")
         self._start_edge_trim()
 
-    def _resume_mow(self):
+    def _resume_mow(self) -> None:
         """Resume mowing"""
         command = {'seq': self.get_cmd_seq()}
         self.publish_data_point(106, command)
 
-    def _send_pause_command(self):
+    def _send_pause_command(self) -> None:
         """Send pause command"""
         command = {'seq': self.get_cmd_seq()}
         self.publish_data_point(105, command)
 
-    def _start_normal_recharge(self):
+    def _start_normal_recharge(self) -> None:
         """Start normal recharging"""
         command = {
             'seq': self.get_cmd_seq(),
@@ -1445,12 +1448,12 @@ class TerraMowHub:
         }
         self.publish_data_point(103, command)
 
-    def _resume_recharge(self):
+    def _resume_recharge(self) -> None:
         """Resume recharging"""
         # 继续回充等效于继续割草
         return self._resume_mow()
 
-    def _request_compatibility_info(self):
+    def _request_compatibility_info(self) -> None:
         """Request version compatibility information."""
         try:
             _LOGGER.info("Requesting version compatibility information")
