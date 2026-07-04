@@ -14,7 +14,7 @@ from homeassistant.const import (
     EntityCategory,
     UnitOfLength
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import Event, HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 
 from . import TerraMowBasicData, DOMAIN
@@ -53,8 +53,12 @@ class TerraMowNumberBase(PushUpdateMixin, TerraMowEntity, NumberEntity):
     """TerraMow数值控制基类"""
 
     _push_dp_ids = (155,)
-    
-    
+
+    # Cached mode pushed by the main-direction-mode selector event; None when
+    # the entity should fall back to reading the device's global params.
+    _cached_mode: str | None = None
+
+
 
 class MowingHeightNumber(TerraMowNumberBase):
     """割草高度设置控制器 - 使用dp_155数据"""
@@ -240,7 +244,7 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
     
     def _register_mode_change_listener(self) -> None:
         """注册模式切换事件监听器"""
-        async def on_mode_changed(event):
+        async def on_mode_changed(event: Event) -> None:
             if event.data.get("device_host") == self.host:
                 # 从事件中获取新模式，并缓存
                 new_mode = event.data.get("new_mode")
@@ -291,7 +295,7 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
         
         main_direction_config = global_params.get('main_direction_angle_config', {})
         mode = main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE')
-        return mode == 'MAIN_DIRECTION_MODE_SINGLE'
+        return bool(mode == 'MAIN_DIRECTION_MODE_SINGLE')
     
     @property
     def native_value(self) -> float | None:
@@ -378,7 +382,7 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
     
     def _register_mode_change_listener(self) -> None:
         """注册模式切换事件监听器"""
-        async def on_mode_changed(event):
+        async def on_mode_changed(event: Event) -> None:
             if event.data.get("device_host") == self.host:
                 # 从事件中获取新模式，并缓存
                 new_mode = event.data.get("new_mode")
@@ -429,7 +433,7 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
         
         main_direction_config = global_params.get('main_direction_angle_config', {})
         mode = main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE')
-        return mode == 'MAIN_DIRECTION_MODE_AUTO_ROTATE'
+        return bool(mode == 'MAIN_DIRECTION_MODE_AUTO_ROTATE')
     
     @property
     def native_value(self) -> float | None:
@@ -515,7 +519,7 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
     
     def _register_mode_change_listener(self) -> None:
         """注册模式切换事件监听器"""
-        async def on_mode_changed(event):
+        async def on_mode_changed(event: Event) -> None:
             if event.data.get("device_host") == self.host:
                 # 从事件中获取新模式，并缓存
                 new_mode = event.data.get("new_mode")
@@ -566,7 +570,7 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
         
         main_direction_config = global_params.get('main_direction_angle_config', {})
         mode = main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE')
-        return mode == 'MAIN_DIRECTION_MODE_MULTIPLE'
+        return bool(mode == 'MAIN_DIRECTION_MODE_MULTIPLE')
     
     @property
     def native_value(self) -> float | None:
@@ -676,7 +680,7 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
     
     def _register_mode_change_listener(self) -> None:
         """注册模式切换事件监听器"""
-        async def on_mode_changed(event):
+        async def on_mode_changed(event: Event) -> None:
             if event.data.get("device_host") == self.host:
                 # 从事件中获取新模式，并缓存
                 new_mode = event.data.get("new_mode")
@@ -727,7 +731,7 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
         
         main_direction_config = global_params.get('main_direction_angle_config', {})
         mode = main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE')
-        return mode == 'MAIN_DIRECTION_MODE_MULTIPLE'
+        return bool(mode == 'MAIN_DIRECTION_MODE_MULTIPLE')
     
     @property
     def native_value(self) -> float | None:
