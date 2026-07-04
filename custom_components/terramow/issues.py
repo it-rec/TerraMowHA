@@ -9,12 +9,14 @@ automatically once a compatible firmware reports in.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import issue_registry as ir
 
 from .const import (
+    BASE_STATION_MAINTENANCE_CYCLE_MINUTES,
+    BLADE_MAINTENANCE_CYCLE_MINUTES,
     CURRENT_HA_VERSION,
     DOMAIN,
     MIN_REQUIRED_OVERALL_VERSION,
@@ -26,6 +28,9 @@ if TYPE_CHECKING:
 
 # The requirements section of the README documents the supported versions.
 DOCS_URL = "https://github.com/TerraMow/TerraMowHA#requirements"
+
+BLADE_MAINTENANCE_ISSUE = "blade_maintenance_due"
+BASE_STATION_MAINTENANCE_ISSUE = "base_station_maintenance_due"
 
 
 def compatibility_issue_id(entry_id: str) -> str:
@@ -99,3 +104,82 @@ def async_sync_compatibility_issue(
 def async_clear_compatibility_issue(hass: HomeAssistant, entry_id: str) -> None:
     """Remove the compatibility repair issue (e.g. on config entry unload)."""
     ir.async_delete_issue(hass, DOMAIN, compatibility_issue_id(entry_id))
+
+
+def _maintenance_issue_id(entry_id: str, kind: str) -> str:
+    """Return the per-config-entry issue id for a maintenance repair."""
+    return f"{kind}_{entry_id}"
+
+
+def _used_minutes(data: Any) -> int:
+    """Read the ``int_value`` usage counter from a dp payload, defaulting to 0."""
+    try:
+        return int(data.get("int_value", 0))
+    except (ValueError, TypeError, AttributeError):
+        return 0
+
+
+@callback
+def _async_sync_maintenance_issue(
+    hass: HomeAssistant,
+    entry_id: str,
+    kind: str,
+    used_minutes: int,
+    cycle_minutes: int,
+    placeholders: dict[str, str],
+) -> None:
+    """Raise a maintenance repair issue once the usage cycle is exceeded."""
+    issue_id = _maintenance_issue_id(entry_id, kind)
+    if used_minutes >= cycle_minutes:
+        ir.async_create_issue(
+            hass,
+            DOMAIN,
+            issue_id,
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key=kind,
+            translation_placeholders=placeholders,
+        )
+    else:
+        ir.async_delete_issue(hass, DOMAIN, issue_id)
+
+
+@callback
+def async_sync_blade_maintenance_issue(
+    hass: HomeAssistant, entry_id: str, blade_time: Any
+) -> None:
+    """Sync the blade-maintenance repair issue from the dp_126 payload."""
+    _async_sync_maintenance_issue(
+        hass,
+        entry_id,
+        BLADE_MAINTENANCE_ISSUE,
+        _used_minutes(blade_time),
+        BLADE_MAINTENANCE_CYCLE_MINUTES,
+        {"hours": str(BLADE_MAINTENANCE_CYCLE_MINUTES // 60)},
+    )
+
+
+@callback
+def async_sync_base_station_maintenance_issue(
+    hass: HomeAssistant, entry_id: str, base_station_time: Any
+) -> None:
+    """Sync the base-station-maintenance repair issue from the dp_125 payload."""
+    _async_sync_maintenance_issue(
+        hass,
+        entry_id,
+        BASE_STATION_MAINTENANCE_ISSUE,
+        _used_minutes(base_station_time),
+        BASE_STATION_MAINTENANCE_CYCLE_MINUTES,
+        {"days": str(BASE_STATION_MAINTENANCE_CYCLE_MINUTES // (60 * 24))},
+    )
+
+
+@callback
+def async_clear_maintenance_issues(hass: HomeAssistant, entry_id: str) -> None:
+    """Remove both maintenance repair issues (e.g. on config entry unload)."""
+    ir.async_delete_issue(
+        hass, DOMAIN, _maintenance_issue_id(entry_id, BLADE_MAINTENANCE_ISSUE)
+    )
+    ir.async_delete_issue(
+        hass, DOMAIN, _maintenance_issue_id(entry_id, BASE_STATION_MAINTENANCE_ISSUE)
+    )

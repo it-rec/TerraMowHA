@@ -416,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "TerraMow-Integrationsupdate empfohlen",
       "description": "Die HA-Modulversion der TerraMow-Firmware ({firmware_version}) ist neuer als diese Integration unterstützt ({plugin_version}). Aktualisiere die Integration in HACS, um die neuesten Funktionen zu erhalten."
+    },
+    "blade_maintenance_due": {
+      "title": "TerraMow-Klingenwartung fällig",
+      "description": "Die Klingenscheibe des TerraMow hat das empfohlene Wartungsintervall von {hours} Stunden erreicht. Reinige oder ersetze die Klingen und setze anschließend den Klingen-Timer über die Schaltfläche „Klingen-Timer zurücksetzen“ zurück, um diese Erinnerung zu löschen."
+    },
+    "base_station_maintenance_due": {
+      "title": "TerraMow-Basisstationswartung fällig",
+      "description": "Die Basisstation des TerraMow hat das empfohlene Wartungsintervall von {days} Tagen erreicht. Reinige die Basisstation und setze anschließend den Basisstations-Timer über die Schaltfläche „Basisstations-Timer zurücksetzen“ zurück, um diese Erinnerung zu löschen."
     }
   },
   "exceptions": {

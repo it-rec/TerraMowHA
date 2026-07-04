@@ -22,7 +22,7 @@ from homeassistant.helpers import config_validation as cv, device_registry as dr
 
 from .config_flow import CannotConnect, InvalidAuth, validate_input
 from .hub import TerraMowHub
-from .issues import async_clear_compatibility_issue
+from .issues import async_clear_compatibility_issue, async_clear_maintenance_issues
 from .const import DOMAIN as DOMAIN
 from .const import (
     CURRENT_HA_VERSION,
@@ -263,6 +263,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) ->
     # If unloading is successful, stop the hub. runtime_data is cleared by HA.
     if unload_ok:
         async_clear_compatibility_issue(hass, entry.entry_id)
+        async_clear_maintenance_issues(hass, entry.entry_id)
         basic_data = entry.runtime_data
         if basic_data.lawn_mower is not None:
             await basic_data.lawn_mower.async_stop()

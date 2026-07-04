@@ -416,6 +416,14 @@
     "plugin_downgrade_recommended": {
       "title": "TerraMow integration update recommended",
       "description": "The TerraMow's firmware HA module version ({firmware_version}) is newer than this integration supports ({plugin_version}). Update the integration in HACS to get the latest features."
+    },
+    "blade_maintenance_due": {
+      "title": "TerraMow blade maintenance due",
+      "description": "The TerraMow's blade disc has run for its recommended {hours}-hour service interval. Clean or replace the blades, then reset the blade timer with the \"Reset Blade Timer\" button to clear this reminder."
+    },
+    "base_station_maintenance_due": {
+      "title": "TerraMow base station maintenance due",
+      "description": "The TerraMow's base station has run for its recommended {days}-day service interval. Clean the base station, then reset the base station timer with the \"Reset Base Station Timer\" button to clear this reminder."
     }
   },
   "exceptions": {
