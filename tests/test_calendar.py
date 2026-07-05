@@ -7,7 +7,7 @@ schedules, past-midnight slots and the get-events window query.
 
 import asyncio
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -228,3 +228,46 @@ def test_get_events_empty_without_schedule() -> None:
         datetime(2026, 7, 5, 0, 0, tzinfo=timezone.utc),
     )
     assert events == []
+
+
+# ---------------------------------------------------------------------------
+# non-UTC timezone handling (dt_util.now() is the local, tz-aware clock)
+# ---------------------------------------------------------------------------
+
+
+def test_event_is_built_in_the_local_timezone() -> None:
+    hub = _hub()
+    cal = _cal(hub)
+    _feed(
+        hub,
+        {
+            "exist": True,
+            "start_time": {"hour": 9, "minute": 5},
+            "end_time": {"hour": 11, "minute": 30},
+        },
+    )
+    tz = timezone(timedelta(hours=-5))  # a non-UTC local clock
+    event = _event_at(cal, datetime(2026, 7, 4, 8, 0, tzinfo=tz))
+    assert event is not None
+    # the slot is computed in the same local timezone as "now", not UTC
+    assert event.start == datetime(2026, 7, 4, 9, 5, tzinfo=tz)
+    assert event.end == datetime(2026, 7, 4, 11, 30, tzinfo=tz)
+    assert event.start.utcoffset() == timedelta(hours=-5)
+
+
+def test_event_rolls_over_in_local_timezone() -> None:
+    hub = _hub()
+    cal = _cal(hub)
+    _feed(
+        hub,
+        {
+            "exist": True,
+            "start_time": {"hour": 9, "minute": 5},
+            "end_time": {"hour": 11, "minute": 30},
+        },
+    )
+    tz = timezone(timedelta(hours=9))  # e.g. JST
+    # 12:00 local is past today's local end -> next occurrence is tomorrow, local
+    event = _event_at(cal, datetime(2026, 7, 4, 12, 0, tzinfo=tz))
+    assert event is not None
+    assert event.start == datetime(2026, 7, 5, 9, 5, tzinfo=tz)
