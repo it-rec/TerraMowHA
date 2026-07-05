@@ -195,14 +195,13 @@ Consequence — the split responsibilities:
 
 ## 6. Data-point catalog
 
-Handlers registered in `register_all_callbacks()` plus `register_callback(8, …)`
-in `BatterySensor`. The device→HA payloads are cached on the hub and exposed via
-`@property`; consuming entities read those properties (mostly through
-`PushUpdateMixin._push_dp_ids`).
+Handlers registered in `register_all_callbacks()`. The device→HA payloads are
+cached on the hub and exposed via `@property`; consuming entities read those
+properties (mostly through `PushUpdateMixin._push_dp_ids`).
 
 | dp_id | Dir | Hub handler | Cached property | Consumed by | Meaning |
 | --- | --- | --- | --- | --- | --- |
-| 8 | in | `BatterySensor.set_capacity` | (entity-local) | `BatterySensor` | Battery capacity/percentage |
+| 8 | in | `on_battery_level` | `battery_level` | `BatterySensor` (push) | Battery percentage |
 | 103 | **out** | — (`_start_normal_mow`, `start_select_region_clean`, `_start_edge_trim`, `_start_normal_recharge`) | — | lawn_mower, button, service | Start-mode command (global/select-region/edge-trim/return) |
 | 105 | **out** | `_send_pause_command` | — | lawn_mower pause | Pause command |
 | 106 | **out** | `_resume_mow` / `_resume_recharge` | — | lawn_mower resume | Resume command |
@@ -231,8 +230,11 @@ Notes:
   `data_point/{id}/robot` message with no registered callback is logged once at
   `INFO` (with the first payload, truncated) and thereafter at `DEBUG`; the
   seen ids accumulate in `_seen_unknown_dp_ids` and appear in diagnostics under
-  `unknown_data_points_seen`. This is the intended way to discover new dps
-  (lift-off alarms, error codes, schedule toggles, …).
+  `unknown_data_points_seen`, while the latest raw payload per unhandled id is
+  kept in `_unknown_dp_payloads` and exported under
+  `unknown_data_point_payloads`. This is the intended way to discover new dps
+  (lift-off alarms, error codes, schedule toggles, …) — export diagnostics and
+  read the payloads to identify them.
 
 ## 7. Map / path pipeline
 

@@ -180,12 +180,22 @@ def test_battery_sensor_capacity_from_dp8() -> None:
     sensor = BatterySensor(hub.basic_data, hub.hass)
     assert sensor.native_value is None
 
-    sensor.set_capacity(json.dumps({"int_value": 73}))
+    asyncio.run(hub.on_battery_level(json.dumps({"int_value": 73})))
     assert sensor.native_value == 73
 
     # invalid JSON leaves the last value intact
-    sensor.set_capacity("not-json")
+    asyncio.run(hub.on_battery_level("not-json"))
     assert sensor.native_value == 73
+
+    # a non-integer int_value (null / string / bool) is ignored
+    asyncio.run(hub.on_battery_level(json.dumps({"int_value": None})))
+    asyncio.run(hub.on_battery_level(json.dumps({"int_value": "x"})))
+    asyncio.run(hub.on_battery_level(json.dumps({"int_value": True})))
+    assert sensor.native_value == 73
+
+    # without a lawn mower the sensor reports no value
+    hub.basic_data.lawn_mower = None
+    assert sensor.native_value is None
 
 
 def test_battery_state_and_temperature_sensors_from_dp108() -> None:

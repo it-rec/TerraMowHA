@@ -207,8 +207,12 @@ class TerraMowHub:
         self._blade_time: dict[str, Any] = {}  # Stores dp_126 blade usage time
         self._schedule_data: dict[str, Any] = {}  # Stores dp_138 upcoming schedule
         self._battery_status: dict[str, Any] = {}  # Store dp_108 battery status
+        self._battery_level: int | None = None  # Store dp_8 battery percentage
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
+        # Latest raw payload seen for each unhandled data point, surfaced in
+        # diagnostics so undocumented dps can be identified from real data.
+        self._unknown_dp_payloads: dict[int, str] = {}
         self._device_model: str = "TerraMow S1200"  # Default model name, kept for backward compatibility
         # Entities reach the hub through this attribute; the name is kept
         # from the time the lawn mower entity itself played the hub role.
@@ -345,6 +349,7 @@ class TerraMowHub:
         self.register_callback(126, self.on_blade_time)
         self.register_callback(138, self.on_schedule_data)
         self.register_callback(108, self.on_battery_status)
+        self.register_callback(8, self.on_battery_level)
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
 
     async def on_global_params(self, payload: str) -> None:
@@ -451,6 +456,17 @@ class TerraMowHub:
             _LOGGER.debug("Schedule data updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_138: %s", payload)
+
+    async def on_battery_level(self, payload: str) -> None:
+        """Handle battery level updates (dp_8, battery percentage)."""
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_8: %s", payload)
+            return
+        value = data.get("int_value")
+        if isinstance(value, int) and not isinstance(value, bool):
+            self._battery_level = value
 
     async def on_battery_status(self, payload: str) -> None:
         """Handle battery status updates (dp_108)."""
@@ -740,7 +756,10 @@ class TerraMowHub:
         else:
             # Help discover undocumented data points (e.g. lift alarms, schedule
             # switches, error codes): each unknown dp_id is logged once at INFO,
-            # while the full payload is continuously logged at DEBUG.
+            # while the full payload is continuously logged at DEBUG. The latest
+            # payload is also kept for the diagnostics export so undocumented
+            # dps can be identified from real data without live log capture.
+            self._unknown_dp_payloads[dp_id] = payload[:500]
             if dp_id not in self._seen_unknown_dp_ids:
                 self._seen_unknown_dp_ids.add(dp_id)
                 _LOGGER.info(
@@ -1316,6 +1335,11 @@ class TerraMowHub:
     def battery_status(self) -> dict[str, Any]:
         """Get current battery status from dp_108."""
         return self._battery_status
+
+    @property
+    def battery_level(self) -> int | None:
+        """Get the current battery percentage from dp_8."""
+        return self._battery_level
 
     @property
     def is_robot_navi_located(self) -> bool | None:

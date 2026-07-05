@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any, cast
 
@@ -35,7 +34,7 @@ PARALLEL_UPDATES = 0
 
 _LOGGER = logging.getLogger(__name__)
 
-class BatterySensor(TerraMowEntity, SensorEntity):
+class BatterySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Representation of the battery sensor."""
 
     _attr_translation_key = "battery"
@@ -43,42 +42,19 @@ class BatterySensor(TerraMowEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.BATTERY
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_extra_state_attributes = {
-        'state': 'unknown',
-        'temperature': 'unknown',
-        'charger_connected': 'unknown',
-        'is_switch_on': 'unknown'
-    }
-
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__(basic_data, hass)
-        self._attr_native_value: int | None = None  # initialize the battery level value
-        self.basic_data.lawn_mower.register_callback(8, self.set_capacity)
-        # self.basic_data.lawn_mower.register_callback(108, self.set_battery_attributes) # This is now handled by the lawn_mower entity
-
-        _LOGGER.debug("BatterySensor entity created")
+    # dp_8 carries the percentage, dp_108 the charge state/temperature
+    # attributes; a push on either refreshes this sensor immediately.
+    _push_dp_ids = (8, 108)
 
     _unique_id_suffix = "battery"
 
-    def set_capacity(self, payload :str) -> None:
-        """Handle battery capacity status updates."""
-        try:
-            data = json.loads(payload)
-            self._attr_native_value = data.get('int_value', self._attr_native_value)
-            _LOGGER.debug(f"Received battery capacity status: {data}")
-
-        except json.JSONDecodeError:
-            _LOGGER.error(f"Invalid JSON payload: {payload}")
-            return
-
     @property
     def native_value(self) -> int | None:
-        """Return value of sensor."""
-        return self._attr_native_value
+        """Return the battery percentage (dp_8)."""
+        lawn_mower = self.basic_data.lawn_mower
+        if lawn_mower is None:
+            return None
+        return cast("int | None", lawn_mower.battery_level)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

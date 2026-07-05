@@ -56,6 +56,14 @@ async def async_get_config_entry_diagnostics(
         "unknown_data_points_seen": sorted(
             getattr(lawn_mower, "_seen_unknown_dp_ids", [])
         ),
+        # Latest raw payload per unhandled data point, to identify undocumented
+        # dps from real data. Keyed by dp id (as a string for JSON portability).
+        "unknown_data_point_payloads": {
+            str(dp_id): payload
+            for dp_id, payload in sorted(
+                getattr(lawn_mower, "_unknown_dp_payloads", {}).items()
+            )
+        },
     }
     diagnostics["state"] = {
         "task_status": lawn_mower.task_status,
