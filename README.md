@@ -2,8 +2,8 @@
 
 <div align="center">
   <p>
-    <a href="https://github.com/TerraMow/TerraMowHA/actions/workflows/validate.yml"><img src="https://github.com/TerraMow/TerraMowHA/actions/workflows/validate.yml/badge.svg" alt="Validate"/></a>
-    <a href="https://github.com/TerraMow/TerraMowHA/actions/workflows/release.yml"><img src="https://github.com/TerraMow/TerraMowHA/actions/workflows/release.yml/badge.svg" alt="Release"/></a>
+    <a href="https://github.com/it-rec/TerraMowHA/actions/workflows/validate.yml"><img src="https://github.com/it-rec/TerraMowHA/actions/workflows/validate.yml/badge.svg" alt="Validate"/></a>
+    <a href="https://github.com/it-rec/TerraMowHA/actions/workflows/release.yml"><img src="https://github.com/it-rec/TerraMowHA/actions/workflows/release.yml/badge.svg" alt="Release"/></a>
     <a href="https://codecov.io/gh/it-rec/TerraMowHA"><img src="https://codecov.io/gh/it-rec/TerraMowHA/branch/main/graph/badge.svg" alt="Coverage"/></a>
   </p>
   <img src="docs/images/terramow_logo.png" alt="TerraMow Logo" width="400">
@@ -64,7 +64,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 
 ### Installation
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=TerraMow&repository=TerraMowHA&category=Integration)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=it-rec&repository=TerraMowHA&category=Integration)
 
 #### Method 1: HACS (Recommended)
 1. Make sure [HACS](https://hacs.xyz/) is installed
@@ -187,7 +187,7 @@ The integration is translated into: Български · Català · Čeština �
 
 ### Support
 
-Open an issue on [GitHub](https://github.com/TerraMow/TerraMowHA/issues) for support.
+Open an issue on [GitHub](https://github.com/it-rec/TerraMowHA/issues) for support.
 
 ### Developer Information
 

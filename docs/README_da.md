@@ -112,7 +112,7 @@ Integrationen er oversat til: Български · Català · Čeština · Dans
 
 ### Support
 
-Opret et issue på [GitHub](https://github.com/TerraMow/TerraMowHA/issues) for at få support.
+Opret et issue på [GitHub](https://github.com/it-rec/TerraMowHA/issues) for at få support.
 
 ### Udviklerinformation
 

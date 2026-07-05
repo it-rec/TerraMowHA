@@ -55,7 +55,7 @@
 #### 方法一：通过HACS安装（推荐）
 1. 确保已安装[HACS](https://hacs.xyz/)
 2. 进入HACS → 集成 → 三点菜单(⋮) → 自定义存储库
-3. 添加 `https://github.com/TerraMow/TerraMowHA` 作为存储库URL，类别选择"集成"
+3. 添加 `https://github.com/it-rec/TerraMowHA` 作为存储库URL，类别选择"集成"
 4. 进入HACS → 集成 → + → 搜索"TerraMow"
 5. 安装并重启Home Assistant
 
@@ -113,7 +113,7 @@ data:
 
 ### 支持
 
-如需支持，请在[GitHub](https://github.com/TerraMow/TerraMowHA/issues)上提交问题。
+如需支持，请在[GitHub](https://github.com/it-rec/TerraMowHA/issues)上提交问题。
 
 ### 开发者信息
 
