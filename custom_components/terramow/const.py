@@ -41,16 +41,19 @@ MQTT_PORT = 1883
 
 MQTT_USERNAME = "terramow"
 
-# MQTT 重连退避（秒）
-# 首次连接失败后的基础等待时间，之后按指数退避，封顶为 MQTT_RECONNECT_MAX_DELAY。
-# 这样在割草机不可达（休眠/回基站/IP 变化）时不会每隔几秒刷一条 ERROR，也不会频繁拍打网络。
+# MQTT reconnect backoff (seconds)
+# Base wait time after the first connection failure; subsequent retries back off
+# exponentially, capped at MQTT_RECONNECT_MAX_DELAY.
+# This way, when the mower is unreachable (asleep / returning to base / IP change)
+# we don't spam an ERROR every few seconds or hammer the network.
 MQTT_RECONNECT_BASE_DELAY = 5
 MQTT_RECONNECT_MAX_DELAY = 60
 
-# 实体移除时等待 MQTT 工作线程退出的最长时间（秒），避免线程残留为僵尸继续重连。
+# Maximum time (seconds) to wait for the MQTT worker thread to exit when the entity
+# is removed, avoiding a lingering zombie thread that keeps reconnecting.
 MQTT_THREAD_JOIN_TIMEOUT = 10
 
-# MQTT主题
+# MQTT topics
 MAP_INFO_TOPIC = "map/current/info"
 MAP_META_TOPIC = "map/current/meta"
 PATH_META_TOPIC = "path/current/meta"
@@ -58,36 +61,37 @@ PATH_HISTORY_META_TOPIC = "path/history/meta"
 POSE_TOPIC = "pose/current"
 MODEL_NAME_TOPIC = "model/name"
 
-# 版本兼容性相关常量
-# 当前插件要求的固件 home_assistant 兼容版本
+# Version compatibility constants
+# Firmware home_assistant compatibility version required by the current plugin
 CURRENT_HA_VERSION = 3
 
-# 插件支持的最低固件 home_assistant 兼容版本。
-# 版本 2 缺少实时地图/路径能力（需要版本 3），但其余功能完整可用；
-# 部分机型（如 S800）最新固件仍报告版本 2，不应提示"需要升级固件"。
+# Minimum firmware home_assistant compatibility version supported by the plugin.
+# Version 2 lacks real-time map/path capabilities (which need version 3), but all
+# other features work fully; some models (such as the S800) still report version 2
+# on their latest firmware and should not be prompted to "upgrade firmware".
 MIN_SUPPORTED_HA_VERSION = 2
 
-# 最低要求的固件overall版本号
+# Minimum required firmware overall version number
 MIN_REQUIRED_OVERALL_VERSION = 25
 
-# 版本兼容性检查结果
+# Version compatibility check results
 class CompatibilityStatus:
     COMPATIBLE = "compatible"
-    UPGRADE_REQUIRED = "upgrade_required"  # 需要升级固件
-    DOWNGRADE_RECOMMENDED = "downgrade_recommended"  # 建议降级插件
-    INCOMPATIBLE = "incompatible"  # 完全不兼容
+    UPGRADE_REQUIRED = "upgrade_required"  # firmware upgrade required
+    DOWNGRADE_RECOMMENDED = "downgrade_recommended"  # plugin downgrade recommended
+    INCOMPATIBLE = "incompatible"  # completely incompatible
 
-# 版本兼容性信息获取的数据点ID
+# Data point ID used to obtain version compatibility information
 COMPATIBILITY_INFO_DP = 127
 
-# 维护周期常量 (单位: 分钟)
-# 刀盘推荐清洁周期: 240小时 = 240 * 60 = 14400分钟
+# Maintenance cycle constants (unit: minutes)
+# Recommended blade cleaning cycle: 240 hours = 240 * 60 = 14400 minutes
 BLADE_MAINTENANCE_CYCLE_MINUTES = 14400
 
-# 基站推荐清洁周期: 30天 = 30 * 24 * 60 = 43200分钟
+# Recommended base station cleaning cycle: 30 days = 30 * 24 * 60 = 43200 minutes
 BASE_STATION_MAINTENANCE_CYCLE_MINUTES = 43200
 
-# dp_155 割草速度枚举（与 work_param.proto 对齐）
+# dp_155 mowing speed enum (aligned with work_param.proto)
 MOW_SPEED_TYPE_LOW = "MOW_SPEED_TYPE_LOW"
 MOW_SPEED_TYPE_MEDIUM = "MOW_SPEED_TYPE_MEDIUM"
 MOW_SPEED_TYPE_ADAPTIVE_HIGH = "MOW_SPEED_TYPE_ADAPTIVE_HIGH"
@@ -100,13 +104,14 @@ MOW_SPEED_TYPES = [
     MOW_SPEED_TYPE_AUTO,
 ]
 
-# 功能级兼容版本：割草速度支持 AUTO 档位的最小版本号
+# Feature-level compatibility version: minimum version number where the mowing
+# speed supports the AUTO setting
 MIN_MOW_SPEED_VERSION_FOR_AUTO = 3
 
-# dp_155 刀盘转速默认值（与固件实际初始化路径一致）
+# dp_155 blade disk speed default value (matches the firmware's actual init path)
 DEFAULT_BLADE_DISK_SPEED_TYPE = "BLADE_DISK_SPEED_TYPE_MEDIUM"
 
-# 地图摄像头输出分辨率（边长，正方形画布）
+# Map camera output resolution (side length, square canvas)
 CONF_MAP_RESOLUTION = "map_resolution"
 DEFAULT_MAP_RESOLUTION = 1024
 MAP_RESOLUTION_OPTIONS = [1024, 1536, 2048, 3072, 4096]

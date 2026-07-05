@@ -56,7 +56,7 @@ STEP_REAUTH_DATA_SCHEMA = vol.Schema(
 
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
-    """验证用户输入并测试MQTT连接.
+    """Validate the user input and test the MQTT connection.
 
     Raises InvalidAuth on authentication failure (broker rejects credentials)
     and CannotConnect for any other failure mode.
@@ -265,7 +265,7 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
             else:
                 new_host = user_input[CONF_HOST]
-                # 唯一 ID 就是主机名；如果新主机已被其他条目占用则中止。
+                # The unique ID is the hostname; abort if the new host is already used by another entry.
                 for other in self.hass.config_entries.async_entries(DOMAIN):
                     if (
                         other.entry_id != entry.entry_id

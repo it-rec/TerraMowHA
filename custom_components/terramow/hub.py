@@ -55,7 +55,7 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
-# 定义正则表达式模式
+# Define the regular expression pattern
 TOPIC_PATTERN = re.compile(r"^data_point/(\d+)/robot$")
 
 
@@ -158,22 +158,22 @@ class TerraMowHub:
         self.password = basic_data.password
         self.hass = hass
         self.mqtt_client: mqtt_client.Client | None = None
-        self._stop_event = threading.Event()  # 用于停止重连循环
-        self.callbacks: dict[int, list[Callable[..., Any]]] = {}  # 存储 dp_id 和对应的回调函数列表
-        self.map_callbacks: list[Callable[..., Any]] = []  # 存储地图信息回调函数
-        self.pose_callbacks: list[Callable[..., Any]] = []  # 存储姿态回调函数
-        self.path_callbacks: list[Callable[..., Any]] = []  # 存储路径数据回调函数
-        self.history_path_callbacks: list[Callable[..., Any]] = []  # 存储历史路径数据回调函数
-        self._state_listeners: list[Callable[[], None]] = []  # 状态变化监听（连接状态、dp_107、型号）
-        self.connection_error = False  # MQTT 连接是否处于错误状态
-        self._map_info: dict[str, Any] = {}  # 存储当前地图信息
-        self._map_meta: dict[str, Any] = {}  # 存储地图元信息
-        self._path_meta: dict[str, Any] = {}  # 存储路径元信息
-        self._history_path_meta: dict[str, Any] = {}  # 存储历史路径元信息
-        self._map_data: dict[str, Any] = {}  # 存储HTTP拉取的地图数据
-        self._path_data: dict[str, Any] = {}  # 存储HTTP拉取的路径数据
-        self._history_path_data: dict[str, Any] = {}  # 存储HTTP拉取的历史路径数据
-        self._pose: dict[str, Any] = {}  # 存储实时姿态
+        self._stop_event = threading.Event()  # Used to stop the reconnect loop
+        self.callbacks: dict[int, list[Callable[..., Any]]] = {}  # Stores dp_id and its list of callback functions
+        self.map_callbacks: list[Callable[..., Any]] = []  # Stores map info callback functions
+        self.pose_callbacks: list[Callable[..., Any]] = []  # Stores pose callback functions
+        self.path_callbacks: list[Callable[..., Any]] = []  # Stores path data callback functions
+        self.history_path_callbacks: list[Callable[..., Any]] = []  # Stores history path data callback functions
+        self._state_listeners: list[Callable[[], None]] = []  # State change listeners (connection state, dp_107, model)
+        self.connection_error = False  # Whether the MQTT connection is in an error state
+        self._map_info: dict[str, Any] = {}  # Stores the current map info
+        self._map_meta: dict[str, Any] = {}  # Stores map meta info
+        self._path_meta: dict[str, Any] = {}  # Stores path meta info
+        self._history_path_meta: dict[str, Any] = {}  # Stores history path meta info
+        self._map_data: dict[str, Any] = {}  # Stores map data fetched over HTTP
+        self._path_data: dict[str, Any] = {}  # Stores path data fetched over HTTP
+        self._history_path_data: dict[str, Any] = {}  # Stores history path data fetched over HTTP
+        self._pose: dict[str, Any] = {}  # Stores the real-time pose
         self._pending_map_meta: dict[str, Any] | None = None
         self._pending_path_meta: dict[str, Any] | None = None
         self._pending_history_path_meta: dict[str, Any] | None = None
@@ -199,22 +199,22 @@ class TerraMowHub:
         self._fetching_map = False
         self._fetching_path = False
         self._fetching_history_path = False
-        self._global_params: dict[str, Any] = {}  # 存储dp_155全局作业参数
-        self._map_status: dict[str, Any] = {}  # 存储dp_117地图状态
-        self._current_work_data: dict[str, Any] = {}  # 存储dp_113当前作业数据
-        self._statistics_data: dict[str, Any] = {}  # 存储dp_124作业统计数据
-        self._base_station_time: dict[str, Any] = {}  # 存储dp_125基站使用时间
-        self._blade_time: dict[str, Any] = {}  # 存储dp_126刀盘使用时间
-        self._schedule_data: dict[str, Any] = {}  # 存储dp_138即将到来的预约
+        self._global_params: dict[str, Any] = {}  # Stores dp_155 global work parameters
+        self._map_status: dict[str, Any] = {}  # Stores dp_117 map status
+        self._current_work_data: dict[str, Any] = {}  # Stores dp_113 current work data
+        self._statistics_data: dict[str, Any] = {}  # Stores dp_124 work statistics data
+        self._base_station_time: dict[str, Any] = {}  # Stores dp_125 base station usage time
+        self._blade_time: dict[str, Any] = {}  # Stores dp_126 blade usage time
+        self._schedule_data: dict[str, Any] = {}  # Stores dp_138 upcoming schedule
         self._battery_status: dict[str, Any] = {}  # Store dp_108 battery status
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
-        self._seen_unknown_dp_ids: set[int] = set()  # 已记录过的未知数据点
-        self._device_model: str = "TerraMow S1200"  # 默认型号名称，保持向后兼容
+        self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
+        self._device_model: str = "TerraMow S1200"  # Default model name, kept for backward compatibility
         # Entities reach the hub through this attribute; the name is kept
         # from the time the lawn mower entity itself played the hub role.
         self.basic_data.lawn_mower = self
 
-        # 机器人状态
+        # Robot state
         self.mission = Mission.MISSION_IDLE
         self.sub_mission = SubMission.SUB_MISSION_IDLE
         self.mission_state = MissionState.MISSION_STATE_IDLE
@@ -222,21 +222,21 @@ class TerraMowHub:
         self._is_upgrading: bool | None = None
         self._power_mode: str | None = None
 
-        self.cmd_seq = random.randint(0, 0xFFFFFFFF)  # 生成随机的指令序号
+        self.cmd_seq = random.randint(0, 0xFFFFFFFF)  # Generate a random command sequence number
 
         self._last_control_time = time.monotonic()
-        self._control_interval = 1.0  # 控制间隔时间
+        self._control_interval = 1.0  # Control interval time
 
         _LOGGER.debug("TerraMowHub created with host %s", self.host)
 
     @property
     def device_model(self) -> str:
-        """返回设备型号"""
+        """Return the device model."""
         return self._device_model
 
     @device_model.setter
     def device_model(self, model_name: str) -> None:
-        """更新设备型号"""
+        """Update the device model."""
         self._device_model = model_name
 
     def register_state_listener(self, listener: Callable[[], None]) -> None:
@@ -299,10 +299,13 @@ class TerraMowHub:
         self._reset_history_path_retry()
         self._reset_pending_meta()
         if self.mqtt_client:
-            # disconnect() 让 loop_forever() 返回，工作线程才能看到 stop 事件并退出。
+            # disconnect() makes loop_forever() return so the worker thread can
+            # see the stop event and exit.
             self.mqtt_client.disconnect()
-        # 等待工作线程真正结束，避免在 reload/reconfigure 后残留为僵尸线程
-        # （继续重连并刷日志）。在 executor 中 join，避免阻塞事件循环。
+        # Wait for the worker thread to actually finish, to avoid leaving a
+        # zombie thread behind after a reload/reconfigure (which would keep
+        # reconnecting and flooding the log). Join in the executor so we don't
+        # block the event loop.
         thread = getattr(self, "mqtt_thread", None)
         if thread is not None and thread.is_alive():
             await self.hass.async_add_executor_job(thread.join, MQTT_THREAD_JOIN_TIMEOUT)
@@ -333,14 +336,14 @@ class TerraMowHub:
             self._global_params = data
             _LOGGER.debug("Global parameters updated: %s", data)
 
-            # 检查主方向模式是否有变化，通知模式选择器
+            # Check whether the main direction mode changed and notify the mode selector
             self._notify_mode_selector_if_changed(old_params, data)
 
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_155: %s", payload)
 
     def _notify_mode_selector_if_changed(self, old_params: dict[str, Any], new_params: dict[str, Any]) -> None:
-        """如果主方向模式有变化，通知模式选择器"""
+        """Notify the mode selector if the main direction mode changed."""
         try:
             old_mode = old_params.get('main_direction_angle_config', {}).get('mode') if old_params else None
             new_mode = new_params.get('main_direction_angle_config', {}).get('mode')
@@ -348,7 +351,7 @@ class TerraMowHub:
             if new_mode and old_mode != new_mode:
                 _LOGGER.debug("Main direction mode changed from %s to %s, notifying mode selector", old_mode, new_mode)
 
-                # 通过Home Assistant事件通知模式选择器
+                # Notify the mode selector via a Home Assistant event
                 self.hass.bus.fire(f"{DOMAIN}_device_mode_confirmed", {
                     "device_host": self.host,
                     "confirmed_mode": new_mode,
@@ -497,35 +500,36 @@ class TerraMowHub:
         self._notify_state_listeners()
 
     async def on_compatibility_info(self, payload: str) -> None:
-        """Handle compatibility info updates (dp_112)."""
+        """Handle compatibility info updates (dp_127)."""
         _LOGGER.debug("Raw compatibility info payload: %s", payload)
         try:
             data = json.loads(payload)
             _LOGGER.debug("Received version compatibility info: %s", data)
 
-            # 进行版本兼容性检查
+            # Perform the version compatibility check
             compatibility_status = self.basic_data.check_version_compatibility(data)
             self.basic_data.compatibility_status = compatibility_status
             self.basic_data.firmware_version = data
 
-            # 在设备页展示固件版本（与 update 实体使用相同的格式）
+            # Show the firmware version on the device page (same format as the update entity)
             sw_version = self._format_firmware_version(data)
             if sw_version:
                 self.hass.add_job(self._async_update_device_sw_version, sw_version)
 
-            # 记录兼容性检查结果
+            # Log the compatibility check result
             message = self.basic_data.get_compatibility_message()
             if compatibility_status == CompatibilityStatus.COMPATIBLE:
                 _LOGGER.info("Version compatibility check: %s", message)
             else:
                 _LOGGER.warning("Version compatibility check: %s", message)
 
-            # 如果版本不兼容，可以考虑禁用某些功能或显示警告
+            # If the version is incompatible, consider disabling some features or showing a warning
             if compatibility_status == CompatibilityStatus.INCOMPATIBLE:
                 _LOGGER.error("Version completely incompatible, recommend checking firmware and plugin versions")
 
-            # 把兼容性结果同步为 Home Assistant 的 Repair Issue，
-            # 让不兼容固件以可操作的修复卡片形式呈现，而不仅仅是传感器。
+            # Sync the compatibility result to a Home Assistant Repair Issue so
+            # that incompatible firmware surfaces as an actionable repair card
+            # rather than just a sensor.
             if self.basic_data.entry_id is not None:
                 async_sync_compatibility_issue(
                     self.hass, self.basic_data.entry_id, self.basic_data
@@ -557,7 +561,7 @@ class TerraMowHub:
                     self.mqtt_client.loop_forever()
             except Exception as e:
                 consecutive_failures += 1
-                # 第一次失败用 WARNING 提醒一次，之后降到 DEBUG，避免刷屏。
+                # Warn once on the first failure, then drop to DEBUG to avoid flooding the log.
                 if consecutive_failures == 1:
                     _LOGGER.warning(
                         "Cannot reach TerraMow MQTT broker at %s:%d (%s); "
@@ -569,9 +573,9 @@ class TerraMowHub:
                         "MQTT connection still failing (attempt %d): %s",
                         consecutive_failures, e,
                     )
-                # 设置错误状态
+                # Set the error state
                 self._set_connection_error(True)
-                # 指数退避，封顶 MQTT_RECONNECT_MAX_DELAY；用可中断的等待以便立即停止。
+                # Exponential backoff capped at MQTT_RECONNECT_MAX_DELAY; use an interruptible wait so we can stop immediately.
                 delay = min(
                     MQTT_RECONNECT_BASE_DELAY * (2 ** (consecutive_failures - 1)),
                     MQTT_RECONNECT_MAX_DELAY,
@@ -582,15 +586,15 @@ class TerraMowHub:
         """Callback when connected to MQTT Broker."""
         if rc == 0:
             _LOGGER.info("MQTT connected")
-            # 订阅主题
+            # Subscribe to topics
             for dp_id in range(201):
                 topic = f"data_point/{dp_id}/robot"
                 client.subscribe(topic)
-            # 订阅地图信息主题（旧固件兼容）
+            # Subscribe to the map info topic (for older firmware compatibility)
             client.subscribe(MAP_INFO_TOPIC)
             _LOGGER.debug("Subscribed to %s topic", MAP_INFO_TOPIC)
 
-            # 订阅地图/路径元数据与姿态
+            # Subscribe to map/path meta data and pose
             client.subscribe(MAP_META_TOPIC)
             client.subscribe(PATH_META_TOPIC)
             client.subscribe(PATH_HISTORY_META_TOPIC)
@@ -603,26 +607,26 @@ class TerraMowHub:
                 POSE_TOPIC,
             )
 
-            # 订阅设备型号主题
+            # Subscribe to the device model topic
             client.subscribe(MODEL_NAME_TOPIC)
             _LOGGER.info("Subscribed to %s topic", MODEL_NAME_TOPIC)
 
-            # 主动请求版本兼容性信息
+            # Proactively request version compatibility information
             self._request_compatibility_info()
 
             self.connection_error = False
             self._notify_state_listeners()
         else:
             _LOGGER.error(f"MQTT connection failed with code {rc}")
-            # 设置错误状态
+            # Set the error state
             self._set_connection_error(True)
 
     def on_mqtt_disconnect(self, _client: Any, _userdata: Any, rc: int) -> None:
         """Callback when disconnected from MQTT Broker."""
         if rc != 0:
             _LOGGER.warning(f"Unexpected MQTT disconnection: {rc}")
-            # 断开连接后自动重连
-            # 设置错误状态
+            # Automatically reconnect after a disconnection
+            # Set the error state
             self._set_connection_error(True)
 
     def on_mqtt_message(self, _client: Any, _userdata: Any, msg: Any) -> None:
@@ -633,7 +637,7 @@ class TerraMowHub:
         if topic != POSE_TOPIC:
             _LOGGER.debug("Received MQTT message: topic=%s, payload=%s", topic, payload)
 
-        # 处理地图元信息
+        # Handle map meta info
         if topic == MAP_META_TOPIC:
             try:
                 meta = json.loads(payload)
@@ -645,7 +649,7 @@ class TerraMowHub:
                 _LOGGER.error("Error handling map meta: %s", e)
             return
 
-        # 处理路径元信息
+        # Handle path meta info
         if topic == PATH_META_TOPIC:
             try:
                 meta = json.loads(payload)
@@ -657,7 +661,7 @@ class TerraMowHub:
                 _LOGGER.error("Error handling path meta: %s", e)
             return
 
-        # 处理历史路径元信息
+        # Handle history path meta info
         if topic == PATH_HISTORY_META_TOPIC:
             try:
                 meta = json.loads(payload)
@@ -669,7 +673,7 @@ class TerraMowHub:
                 _LOGGER.error("Error handling history path meta: %s", e)
             return
 
-        # 处理实时姿态
+        # Handle the real-time pose
         if topic == POSE_TOPIC:
             try:
                 pose = json.loads(payload)
@@ -682,19 +686,19 @@ class TerraMowHub:
                 _LOGGER.error("Error handling pose: %s", e)
             return
 
-        # 处理地图信息主题
+        # Handle the map info topic
         if topic == MAP_INFO_TOPIC:
             _LOGGER.debug("Received map info message, size: %d bytes", len(payload))
             self._handle_map_info(payload)
             return
 
-        # 处理设备型号主题
+        # Handle the device model topic
         if topic == MODEL_NAME_TOPIC:
             _LOGGER.info("Received device model message: %s", payload)
             self._handle_model_name(payload)
             return
 
-        # 使用正则表达式解析 data_point topic
+        # Parse the data_point topic using a regular expression
         match = TOPIC_PATTERN.fullmatch(topic)
         if not match:
             _LOGGER.warning("Invalid topic format: %s", topic)
@@ -707,15 +711,16 @@ class TerraMowHub:
             _LOGGER.warning("Invalid dp_id in topic: %s", topic)
             return
 
-        # 调用对应的回调函数
+        # Call the corresponding callback functions
         callbacks = self.callbacks.get(dp_id)
         if callbacks:
             _LOGGER.debug("Calling %d callbacks for dp_id %d", len(callbacks), dp_id)
             for callback in callbacks:
                 self.hass.add_job(callback, payload)
         else:
-            # 帮助发现未文档化的数据点（例如提离报警、日程开关、错误码）：
-            # 每个未知 dp_id 只在 INFO 记录一次，完整报文在 DEBUG 持续记录。
+            # Help discover undocumented data points (e.g. lift alarms, schedule
+            # switches, error codes): each unknown dp_id is logged once at INFO,
+            # while the full payload is continuously logged at DEBUG.
             if dp_id not in self._seen_unknown_dp_ids:
                 self._seen_unknown_dp_ids.add(dp_id)
                 _LOGGER.info(
@@ -742,7 +747,7 @@ class TerraMowHub:
             raise ValueError("Callback must be a callable function.")
         self.map_callbacks.append(callback)
         _LOGGER.debug("Map callback registered")
-        # 如果已有地图数据，立即触发回调
+        # If map data already exists, trigger the callback immediately
         if self._map_info:
             self.hass.add_job(callback, self._map_info)
 
@@ -782,14 +787,14 @@ class TerraMowHub:
             self.hass.add_job(callback, map_info)
 
     def _get_map_field(self, data: dict[str, Any], *keys: str) -> Any | None:
-        """从可能的字段名中取值"""
+        """Get a value from among the possible field names."""
         for key in keys:
             if key in data:
                 return data.get(key)
         return None
 
     def _build_map_info_from_map_data(self, map_data: dict[str, Any]) -> dict[str, Any] | None:
-        """根据 HTTP map 数据构建/补全 map_info"""
+        """Build/complete map_info from the HTTP map data."""
         if not isinstance(map_data, dict):
             return None
         base = dict(self._map_info) if self._map_info else {}
@@ -816,7 +821,7 @@ class TerraMowHub:
         return base
 
     def _get_meta_seq(self, meta: dict[str, Any], label: str, warn: bool = True) -> int:
-        """解析 meta 中的 seq"""
+        """Parse the seq from the meta."""
         try:
             return int(meta.get("seq", -1))
         except (ValueError, TypeError):
@@ -825,7 +830,7 @@ class TerraMowHub:
             return -1
 
     def _should_replace_pending(self, pending_meta: dict[str, Any] | None, seq: int, label: str) -> bool:
-        """是否用新的 meta 替换缓存的 pending meta"""
+        """Whether to replace the cached pending meta with the new meta."""
         if pending_meta is None:
             return True
         pending_seq = self._get_meta_seq(pending_meta, label, warn=False)
@@ -836,14 +841,14 @@ class TerraMowHub:
         return seq > pending_seq
 
     def _get_retry_delay(self, count: int) -> float:
-        """获取重试延迟（秒）"""
+        """Get the retry delay (in seconds)."""
         delays = [2.0, 5.0, 10.0, 30.0]
         if count < len(delays):
             return delays[count]
         return delays[-1]
 
     def _reset_map_retry(self) -> None:
-        """清理地图拉取重试状态"""
+        """Clear the map fetch retry state."""
         self._map_retry_meta = None
         self._map_retry_count = 0
         if self._map_retry_task and not self._map_retry_task.done():
@@ -851,7 +856,7 @@ class TerraMowHub:
         self._map_retry_task = None
 
     def _reset_path_retry(self) -> None:
-        """清理路径拉取重试状态"""
+        """Clear the path fetch retry state."""
         self._path_retry_meta = None
         self._path_retry_count = 0
         if self._path_retry_task and not self._path_retry_task.done():
@@ -859,7 +864,7 @@ class TerraMowHub:
         self._path_retry_task = None
 
     def _reset_history_path_retry(self) -> None:
-        """清理历史路径拉取重试状态"""
+        """Clear the history path fetch retry state."""
         self._history_path_retry_meta = None
         self._history_path_retry_count = 0
         if self._history_path_retry_task and not self._history_path_retry_task.done():
@@ -867,13 +872,13 @@ class TerraMowHub:
         self._history_path_retry_task = None
 
     def _reset_pending_meta(self) -> None:
-        """清理 pending meta"""
+        """Clear the pending meta."""
         self._pending_map_meta = None
         self._pending_path_meta = None
         self._pending_history_path_meta = None
 
     def _schedule_map_retry(self, meta: dict[str, Any]) -> None:
-        """安排地图拉取重试"""
+        """Schedule a map fetch retry."""
         self._map_retry_meta = meta
         if self._map_retry_task and not self._map_retry_task.done():
             return
@@ -882,7 +887,7 @@ class TerraMowHub:
         self._map_retry_task = self.hass.async_create_task(self._async_retry_map(delay))
 
     def _schedule_path_retry(self, meta: dict[str, Any]) -> None:
-        """安排路径拉取重试"""
+        """Schedule a path fetch retry."""
         self._path_retry_meta = meta
         if self._path_retry_task and not self._path_retry_task.done():
             return
@@ -891,7 +896,7 @@ class TerraMowHub:
         self._path_retry_task = self.hass.async_create_task(self._async_retry_path(delay))
 
     def _schedule_history_path_retry(self, meta: dict[str, Any]) -> None:
-        """安排历史路径拉取重试"""
+        """Schedule a history path fetch retry."""
         self._history_path_retry_meta = meta
         if self._history_path_retry_task and not self._history_path_retry_task.done():
             return
@@ -902,7 +907,7 @@ class TerraMowHub:
         )
 
     async def _async_retry_map(self, delay: float) -> None:
-        """延迟重试地图拉取"""
+        """Retry the map fetch after a delay."""
         try:
             await asyncio.sleep(delay)
         except asyncio.CancelledError:
@@ -913,7 +918,7 @@ class TerraMowHub:
             await self._async_handle_map_meta(meta)
 
     async def _async_retry_path(self, delay: float) -> None:
-        """延迟重试路径拉取"""
+        """Retry the path fetch after a delay."""
         try:
             await asyncio.sleep(delay)
         except asyncio.CancelledError:
@@ -924,7 +929,7 @@ class TerraMowHub:
             await self._async_handle_path_meta(meta)
 
     async def _async_retry_history_path(self, delay: float) -> None:
-        """延迟重试历史路径拉取"""
+        """Retry the history path fetch after a delay."""
         try:
             await asyncio.sleep(delay)
         except asyncio.CancelledError:
@@ -1134,7 +1139,7 @@ class TerraMowHub:
                 return None, etag, False, False
             new_etag = resp.headers.get("ETag") or etag
             raw = await resp.read()
-            # 手动处理 gzip 压缩：协议要求 Content-Encoding: gzip
+            # Handle gzip compression manually: the protocol requires Content-Encoding: gzip
             if raw[:2] == b'\x1f\x8b':
                 raw = await self.hass.async_add_executor_job(gzip.decompress, raw)
             text = raw.decode("utf-8")
@@ -1153,7 +1158,7 @@ class TerraMowHub:
         return str(overall)
 
     async def _async_update_device_sw_version(self, sw_version: str) -> None:
-        """异步更新设备注册表中的固件版本信息."""
+        """Asynchronously update the firmware version info in the device registry."""
         try:
             device_registry = dr.async_get(self.hass)
             device_entry = device_registry.async_get_device(
@@ -1168,12 +1173,12 @@ class TerraMowHub:
             _LOGGER.error("Error updating device firmware version: %s", e)
 
     async def _async_update_device_model(self, model_name: str) -> None:
-        """异步更新设备注册表中的模型信息."""
+        """Asynchronously update the model info in the device registry."""
         try:
             device_registry = dr.async_get(self.hass)
             device_identifier = ('TerraMowLawnMower', self.basic_data.host)
 
-            # 查找设备并更新模型信息
+            # Look up the device and update its model info
             device_entry = device_registry.async_get_device({device_identifier})
             if device_entry:
                 device_registry.async_update_device(
@@ -1189,17 +1194,17 @@ class TerraMowHub:
     def _handle_model_name(self, payload: str) -> None:
         """Handle device model name message."""
         try:
-            # payload 直接是型号名称字符串
+            # The payload is directly the model name string
             model_name = payload.strip()
             if model_name:
                 old_model = self.device_model
                 self.device_model = model_name
                 _LOGGER.info("Device model updated: %s -> %s", old_model, model_name)
 
-                # 使用 hass.add_job 调度异步设备注册表更新操作到主事件循环
+                # Use hass.add_job to schedule the async device registry update onto the main event loop
                 self.hass.add_job(self._async_update_device_model, model_name)
 
-                # 通知实体刷新（例如 device_info 中的型号）
+                # Notify entities to refresh (e.g. the model in device_info)
                 self._notify_state_listeners()
             else:
                 _LOGGER.warning("Received empty model name, keeping default")
@@ -1464,14 +1469,14 @@ class TerraMowHub:
 
     def _resume_recharge(self) -> None:
         """Resume recharging"""
-        # 继续回充等效于继续割草
+        # Resuming recharge is equivalent to resuming mowing
         return self._resume_mow()
 
     def _request_compatibility_info(self) -> None:
         """Request version compatibility information."""
         try:
             _LOGGER.info("Requesting version compatibility information")
-            # 发送空的请求来获取兼容性信息
+            # Send an empty request to obtain the compatibility information
             request_data = {"seq": self.get_cmd_seq()}
             self.publish_data_point(COMPATIBILITY_INFO_DP, request_data)
         except Exception as e:

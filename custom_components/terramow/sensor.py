@@ -57,7 +57,7 @@ class BatterySensor(TerraMowEntity, SensorEntity):
         hass: HomeAssistant,
     ) -> None:
         super().__init__(basic_data, hass)
-        self._attr_native_value: int | None = None  # 初始化电池电量值
+        self._attr_native_value: int | None = None  # initialize the battery level value
         self.basic_data.lawn_mower.register_callback(8, self.set_capacity)
         # self.basic_data.lawn_mower.register_callback(108, self.set_battery_attributes) # This is now handled by the lawn_mower entity
 
@@ -240,7 +240,7 @@ class TotalMowedAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         clean_area = statistics_data.get('clean_area')
         if clean_area is None:
             return None
-        # 协议单位为 0.1 平方米
+        # The protocol unit is 0.1 square meters
         return round(float(clean_area) / 10, 1)
 
 
@@ -267,7 +267,7 @@ class CurrentSessionAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         if not current_work_data:
             return None
 
-        # clean_area单位为0.1平方米，转换为平方米
+        # clean_area is in units of 0.1 square meters; convert to square meters
         clean_area = current_work_data.get('clean_area', 0)
         return round(clean_area / 10, 1) if clean_area else None
 
@@ -418,7 +418,7 @@ class RemainingBladeTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
             return None
 
         used_time = int(blade_time.get('int_value', 0))
-        # 刀盘推荐清洁周期为240小时,即14400分钟
+        # Recommended blade cleaning cycle is 240 hours, i.e. 14400 minutes
         remaining_time = BLADE_MAINTENANCE_CYCLE_MINUTES - used_time
         return max(0, remaining_time)
 
@@ -465,7 +465,7 @@ class RemainingBaseStationTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEnti
             return None
 
         used_time = int(base_station_time.get('int_value', 0))
-        # 基站推荐清洁周期为30天，即43200分钟
+        # Recommended base station cleaning cycle is 30 days, i.e. 43200 minutes
         remaining_time = BASE_STATION_MAINTENANCE_CYCLE_MINUTES - used_time
         return max(0, remaining_time)
 
@@ -489,7 +489,7 @@ class RemainingBaseStationTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEnti
 
 
 class TerraMowMowHeightSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
-    """割草高度传感器 - 使用dp_155数据"""
+    """Mow height sensor - uses dp_155 data."""
 
     _push_dp_ids = (155,)
 
@@ -516,7 +516,7 @@ class TerraMowMowHeightSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
 
 class TerraMowMowSpeedSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
-    """割草速度传感器 - 使用dp_155数据"""
+    """Mow speed sensor - uses dp_155 data."""
 
     _push_dp_ids = (155,)
 
@@ -577,17 +577,17 @@ class TerraMowMowSpeedSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
         attrs = {}
 
-        # 割草间距
+        # Mowing spacing
         mow_spacing = global_params.get('mow_spacing', {})
         if 'value' in mow_spacing:
             attrs['mow_spacing'] = mow_spacing['value']
 
-        # 沿边割草距离
+        # Edge cutting distance
         edge_cutting_distance = global_params.get('edge_cutting_distance', {})
         if 'value' in edge_cutting_distance:
             attrs['edge_cutting_distance'] = edge_cutting_distance['value']
 
-        # 刀盘转速
+        # Blade disk speed
         blade_disk_speed = global_params.get('blade_disk_speed', {})
         if 'speed_type' in blade_disk_speed:
             attrs['blade_disk_speed'] = blade_disk_speed['speed_type']
@@ -605,7 +605,7 @@ class NextScheduledStartSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "next_scheduled_start"
-    _attr_device_class = None  # 使用字符串显示时间
+    _attr_device_class = None  # display the time as a string
 
     _unique_id_suffix = "next_scheduled_start"
 
@@ -619,7 +619,7 @@ class NextScheduledStartSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         if not schedule_data:
             return None
 
-        # 检查是否存在预约
+        # Check whether a schedule exists
         if not schedule_data.get('exist', False):
             return None
 
@@ -627,7 +627,7 @@ class NextScheduledStartSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         if not start_time or 'hour' not in start_time or 'minute' not in start_time:
             return None
 
-        # 返回格式化的时间字符串
+        # Return the formatted time string
         hour = start_time['hour']
         minute = start_time['minute']
         return f"{hour:02d}:{minute:02d}"
@@ -649,7 +649,7 @@ class NextScheduledStartSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
             attrs['item_id'] = schedule_data.get('item_id')
             attrs['shift_id'] = schedule_data.get('shift_id')
 
-            # 结束时间
+            # End time
             end_time = schedule_data.get('end_time', {})
             if end_time and 'hour' in end_time and 'minute' in end_time:
                 attrs['end_time'] = f"{end_time['hour']:02d}:{end_time['minute']:02d}"
@@ -660,7 +660,7 @@ class NextScheduledStartSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
 
 class VersionCompatibilitySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
-    """版本兼容性状态传感器."""
+    """Version compatibility status sensor."""
 
     _push_dp_ids = (127,)
 
@@ -686,10 +686,10 @@ class VersionCompatibilitySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         """Return the state attributes."""
         attributes: dict[str, Any] = {}
 
-        # 获取兼容性消息
+        # Get the compatibility message
         attributes["message"] = self.basic_data.get_compatibility_message()
 
-        # 添加详细的版本信息
+        # Add detailed version information
         firmware_info = self.basic_data.firmware_version
         if firmware_info:
             attributes["firmware_overall_version"] = firmware_info.get("overall", "unknown")
@@ -706,7 +706,7 @@ class VersionCompatibilitySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
 
 class TerraMowPoseSensor(TerraMowEntity, SensorEntity):
-    """实时姿态传感器（2Hz）"""
+    """Real-time pose sensor (2 Hz)."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "pose"
@@ -729,7 +729,7 @@ class TerraMowPoseSensor(TerraMowEntity, SensorEntity):
     _unique_id_suffix = "pose"
 
     async def _on_pose(self, pose: dict[str, Any]) -> None:
-        """处理姿态更新"""
+        """Handle a pose update."""
         self._pose = pose
         safe_write_ha_state(self)
 
@@ -761,31 +761,31 @@ async def async_setup_entry(
 ) -> None:
     basic_data = config_entry.runtime_data
 
-    # 导入地图相关传感器类
+    # Import the map-related sensor classes
     from .map_sensor import (
         TerraMowMapStatusSensor,
         TerraMowMapAreaSensor,
         TerraMowCleanModeSensor,
     )
 
-    # 创建传感器实体列表
+    # Build the list of sensor entities
     entities = [
-        # 基本传感器
+        # Basic sensors
         BatterySensor(basic_data, hass),
         BatteryStateSensor(basic_data, hass),
         BatteryTemperatureStateSensor(basic_data, hass),
         TerraMowPoseSensor(basic_data, hass),
 
-        # 地图相关传感器
+        # Map-related sensors
         TerraMowMapStatusSensor(basic_data, hass),
         TerraMowMapAreaSensor(basic_data, hass),
         TerraMowCleanModeSensor(basic_data, hass),
 
-        # 全局参数显示传感器 (dp_155)
+        # Global parameter display sensors (dp_155)
         TerraMowMowHeightSensor(basic_data, hass),
         TerraMowMowSpeedSensor(basic_data, hass),
 
-        # 统计和会话传感器
+        # Statistics and session sensors
         TotalMowingTimeSensor(basic_data, hass),
         TotalMowingJobsSensor(basic_data, hass),
         TotalMowedAreaSensor(basic_data, hass),
@@ -794,23 +794,23 @@ async def async_setup_entry(
         CurrentSessionTimeSensor(basic_data, hass),
 CurrentJobTypeSensor(basic_data, hass),
 
-        # 维护提醒传感器
+        # Maintenance reminder sensors
         RemainingBladeTimeSensor(basic_data, hass),
         RemainingBaseStationTimeSensor(basic_data, hass),
 
-        # 计划任务传感器
+        # Scheduled task sensors
         NextScheduledStartSensor(basic_data, hass),
 
-        # 版本兼容性传感器
+        # Version compatibility sensor
         VersionCompatibilitySensor(basic_data, hass),
 
-        # 主方向状态传感器
+        # Main direction status sensor
         MainDirectionStatusSensor(basic_data, hass),
 
-        # 电源模式传感器 (dp_107)
+        # Power mode sensor (dp_107)
         PowerModeSensor(basic_data, hass),
 
-        # 任务状态相关 (dp_107)
+        # Mission state related (dp_107)
         BackToStationReasonSensor(basic_data, hass),
         TerraMowMissionSensor(basic_data, hass),
         TerraMowSubMissionSensor(basic_data, hass),
@@ -849,7 +849,7 @@ class PowerModeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
 
 class MainDirectionStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
-    """主方向状态传感器 - 显示当前主方向配置和角度"""
+    """Main direction status sensor - shows the current main direction config and angle."""
 
     _push_dp_ids = (155,)
 
@@ -871,7 +871,7 @@ class MainDirectionStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         main_direction_config = global_params.get('main_direction_angle_config', {})
         mode = main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE')
 
-        # 返回当前模式作为传感器值（小写 token 以匹配翻译键）
+        # Return the current mode as the sensor value (lowercase token to match translation keys)
         return cast("str | None", to_ha_enum_state(mode))
 
     @property
@@ -888,17 +888,17 @@ class MainDirectionStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
         main_direction_config = global_params.get('main_direction_angle_config', {})
 
-        # 基本模式信息
+        # Basic mode information
         mode = main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE')
         attrs['mode'] = mode
 
-        # 当前角度（如果有）
+        # Current angle (if any)
         current_angle = main_direction_config.get('current_angle')
         if current_angle is not None:
             attrs['current_angle'] = current_angle
             attrs['current_angle_degrees'] = f"{current_angle}°"
 
-        # 根据模式添加特定配置信息
+        # Add mode-specific configuration information
         if mode == 'MAIN_DIRECTION_MODE_SINGLE':
             single_config = main_direction_config.get('single_mode_config', {})
             configured_angle = single_config.get('angle', 0)
@@ -921,7 +921,7 @@ class MainDirectionStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
             attrs['rotation_interval_degrees'] = f"{interval}°"
             attrs['mode_description'] = "Auto rotate main direction"
 
-        # 添加模式可读名称
+        # Add a human-readable mode name
         mode_names = {
             'MAIN_DIRECTION_MODE_SINGLE': 'Single Direction',
             'MAIN_DIRECTION_MODE_MULTIPLE': 'Multiple Directions',
