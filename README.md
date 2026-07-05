@@ -30,13 +30,18 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - Job progress: current session area, progress (%), duration and job type; lifetime mowing time, job count and mowed area
 - Status: mission / sub-mission / mission state, operation mode, power mode, back-to-station reason, rain detection, problem indicator, saving-data and data-conversion indicators
 - Map: status, area, detected / buildable / backing-up flags
-- Schedule: next scheduled start
+- Schedule: next-scheduled-start sensor and a read-only **mowing-schedule calendar** (the next mow appears on the calendar card)
 - Firmware update entity, firmware version on the device page, and version compatibility sensor
 - All entities update instantly on device pushes — no polling delay
+
+**Events & automation**
+- **Mower event entity** — fires a discrete event on every notable transition (`mowing_started`, `paused`, `returning`, `docked`, `mowing_completed`, `error`), each carrying the raw mission fields, so automations react to *happenings* without polling activity state
+- One-click automation blueprints (see below)
 
 **Integration quality of life**
 - Zeroconf/mDNS auto-discovery
 - Reconfigure flow (change host/IP without re-adding) and reauth flow
+- **Repair issues** — actionable dashboard cards for incompatible firmware and for due blade / base-station maintenance
 - Diagnostics download for easy bug reports
 - Translated into 33 languages (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - MQTT based local push communication — no cloud required
@@ -54,6 +59,8 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 | Switch | Thorough corner cutting |
 | Button | Edge trim, reset blade timer, reset base station timer |
 | Update | Firmware version |
+| Event | Mower event (mowing started / paused / returning / docked / completed / error) |
+| Calendar | Mowing schedule (next scheduled mow) |
 
 ### Installation
 
@@ -123,6 +130,28 @@ One-click importable blueprints for the most common notifications — each just 
 - **Mowing finished** — when a mowing job completes
   [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fit-rec%2FTerraMowHA%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fterramow%2Fmowing_finished_notification.yaml)
 
+**Using the event entity directly** — the mower event entity is the most flexible trigger. Its `event_type` attribute is one of `mowing_started`, `paused`, `returning`, `docked`, `mowing_completed`, `error`, and it carries the raw `mission`, `sub_mission`, `state`, `back_to_station_reason` and `has_error` fields:
+
+```yaml
+triggers:
+  - trigger: state
+    entity_id: event.terramow_mower_event
+    attribute: event_type
+    to: mowing_completed
+actions:
+  - action: notify.mobile_app_phone
+    data:
+      message: "TerraMow finished mowing 🌱"
+```
+
+### Repair issues
+
+The integration raises actionable Home Assistant repair issues (Settings → Devices & Services → Repairs) instead of hiding problems in sensors:
+
+- **Firmware incompatible / update required** — the firmware is too old for the integration (or a specific feature). Derived from the version-compatibility check; clears when a compatible firmware reports in.
+- **Blade maintenance due** — the blade disc has run for its recommended 240-hour service interval. Clean/replace the blades and press the *Reset Blade Timer* button to clear it.
+- **Base station maintenance due** — the base station has run for its recommended 30-day service interval. Clean it and press the *Reset Base Station Timer* button to clear it.
+
 ### Diagnostics & troubleshooting
 
 - **Diagnostics download**: Settings → Devices & Services → TerraMow → three-dot menu → *Download diagnostics* produces a redacted JSON snapshot (device state, firmware compatibility, raw data point caches) — please attach it to bug reports.
@@ -162,13 +191,18 @@ Open an issue on [GitHub](https://github.com/TerraMow/TerraMowHA/issues) for sup
 
 ### Developer Information
 
-For developers interested in understanding or extending this integration, please refer to the [Developer Guide](docs/en/developers.md).
+For developers interested in understanding or extending this integration:
+
+- [Contributing guide](CONTRIBUTING.md) — setup, quality gates (100% coverage, `mypy --strict`, translations), PR and release process
+- [Architecture](docs/ARCHITECTURE.md) — integration internals: hub lifecycle, threading model, data-point catalog, map/path pipeline
+- [Developer guide](docs/en/developers.md) — the on-the-wire MQTT/HTTP device protocol
+- [What this fork adds over upstream](docs/UPSTREAM_DELTA.md)
 
 To run the test suite locally:
 
 ```bash
 pip install -r requirements_test.txt
-pytest tests/
+pytest tests/ --cov=custom_components/terramow --cov-fail-under=100
 ```
 
 ---
