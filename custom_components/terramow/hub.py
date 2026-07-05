@@ -223,6 +223,10 @@ class TerraMowHub:
         self._power_mode: str | None = None
 
         self.cmd_seq = random.randint(0, 0xFFFFFFFF)  # Generate a random command sequence number
+        # get_cmd_seq is reachable from the paho network thread (compatibility
+        # request on connect) and from executor threads (sync command senders),
+        # so the increment must be atomic to avoid handing out a duplicate seq.
+        self._cmd_seq_lock = threading.Lock()
 
         self._last_control_time = time.monotonic()
         self._control_interval = 1.0  # Control interval time
@@ -249,7 +253,10 @@ class TerraMowHub:
 
     def _notify_state_listeners(self) -> None:
         """Notify listeners about a state change."""
-        for listener in self._state_listeners:
+        # Iterate over a snapshot: listeners are registered from the event loop
+        # while this runs on the MQTT worker thread, so iterating the live list
+        # can raise "list changed size during iteration".
+        for listener in list(self._state_listeners):
             try:
                 listener()
             except Exception as e:
@@ -892,6 +899,11 @@ class TerraMowHub:
 
     def _schedule_map_retry(self, meta: dict[str, Any]) -> None:
         """Schedule a map fetch retry."""
+        # Don't schedule a new retry once shutdown has started; an in-flight
+        # retry that already woke and cleared its task handle could otherwise
+        # spawn a fresh retry task against a torn-down entry (leaks work).
+        if self._stop_event.is_set():
+            return
         self._map_retry_meta = meta
         if self._map_retry_task and not self._map_retry_task.done():
             return
@@ -901,6 +913,8 @@ class TerraMowHub:
 
     def _schedule_path_retry(self, meta: dict[str, Any]) -> None:
         """Schedule a path fetch retry."""
+        if self._stop_event.is_set():
+            return
         self._path_retry_meta = meta
         if self._path_retry_task and not self._path_retry_task.done():
             return
@@ -910,6 +924,8 @@ class TerraMowHub:
 
     def _schedule_history_path_retry(self, meta: dict[str, Any]) -> None:
         """Schedule a history path fetch retry."""
+        if self._stop_event.is_set():
+            return
         self._history_path_retry_meta = meta
         if self._history_path_retry_task and not self._history_path_retry_task.done():
             return
@@ -967,6 +983,18 @@ class TerraMowHub:
         """Handle map meta message and fetch map data via HTTP."""
         seq = self._get_meta_seq(meta, "map")
 
+        # Same session-reset handling as the path/history meta handlers: when a
+        # new map is created/switched/restored the device republishes meta with
+        # a seq counted from 0 again. Without this reset the new meta is dropped
+        # by the seq <= _map_seq guard and the camera keeps showing the old map
+        # until the integration is reloaded. Treat a backward seq as a reset.
+        if seq != -1 and self._map_seq != -1 and seq < self._map_seq:
+            _LOGGER.info(
+                "Map seq went backward (%d -> %d); treating as new session",
+                self._map_seq, seq,
+            )
+            self._map_seq = -1
+            self._map_etag = None
         if seq != -1 and seq <= self._map_seq:
             return
         if seq != -1 and seq > self._map_seq:
@@ -1380,9 +1408,10 @@ class TerraMowHub:
             )
 
     def get_cmd_seq(self) -> int:
-        """Generate a new command sequence number."""
-        self.cmd_seq += 1
-        return self.cmd_seq
+        """Generate a new command sequence number (thread-safe)."""
+        with self._cmd_seq_lock:
+            self.cmd_seq += 1
+            return self.cmd_seq
 
     def start_mowing(self) -> None:
         """Start mowing, resuming a paused or station-waiting job."""

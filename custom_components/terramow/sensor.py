@@ -92,7 +92,7 @@ class BatterySensor(TerraMowEntity, SensorEntity):
 
         return {
             'state': battery_status.get('state', 'unknown'),
-            'temperature': battery_status.get('tempreture', 'unknown').replace('TEMPRETURE', 'TEMPERATURE'),
+            'temperature': (battery_status.get('tempreture') or 'unknown').replace('TEMPRETURE', 'TEMPERATURE'),
             'charger_connected': battery_status.get('charger_connected', 'unknown'),
             'is_switch_on': battery_status.get('is_switch_on', 'unknown')
         }

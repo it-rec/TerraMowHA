@@ -128,15 +128,28 @@ async def test_handle_map_meta_success_updates_map() -> None:
     assert hub._map_seq == 5
 
 
-async def test_handle_map_meta_seq_guard_skips_old() -> None:
+async def test_handle_map_meta_seq_guard_skips_duplicate() -> None:
     hub = _hub()
     hub._map_seq = 10
     called = MagicMock()
     with patch(
         "custom_components.terramow.hub.async_get_clientsession", called
     ):
-        await hub._async_handle_map_meta({"seq": 4, "http_port": 1, "http_path": "/m", "token": "t"})
+        # seq == current (not backward) -> skipped by the seq guard
+        await hub._async_handle_map_meta({"seq": 10, "http_port": 1, "http_path": "/m", "token": "t"})
     called.assert_not_called()
+
+
+async def test_handle_map_meta_backward_seq_resets_and_refetches() -> None:
+    hub = _hub()
+    hub._map_seq = 10
+    resp = _FakeResp(status=200, body=b'{"id": 9, "map_state": "MAP_STATE_COMPLETE"}')
+    # seq 4 < 10 -> new-session reset, then the fetch proceeds (a new map would
+    # otherwise stay hidden behind the seq guard until a reload)
+    with _patch_session(resp):
+        await hub._async_handle_map_meta({"seq": 4, "http_port": 1, "http_path": "/m", "token": "t"})
+    assert hub.map_data["id"] == 9
+    assert hub._map_seq == 4
 
 
 async def test_handle_map_meta_schedules_retry_on_failure() -> None:
@@ -208,6 +221,21 @@ def test_retry_delay_progression_and_reset() -> None:
     assert hub._history_path_retry_meta is None
     hub._reset_pending_meta()
     assert hub._pending_map_meta is None
+
+
+def test_schedule_retry_noop_after_stop_requested() -> None:
+    # Once shutdown has started, no new retry task may be scheduled (otherwise a
+    # retry could fire against a torn-down entry).
+    hub = _hub()
+    hub._stop_event.set()
+    hub.hass.async_create_task.reset_mock()
+    hub._schedule_map_retry(META)
+    hub._schedule_path_retry(META)
+    hub._schedule_history_path_retry(META)
+    hub.hass.async_create_task.assert_not_called()
+    assert hub._map_retry_meta is None
+    assert hub._path_retry_meta is None
+    assert hub._history_path_retry_meta is None
 
 
 def test_build_map_info_from_map_data() -> None:

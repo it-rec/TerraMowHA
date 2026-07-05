@@ -173,6 +173,25 @@ def test_past_midnight_slot_extends_end_by_a_day() -> None:
     assert event.end == datetime(2026, 7, 5, 1, 0, tzinfo=timezone.utc)
 
 
+def test_active_past_midnight_slot_returns_the_running_slot() -> None:
+    hub = _hub()
+    cal = _cal(hub)
+    _feed(
+        hub,
+        {
+            "exist": True,
+            "start_time": {"hour": 23, "minute": 0},
+            "end_time": {"hour": 1, "minute": 0},
+        },
+    )
+    # 00:30 is inside the slot that *began the previous day* at 23:00; it must be
+    # reported as the currently-running event, not tonight's upcoming one.
+    event = _event_at(cal, datetime(2026, 7, 4, 0, 30, tzinfo=timezone.utc))
+    assert event is not None
+    assert event.start == datetime(2026, 7, 3, 23, 0, tzinfo=timezone.utc)
+    assert event.end == datetime(2026, 7, 4, 1, 0, tzinfo=timezone.utc)
+
+
 # ---------------------------------------------------------------------------
 # async_get_events window query
 # ---------------------------------------------------------------------------
@@ -219,6 +238,30 @@ def test_get_events_excludes_event_outside_window() -> None:
         datetime(2026, 7, 4, 13, 0, tzinfo=timezone.utc),
     )
     assert events == []
+
+
+def test_get_events_returns_one_occurrence_per_day_in_wide_window() -> None:
+    hub = _hub()
+    cal = _cal(hub)
+    _feed(
+        hub,
+        {
+            "exist": True,
+            "start_time": {"hour": 9, "minute": 5},
+            "end_time": {"hour": 11, "minute": 30},
+        },
+    )
+    # a three-day window yields the daily-recurring slot once per day
+    events = _get_events(
+        cal,
+        datetime(2026, 7, 4, 0, 0, tzinfo=timezone.utc),
+        datetime(2026, 7, 7, 0, 0, tzinfo=timezone.utc),
+    )
+    assert [e.start for e in events] == [
+        datetime(2026, 7, 4, 9, 5, tzinfo=timezone.utc),
+        datetime(2026, 7, 5, 9, 5, tzinfo=timezone.utc),
+        datetime(2026, 7, 6, 9, 5, tzinfo=timezone.utc),
+    ]
 
 
 def test_get_events_empty_without_schedule() -> None:

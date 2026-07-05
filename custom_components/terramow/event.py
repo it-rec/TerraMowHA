@@ -10,6 +10,7 @@ never disagree.
 from __future__ import annotations
 
 import logging
+import threading
 from collections import deque
 from typing import Any
 
@@ -85,6 +86,10 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
         self._last_phase: str | None = None
         self._was_complete = False
         self._pending: deque[tuple[str, dict[str, Any]]] = deque()
+        # _detect_event mutates _last_phase/_was_complete and is reachable from
+        # both the event loop (dp_107 updates) and the MQTT worker thread
+        # (connection-state changes), so guard the read-modify-write.
+        self._detect_lock = threading.Lock()
 
     @property
     def hub(self) -> TerraMowHub:
@@ -154,18 +159,19 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
         phase = self._compute_phase()
         attributes = self._event_attributes()
 
-        # Completion is a distinct, momentary signal worth its own event.
-        if completed and not self._was_complete:
-            self._was_complete = True
-            self._last_phase = phase
-            return EVENT_COMPLETED, attributes
-        if not completed:
-            self._was_complete = False
+        with self._detect_lock:
+            # Completion is a distinct, momentary signal worth its own event.
+            if completed and not self._was_complete:
+                self._was_complete = True
+                self._last_phase = phase
+                return EVENT_COMPLETED, attributes
+            if not completed:
+                self._was_complete = False
 
-        if phase != self._last_phase:
-            self._last_phase = phase
-            return _PHASE_EVENTS[phase], attributes
-        return None
+            if phase != self._last_phase:
+                self._last_phase = phase
+                return _PHASE_EVENTS[phase], attributes
+            return None
 
     def _on_hub_state(self) -> None:
         """Handle a hub state change (may run on the MQTT worker thread)."""
