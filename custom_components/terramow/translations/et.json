@@ -432,6 +432,12 @@
     },
     "lawn_mower_not_ready": {
       "message": "{entity_id} TerraMow muruniiduk ei ole veel valmis."
+    },
+    "command_not_delivered": {
+      "message": "Käsku ei õnnestunud muruniidukile saata — see on võrguühenduseta või MQTT kaudu kättesaamatu. Veenduge, et niiduk on sisse lülitatud ja võrku ühendatud, ning proovige uuesti."
+    },
+    "command_rate_limited": {
+      "message": "Muruniidukile saadeti just teine käsk. Oodake hetk ja proovige uuesti."
     }
   }
 }

@@ -29,6 +29,8 @@ def _hub() -> TerraMowHub:
     basic_data = TerraMowBasicData(host="192.0.2.130", password="secret")
     hub = TerraMowHub(basic_data, MagicMock())
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     hub._last_control_time = 0.0
     # run executor jobs inline; swallow fire-and-forget coroutines
     hub.hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *a: fn(*a))
@@ -300,12 +302,20 @@ def _feed(hub: TerraMowHub, payload: dict) -> None:
 
 
 def test_commands_blocked_by_rate_limiter() -> None:
+    import pytest
+    from homeassistant.exceptions import HomeAssistantError
+
     hub = _hub()
-    hub._last_control_time = time.monotonic()  # a command just happened
-    hub.start_mowing()
-    hub.pause()
-    hub.dock()
-    hub.start_select_region_clean([1])
+    commands = (
+        hub.start_mowing,
+        hub.pause,
+        hub.dock,
+        lambda: hub.start_select_region_clean([1]),
+    )
+    for command in commands:
+        hub._last_control_time = time.monotonic()  # a command just happened
+        with pytest.raises(HomeAssistantError):
+            command()
     hub.mqtt_client.publish.assert_not_called()
 
 

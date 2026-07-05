@@ -375,6 +375,8 @@ def test_invalid_topic_is_ignored() -> None:
 def test_async_stop_disconnects_and_clears_state() -> None:
     hub = _hub()
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     hub._pending_map_meta = {"seq": 1}
 
     asyncio.run(hub.async_stop())

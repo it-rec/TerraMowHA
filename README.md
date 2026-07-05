@@ -161,6 +161,8 @@ The integration raises actionable Home Assistant repair issues (Settings → Dev
 
 TerraMow is a **local push** integration. The mower runs an on-device MQTT broker; Home Assistant connects to it directly over the LAN (no cloud) and subscribes to the device's data-point topics, so entity states update the instant the mower reports a change rather than on a polling interval. Larger payloads (the map, the live path) are announced over MQTT and fetched on demand over local HTTP. If the mower is asleep or off the network the connection is retried with exponential backoff, and the lawn-mower entity surfaces the connection loss as its `error` activity.
 
+**Commands fail loudly, not silently.** When you send a command — `dock`, `start_mowing`, `pause`, edge trim, zone mowing, or any setting change — it is published at MQTT QoS 1 (so a brief reconnect buffers it instead of dropping it). If the mower is offline/unreachable, the broker rejects the publish, or a command arrives faster than the device can accept it, the service call **fails with an error** instead of silently reporting success. This means an automation that calls `lawn_mower.dock` while the mower is unreachable now sees the failure (and can retry or notify) rather than believing the mower is on its way back when it never received the command.
+
 ### Known limitations
 
 - **No cloud / remote access** — Home Assistant must be on the same LAN as the mower; there is no cloud fallback.

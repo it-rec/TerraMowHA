@@ -432,6 +432,12 @@
     },
     "lawn_mower_not_ready": {
       "message": "Kohteen {entity_id} TerraMow-ruohonleikkuri ei ole vielä valmis."
+    },
+    "command_not_delivered": {
+      "message": "Komentoa ei voitu lähettää ruohonleikkurille — se on offline-tilassa tai ei tavoitettavissa MQTT:n kautta. Varmista, että leikkuri on päällä ja verkkoon yhdistetty, ja yritä uudelleen."
+    },
+    "command_rate_limited": {
+      "message": "Ruohonleikkurille lähetettiin juuri toinen komento. Odota hetki ja yritä uudelleen."
     }
   }
 }

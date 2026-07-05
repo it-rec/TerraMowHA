@@ -432,6 +432,12 @@
     },
     "lawn_mower_not_ready": {
       "message": "TerraMow-plæneklipperen for {entity_id} er ikke klar endnu."
+    },
+    "command_not_delivered": {
+      "message": "Kommandoen kunne ikke sendes til plæneklipperen — den er offline eller ikke tilgængelig via MQTT. Kontrollér, at plæneklipperen er tændt og forbundet til netværket, og prøv igen."
+    },
+    "command_rate_limited": {
+      "message": "Der blev lige sendt en anden kommando til plæneklipperen. Vent et øjeblik, og prøv igen."
     }
   }
 }

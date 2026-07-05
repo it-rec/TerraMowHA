@@ -28,6 +28,8 @@ def _hub() -> TerraMowHub:
     basic_data = TerraMowBasicData(host="192.0.2.100", password="secret")
     hub = TerraMowHub(basic_data, MagicMock())
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     return hub
 
 
@@ -220,10 +222,13 @@ def test_global_params_mode_change_fires_event() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_publish_data_point_without_client_logs_error() -> None:
+def test_publish_data_point_without_client_raises() -> None:
+    from homeassistant.exceptions import HomeAssistantError
+
     hub = _hub()
     hub.mqtt_client = None
-    hub.publish_data_point(155, {"v": 1})  # must not raise
+    with pytest.raises(HomeAssistantError):
+        hub.publish_data_point(155, {"v": 1})
 
 
 def test_get_cmd_seq_increments() -> None:

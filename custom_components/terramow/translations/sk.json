@@ -432,6 +432,12 @@
     },
     "lawn_mower_not_ready": {
       "message": "Kosačka TerraMow pre {entity_id} ešte nie je pripravená."
+    },
+    "command_not_delivered": {
+      "message": "Príkaz sa nepodarilo odoslať do kosačky — je offline alebo nedostupná cez MQTT. Skontrolujte, či je kosačka zapnutá a pripojená k sieti, a skúste to znova."
+    },
+    "command_rate_limited": {
+      "message": "Do kosačky bol práve odoslaný iný príkaz. Chvíľu počkajte a skúste to znova."
     }
   }
 }

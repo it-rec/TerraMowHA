@@ -24,6 +24,8 @@ def _hub() -> TerraMowHub:
     basic_data = TerraMowBasicData(host="192.0.2.10", password="secret")
     hub = TerraMowHub(basic_data, MagicMock())
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     # no entity registry in these tests: force the device-data fallback and
     # close coroutines handed to async_create_task instead of scheduling them
     hub.hass.states.get = MagicMock(return_value=None)

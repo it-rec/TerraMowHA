@@ -432,6 +432,12 @@
     },
     "lawn_mower_not_ready": {
       "message": "TerraMow-gräsklipparen för {entity_id} är inte redo än."
+    },
+    "command_not_delivered": {
+      "message": "Det gick inte att skicka kommandot till gräsklipparen — den är offline eller inte nåbar via MQTT. Kontrollera att gräsklipparen är påslagen och ansluten till nätverket och försök igen."
+    },
+    "command_rate_limited": {
+      "message": "Ett annat kommando skickades just till gräsklipparen. Vänta en stund och försök igen."
     }
   }
 }

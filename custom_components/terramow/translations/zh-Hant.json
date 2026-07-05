@@ -432,6 +432,12 @@
     },
     "lawn_mower_not_ready": {
       "message": "{entity_id} 對應的 TerraMow 割草機尚未就緒。"
+    },
+    "command_not_delivered": {
+      "message": "無法向割草機傳送命令——它已離線或無法透過 MQTT 存取。請確認割草機已開機並連線到網路，然後重試。"
+    },
+    "command_rate_limited": {
+      "message": "剛剛已向割草機傳送了另一條命令。請稍候片刻再試。"
     }
   }
 }

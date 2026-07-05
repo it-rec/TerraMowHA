@@ -432,6 +432,12 @@
     },
     "lawn_mower_not_ready": {
       "message": "{entity_id} skirta TerraMow vejapjovė dar neparuošta."
+    },
+    "command_not_delivered": {
+      "message": "Nepavyko išsiųsti komandos vejapjovei — ji neprisijungusi arba nepasiekiama per MQTT. Įsitikinkite, kad vejapjovė įjungta ir prijungta prie tinklo, ir bandykite dar kartą."
+    },
+    "command_rate_limited": {
+      "message": "Vejapjovei ką tik išsiųsta kita komanda. Palaukite akimirką ir bandykite dar kartą."
     }
   }
 }

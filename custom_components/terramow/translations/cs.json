@@ -432,6 +432,12 @@
     },
     "lawn_mower_not_ready": {
       "message": "Sekačka TerraMow pro {entity_id} ještě není připravena."
+    },
+    "command_not_delivered": {
+      "message": "Příkaz se nepodařilo odeslat do sekačky — je offline nebo nedostupná přes MQTT. Zkontrolujte, že je sekačka zapnutá a připojená k síti, a zkuste to znovu."
+    },
+    "command_rate_limited": {
+      "message": "Do sekačky byl právě odeslán jiný příkaz. Chvíli počkejte a zkuste to znovu."
     }
   }
 }

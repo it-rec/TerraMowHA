@@ -432,6 +432,12 @@
     },
     "lawn_mower_not_ready": {
       "message": "Kosilnica TerraMow za {entity_id} še ni pripravljena."
+    },
+    "command_not_delivered": {
+      "message": "Ukaza ni bilo mogoče poslati kosilnici — ni povezana ali ni dosegljiva prek MQTT. Preverite, ali je kosilnica vklopljena in povezana z omrežjem, ter poskusite znova."
+    },
+    "command_rate_limited": {
+      "message": "Kosilnici je bil pravkar poslan drug ukaz. Počakajte trenutek in poskusite znova."
     }
   }
 }
