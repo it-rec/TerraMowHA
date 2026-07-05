@@ -497,18 +497,29 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         self._current_option = "MAIN_DIRECTION_MODE_SINGLE"  # Default: single main direction
         self._pending_mode: str | None = None  # Cache the mode pending activation
 
-        # Register the device-confirmation event listener
+    async def async_added_to_hass(self) -> None:
+        """Register push callbacks and the device-confirmation listener."""
+        await super().async_added_to_hass()
         self._register_device_confirmation_listener()
 
     def _register_device_confirmation_listener(self) -> None:
-        """Register the device-confirmation event listener."""
+        """Refresh pending state on the device-confirmation event.
+
+        The unsubscribe callable is handed to ``async_on_remove`` so the
+        listener is torn down on removal (reload/reconfigure) instead of
+        leaking across reloads and acting on a removed entity.
+        """
         async def on_device_confirmed(event: Event) -> None:
             if event.data.get("device_host") == self.host:
                 confirmed_mode = event.data.get("confirmed_mode")
                 if confirmed_mode:
                     self.on_device_mode_confirmed(confirmed_mode)
 
-        self.hass.bus.async_listen(f"{DOMAIN}_device_mode_confirmed", on_device_confirmed)
+        self.async_on_remove(
+            self.hass.bus.async_listen(
+                f"{DOMAIN}_device_mode_confirmed", on_device_confirmed
+            )
+        )
 
     _unique_id_suffix = "main_direction_mode"
 
@@ -616,11 +627,15 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
             "source": "mode_select"
         })
 
-        # Trigger a delayed state update for all related entities
-        async def delayed_update() -> None:
-            await self.hass.async_add_executor_job(self._force_update_related_entities)
+        # Refresh the related angle controllers. This runs directly on the
+        # event loop: _force_update_related_entities only touches loop-bound
+        # APIs (hass.states.get / hass.async_create_task), which are not
+        # thread-safe and must never be called from an executor thread.
+        self.hass.async_create_task(self._async_force_update_related_entities())
 
-        self.hass.async_create_task(delayed_update())
+    async def _async_force_update_related_entities(self) -> None:
+        """Force a state update of the related angle controllers (on the loop)."""
+        self._force_update_related_entities()
 
     def _force_update_related_entities(self) -> None:
         """Force a state update of the related angle-control entities."""

@@ -93,7 +93,8 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
 
     @property
     def available(self) -> bool:
-        """Stay available during connection loss so error events surface."""
+        """Stay available while the mower exists, independent of transient
+        connection drops, so mission events keep flowing after a reconnect."""
         return self.basic_data.lawn_mower is not None
 
     async def async_added_to_hass(self) -> None:
@@ -110,7 +111,12 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
     def _compute_phase(self) -> str:
         """Derive the semantic phase from the hub state (mirrors lawn_mower)."""
         hub = self.hub
-        if hub.connection_error or hub.has_error:
+        # Only a real device fault is an ``error`` event. A dropped MQTT
+        # connection is routine (mower asleep/docked/after a DHCP IP change)
+        # and must not fire a spurious error event on every cycle; the phase
+        # then falls back to the last known mission state. The lawn_mower
+        # entity already surfaces the connection loss as an ERROR state.
+        if hub.has_error:
             return "error"
         state = hub.mission_state
         if state == MissionState.MISSION_STATE_RUNNING:
