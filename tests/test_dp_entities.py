@@ -58,7 +58,7 @@ def _feed(handler, payload: dict) -> None:
 def test_battery_level_from_dp8() -> None:
     hub = _hub()
     sensor = BatterySensor(hub.basic_data, hub.hass)
-    sensor.set_capacity('{"int_value": 76}')
+    asyncio.run(hub.on_battery_level('{"int_value": 76}'))
     assert sensor.native_value == 76
 
 
