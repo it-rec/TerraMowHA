@@ -432,6 +432,12 @@
     },
     "lawn_mower_not_ready": {
       "message": "La talladora de gespa TerraMow per a {entity_id} encara no està a punt."
+    },
+    "command_not_delivered": {
+      "message": "No s'ha pogut enviar l'ordre a la gespadora — està fora de línia o no és accessible per MQTT. Comproveu que estigui engegada i connectada a la xarxa i torneu-ho a provar."
+    },
+    "command_rate_limited": {
+      "message": "Acabeu d'enviar una altra ordre a la gespadora. Espereu un moment i torneu-ho a provar."
     }
   }
 }

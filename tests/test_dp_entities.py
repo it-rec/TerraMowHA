@@ -219,6 +219,8 @@ def test_global_param_sensors_from_dp155() -> None:
 def test_mow_speed_select_round_trip() -> None:
     hub = _hub()
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     select = MowSpeedSelect(hub.basic_data, hub.hass)
     select.async_write_ha_state = MagicMock()
 
@@ -233,6 +235,8 @@ def test_mow_speed_select_round_trip() -> None:
 def test_mow_speed_select_rejects_invalid_option() -> None:
     hub = _hub()
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     select = MowSpeedSelect(hub.basic_data, hub.hass)
     select.async_write_ha_state = MagicMock()
 
@@ -243,6 +247,8 @@ def test_mow_speed_select_rejects_invalid_option() -> None:
 def test_mowing_height_number_write_path() -> None:
     hub = _hub()
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     number = MowingHeightNumber(hub.basic_data, hub.hass)
 
     asyncio.run(number.async_set_native_value(52.0))
@@ -269,6 +275,8 @@ def test_corner_cutting_switch_reads_map_info() -> None:
 def test_corner_cutting_switch_write_path() -> None:
     hub = _hub()
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     switch = ThoroughCornerCuttingSwitch(hub.basic_data, hub.hass)
 
     asyncio.run(switch.async_turn_on())

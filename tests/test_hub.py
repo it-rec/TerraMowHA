@@ -5,7 +5,9 @@ import json
 import time
 from unittest.mock import MagicMock
 
+import pytest
 from homeassistant.components.lawn_mower.const import LawnMowerActivity
+from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.hub import (
@@ -86,6 +88,8 @@ def test_failing_state_listener_does_not_break_others() -> None:
 def test_publish_data_point() -> None:
     hub = _make_hub()
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     hub.publish_data_point(103, {"seq": 1})
     topic, payload = hub.mqtt_client.publish.call_args.args
     assert topic == "data_point/103/app"
@@ -95,6 +99,8 @@ def test_publish_data_point() -> None:
 def test_start_mowing_from_idle_sends_global_clean() -> None:
     hub = _make_hub()
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     _allow_command(hub)
     hub.start_mowing()
     topic, payload = hub.mqtt_client.publish.call_args.args
@@ -105,6 +111,8 @@ def test_start_mowing_from_idle_sends_global_clean() -> None:
 def test_start_mowing_resumes_paused_job_via_dp106() -> None:
     hub = _make_hub()
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     _feed_dp107(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_PAUSE")
     _allow_command(hub)
     hub.start_mowing()
@@ -115,6 +123,8 @@ def test_start_mowing_resumes_paused_job_via_dp106() -> None:
 def test_start_mowing_while_running_sends_nothing() -> None:
     hub = _make_hub()
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     _feed_dp107(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
     _allow_command(hub)
     hub.start_mowing()
@@ -124,6 +134,8 @@ def test_start_mowing_while_running_sends_nothing() -> None:
 def test_dock_sends_return_command() -> None:
     hub = _make_hub()
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     _allow_command(hub)
     hub.dock()
     topic, payload = hub.mqtt_client.publish.call_args.args
@@ -134,9 +146,12 @@ def test_dock_sends_return_command() -> None:
 def test_command_rate_limit() -> None:
     hub = _make_hub()
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     _allow_command(hub)
     hub.start_edge_trim()
-    hub.start_edge_trim()  # immediately again -> throttled
+    with pytest.raises(HomeAssistantError):
+        hub.start_edge_trim()  # immediately again -> rate limited, raises
     assert hub.mqtt_client.publish.call_count == 1
 
 

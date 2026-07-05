@@ -432,6 +432,12 @@
     },
     "lawn_mower_not_ready": {
       "message": "La tondeuse TerraMow pour {entity_id} n'est pas encore prête."
+    },
+    "command_not_delivered": {
+      "message": "Impossible d'envoyer la commande au robot tondeuse — il est hors ligne ou injoignable via MQTT. Vérifiez qu'il est allumé et connecté au réseau, puis réessayez."
+    },
+    "command_rate_limited": {
+      "message": "Une autre commande vient d'être envoyée au robot tondeuse. Patientez un instant puis réessayez."
     }
   }
 }

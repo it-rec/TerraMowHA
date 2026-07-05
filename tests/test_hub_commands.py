@@ -8,6 +8,9 @@ import asyncio
 import json
 from unittest.mock import MagicMock
 
+import pytest
+from homeassistant.exceptions import HomeAssistantError
+
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.hub import TerraMowHub
 
@@ -16,6 +19,8 @@ def _hub() -> TerraMowHub:
     basic_data = TerraMowBasicData(host="192.0.2.40", password="secret")
     hub = TerraMowHub(basic_data, MagicMock())
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     # start every test with the command rate limiter cleared
     hub._last_control_time = 0.0
     return hub
@@ -147,6 +152,32 @@ def test_command_rate_limiter_blocks_rapid_second_command() -> None:
     hub = _hub()
     hub.dock()
     assert hub.mqtt_client.publish.call_count == 1
-    # immediate second command is skipped by the rate limiter
-    hub.dock()
+    # an immediate second command is rejected loudly (not silently dropped),
+    # so the caller / Home Assistant learns it did not reach the mower
+    with pytest.raises(HomeAssistantError):
+        hub.dock()
     assert hub.mqtt_client.publish.call_count == 1
+
+
+def test_dock_raises_when_mqtt_disconnected() -> None:
+    hub = _hub()
+    hub.mqtt_client.is_connected.return_value = False
+    # the reported bug: dock must fail visibly instead of "succeeding" while
+    # the command never reaches the offline mower
+    with pytest.raises(HomeAssistantError):
+        hub.dock()
+    hub.mqtt_client.publish.assert_not_called()
+
+
+def test_command_raises_when_broker_rejects_publish() -> None:
+    hub = _hub()
+    hub.mqtt_client.publish.return_value.rc = 1  # not MQTT_ERR_SUCCESS
+    with pytest.raises(HomeAssistantError):
+        hub.dock()
+
+
+def test_publish_uses_qos_1_for_reliable_command_delivery() -> None:
+    hub = _hub()
+    hub.dock()
+    _, kwargs = hub.mqtt_client.publish.call_args
+    assert kwargs.get("qos") == 1

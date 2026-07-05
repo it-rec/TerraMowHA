@@ -40,6 +40,8 @@ def _hub(states_get=None) -> TerraMowHub:
     basic_data = TerraMowBasicData(host="192.0.2.61", password="secret")
     hub = TerraMowHub(basic_data, MagicMock())
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     hub.hass.states.get = states_get or MagicMock(return_value=None)
     return hub
 
@@ -48,6 +50,8 @@ def _shub() -> TerraMowHub:
     basic_data = TerraMowBasicData(host="192.0.2.86", password="secret")
     hub = TerraMowHub(basic_data, MagicMock())
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     hub.hass.async_create_task = MagicMock(
         side_effect=lambda c: c.close() if hasattr(c, "close") else None
     )

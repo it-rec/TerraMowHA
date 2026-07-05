@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING, Any
 import aiohttp
 import paho.mqtt.client as mqtt_client
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -268,6 +269,19 @@ class TerraMowHub:
             return False
         self._last_control_time = now
         return True
+
+    def _ensure_command_allowed(self) -> None:
+        """Raise if a command arrives within the rate-limit window.
+
+        Two commands less than ``_control_interval`` apart would otherwise be
+        dropped silently, so the caller (and Home Assistant) never learns the
+        command did not reach the mower. Surfacing it lets the automation retry.
+        """
+        if not self._can_accept_command():
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="command_rate_limited",
+            )
 
     def start(self) -> None:
         """Start the MQTT client in a separate thread."""
@@ -1334,14 +1348,36 @@ class TerraMowHub:
         return self.basic_data.firmware_version or {}
 
     def publish_data_point(self, dp_id: int, data: dict[str, Any]) -> None:
-        """Publish data to a specific data point."""
+        """Publish a command/data payload to a device data point.
+
+        Commands are sent at QoS 1 so a brief reconnect buffers them instead of
+        dropping them. If the MQTT client is missing or disconnected, or the
+        broker rejects the publish, raise ``HomeAssistantError`` so a service
+        call surfaces the failure instead of silently reporting success — the
+        mower would otherwise keep mowing while ``dock``/``pause`` "succeed".
+
+        Only the synchronous command path (lawn_mower/button/select/number/
+        switch service calls) lets this propagate; the one background caller,
+        ``_request_compatibility_info`` on the MQTT worker thread, wraps this in
+        its own ``try/except`` so a raised error never kills the worker.
+        """
         topic = f"data_point/{dp_id}/app"
-        _LOGGER.info(f"Publishing data to topic {topic}: {data}")
+        _LOGGER.info("Publishing data to topic %s: %s", topic, data)
         payload = json.dumps(data)
-        if self.mqtt_client:
-            self.mqtt_client.publish(topic, payload)
-        else:
-            _LOGGER.error("MQTT client is not initialized")
+        client = self.mqtt_client
+        if client is None or not client.is_connected():
+            _LOGGER.error("Cannot publish to %s: MQTT client not connected", topic)
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="command_not_delivered",
+            )
+        info = client.publish(topic, payload, qos=1)
+        if info.rc != mqtt_client.MQTT_ERR_SUCCESS:
+            _LOGGER.error("MQTT publish to %s failed with rc=%s", topic, info.rc)
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="command_not_delivered",
+            )
 
     def get_cmd_seq(self) -> int:
         """Generate a new command sequence number."""
@@ -1350,9 +1386,7 @@ class TerraMowHub:
 
     def start_mowing(self) -> None:
         """Start mowing, resuming a paused or station-waiting job."""
-        if not self._can_accept_command():
-            _LOGGER.warning("Request too quick, skip start mowing command")
-            return
+        self._ensure_command_allowed()
 
         if self.mission in MOW_MISSIONS:
             if self.sub_mission == SubMission.SUB_MISSION_FLEXIBLE_STATION_WAIT:
@@ -1370,9 +1404,7 @@ class TerraMowHub:
 
     def pause(self) -> None:
         """Pause the running job."""
-        if not self._can_accept_command():
-            _LOGGER.warning("Request too quick, skip pause command")
-            return
+        self._ensure_command_allowed()
 
         if self.mission in MOW_MISSIONS:
             if self.sub_mission == SubMission.SUB_MISSION_FLEXIBLE_STATION_WAIT:
@@ -1392,9 +1424,7 @@ class TerraMowHub:
 
     def dock(self) -> None:
         """Send the mower back to the base station."""
-        if not self._can_accept_command():
-            _LOGGER.warning("Request too quick, skip dock command")
-            return
+        self._ensure_command_allowed()
 
         if self.mission in RECHARGE_MISSIONS:
             if self.mission_state == MissionState.MISSION_STATE_RUNNING:
@@ -1420,9 +1450,7 @@ class TerraMowHub:
         if not region_ids:
             _LOGGER.warning("start_select_region_clean called with empty region_ids")
             return
-        if not self._can_accept_command():
-            _LOGGER.warning("Request too quick, skip start_select_region_clean command")
-            return
+        self._ensure_command_allowed()
         command = {
             'seq': self.get_cmd_seq(),
             'mode': 'START_MODE_SELECT_REGION_CLEAN',
@@ -1441,9 +1469,7 @@ class TerraMowHub:
 
     def start_edge_trim(self) -> None:
         """Public wrapper to start edge-trim mowing."""
-        if not self._can_accept_command():
-            _LOGGER.warning("Request too quick, skip start edge trim command")
-            return
+        self._ensure_command_allowed()
 
         _LOGGER.info("START EDGE TRIM : Sending edge trim command")
         self._start_edge_trim()

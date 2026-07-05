@@ -29,6 +29,8 @@ def _hub(states_get=None) -> TerraMowHub:
     basic_data = TerraMowBasicData(host="192.0.2.60", password="secret")
     hub = TerraMowHub(basic_data, MagicMock())
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     hub.hass.states.get = states_get or MagicMock(return_value=None)
     return hub
 

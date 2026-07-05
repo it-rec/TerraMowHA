@@ -432,6 +432,12 @@
     },
     "lawn_mower_not_ready": {
       "message": "El cortacésped TerraMow para {entity_id} aún no está listo."
+    },
+    "command_not_delivered": {
+      "message": "No se pudo enviar el comando al robot cortacésped — está desconectado o no es accesible por MQTT. Comprueba que esté encendido y conectado a la red e inténtalo de nuevo."
+    },
+    "command_rate_limited": {
+      "message": "Se acaba de enviar otro comando al robot cortacésped. Espera un momento e inténtalo de nuevo."
     }
   }
 }

@@ -432,6 +432,12 @@
     },
     "lawn_mower_not_ready": {
       "message": "{entity_id}의 TerraMow 잔디깎이가 아직 준비되지 않았습니다."
+    },
+    "command_not_delivered": {
+      "message": "잔디깎이에 명령을 보낼 수 없습니다. 오프라인이거나 MQTT로 연결할 수 없습니다. 잔디깎이의 전원이 켜져 있고 네트워크에 연결되어 있는지 확인한 후 다시 시도하세요."
+    },
+    "command_rate_limited": {
+      "message": "방금 잔디깎이에 다른 명령을 보냈습니다. 잠시 기다린 후 다시 시도하세요."
     }
   }
 }

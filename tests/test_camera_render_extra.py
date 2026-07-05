@@ -27,6 +27,8 @@ def _hub() -> TerraMowHub:
     basic_data = TerraMowBasicData(host="192.0.2.50", password="secret")
     hub = TerraMowHub(basic_data, MagicMock())
     hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
     # run "executor" jobs inline so the render pipeline works synchronously
     hub.hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *a: fn(*a))
     return hub

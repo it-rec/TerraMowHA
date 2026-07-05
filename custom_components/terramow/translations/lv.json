@@ -432,6 +432,12 @@
     },
     "lawn_mower_not_ready": {
       "message": "TerraMow zāles pļāvējs {entity_id} vēl nav gatavs."
+    },
+    "command_not_delivered": {
+      "message": "Komandu neizdevās nosūtīt zāles pļāvējam — tas ir bezsaistē vai nav sasniedzams caur MQTT. Pārliecinieties, ka pļāvējs ir ieslēgts un pievienots tīklam, un mēģiniet vēlreiz."
+    },
+    "command_rate_limited": {
+      "message": "Zāles pļāvējam tikko tika nosūtīta cita komanda. Uzgaidiet mirkli un mēģiniet vēlreiz."
     }
   }
 }
