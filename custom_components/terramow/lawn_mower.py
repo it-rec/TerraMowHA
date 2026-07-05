@@ -18,8 +18,7 @@ from homeassistant.components.lawn_mower.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import TerraMowBasicData
-from . import TerraMowConfigEntry
+from . import TerraMowBasicData, TerraMowConfigEntry
 from .entity import TerraMowEntity
 from .entity_utils import safe_schedule_update_ha_state
 from .hub import (

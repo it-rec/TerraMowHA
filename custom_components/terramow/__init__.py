@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import logging
-from typing import Any, Optional
+from dataclasses import dataclass
+from typing import Any
 
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -16,20 +15,25 @@ from homeassistant.const import (
     Platform,
 )
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import HomeAssistantError
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers import config_validation as cv, device_registry as dr, entity_registry as er
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    ConfigEntryNotReady,
+    HomeAssistantError,
+)
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 
 from .config_flow import CannotConnect, InvalidAuth, validate_input
-from .hub import TerraMowHub
-from .issues import async_clear_compatibility_issue, async_clear_maintenance_issues
-from .const import DOMAIN as DOMAIN
 from .const import (
     CURRENT_HA_VERSION,
-    MIN_SUPPORTED_HA_VERSION,
     MIN_REQUIRED_OVERALL_VERSION,
-    CompatibilityStatus
+    MIN_SUPPORTED_HA_VERSION,
+    CompatibilityStatus,
 )
+from .const import DOMAIN as DOMAIN
+from .hub import TerraMowHub
+from .issues import async_clear_compatibility_issue, async_clear_maintenance_issues
 
 SERVICE_START_SELECT_REGION = "start_select_region"
 ATTR_REGION_IDS = "region_ids"
@@ -53,9 +57,9 @@ class TerraMowBasicData:
     password: str
     lawn_mower: Any = None
     compatibility_status: str = CompatibilityStatus.COMPATIBLE
-    firmware_version: Optional[dict[str, Any]] = None
+    firmware_version: dict[str, Any] | None = None
     compatibility_reason: str = ""  # Store the specific reason for compatibility check failure
-    entry_id: Optional[str] = None  # Config entry id, used to scope repair issues
+    entry_id: str | None = None  # Config entry id, used to scope repair issues
 
     def check_version_compatibility(self, compatibility_info: dict[str, Any]) -> str:
         """Check version compatibility and return status."""

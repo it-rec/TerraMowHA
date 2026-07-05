@@ -1,19 +1,15 @@
 from __future__ import annotations
-from typing import Any
 
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from typing import Any
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorStateClass,
 )
-
-from homeassistant.const import (
-    EntityCategory,
-    UnitOfArea
-)
+from homeassistant.const import EntityCategory, UnitOfArea
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowBasicData, TerraMowConfigEntry
 from .const import to_ha_enum_state
@@ -28,19 +24,19 @@ async def async_setup_entry(
 ) -> None:
     """Set up TerraMow map sensors."""
     basic_data = config_entry.runtime_data
-    
+
     # Create the map sensor entities
     entities = [
         TerraMowMapStatusSensor(basic_data, hass),
         TerraMowMapAreaSensor(basic_data, hass),
         TerraMowCleanModeSensor(basic_data, hass),
     ]
-    
+
     async_add_entities(entities)
 
 class TerraMowMapSensorBase(TerraMowEntity, SensorEntity):
     """Base class for map sensors."""
-    
+
     def __init__(
         self,
         basic_data: TerraMowBasicData,
@@ -48,7 +44,7 @@ class TerraMowMapSensorBase(TerraMowEntity, SensorEntity):
     ) -> None:
         super().__init__(basic_data, hass)
         self._map_info: dict[str, Any] = {}
-        
+
         # Register the map info callback
         if hasattr(basic_data, 'lawn_mower') and basic_data.lawn_mower:
             basic_data.lawn_mower.register_map_callback(self._on_map_info)
@@ -60,37 +56,37 @@ class TerraMowMapSensorBase(TerraMowEntity, SensorEntity):
 
 class TerraMowMapStatusSensor(TerraMowEntity, SensorEntity):
     """Map status sensor - uses dp_117 data."""
-    
+
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "map_status"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = ["map_state_empty", "map_state_incomplete", "map_state_complete"]
 
     _unique_id_suffix = "map_status"
-    
+
     @property
     def native_value(self) -> str | None:
         """Return the state of the sensor."""
         if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
             return None
-            
+
         map_status = self.basic_data.lawn_mower.map_status
         if not map_status:
             return None
 
         state = to_ha_enum_state(map_status.get('map_state'))
         return state if state in self._attr_options else None
-    
+
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
         if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
             return {}
-            
+
         map_status = self.basic_data.lawn_mower.map_status
         if not map_status:
             return {}
-        
+
         return {
             'is_map_detected': map_status.get('is_map_detected', False),
             'map_id': map_status.get('map_id'),
@@ -113,13 +109,13 @@ class TerraMowMapAreaSensor(TerraMowMapSensorBase):
     _attr_translation_key = "map_area"
 
     _unique_id_suffix = "map_area"
-    
+
     @property
     def native_value(self) -> float | None:
         """Return the state of the sensor."""
         if not self._map_info:
             return None
-        
+
         # total_area is in units of 0.1 square meters; convert to square meters
         total_area = self._map_info.get('total_area', 0)
         return round(total_area / 10, 1) if total_area else None
@@ -127,38 +123,38 @@ class TerraMowMapAreaSensor(TerraMowMapSensorBase):
 
 class TerraMowCleanModeSensor(TerraMowMapSensorBase):
     """Clean mode sensor."""
-    
+
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "clean_mode"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = ["map_clean_info_mode_global", "map_clean_info_mode_select_region", "map_clean_info_mode_draw_region", "map_clean_info_mode_move_to_target_point"]
 
     _unique_id_suffix = "clean_mode"
-    
+
     @property
     def native_value(self) -> str | None:
         """Return the state of the sensor."""
         if not self._map_info:
             return None
-        
+
         clean_info = self._map_info.get('clean_info', {})
         mode = to_ha_enum_state(clean_info.get('mode', ''))
 
         return mode if mode in self._attr_options else None
-    
+
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
         if not self._map_info:
             return {}
-        
+
         clean_info = self._map_info.get('clean_info', {})
         attrs = {}
-        
+
         # Show detailed information depending on the working mode
         if 'select_region' in clean_info:
             region_ids = clean_info['select_region'].get('region_id', [])
             attrs['selected_regions'] = region_ids
             attrs['selected_regions_count'] = len(region_ids)
-        
+
         return attrs

@@ -8,11 +8,12 @@ from typing import TYPE_CHECKING, Any
 
 import paho.mqtt.client as mqtt_client
 import voluptuous as vol
-
 from homeassistant.config_entries import (
     ConfigEntry,
-    ConfigFlow as BaseConfigFlow,
     OptionsFlow,
+)
+from homeassistant.config_entries import (
+    ConfigFlow as BaseConfigFlow,
 )
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
 from homeassistant.core import HomeAssistant, callback
