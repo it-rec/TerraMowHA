@@ -76,6 +76,21 @@ def test_battery_sensor_attributes_and_missing_branches() -> None:
     assert sensor.extra_state_attributes == {}
 
 
+def test_battery_sensor_attributes_survive_null_tempreture() -> None:
+    # A dp_108 payload carrying an explicit null tempreture must not crash the
+    # attribute read (None.replace would raise); it falls back to "unknown".
+    hub = _hub()
+    sensor = BatterySensor(hub.basic_data, hub.hass)
+    _feed(hub.on_battery_status, {
+        "state": "BATTERY_STATE_CHARGING",
+        "tempreture": None,
+        "charger_connected": True,
+        "is_switch_on": True,
+    })
+    attrs = sensor.extra_state_attributes
+    assert attrs["temperature"] == "unknown"
+
+
 def test_battery_state_and_temperature_unknown_values_are_none() -> None:
     hub = _hub()
     state = BatteryStateSensor(hub.basic_data, hub.hass)

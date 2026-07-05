@@ -81,6 +81,15 @@ class TerraMowNumberBase(PushUpdateMixin, TerraMowEntity, NumberEntity):
         )
         self._cached_mode = None  # Initialize the cached mode
 
+    def _clamp_native(self, value: float) -> float:
+        """Clamp a device-reported value into the entity's declared range.
+
+        Some firmware reports a value slightly outside the advertised range;
+        returning it unclamped makes Home Assistant log a "not within range"
+        warning on every state write. Clamping keeps the readout within the
+        entity's contract.
+        """
+        return min(self.native_max_value, max(self.native_min_value, value))
 
 
 class MowingHeightNumber(TerraMowNumberBase):
@@ -109,7 +118,7 @@ class MowingHeightNumber(TerraMowNumberBase):
 
         mow_height = global_params.get('mow_height', {})
         value = mow_height.get('value')
-        return float(value) if value is not None else None
+        return self._clamp_native(float(value)) if value is not None else None
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the mowing height."""
@@ -154,7 +163,7 @@ class EdgeCuttingDistanceNumber(TerraMowNumberBase):
 
         edge_cutting_distance = global_params.get('edge_cutting_distance', {})
         value = edge_cutting_distance.get('value')
-        return float(value) if value is not None else None
+        return self._clamp_native(float(value)) if value is not None else None
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the edge cutting distance."""
@@ -199,7 +208,7 @@ class MowingSpacingNumber(TerraMowNumberBase):
 
         mow_spacing = global_params.get('mow_spacing', {})
         value = mow_spacing.get('value')
-        return float(value) if value is not None else None
+        return self._clamp_native(float(value)) if value is not None else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

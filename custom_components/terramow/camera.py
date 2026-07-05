@@ -5,6 +5,7 @@ Renders ha_map_v1 / ha_path_v1 / pose into a PNG map with a HUD overlay.
 
 from __future__ import annotations
 
+import asyncio
 import io
 import logging
 import math
@@ -840,6 +841,13 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         self._robot_image: Image.Image | None = None
         self._robot_image_mask: Image.Image | None = None
         self._transformer: CoordinateTransformer | None = None
+        # The finished static layers paired with the transformer they were
+        # drawn with, published as one atomic reference. The final render reads
+        # this so it never pairs a static image with a mismatched transformer.
+        self._render_snapshot: tuple[Image.Image, CoordinateTransformer | None] | None = None
+        # Serialize rebuilds so overlapping map/path/history updates don't race
+        # on self._transformer / self._static_image (each runs in an executor).
+        self._rebuild_lock = asyncio.Lock()
         self._cached_png: bytes | None = None
         self._last_pose_state_update = 0.0
         self._render_metadata: dict[str, Any] = {}
@@ -886,6 +894,13 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
     ) -> bytes | None:
         return await self.hass.async_add_executor_job(self._render_final_image)
 
+    async def _async_rebuild(self) -> None:
+        """Rebuild the static layers, serialized against concurrent rebuilds."""
+        async with self._rebuild_lock:
+            await self.hass.async_add_executor_job(self._rebuild_static_image)
+        self._cached_png = None
+        safe_write_ha_state(self)
+
     async def _on_map_info(self, map_info: dict[str, Any]) -> None:
         """Callback for map info updates."""
         lawn_mower = self.basic_data.lawn_mower
@@ -894,9 +909,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         if not self._map_data_logged and self._map_data:
             _LOGGER.debug("ha_map_v1 top-level keys: %s", list(self._map_data.keys()))
             self._map_data_logged = True
-        await self.hass.async_add_executor_job(self._rebuild_static_image)
-        self._cached_png = None
-        safe_write_ha_state(self)
+        await self._async_rebuild()
 
     async def _on_path_data(self, path_data: dict[str, Any]) -> None:
         """Callback for path data updates."""
@@ -907,9 +920,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
                 list(path_data.keys()) if isinstance(path_data, dict) else type(path_data),
             )
             self._path_data_logged = True
-        await self.hass.async_add_executor_job(self._rebuild_static_image)
-        self._cached_png = None
-        safe_write_ha_state(self)
+        await self._async_rebuild()
 
     async def _on_history_path_data(self, path_data: dict[str, Any]) -> None:
         """Callback for history path data updates."""
@@ -920,9 +931,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
                 list(path_data.keys()) if isinstance(path_data, dict) else type(path_data),
             )
             self._history_path_data_logged = True
-        await self.hass.async_add_executor_job(self._rebuild_static_image)
-        self._cached_png = None
-        safe_write_ha_state(self)
+        await self._async_rebuild()
 
     async def _on_pose(self, pose: dict[str, Any]) -> None:
         """Callback for pose updates."""
@@ -1377,6 +1386,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         if not self._map_data and not self._path_data and not self._history_path_data:
             self._static_image = None
             self._transformer = None
+            self._render_snapshot = None
             return
 
         bg_color = (0, 0, 0, 0) if self._clean_mode else COLOR_APP_BG
@@ -1398,6 +1408,9 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         if not self._clean_mode:
             self._draw_summary_panel(image, scene)
         self._static_image = image
+        # Publish the finished image together with the transformer it was drawn
+        # with as a single atomic reference (see _render_final_image).
+        self._render_snapshot = (image, self._transformer)
 
     def _draw_background(self, image: Image.Image) -> None:
         """Draw the canvas background and cards."""
@@ -1955,9 +1968,10 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
                   (cx - station_rotated.width // 2, cy - station_rotated.height // 2),
                   station_mask_rotated)
 
-    def _draw_robot(self, image: Image.Image) -> None:
+    def _draw_robot(
+        self, image: Image.Image, transformer: CoordinateTransformer | None
+    ) -> None:
         """Draw the live robot position."""
-        transformer = self._transformer
         if transformer is None:
             return
         robot_state = self._get_display_robot_state()
@@ -2125,11 +2139,16 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         if self._cached_png is not None:
             return self._cached_png
 
-        if self._static_image is None:
+        # Read the published (image, transformer) pair once so a rebuild
+        # completing mid-render can't leave us drawing the robot with a
+        # transformer that doesn't match the copied static image.
+        snapshot = self._render_snapshot
+        if snapshot is None:
             return _render_placeholder()
+        static_image, transformer = snapshot
 
-        image = self._static_image.copy()
-        self._draw_robot(image)
+        image = static_image.copy()
+        self._draw_robot(image, transformer)
 
         if self._output_resolution != IMAGE_WIDTH:
             image = image.resize(

@@ -79,6 +79,17 @@ def test_number_native_value_none_with_empty_global_params() -> None:
         assert number.native_value is None
 
 
+def test_mowing_spacing_native_value_clamps_out_of_range_device_value() -> None:
+    # A device value above the declared max is clamped to the entity's range so
+    # Home Assistant doesn't log a "not within range" warning on every write.
+    hub = _hub()
+    _feed(hub.on_global_params, {"mow_spacing": {"value": 200}})
+    number = MowingSpacingNumber(hub.basic_data, hub.hass)
+    assert number.native_value == number.native_max_value == 140
+    _feed(hub.on_global_params, {"mow_spacing": {"value": 10}})
+    assert number.native_value == number.native_min_value == 80
+
+
 def test_mowing_spacing_attrs_without_current_when_params_present() -> None:
     hub = _hub()
     _feed(hub.on_global_params, {"mow_spacing": {"value": 100}})

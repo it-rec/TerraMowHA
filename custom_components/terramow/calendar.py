@@ -45,8 +45,13 @@ class TerraMowScheduleCalendar(PushUpdateMixin, TerraMowEntity, CalendarEntity):
     _unique_id_suffix = "schedule"
     _push_dp_ids = (138,)
 
-    def _build_event(self, now: datetime) -> CalendarEvent | None:
-        """Build the next mowing event relative to ``now`` (None if unset)."""
+    def _slot_for_date(self, anchor: datetime) -> CalendarEvent | None:
+        """Build the mowing slot that *starts* on ``anchor``'s date (or None).
+
+        The device reports only a time-of-day; the returned slot uses
+        ``anchor``'s date for the start. An end at/before the start means the
+        slot runs past midnight and ends the following day.
+        """
         lawn_mower = self.basic_data.lawn_mower
         if lawn_mower is None:
             return None
@@ -58,12 +63,12 @@ class TerraMowScheduleCalendar(PushUpdateMixin, TerraMowEntity, CalendarEntity):
         if "hour" not in start_time or "minute" not in start_time:
             return None
 
-        start = now.replace(
+        start = anchor.replace(
             hour=start_time["hour"], minute=start_time["minute"], second=0, microsecond=0
         )
         end_time = data.get("end_time", {})
         if "hour" in end_time and "minute" in end_time:
-            end = now.replace(
+            end = anchor.replace(
                 hour=end_time["hour"], minute=end_time["minute"], second=0, microsecond=0
             )
         else:
@@ -71,10 +76,6 @@ class TerraMowScheduleCalendar(PushUpdateMixin, TerraMowEntity, CalendarEntity):
 
         # An end at/before the start means the slot runs past midnight.
         if end <= start:
-            end += timedelta(days=1)
-        # Once today's slot is over, the next occurrence is tomorrow.
-        if now >= end:
-            start += timedelta(days=1)
             end += timedelta(days=1)
 
         item_id = data.get("item_id")
@@ -84,6 +85,23 @@ class TerraMowScheduleCalendar(PushUpdateMixin, TerraMowEntity, CalendarEntity):
             summary=EVENT_SUMMARY,
             uid=str(item_id) if item_id is not None else None,
         )
+
+    def _build_event(self, now: datetime) -> CalendarEvent | None:
+        """Build the currently-active or next mowing event relative to ``now``."""
+        today = self._slot_for_date(now)
+        if today is None:
+            return None
+
+        # A slot that began yesterday may still be running (past-midnight
+        # schedules), in which case it is the active event, not tonight's.
+        yesterday = self._slot_for_date(now - timedelta(days=1))
+        if yesterday is not None and yesterday.start <= now < yesterday.end:
+            return yesterday
+
+        # Once today's slot is over, the next occurrence is tomorrow.
+        if now >= today.end:
+            return self._slot_for_date(now + timedelta(days=1))
+        return today
 
     @property
     def event(self) -> CalendarEvent | None:
@@ -96,10 +114,18 @@ class TerraMowScheduleCalendar(PushUpdateMixin, TerraMowEntity, CalendarEntity):
         start_date: datetime,
         end_date: datetime,
     ) -> list[CalendarEvent]:
-        """Return the scheduled event if it overlaps the requested window."""
-        event = self._build_event(dt_util.now())
-        if event is None:
-            return []
-        if event.start < end_date and event.end > start_date:
-            return [event]
-        return []
+        """Return every daily mowing occurrence overlapping the window."""
+        events: list[CalendarEvent] = []
+        # The schedule recurs daily. Walk each day whose slot could overlap the
+        # window (start one day early so a past-midnight slot begun the prior
+        # day is included) and keep the ones that actually overlap.
+        day = (start_date - timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        last_day = end_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        while day <= last_day:
+            slot = self._slot_for_date(day)
+            if slot is not None and slot.start < end_date and slot.end > start_date:
+                events.append(slot)
+            day += timedelta(days=1)
+        return events
