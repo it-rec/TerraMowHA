@@ -8,9 +8,9 @@ from homeassistant.const import EntityCategory, UnitOfLength
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import DOMAIN, TerraMowBasicData, TerraMowConfigEntry
+from . import DOMAIN, TerraMowConfigEntry
 from .entity import TerraMowEntity
-from .entity_utils import PushUpdateMixin
+from .entity_utils import PushUpdateMixin, safe_write_ha_state
 
 # Push-based integration: no update throttling needed
 PARALLEL_UPDATES = 0
@@ -48,6 +48,38 @@ class TerraMowNumberBase(PushUpdateMixin, TerraMowEntity, NumberEntity):
     # Cached mode pushed by the main-direction-mode selector event; None when
     # the entity should fall back to reading the device's global params.
     _cached_mode: str | None = None
+
+    # Angle controllers refresh promptly on the shared main-direction
+    # mode-change event; the plain number entities leave this False.
+    _listens_for_mode_change: bool = False
+
+    async def async_added_to_hass(self) -> None:
+        """Register push callbacks and, for angle controllers, the mode listener."""
+        await super().async_added_to_hass()
+        if self._listens_for_mode_change:
+            self._register_mode_change_listener()
+
+    def _register_mode_change_listener(self) -> None:
+        """Refresh on the shared main-direction mode-change event.
+
+        The unsubscribe callable is handed to ``async_on_remove`` so the
+        listener is torn down when the entity is removed (reload/reconfigure).
+        Without it, stale listeners accumulate across reloads and keep writing
+        state on removed entities.
+        """
+        async def on_mode_changed(event: Event) -> None:
+            if event.data.get("device_host") == self.host:
+                new_mode = event.data.get("new_mode")
+                if new_mode:
+                    self._cached_mode = new_mode
+                safe_write_ha_state(self)
+
+        self.async_on_remove(
+            self.hass.bus.async_listen(
+                f"{DOMAIN}_main_direction_mode_changed", on_mode_changed
+            )
+        )
+        self._cached_mode = None  # Initialize the cached mode
 
 
 
@@ -219,29 +251,7 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
     _attr_native_min_value = 0
     _attr_native_max_value = 359
     _attr_native_step = 1
-
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__(basic_data, hass)
-        # Register the mode-change event listener
-        self._register_mode_change_listener()
-
-    def _register_mode_change_listener(self) -> None:
-        """Register the mode-change event listener."""
-        async def on_mode_changed(event: Event) -> None:
-            if event.data.get("device_host") == self.host:
-                # Get the new mode from the event and cache it
-                new_mode = event.data.get("new_mode")
-                if new_mode:
-                    self._cached_mode = new_mode
-                # Update the entity state immediately
-                self.async_write_ha_state()
-
-        self.hass.bus.async_listen(f"{DOMAIN}_main_direction_mode_changed", on_mode_changed)
-        self._cached_mode = None  # Initialize the cached mode
+    _listens_for_mode_change = True
 
     def _get_current_mode_from_selector(self) -> str | None:
         """Try to get the current mode from the mode selector."""
@@ -355,29 +365,7 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
     _attr_native_min_value = 1
     _attr_native_max_value = 180
     _attr_native_step = 1
-
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__(basic_data, hass)
-        # Register the mode-change event listener
-        self._register_mode_change_listener()
-
-    def _register_mode_change_listener(self) -> None:
-        """Register the mode-change event listener."""
-        async def on_mode_changed(event: Event) -> None:
-            if event.data.get("device_host") == self.host:
-                # Get the new mode from the event and cache it
-                new_mode = event.data.get("new_mode")
-                if new_mode:
-                    self._cached_mode = new_mode
-                # Update the entity state immediately
-                self.async_write_ha_state()
-
-        self.hass.bus.async_listen(f"{DOMAIN}_main_direction_mode_changed", on_mode_changed)
-        self._cached_mode = None  # Initialize the cached mode
+    _listens_for_mode_change = True
 
     def _get_current_mode_from_selector(self) -> str | None:
         """Try to get the current mode from the mode selector."""
@@ -490,29 +478,7 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
     _attr_native_min_value = 0
     _attr_native_max_value = 359
     _attr_native_step = 1
-
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__(basic_data, hass)
-        # Register the mode-change event listener
-        self._register_mode_change_listener()
-
-    def _register_mode_change_listener(self) -> None:
-        """Register the mode-change event listener."""
-        async def on_mode_changed(event: Event) -> None:
-            if event.data.get("device_host") == self.host:
-                # Get the new mode from the event and cache it
-                new_mode = event.data.get("new_mode")
-                if new_mode:
-                    self._cached_mode = new_mode
-                # Update the entity state immediately
-                self.async_write_ha_state()
-
-        self.hass.bus.async_listen(f"{DOMAIN}_main_direction_mode_changed", on_mode_changed)
-        self._cached_mode = None  # Initialize the cached mode
+    _listens_for_mode_change = True
 
     def _get_current_mode_from_selector(self) -> str | None:
         """Try to get the current mode from the mode selector."""
@@ -649,29 +615,7 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
     _attr_native_min_value = 0
     _attr_native_max_value = 359
     _attr_native_step = 1
-
-    def __init__(
-        self,
-        basic_data: TerraMowBasicData,
-        hass: HomeAssistant,
-    ) -> None:
-        super().__init__(basic_data, hass)
-        # Register the mode-change event listener
-        self._register_mode_change_listener()
-
-    def _register_mode_change_listener(self) -> None:
-        """Register the mode-change event listener."""
-        async def on_mode_changed(event: Event) -> None:
-            if event.data.get("device_host") == self.host:
-                # Get the new mode from the event and cache it
-                new_mode = event.data.get("new_mode")
-                if new_mode:
-                    self._cached_mode = new_mode
-                # Update the entity state immediately
-                self.async_write_ha_state()
-
-        self.hass.bus.async_listen(f"{DOMAIN}_main_direction_mode_changed", on_mode_changed)
-        self._cached_mode = None  # Initialize the cached mode
+    _listens_for_mode_change = True
 
     def _get_current_mode_from_selector(self) -> str | None:
         """Try to get the current mode from the mode selector."""

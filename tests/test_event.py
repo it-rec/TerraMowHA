@@ -230,11 +230,26 @@ def test_error_fires_error_event() -> None:
     assert ent._trigger_event.call_args.args[1]["has_error"] is True
 
 
-def test_connection_error_maps_to_error() -> None:
+def test_connection_error_does_not_fire_error_event() -> None:
+    # A dropped MQTT connection is routine (mower asleep/docked/DHCP change)
+    # and must not fire a spurious error event; only a real device fault does.
     hub = _hub()
     ent = _entity(hub)
     _added(ent)
     hub.connection_error = True
+    _fire(ent)
+    assert _last_event(ent) is None
+
+
+def test_real_fault_still_fires_after_connection_blip() -> None:
+    # A genuine has_error fault must still surface as an error event even after
+    # a preceding connection blip that no longer produces one.
+    hub = _hub()
+    ent = _entity(hub)
+    _added(ent)
+    hub.connection_error = True
+    _fire(ent)
+    _feed(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING", has_error=True)
     _fire(ent)
     assert _last_event(ent) == EVENT_ERROR
 

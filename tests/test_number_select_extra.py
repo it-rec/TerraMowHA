@@ -11,7 +11,7 @@ refresh and the high-grass edge-trim selector.
 import asyncio
 import json
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.terramow import DOMAIN, TerraMowBasicData
 from custom_components.terramow.hub import TerraMowHub
@@ -97,7 +97,9 @@ def test_mowing_spacing_attrs_without_current_when_params_present() -> None:
 def test_single_angle_listener_without_new_mode_still_writes() -> None:
     hub = _hub()
     number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
+    number.entity_id = "number.terramow_test"
     number.async_write_ha_state = MagicMock()
+    number._register_mode_change_listener()
     number._cached_mode = "sentinel"
 
     _event_name, callback = hub.hass.bus.async_listen.call_args.args
@@ -118,7 +120,9 @@ def test_mode_number_listener_host_mismatch_and_missing_new_mode() -> None:
     for cls, _mode in _MODE_CLASSES:
         hub = _hub()
         number = cls(hub.basic_data, hub.hass)
+        number.entity_id = "number.terramow_test"
         number.async_write_ha_state = MagicMock()
+        number._register_mode_change_listener()
         _event_name, callback = hub.hass.bus.async_listen.call_args.args
 
         # a different host is ignored (callback exits, no write)
@@ -472,6 +476,7 @@ def test_blade_speed_extra_state_attributes() -> None:
 def test_mode_select_device_confirmation_listener() -> None:
     hub = _shub()
     select = MainDirectionModeSelect(hub.basic_data, hub.hass)
+    select._register_device_confirmation_listener()
     _event_name, callback = hub.hass.bus.async_listen.call_args.args
 
     # matching host + confirmed_mode clears the pending mode
@@ -490,6 +495,27 @@ def test_mode_select_device_confirmation_listener() -> None:
     # matching host but no confirmed_mode is a no-op
     asyncio.run(callback(SimpleNamespace(data={"device_host": select.host})))
     assert select._pending_mode == "MAIN_DIRECTION_MODE_SINGLE"
+
+
+def test_mode_select_confirmation_listener_registers_unsub_for_teardown() -> None:
+    # Regression: the device-confirmation listener's unsubscribe must be handed
+    # to async_on_remove so it is torn down on reload/removal, not leaked.
+    hub = _shub()
+    select = MainDirectionModeSelect(hub.basic_data, hub.hass)
+    unsub = hub.hass.bus.async_listen.return_value
+    select._register_device_confirmation_listener()
+    assert unsub in select._on_remove
+
+
+def test_mode_select_registers_confirmation_listener_on_add() -> None:
+    hub = _shub()
+    select = MainDirectionModeSelect(hub.basic_data, hub.hass)
+    with patch(
+        "custom_components.terramow.entity_utils.PushUpdateMixin.async_added_to_hass",
+        AsyncMock(),
+    ):
+        asyncio.run(select.async_added_to_hass())
+    hub.hass.bus.async_listen.assert_called_once()
 
 
 def test_mode_select_effective_mode_without_lawn_mower() -> None:
@@ -538,9 +564,8 @@ def test_mode_select_unknown_mode_publishes_bare_config() -> None:
     assert cfg == {"mode": "MAIN_DIRECTION_MODE_EXTRA"}
 
 
-def test_mode_select_delayed_update_invokes_force_update() -> None:
+def test_mode_select_notify_schedules_force_update_on_loop() -> None:
     hub = _shub()
-    hub.hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *a: fn(*a))
     hub.hass.states.get = MagicMock(return_value=None)  # no related entities exist
     collected: list = []
     hub.hass.async_create_task = MagicMock(side_effect=collected.append)
@@ -549,10 +574,16 @@ def test_mode_select_delayed_update_invokes_force_update() -> None:
     select._notify_angle_controllers_mode_change("A", "B")
     assert hub.hass.bus.fire.called
     assert collected
-    # run the scheduled delayed_update coroutine -> executes the executor job
+    # the refresh is scheduled directly on the event loop (no executor hop);
+    # running it must reach _force_update_related_entities without touching
+    # async_add_executor_job (which is not needed for loop-only work)
+    called = {"executor": False}
+    hub.hass.async_add_executor_job = MagicMock(
+        side_effect=lambda *a, **k: called.__setitem__("executor", True)
+    )
     for coro in collected:
         asyncio.run(coro)
-    hub.hass.async_add_executor_job.assert_called_once()
+    assert called["executor"] is False
 
 
 def test_mode_select_force_update_swallows_entity_error(monkeypatch) -> None:

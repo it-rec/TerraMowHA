@@ -9,7 +9,7 @@ extra_state_attributes.
 import asyncio
 import json
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.terramow import DOMAIN, TerraMowBasicData
 from custom_components.terramow.hub import TerraMowHub
@@ -126,9 +126,11 @@ def test_cached_mode_takes_priority_and_is_cleared() -> None:
 def test_mode_change_listener_updates_cache() -> None:
     hub = _hub()
     number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
+    number.entity_id = "number.terramow_test"
     number.async_write_ha_state = MagicMock()
 
-    # the listener registered in __init__ is (event_name, callback)
+    # the listener is registered when the entity is added to hass
+    number._register_mode_change_listener()
     _event_name, callback = hub.hass.bus.async_listen.call_args.args
     asyncio.run(callback(SimpleNamespace(data={
         "device_host": number.host,
@@ -313,10 +315,50 @@ def test_every_mode_number_registers_a_working_listener() -> None:
     ):
         hub = _hub()
         number = cls(hub.basic_data, hub.hass)
+        number.entity_id = "number.terramow_test"
         number.async_write_ha_state = MagicMock()
+        number._register_mode_change_listener()
         _event_name, callback = hub.hass.bus.async_listen.call_args.args
         asyncio.run(callback(SimpleNamespace(data={
             "device_host": number.host,
             "new_mode": "MAIN_DIRECTION_MODE_MULTIPLE",
         })))
         assert number._cached_mode == "MAIN_DIRECTION_MODE_MULTIPLE"
+
+
+def test_mode_listener_registers_unsub_for_teardown() -> None:
+    # Regression: the bus listener's unsubscribe callable must be handed to
+    # async_on_remove so it is torn down on reload/removal instead of leaking
+    # and writing state on a dead entity.
+    hub = _hub()
+    number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
+    number.entity_id = "number.terramow_test"
+    unsub = hub.hass.bus.async_listen.return_value
+    number._register_mode_change_listener()
+    assert unsub in number._on_remove
+
+
+def test_plain_number_does_not_register_mode_listener() -> None:
+    # Only angle controllers listen for the mode-change event; a plain number
+    # (e.g. mowing height) must not register a listener when added to hass.
+    hub = _hub()
+    number = MowingHeightNumber(hub.basic_data, hub.hass)
+    with patch(
+        "custom_components.terramow.entity_utils.PushUpdateMixin.async_added_to_hass",
+        AsyncMock(),
+    ):
+        asyncio.run(number.async_added_to_hass())
+    hub.hass.bus.async_listen.assert_not_called()
+
+
+def test_angle_number_registers_mode_listener_on_add() -> None:
+    # Conversely, adding an angle controller registers exactly one listener.
+    hub = _hub()
+    number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
+    number.entity_id = "number.terramow_test"
+    with patch(
+        "custom_components.terramow.entity_utils.PushUpdateMixin.async_added_to_hass",
+        AsyncMock(),
+    ):
+        asyncio.run(number.async_added_to_hass())
+    hub.hass.bus.async_listen.assert_called_once()
