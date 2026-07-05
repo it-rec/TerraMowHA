@@ -1,9 +1,10 @@
 from __future__ import annotations
+
 import logging
 
 from homeassistant.components.binary_sensor import (
-    BinarySensorEntity,
     BinarySensorDeviceClass,
+    BinarySensorEntity,
 )
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant

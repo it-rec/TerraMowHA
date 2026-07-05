@@ -1,16 +1,15 @@
 from __future__ import annotations
+
 import logging
 from typing import Any
 
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.components.select import SelectEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers import entity_component
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import TerraMowBasicData, DOMAIN, TerraMowConfigEntry
-from .entity import TerraMowEntity
-from .entity_utils import PushUpdateMixin, safe_write_ha_state
+from . import DOMAIN, TerraMowBasicData, TerraMowConfigEntry
 from .const import (
     DEFAULT_BLADE_DISK_SPEED_TYPE,
     MIN_MOW_SPEED_VERSION_FOR_AUTO,
@@ -22,6 +21,8 @@ from .const import (
     to_device_enum,
     to_ha_enum_state,
 )
+from .entity import TerraMowEntity
+from .entity_utils import PushUpdateMixin, safe_write_ha_state
 
 # Push-based integration: no update throttling needed
 PARALLEL_UPDATES = 0
@@ -35,7 +36,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up TerraMow select entities."""
     basic_data = config_entry.runtime_data
-    
+
     # Create select entities
     entities = [
         TerraMowZoneSelect(basic_data, hass),
@@ -59,7 +60,7 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
     # The actual display name is controlled by the translation files and has
     # been changed to "Zone Select" (with a localized name per language).
     _attr_translation_key = "region_select"
-    
+
     def __init__(
         self,
         basic_data: TerraMowBasicData,
@@ -69,7 +70,7 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
         self._map_info: dict[str, Any] = {}
         self._current_option: str | None = None
         self._options = ["no_zones_available"]
-        
+
         # Register the map info callback
         if hasattr(basic_data, 'lawn_mower') and basic_data.lawn_mower:
             basic_data.lawn_mower.register_map_callback(self._on_map_info)
@@ -83,12 +84,12 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
     def options(self) -> list[str]:
         """Return a set of selectable options."""
         return self._options
-    
+
     @property
     def current_option(self) -> str | None:
         """Return the selected entity option to represent the entity state."""
         return self._current_option
-    
+
     async def async_select_option(self, option: str) -> None:
         """Change the selected option."""
         if option not in self._options:
@@ -100,7 +101,7 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
             self._current_option = option
             self.async_write_ha_state()
             return
-        
+
         # Parse the zone ID
         try:
             # Format: "zone name (ID: 123)"
@@ -117,7 +118,7 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
 
         except (ValueError, IndexError) as e:
             _LOGGER.error("Error parsing zone option %s: %s", option, e)
-    
+
     async def _start_zone_clean(self, zone_id: int) -> None:
         """Send the zone-clean command."""
         _LOGGER.info("Starting zone clean for zone ID: %d", zone_id)
@@ -135,13 +136,13 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
             _LOGGER.info("Zone clean command sent: zone_id=%d", zone_id)
         else:
             _LOGGER.error("Cannot send zone clean command: lawn_mower not available")
-    
+
     async def _on_map_info(self, map_info: dict[str, Any]) -> None:
         """Handle a map info update."""
         self._map_info = map_info
         self._update_options()
         safe_write_ha_state(self)
-    
+
     def _update_options(self) -> None:
         """Update the list of selectable zones based on the map info."""
         if not self._map_info:
@@ -178,7 +179,7 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
             self._current_option = "all_zones"
 
         _LOGGER.debug("Updated zone options: %d sub-zones available", len(self._options) - 1)
-    
+
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
@@ -220,7 +221,7 @@ class MowSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
     """Mowing travel-speed selector - uses dp_155 data."""
 
     _push_dp_ids = (155,)
-    
+
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "mow_speed_setting"
 
@@ -230,7 +231,7 @@ class MowSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         MOW_SPEED_TYPE_MEDIUM,
         MOW_SPEED_TYPE_ADAPTIVE_HIGH,
     ]
-    
+
     def __init__(
         self,
         basic_data: TerraMowBasicData,
@@ -347,24 +348,24 @@ class MowSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
             )
             self.async_write_ha_state()
             return
-            
+
         if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
             _LOGGER.error("Lawn mower not available")
             return
-        
+
         # Send the set command to dp_155
         command = {
             'mow_speed': {
                 'speed_type': option
             }
         }
-        
+
         _LOGGER.info("Setting mow speed to %s", option)
         self.basic_data.lawn_mower.publish_data_point(155, command)
         self._current_option = option
         self._unknown_speed_type = None
         self.async_write_ha_state()
-    
+
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
@@ -392,17 +393,17 @@ class BladeSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
     """Blade-disk speed selector - uses dp_155 data."""
 
     _push_dp_ids = (155,)
-    
+
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "blade_speed"
-    
+
     # Blade-disk speed options
     _attr_options = [
         "BLADE_DISK_SPEED_TYPE_LOW",
-        "BLADE_DISK_SPEED_TYPE_MEDIUM", 
+        "BLADE_DISK_SPEED_TYPE_MEDIUM",
         "BLADE_DISK_SPEED_TYPE_HIGH"
     ]
-    
+
     def __init__(
         self,
         basic_data: TerraMowBasicData,
@@ -443,23 +444,23 @@ class BladeSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         if option not in self._attr_options:
             _LOGGER.error("Invalid blade speed option: %s", option)
             return
-            
+
         if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
             _LOGGER.error("Lawn mower not available")
             return
-        
+
         # Send the set command to dp_155
         command = {
             'blade_disk_speed': {
                 'speed_type': option
             }
         }
-        
+
         _LOGGER.info("Setting blade speed to %s", option)
         self.basic_data.lawn_mower.publish_data_point(155, command)
         self._current_option = option
         self.async_write_ha_state()
-    
+
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
@@ -476,17 +477,17 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
     """Main-direction mode selector - uses dp_155 data."""
 
     _push_dp_ids = (155,)
-    
+
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "main_direction_mode"
-    
+
     # Main-direction mode options
     _attr_options = [
         "MAIN_DIRECTION_MODE_SINGLE",
-        "MAIN_DIRECTION_MODE_MULTIPLE", 
+        "MAIN_DIRECTION_MODE_MULTIPLE",
         "MAIN_DIRECTION_MODE_AUTO_ROTATE"
     ]
-    
+
     def __init__(
         self,
         basic_data: TerraMowBasicData,
@@ -506,11 +507,11 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
                 confirmed_mode = event.data.get("confirmed_mode")
                 if confirmed_mode:
                     self.on_device_mode_confirmed(confirmed_mode)
-        
+
         self.hass.bus.async_listen(f"{DOMAIN}_device_mode_confirmed", on_device_confirmed)
 
     _unique_id_suffix = "main_direction_mode"
-    
+
     def get_effective_mode(self) -> str:
         """Get the currently effective mode (including any pending mode)."""
         # If there is a pending mode, return it in preference
@@ -525,9 +526,9 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
                 device_mode = main_direction_config.get('mode')
                 if device_mode and device_mode in self._attr_options:
                     return str(device_mode)
-        
+
         return self._current_option
-    
+
     @property
     def options(self) -> list[str]:
         """Return the selectable options as lowercase Home Assistant tokens."""
@@ -547,11 +548,11 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         if option not in self._attr_options:
             _LOGGER.error("Invalid main direction mode option: %s", option)
             return
-            
+
         if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
             _LOGGER.error("Lawn mower not available")
             return
-        
+
         # Save the old mode for the event notification
         old_mode = self._current_option
 
@@ -604,7 +605,7 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
 
         # Set a timeout to clear the pending state (prevents a failed device response from leaving the state stuck)
         self.hass.async_create_task(self._clear_pending_mode_after_timeout())
-    
+
     def _notify_angle_controllers_mode_change(self, old_mode: str, new_mode: str) -> None:
         """Notify the related angle controllers that the mode has changed."""
         # Fire a Home Assistant event that the angle controllers can listen for
@@ -614,27 +615,27 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
             "new_mode": new_mode,
             "source": "mode_select"
         })
-        
+
         # Trigger a delayed state update for all related entities
         async def delayed_update() -> None:
             await self.hass.async_add_executor_job(self._force_update_related_entities)
-        
+
         self.hass.async_create_task(delayed_update())
-    
+
     def _force_update_related_entities(self) -> None:
         """Force a state update of the related angle-control entities."""
         try:
             # Simplified entity-update approach: update directly by inferring the entity_id
             related_entity_patterns = [
                 "main_direction_single_angle",
-                "main_direction_auto_rotate_interval", 
+                "main_direction_auto_rotate_interval",
                 "multiple_direction_angle1",
                 "multiple_direction_angle2"
             ]
-            
+
             entities_to_update = []
             host_suffix = self.host.replace('.', '_')
-            
+
             for pattern in related_entity_patterns:
                 # Construct the expected entity_id
                 entity_id = f"number.terramow_{host_suffix}_{pattern}"
@@ -651,11 +652,11 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
                     )
                 except Exception as update_error:
                     _LOGGER.debug("Could not update entity %s: %s", entity_id, update_error)
-                        
+
             _LOGGER.debug("Triggered state update for angle control entities: %s", entities_to_update)
         except Exception as e:
             _LOGGER.warning("Failed to force update related entities: %s", e)
-    
+
     async def _clear_pending_mode_after_timeout(self) -> None:
         """Clear the pending state after a timeout."""
         import asyncio
@@ -664,7 +665,7 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
             _LOGGER.info("Clearing pending mode %s after timeout", self._pending_mode)
             self._pending_mode = None
             self.async_write_ha_state()
-    
+
     def on_device_mode_confirmed(self, confirmed_mode: str) -> None:
         """Callback invoked after the device confirms a mode change."""
         if self._pending_mode == confirmed_mode:
@@ -672,12 +673,12 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
             self._pending_mode = None
             safe_write_ha_state(self)
         elif self._pending_mode:
-            _LOGGER.warning("Device confirmed mode %s but pending mode was %s", 
+            _LOGGER.warning("Device confirmed mode %s but pending mode was %s",
                           confirmed_mode, self._pending_mode)
             self._pending_mode = None
             self._current_option = confirmed_mode
             safe_write_ha_state(self)
-    
+
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
@@ -688,14 +689,14 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
                 'MAIN_DIRECTION_MODE_AUTO_ROTATE': 'Auto Rotate Direction'
             }
         }
-        
+
         # Add status information
         if self._pending_mode:
             attrs['status'] = 'changing_mode'
             attrs['pending_mode'] = self._pending_mode
         else:
             attrs['status'] = 'active'
-        
+
         # Add detailed information about the current configuration
         if hasattr(self.basic_data, 'lawn_mower') and self.basic_data.lawn_mower:
             global_params = self.basic_data.lawn_mower.global_params
@@ -704,7 +705,7 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
                 current_angle = main_direction_config.get('current_angle')
                 if current_angle is not None:
                     attrs['current_angle'] = current_angle
-                
+
                 mode = main_direction_config.get('mode')
                 if mode == 'MAIN_DIRECTION_MODE_SINGLE':
                     single_config = main_direction_config.get('single_mode_config', {})

@@ -43,7 +43,6 @@ from .const import (
     POSE_TOPIC,
     CompatibilityStatus,
 )
-
 from .issues import (
     async_sync_base_station_maintenance_issue,
     async_sync_blade_maintenance_issue,

@@ -8,15 +8,15 @@ automations, instead of being buried in a single "next start" sensor string.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
 import logging
+from datetime import datetime, timedelta
 
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from . import TerraMowBasicData, TerraMowConfigEntry
+from . import TerraMowConfigEntry
 from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin
 

@@ -12,20 +12,19 @@ import time
 from functools import lru_cache
 from typing import Any
 
-from PIL import Image, ImageDraw, ImageFont
-
 from homeassistant.components.camera import Camera
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from PIL import Image, ImageDraw, ImageFont
 
 from . import TerraMowBasicData, TerraMowConfigEntry
-from .entity import TerraMowEntity
-from .entity_utils import safe_write_ha_state
 from .const import (
     CONF_MAP_RESOLUTION,
     DEFAULT_MAP_RESOLUTION,
     MAP_RESOLUTION_OPTIONS,
 )
+from .entity import TerraMowEntity
+from .entity_utils import safe_write_ha_state
 
 # Push-based integration: no update throttling needed
 PARALLEL_UPDATES = 0
@@ -172,7 +171,7 @@ def _load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageF
         font_path = bold_path if bold else regular_path
         try:
             return ImageFont.truetype(font_path, size=size)
-        except (OSError, IOError):
+        except OSError:
             continue
     return ImageFont.load_default()
 
@@ -1656,7 +1655,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         """Draw a dashed line."""
         if len(points) < 2:
             return
-        for start, end in zip(points, points[1:]):
+        for start, end in zip(points, points[1:], strict=False):
             x1, y1 = start
             x2, y2 = end
             dx = x2 - x1
@@ -1727,7 +1726,12 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             self._draw_polygon(image, draw, transformer, polygon, fill, outline, 3)
         for polyline in tunnel.get("polylines", []):
             pixels = transformer.to_pixels(polyline)
-            self._composite_draw(image, lambda overlay_draw: overlay_draw.line(pixels, fill=fill, width=10))
+            self._composite_draw(
+                image,
+                lambda overlay_draw, pixels=pixels: overlay_draw.line(
+                    pixels, fill=fill, width=10
+                ),
+            )
             draw.line(pixels, fill=outline, width=5)
             for point in (pixels[0], pixels[-1]):
                 draw.ellipse(
@@ -1946,10 +1950,10 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         station_mask_rotated = station_mask.rotate(-deg, expand=True, fillcolor=COLOR_TRANSPARENT)
 
         cx, cy = transformer.to_pixel(pose["x"], pose["y"])
-        
+
         image.paste(station_rotated,
                   (cx - station_rotated.width // 2, cy - station_rotated.height // 2),
-                  station_mask_rotated)        
+                  station_mask_rotated)
 
     def _draw_robot(self, image: Image.Image) -> None:
         """Draw the live robot position."""
@@ -1971,7 +1975,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
 
             w = 40
             h = 40
-            
+
             self._robot_image = Image.new('RGBA', (w, h), COLOR_TRANSPARENT)
             draw = ImageDraw.Draw(self._robot_image, 'RGBA')
 

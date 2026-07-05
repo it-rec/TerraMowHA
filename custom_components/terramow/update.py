@@ -11,9 +11,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowBasicData, TerraMowConfigEntry
+from .const import COMPATIBILITY_INFO_DP
 from .entity import TerraMowEntity
 from .entity_utils import safe_write_ha_state
-from .const import COMPATIBILITY_INFO_DP
 
 # Push-based integration: no update throttling needed
 PARALLEL_UPDATES = 0

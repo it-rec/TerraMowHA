@@ -1,34 +1,33 @@
 from __future__ import annotations
-import logging
-import json
 
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+import json
+import logging
+from typing import Any, cast
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorStateClass,
 )
-
 from homeassistant.const import (
     PERCENTAGE,
     EntityCategory,
-    UnitOfTime,
     UnitOfArea,
-    UnitOfLength
+    UnitOfLength,
+    UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from typing import Any, cast
 from . import TerraMowBasicData, TerraMowConfigEntry
-from .entity import TerraMowEntity
-from .entity_utils import PushUpdateMixin, safe_write_ha_state
 from .const import (
-    BLADE_MAINTENANCE_CYCLE_MINUTES,
     BASE_STATION_MAINTENANCE_CYCLE_MINUTES,
+    BLADE_MAINTENANCE_CYCLE_MINUTES,
     MOW_SPEED_TYPES,
     to_ha_enum_state,
 )
+from .entity import TerraMowEntity
+from .entity_utils import PushUpdateMixin, safe_write_ha_state
 from .hub import Mission, MissionState, SubMission
 
 # Push-based integration: no update throttling needed
@@ -763,9 +762,9 @@ async def async_setup_entry(
 
     # Import the map-related sensor classes
     from .map_sensor import (
-        TerraMowMapStatusSensor,
-        TerraMowMapAreaSensor,
         TerraMowCleanModeSensor,
+        TerraMowMapAreaSensor,
+        TerraMowMapStatusSensor,
     )
 
     # Build the list of sensor entities

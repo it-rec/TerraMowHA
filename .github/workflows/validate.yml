@@ -110,10 +110,11 @@ jobs:
         run: python -m compileall custom_components/terramow
 
       - name: Install ruff
-        run: python -m pip install --upgrade pip ruff
+        # Pinned so a future ruff release can't add rules that break the
+        # now-blocking lint gate; bump deliberately.
+        run: python -m pip install --upgrade pip "ruff==0.15.20"
 
       - name: Run ruff
-        continue-on-error: true
         run: ruff check custom_components/terramow
 
   mypy:
