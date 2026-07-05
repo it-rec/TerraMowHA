@@ -112,7 +112,7 @@ Integraatio on käännetty seuraaville kielille: Български · Català �
 
 ### Tuki
 
-Avaa issue [GitHubissa](https://github.com/TerraMow/TerraMowHA/issues) saadaksesi tukea.
+Avaa issue [GitHubissa](https://github.com/it-rec/TerraMowHA/issues) saadaksesi tukea.
 
 ### Tietoa kehittäjille
 

@@ -112,7 +112,7 @@ La integración está traducida a: Български · Català · Čeština ·
 
 ### Soporte
 
-Abra un issue en [GitHub](https://github.com/TerraMow/TerraMowHA/issues) para obtener soporte.
+Abra un issue en [GitHub](https://github.com/it-rec/TerraMowHA/issues) para obtener soporte.
 
 ### Información para desarrolladores
 
