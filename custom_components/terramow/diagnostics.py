@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 
 from . import TerraMowConfigEntry
 
-# 主机名/IP 与密码属于隐私信息，导出前打码。
+# The hostname/IP and password are private information; redact them before export.
 TO_REDACT = {CONF_HOST, CONF_PASSWORD, "host"}
 
 

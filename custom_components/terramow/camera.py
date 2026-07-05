@@ -1,6 +1,6 @@
-"""TerraMow 地图摄像头实体。
+"""TerraMow map camera entity.
 
-将 ha_map_v1 / ha_path_v1 / pose 渲染为带 HUD 的 PNG 地图。
+Renders ha_map_v1 / ha_path_v1 / pose into a PNG map with a HUD overlay.
 """
 
 from __future__ import annotations
@@ -32,11 +32,11 @@ PARALLEL_UPDATES = 0
 
 _LOGGER = logging.getLogger(__name__)
 
-# 输出画布
+# Output canvas
 IMAGE_WIDTH = 1024
 IMAGE_HEIGHT = 1024
 
-# 布局
+# Layout
 OUTER_MARGIN = 40
 MAP_RECT = (40, 40, 984, 728)
 SUMMARY_RECT = (40, 760, 984, 928)
@@ -44,7 +44,7 @@ MAP_PADDING = 24
 MAP_RADIUS = 28
 CARD_RADIUS = 24
 
-# 颜色定义
+# Color definitions
 COLOR_APP_BG = (237, 240, 244, 255)
 COLOR_MAP_BG = (244, 244, 246, 255)
 COLOR_CARD_BG = (255, 255, 255, 255)
@@ -153,7 +153,7 @@ HANDLED_PATH_FIELDS = {"id", "map_id", "type", "points"}
 
 @lru_cache(maxsize=32)
 def _load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    """加载字体。"""
+    """Load a font."""
     candidates = [
         (
             "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
@@ -178,7 +178,7 @@ def _load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageF
 
 
 class CoordinateTransformer:
-    """地图坐标 (mm) → 画布像素坐标转换器。"""
+    """Converts map coordinates (mm) to canvas pixel coordinates."""
 
     def __init__(
         self,
@@ -221,18 +221,18 @@ class CoordinateTransformer:
         )
 
     def to_pixel(self, x: float, y: float) -> tuple[int, int]:
-        """转换地图坐标到像素坐标（仅做缩放和平移）。"""
+        """Convert a map coordinate to a pixel coordinate (scaling and translation only)."""
         px = int(round(x * self._scale + self._offset_x))
         py = int(round(y * self._scale + self._offset_y))
         return px, py
 
     def to_pixels(self, points: list[tuple[float, float]]) -> list[tuple[int, int]]:
-        """批量转换坐标。"""
+        """Convert coordinates in bulk."""
         return [self.to_pixel(point[0], point[1]) for point in points]
 
 
 def _coerce_float(value: Any) -> float | None:
-    """尽量把输入转换为浮点数。"""
+    """Convert the input to a float where possible."""
     if value is None or isinstance(value, bool):
         return None
     if isinstance(value, (int, float)):
@@ -246,7 +246,7 @@ def _coerce_float(value: Any) -> float | None:
 
 
 def _coerce_int(value: Any) -> int | None:
-    """尽量把输入转换为整数。"""
+    """Convert the input to an int where possible."""
     number = _coerce_float(value)
     if number is None:
         return None
@@ -254,7 +254,7 @@ def _coerce_int(value: Any) -> int | None:
 
 
 def _point_tuple(obj: Any) -> tuple[float, float] | None:
-    """从对象提取 Point。"""
+    """Extract a Point from an object."""
     if not isinstance(obj, dict):
         return None
     x = _coerce_float(obj.get("x"))
@@ -265,7 +265,7 @@ def _point_tuple(obj: Any) -> tuple[float, float] | None:
 
 
 def _pose_tuple(obj: Any) -> dict[str, float] | None:
-    """从对象提取 Pose。"""
+    """Extract a Pose from an object."""
     point = _point_tuple(obj)
     if point is None:
         return None
@@ -281,7 +281,7 @@ def _pose_tuple(obj: Any) -> dict[str, float] | None:
 
 
 def _polygon_points(polygon: dict[str, Any] | None) -> list[tuple[float, float]]:
-    """从 Polygon 对象提取点列表。"""
+    """Extract the point list from a Polygon object."""
     if not isinstance(polygon, dict):
         return []
     raw = polygon.get("points")
@@ -296,7 +296,7 @@ def _polygon_points(polygon: dict[str, Any] | None) -> list[tuple[float, float]]
 
 
 def _line_points(line: Any) -> list[tuple[float, float]]:
-    """从 Line 或任意线性结构提取点列表。"""
+    """Extract the point list from a Line or any linear structure."""
     if isinstance(line, dict):
         direct = _polygon_points(line)
         if len(direct) >= 2:
@@ -321,7 +321,7 @@ def _line_points(line: Any) -> list[tuple[float, float]]:
 
 
 def _collect_recursive_points(data: Any, limit: int = 64) -> list[tuple[float, float]]:
-    """递归收集任意对象中的点位。"""
+    """Recursively collect points from an arbitrary object."""
     points: list[tuple[float, float]] = []
     stack = [data]
     while stack and len(points) < limit:
@@ -341,7 +341,7 @@ def _collect_recursive_points(data: Any, limit: int = 64) -> list[tuple[float, f
 
 
 def _dedupe_points(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
-    """按坐标去重。"""
+    """Deduplicate points by coordinate."""
     seen: set[tuple[int, int]] = set()
     result: list[tuple[float, float]] = []
     for point in points:
@@ -354,7 +354,7 @@ def _dedupe_points(points: list[tuple[float, float]]) -> list[tuple[float, float
 
 
 def _ellipse_points(ellipse: Any, segments: int = 36) -> list[tuple[float, float]]:
-    """把 Ellipse 近似成多边形点集。"""
+    """Approximate an Ellipse as a set of polygon points."""
     if not isinstance(ellipse, dict):
         return []
 
@@ -421,7 +421,7 @@ def _ellipse_points(ellipse: Any, segments: int = 36) -> list[tuple[float, float
 
 
 def _extract_polygons(item: Any) -> list[list[tuple[float, float]]]:
-    """从对象提取多边形列表。"""
+    """Extract the list of polygons from an object."""
     polygons: list[list[tuple[float, float]]] = []
     if not isinstance(item, dict):
         return polygons
@@ -444,7 +444,7 @@ def _extract_polygons(item: Any) -> list[list[tuple[float, float]]]:
 
 
 def _extract_polylines(item: Any) -> list[list[tuple[float, float]]]:
-    """从对象提取折线列表。"""
+    """Extract the list of polylines from an object."""
     polylines: list[list[tuple[float, float]]] = []
     if not isinstance(item, dict):
         return polylines
@@ -460,7 +460,7 @@ def _extract_polylines(item: Any) -> list[list[tuple[float, float]]]:
 
 
 def _feature_points(item: Any) -> list[tuple[float, float]]:
-    """提取一个空间对象的所有点。"""
+    """Extract all points of a spatial object."""
     points: list[tuple[float, float]] = []
     for polygon in _extract_polygons(item):
         points.extend(polygon)
@@ -476,7 +476,7 @@ def _feature_points(item: Any) -> list[tuple[float, float]]:
 
 
 def _polygon_centroid(points: list[tuple[float, float]]) -> tuple[float, float] | None:
-    """计算简单中心点。"""
+    """Compute a simple centroid."""
     if not points:
         return None
     x = sum(point[0] for point in points) / len(points)
@@ -485,7 +485,7 @@ def _polygon_centroid(points: list[tuple[float, float]]) -> tuple[float, float] 
 
 
 def _extract_marker_points(items: list[Any]) -> list[tuple[float, float]]:
-    """从一组对象提取中心点。"""
+    """Extract center points from a collection of objects."""
     markers: list[tuple[float, float]] = []
     for item in items:
         points = _feature_points(item)
@@ -497,7 +497,7 @@ def _extract_marker_points(items: list[Any]) -> list[tuple[float, float]]:
 
 
 def _extract_path_points(path_data: dict[str, Any]) -> list[dict[str, Any]]:
-    """从 ha_path_v1 提取 PathPoint 列表。"""
+    """Extract the PathPoint list from ha_path_v1."""
     raw = path_data.get("points")
     if not isinstance(raw, list):
         return []
@@ -519,14 +519,14 @@ def _extract_path_points(path_data: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _path_map_id(path_data: dict[str, Any]) -> int | None:
-    """提取路径对应的地图 ID。"""
+    """Extract the map ID that the path belongs to."""
     if not isinstance(path_data, dict):
         return None
     return _coerce_int(path_data.get("map_id"))
 
 
 def _path_point_key(point: dict[str, Any]) -> tuple[int, int, str]:
-    """生成路径点去重键。"""
+    """Build a deduplication key for a path point."""
     return (
         int(round(point["x"] * 1000)),
         int(round(point["y"] * 1000)),
@@ -538,7 +538,7 @@ def _merge_path_points(
     history_points: list[dict[str, Any]],
     current_points: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """按“历史路径在前，当前路径在后”的方式拼接路径点。"""
+    """Concatenate path points with the history path first and the current path last."""
     if not history_points:
         return list(current_points)
     if not current_points:
@@ -549,12 +549,12 @@ def _merge_path_points(
 
 
 def _filter_cleaning_path_points(path_points: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """只保留割草路径点。"""
+    """Keep only mowing path points."""
     return [point for point in path_points if point.get("type") == "PATH_POINT_TYPE_CLEANING"]
 
 
 def _pixel_distance(point_a: tuple[int, int], point_b: tuple[int, int]) -> float:
-    """计算两个像素点之间的距离。"""
+    """Compute the distance between two pixel points."""
     return math.hypot(point_b[0] - point_a[0], point_b[1] - point_a[1])
 
 
@@ -563,7 +563,7 @@ def _point_line_distance(
     line_start: tuple[int, int],
     line_end: tuple[int, int],
 ) -> float:
-    """计算点到线段的垂直距离。"""
+    """Compute the perpendicular distance from a point to a line segment."""
     x0, y0 = point
     x1, y1 = line_start
     x2, y2 = line_end
@@ -575,7 +575,7 @@ def _point_line_distance(
 
 
 def _rdp_simplify_pixels(points: list[tuple[int, int]], epsilon: float) -> list[tuple[int, int]]:
-    """用 RDP 算法简化像素折线。"""
+    """Simplify a pixel polyline using the RDP algorithm."""
     if len(points) <= 2:
         return list(points)
     max_distance = 0.0
@@ -599,7 +599,7 @@ def _simplify_path_pixels(
     epsilon: float,
     min_segment: float,
 ) -> list[tuple[int, int]]:
-    """对路径像素做显示层简化。"""
+    """Simplify path pixels for display purposes."""
     if len(pixels) <= 2:
         return list(pixels)
 
@@ -624,7 +624,7 @@ def _simplify_path_pixels(
 
 
 def _extract_map_extent(map_data: dict[str, Any]) -> list[tuple[float, float]]:
-    """根据 width/height/resolution/origin 推导地图外框。"""
+    """Derive the map's outer bounding box from width/height/resolution/origin."""
     width = _coerce_float(map_data.get("width"))
     height = _coerce_float(map_data.get("height"))
     resolution = _coerce_float(map_data.get("resolution"))
@@ -643,7 +643,7 @@ def _extract_map_extent(map_data: dict[str, Any]) -> list[tuple[float, float]]:
 
 
 def _extract_all_map_points(map_data: dict[str, Any]) -> list[tuple[float, float]]:
-    """收集地图中的所有已知坐标点。"""
+    """Collect all known coordinate points in the map."""
     points: list[tuple[float, float]] = []
     points.extend(_extract_map_extent(map_data))
 
@@ -693,7 +693,7 @@ def _extract_all_map_points(map_data: dict[str, Any]) -> list[tuple[float, float
 
 
 def _enum_label(value: Any) -> str:
-    """把枚举字符串转换成更短的可读文本。"""
+    """Convert an enum string into shorter, human-readable text."""
     if not isinstance(value, str) or not value:
         return "-"
     replacements = {
@@ -716,14 +716,14 @@ def _enum_label(value: Any) -> str:
 
 
 def _truncate(text: str, max_length: int) -> str:
-    """截断字符串。"""
+    """Truncate a string."""
     if len(text) <= max_length:
         return text
     return text[: max_length - 1] + "…"
 
 
 def _format_area(total_area_tenths: Any) -> str:
-    """格式化面积。"""
+    """Format an area value."""
     area = _coerce_float(total_area_tenths)
     if area is None:
         return "-"
@@ -731,7 +731,7 @@ def _format_area(total_area_tenths: Any) -> str:
 
 
 def _format_file_size(value: Any) -> str:
-    """格式化文件大小。"""
+    """Format a file size."""
     size = _coerce_float(value)
     if size is None:
         return "-"
@@ -746,14 +746,14 @@ def _format_file_size(value: Any) -> str:
 
 
 def _format_point(point: tuple[float, float] | None) -> str:
-    """格式化点位。"""
+    """Format a point."""
     if point is None:
         return "-"
     return f"{int(round(point[0]))}, {int(round(point[1]))}"
 
 
 def _format_size(map_data: dict[str, Any]) -> str:
-    """格式化尺寸信息。"""
+    """Format size information."""
     width = _coerce_int(map_data.get("width"))
     height = _coerce_int(map_data.get("height"))
     resolution = _coerce_int(map_data.get("resolution"))
@@ -763,7 +763,7 @@ def _format_size(map_data: dict[str, Any]) -> str:
 
 
 def _coerce_angle_radians(value: Any, milli_radian: bool = False) -> float | None:
-    """把角度转换成弧度。"""
+    """Convert an angle to radians."""
     number = _coerce_float(value)
     if number is None:
         return None
@@ -773,12 +773,12 @@ def _coerce_angle_radians(value: Any, milli_radian: bool = False) -> float | Non
 
 
 def _normalize_angle_radians(value: float) -> float:
-    """把弧度归一化到 [-pi, pi)。"""
+    """Normalize radians to the range [-pi, pi)."""
     return math.atan2(math.sin(value), math.cos(value))
 
 
 def _render_placeholder(text: str = "Waiting for map data...") -> bytes:
-    """生成占位图。"""
+    """Generate a placeholder image."""
     image = Image.new("RGB", (IMAGE_WIDTH, IMAGE_HEIGHT), COLOR_PLACEHOLDER_BG[:3])
     draw = ImageDraw.Draw(image)
     title_font = _load_font(28, bold=True)
@@ -809,7 +809,7 @@ def _render_placeholder(text: str = "Waiting for map data...") -> bytes:
 
 
 class TerraMowMapCamera(TerraMowEntity, Camera):
-    """地图摄像头实体。"""
+    """Map camera entity."""
 
 
     def __init__(
@@ -858,7 +858,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """返回渲染元信息。"""
+        """Return rendering metadata."""
         attributes = dict(self._render_metadata)
         robot_state = self._get_display_robot_state()
         rendered_layers = list(attributes.get("rendered_layers", []))
@@ -888,7 +888,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         return await self.hass.async_add_executor_job(self._render_final_image)
 
     async def _on_map_info(self, map_info: dict[str, Any]) -> None:
-        """地图信息更新回调。"""
+        """Callback for map info updates."""
         lawn_mower = self.basic_data.lawn_mower
         if lawn_mower:
             self._map_data = lawn_mower.map_data or {}
@@ -900,7 +900,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         safe_write_ha_state(self)
 
     async def _on_path_data(self, path_data: dict[str, Any]) -> None:
-        """路径数据更新回调。"""
+        """Callback for path data updates."""
         self._path_data = path_data
         if not self._path_data_logged and path_data:
             _LOGGER.debug(
@@ -913,7 +913,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         safe_write_ha_state(self)
 
     async def _on_history_path_data(self, path_data: dict[str, Any]) -> None:
-        """历史路径数据更新回调。"""
+        """Callback for history path data updates."""
         self._history_path_data = path_data
         if not self._history_path_data_logged and path_data:
             _LOGGER.debug(
@@ -926,7 +926,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         safe_write_ha_state(self)
 
     async def _on_pose(self, pose: dict[str, Any]) -> None:
-        """姿态更新回调。"""
+        """Callback for pose updates."""
         self._pose = pose
         self._cached_png = None
         now = time.monotonic()
@@ -935,12 +935,12 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             safe_write_ha_state(self)
 
     async def _on_battery_status(self, _payload: str) -> None:
-        """电池状态更新后清理机器人图层缓存。"""
+        """Clear the robot layer cache after a battery status update."""
         self._cached_png = None
         safe_write_ha_state(self)
 
     def _get_battery_connected(self) -> bool | None:
-        """读取当前是否已连接充电器。"""
+        """Read whether the charger is currently connected."""
         lawn_mower = self.basic_data.lawn_mower
         if lawn_mower is None:
             return None
@@ -953,7 +953,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         return bool(connected)
 
     def _get_live_robot_pose(self) -> dict[str, Any] | None:
-        """解析实时 pose，并标记是否为全 0 无效姿态。"""
+        """Parse the live pose and flag whether it is an all-zero invalid pose."""
         if not isinstance(self._pose, dict) or not self._pose:
             return None
         x = _coerce_float(self._pose.get("x"))
@@ -969,7 +969,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         }
 
     def _get_display_robot_state(self) -> dict[str, Any]:
-        """决定地图上最终显示的机器人姿态。"""
+        """Determine the final robot pose to display on the map."""
         battery_connected = self._get_battery_connected()
         live_pose = self._get_live_robot_pose()
         if live_pose is not None and not live_pose["is_zero"]:
@@ -1009,7 +1009,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         }
 
     def _build_scene(self) -> dict[str, Any]:
-        """把原始协议数据整理成可绘制的场景。"""
+        """Organize the raw protocol data into a drawable scene."""
         map_data = self._map_data if isinstance(self._map_data, dict) else {}
         path_data = self._path_data if isinstance(self._path_data, dict) else {}
         history_path_data = self._history_path_data if isinstance(self._history_path_data, dict) else {}
@@ -1255,7 +1255,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         return scene
 
     def _build_render_metadata(self, scene: dict[str, Any]) -> dict[str, Any]:
-        """构建实体 attributes。"""
+        """Build the entity attributes."""
         map_data = self._map_data if isinstance(self._map_data, dict) else {}
         path_data = self._path_data if isinstance(self._path_data, dict) else {}
         history_path_data = self._history_path_data if isinstance(self._history_path_data, dict) else {}
@@ -1371,7 +1371,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         }
 
     def _rebuild_static_image(self) -> None:
-        """重建静态图层。"""
+        """Rebuild the static layers."""
         scene = self._build_scene()
         self._render_metadata = self._build_render_metadata(scene)
 
@@ -1401,7 +1401,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         self._static_image = image
 
     def _draw_background(self, image: Image.Image) -> None:
-        """绘制画布底色和卡片。"""
+        """Draw the canvas background and cards."""
         draw = ImageDraw.Draw(image, "RGBA")
         draw.rounded_rectangle(MAP_RECT, radius=MAP_RADIUS, fill=COLOR_MAP_BG, outline=COLOR_CARD_BORDER)
         draw.rounded_rectangle(
@@ -1418,12 +1418,12 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         draw.rounded_rectangle(SUMMARY_RECT, radius=CARD_RADIUS, fill=COLOR_CARD_BG)
 
     def _draw_empty_map_card(self, image: Image.Image, scene: dict[str, Any]) -> None:
-        """没有空间数据时的空地图。"""
+        """Empty map shown when there is no spatial data."""
         draw = ImageDraw.Draw(image, "RGBA")
         title_font = _load_font(28, bold=True)
         body_font = _load_font(18)
         title = self._map_data.get("name") or "TerraMow Map"
-        subtitle = "地图元数据已收到，但没有可绘制的空间点"
+        subtitle = "Map metadata received, but there are no spatial points to draw"
         title_box = draw.textbbox((0, 0), title, font=title_font)
         body_box = draw.textbbox((0, 0), subtitle, font=body_font)
         center_x = (self._map_rect[0] + self._map_rect[2]) / 2
@@ -1444,7 +1444,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             self._draw_map_chips(draw, scene)
 
     def _draw_scene(self, image: Image.Image, scene: dict[str, Any]) -> None:
-        """绘制完整场景。"""
+        """Draw the complete scene."""
         draw = ImageDraw.Draw(image, "RGBA")
         transformer = self._transformer
         if transformer is None:
@@ -1584,7 +1584,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         image: Image.Image,
         draw_fn: Any,
     ) -> None:
-        """在透明图层上绘制后再与主图合成。"""
+        """Draw on a transparent layer, then composite it onto the main image."""
         overlay = Image.new("RGBA", (IMAGE_WIDTH, IMAGE_HEIGHT), (0, 0, 0, 0))
         overlay_draw = ImageDraw.Draw(overlay, "RGBA")
         draw_fn(overlay_draw)
@@ -1596,7 +1596,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         polygon_pixels: list[tuple[int, int]],
         fill: tuple[int, int, int, int],
     ) -> None:
-        """对多边形填充做真正的 alpha 合成。"""
+        """Perform proper alpha compositing for the polygon fill."""
         self._composite_draw(image, lambda overlay_draw: overlay_draw.polygon(polygon_pixels, fill=fill))
 
     def _draw_polygon_pixels(
@@ -1608,7 +1608,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         outline: tuple[int, int, int, int],
         width: int,
     ) -> None:
-        """按像素点绘制多边形，填充单独合成，描边直接绘制。"""
+        """Draw a polygon from pixel points; composite the fill separately and draw the outline directly."""
         if len(pixels) < 3:
             return
         if fill[3] > 0:
@@ -1625,7 +1625,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         outline: tuple[int, int, int, int],
         width: int,
     ) -> None:
-        """绘制面。"""
+        """Draw a filled polygon."""
         if len(polygon) < 3:
             return
         pixels = transformer.to_pixels(polygon)
@@ -1639,7 +1639,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         color: tuple[int, int, int, int],
         width: int,
     ) -> None:
-        """绘制折线。"""
+        """Draw a polyline."""
         if len(polyline) < 2:
             return
         draw.line(transformer.to_pixels(polyline), fill=color, width=width)
@@ -1653,7 +1653,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         dash: int,
         gap: int,
     ) -> None:
-        """绘制虚线。"""
+        """Draw a dashed line."""
         if len(points) < 2:
             return
         for start, end in zip(points, points[1:]):
@@ -1688,7 +1688,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         color: tuple[int, int, int, int],
         spacing: int = 12,
     ) -> None:
-        """给区域叠加斜线纹理。"""
+        """Overlay a diagonal hatch texture on a region."""
         if len(polygon_pixels) < 3:
             return
         mask = Image.new("L", (IMAGE_WIDTH, IMAGE_HEIGHT), 0)
@@ -1722,7 +1722,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         fill: tuple[int, int, int, int],
         outline: tuple[int, int, int, int],
     ) -> None:
-        """绘制跨区通道。"""
+        """Draw a cross-boundary tunnel."""
         for polygon in tunnel.get("polygons", []):
             self._draw_polygon(image, draw, transformer, polygon, fill, outline, 3)
         for polyline in tunnel.get("polylines", []):
@@ -1742,7 +1742,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         color: tuple[int, int, int, int],
         kind: str,
     ) -> None:
-        """绘制点状标记。"""
+        """Draw a point marker."""
         x, y = center
         if kind == "diamond":
             points = [(x, y - 8), (x + 8, y), (x, y + 8), (x - 8, y)]
@@ -1770,7 +1770,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         center: tuple[int, int],
         order: int,
     ) -> None:
-        """绘制顺序徽标。"""
+        """Draw an order badge."""
         x, y = center
         draw.ellipse([x - 16, y - 16, x + 16, y + 16], fill=COLOR_BADGE_RED, outline=COLOR_TEXT_WHITE, width=2)
         font = _load_font(16, bold=True)
@@ -1784,14 +1784,14 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         )
 
     def _draw_target(self, draw: ImageDraw.ImageDraw, center: tuple[int, int]) -> None:
-        """绘制目标点。"""
+        """Draw a target point."""
         x, y = center
         draw.ellipse([x - 18, y - 18, x + 18, y + 18], outline=COLOR_BADGE_BLUE, width=3)
         draw.ellipse([x - 10, y - 10, x + 10, y + 10], outline=COLOR_BADGE_BLUE, width=2)
         draw.ellipse([x - 3, y - 3, x + 3, y + 3], fill=COLOR_BADGE_BLUE)
 
     def _draw_origin(self, draw: ImageDraw.ImageDraw, center: tuple[int, int]) -> None:
-        """绘制原点标记。"""
+        """Draw the origin marker."""
         x, y = center
         draw.line([(x - 8, y), (x + 8, y)], fill=COLOR_ORIGIN, width=2)
         draw.line([(x, y - 8), (x, y + 8)], fill=COLOR_ORIGIN, width=2)
@@ -1807,7 +1807,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         dash: int | None = None,
         gap: int | None = None,
     ) -> None:
-        """绘制带柔和外沿的路径。"""
+        """Draw a path with a soft glow edge."""
         if len(pixels) < 2:
             return
         if dash is not None and gap is not None:
@@ -1835,7 +1835,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         path_points: list[dict[str, Any]],
         variant: str,
     ) -> None:
-        """按通道样式绘制一层路径。"""
+        """Draw a single path layer in the given variant style."""
         transformer = self._transformer
         if transformer is None or len(path_points) < 2:
             return
@@ -1873,7 +1873,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         )
 
     def _draw_path(self, image: Image.Image, scene: dict[str, Any]) -> None:
-        """按历史路径和当前路径分别绘制轨迹。"""
+        """Draw the history path and current path tracks separately."""
         self._draw_path_layer(image, scene.get("history_path_points", []), "history")
         self._draw_path_layer(image, scene.get("current_path_points", []), "current")
 
@@ -1882,7 +1882,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         draw: ImageDraw.ImageDraw,
         segment: list[dict[str, Any]],
     ) -> None:
-        """保留旧接口，兼容现有引用。"""
+        """Kept as a legacy interface for backward compatibility with existing references."""
         transformer = self._transformer
         if transformer is None or len(segment) < 2:
             return
@@ -1900,7 +1900,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         )
 
     def _draw_station(self, image: Image.Image, pose: dict[str, float]) -> None:
-        """绘制基站。"""
+        """Draw the base station."""
         transformer = self._transformer
         if transformer is None:
             return
@@ -1952,7 +1952,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
                   station_mask_rotated)        
 
     def _draw_robot(self, image: Image.Image) -> None:
-        """绘制实时机器人位置。"""
+        """Draw the live robot position."""
         transformer = self._transformer
         if transformer is None:
             return
@@ -2004,7 +2004,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
                   robot_mask_rotated)
 
     def _draw_map_chips(self, draw: ImageDraw.ImageDraw, scene: dict[str, Any]) -> None:
-        """绘制地图上方摘要标签。"""
+        """Draw the summary chips above the map."""
         name = self._map_data.get("name") or f"Map #{self._map_data.get('id', '-')}"
         state = _enum_label(self._map_data.get("map_state"))
 
@@ -2022,7 +2022,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         fill: tuple[int, int, int, int],
         text_color: tuple[int, int, int, int],
     ) -> None:
-        """绘制圆角标签。"""
+        """Draw a rounded-corner chip."""
         x, y = location
         width = self._chip_width(text)
         height = 32
@@ -2037,7 +2037,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         )
 
     def _chip_width(self, text: str) -> int:
-        """计算标签宽度。"""
+        """Compute the chip width."""
         font = _load_font(15, bold=True)
         dummy = Image.new("RGBA", (1, 1))
         draw = ImageDraw.Draw(dummy)
@@ -2045,7 +2045,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         return int(box[2] - box[0] + 24)
 
     def _draw_summary_panel(self, image: Image.Image, scene: dict[str, Any]) -> None:
-        """绘制底部摘要信息。"""
+        """Draw the bottom summary panel."""
         draw = ImageDraw.Draw(image, "RGBA")
         left, top, right, bottom = SUMMARY_RECT
         width = right - left
@@ -2117,7 +2117,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         draw.text((title_x, top + 18), title, fill=COLOR_TEXT_SUBTLE, font=title_font)
 
     def _render_final_image(self) -> bytes:
-        """渲染最终图像。"""
+        """Render the final image."""
         if self._cached_png is not None:
             return self._cached_png
 
@@ -2148,7 +2148,7 @@ async def async_setup_entry(
     config_entry: TerraMowConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """初始化 camera 平台。"""
+    """Initialize the camera platform."""
     basic_data = config_entry.runtime_data
     resolution = config_entry.options.get(
         CONF_MAP_RESOLUTION, DEFAULT_MAP_RESOLUTION

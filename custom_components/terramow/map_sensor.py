@@ -29,7 +29,7 @@ async def async_setup_entry(
     """Set up TerraMow map sensors."""
     basic_data = config_entry.runtime_data
     
-    # 创建地图传感器实体
+    # Create the map sensor entities
     entities = [
         TerraMowMapStatusSensor(basic_data, hass),
         TerraMowMapAreaSensor(basic_data, hass),
@@ -39,7 +39,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 class TerraMowMapSensorBase(TerraMowEntity, SensorEntity):
-    """地图传感器基类"""
+    """Base class for map sensors."""
     
     def __init__(
         self,
@@ -49,17 +49,17 @@ class TerraMowMapSensorBase(TerraMowEntity, SensorEntity):
         super().__init__(basic_data, hass)
         self._map_info: dict[str, Any] = {}
         
-        # 注册地图信息回调
+        # Register the map info callback
         if hasattr(basic_data, 'lawn_mower') and basic_data.lawn_mower:
             basic_data.lawn_mower.register_map_callback(self._on_map_info)
 
     async def _on_map_info(self, map_info: dict[str, Any]) -> None:
-        """处理地图信息更新"""
+        """Handle a map info update."""
         self._map_info = map_info
         safe_write_ha_state(self)
 
 class TerraMowMapStatusSensor(TerraMowEntity, SensorEntity):
-    """地图状态传感器 - 使用dp_117数据"""
+    """Map status sensor - uses dp_117 data."""
     
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "map_status"
@@ -104,10 +104,10 @@ class TerraMowMapStatusSensor(TerraMowEntity, SensorEntity):
         }
 
 class TerraMowMapAreaSensor(TerraMowMapSensorBase):
-    """地图面积传感器"""
-    
+    """Map area sensor."""
+
     _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
-    _attr_device_class = None  # 没有标准的面积设备类
+    _attr_device_class = None  # no standard device class for area
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "map_area"
@@ -120,13 +120,13 @@ class TerraMowMapAreaSensor(TerraMowMapSensorBase):
         if not self._map_info:
             return None
         
-        # total_area单位为0.1平方米，转换为平方米
+        # total_area is in units of 0.1 square meters; convert to square meters
         total_area = self._map_info.get('total_area', 0)
         return round(total_area / 10, 1) if total_area else None
 
 
 class TerraMowCleanModeSensor(TerraMowMapSensorBase):
-    """清洁模式传感器"""
+    """Clean mode sensor."""
     
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "clean_mode"
@@ -155,7 +155,7 @@ class TerraMowCleanModeSensor(TerraMowMapSensorBase):
         clean_info = self._map_info.get('clean_info', {})
         attrs = {}
         
-        # 根据不同的作业模式显示详细信息
+        # Show detailed information depending on the working mode
         if 'select_region' in clean_info:
             region_ids = clean_info['select_region'].get('region_id', [])
             attrs['selected_regions'] = region_ids

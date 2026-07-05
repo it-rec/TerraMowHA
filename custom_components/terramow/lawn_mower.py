@@ -50,7 +50,7 @@ async def async_setup_entry(
 class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
     """The lawn mower entity, fed by the shared hub."""
 
-    # 使用默认图标
+    # Use the default icon
     _attr_translation_key = "lawn_mower"
 
     def __init__(
@@ -60,7 +60,7 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
     ) -> None:
         """Initialize a lawn mower."""
         super().__init__(basic_data, hass)
-        self._activity = LawnMowerActivity.DOCKED  # 默认状态
+        self._activity = LawnMowerActivity.DOCKED  # default state
 
         self._has_returning = hasattr(LawnMowerActivity, 'RETURNING')
         if not self._has_returning:
@@ -77,7 +77,7 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
         """Track hub state changes (connection, dp_107, model name)."""
         await super().async_added_to_hass()
         self.hub.register_state_listener(self._on_hub_state)
-        # 初始状态可能在实体创建前就已到达
+        # The initial state may have arrived before the entity was created
         self.update_activity_from_state()
 
     def _on_hub_state(self) -> None:
@@ -96,7 +96,7 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
         old_activity = self._activity
         self._activity = value
         if old_activity != value:
-            # 只在真正变化时用 INFO，避免每条 dp_107 都刷一行日志
+            # Only log at INFO on an actual change, to avoid a line per dp_107
             _LOGGER.info("Activity changed from %s to %s", old_activity, value)
         _LOGGER.debug("State change details: mission=%s, sub_mission=%s, mission_state=%s, has_error=%s",
                      self.hub.mission, self.hub.sub_mission, self.hub.mission_state, self.hub.has_error)
@@ -127,10 +127,10 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
         elif hub.mission_state == MissionState.MISSION_STATE_RUNNING:
             if hub.mission in MOW_MISSIONS:
                 if hub.sub_mission == SubMission.SUB_MISSION_FLEXIBLE_STATION_WAIT:
-                    # 基站中等待，等效于暂停
+                    # Waiting at the base station, equivalent to paused
                     self.activity = LawnMowerActivity.PAUSED
                 elif hub.sub_mission == SubMission.SUB_MISSION_SAVING_MAP:
-                    # 正在保存地图，等效于结束
+                    # Saving the map, equivalent to finished
                     self.activity = LawnMowerActivity.DOCKED
                 else:
                     self.activity = LawnMowerActivity.MOWING
@@ -138,7 +138,7 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
                 if self._has_returning:
                     self.activity = LawnMowerActivity.RETURNING
                 else:
-                    # 旧版本的HA没有RETURNING状态，使用DOCKED替代
+                    # Older HA versions lack a RETURNING state; use DOCKED instead
                     self.activity = LawnMowerActivity.DOCKED
             else:
                 self.activity = LawnMowerActivity.DOCKED
