@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Κούρεμα λειτουργία"
+      },
+      "rain_sensor_threshold": {
+        "name": "Όριο αισθητήρα βροχής"
+      },
+      "after_rain_resume_delay": {
+        "name": "Καθυστέρηση συνέχισης μετά τη βροχή"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Ακραίες καιρικές συνθήκες"
+      },
+      "cliff_detection": {
+        "name": "Ανίχνευση γκρεμού"
+      },
+      "slope_detection": {
+        "name": "Ανίχνευση κλίσης"
+      },
+      "after_rain_auto_resume": {
+        "name": "Αυτόματη συνέχιση μετά τη βροχή"
       }
     },
     "button": {

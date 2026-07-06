@@ -216,6 +216,7 @@ class TerraMowHub:
         self._environment_info: dict[str, Any] = {}  # Store dp_152 environment/status
         self._weather_info: dict[str, Any] = {}  # Store dp_157 extreme-weather warning
         self._operating_modes: dict[str, Any] = {}  # Store dp_154 operating modes
+        self._advanced_settings: dict[str, Any] = {}  # Store dp_150 advanced settings
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
         # Latest raw payload seen for each unhandled data point, surfaced in
@@ -366,6 +367,7 @@ class TerraMowHub:
         self.register_callback(152, self.on_environment_info)
         self.register_callback(157, self.on_weather_info)
         self.register_callback(154, self.on_operating_modes)
+        self.register_callback(150, self.on_advanced_settings)
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
 
     async def on_global_params(self, payload: str) -> None:
@@ -598,6 +600,21 @@ class TerraMowHub:
             return
         if isinstance(data, dict):
             self._operating_modes = data
+
+    async def on_advanced_settings(self, payload: str) -> None:
+        """Handle the advanced settings block (dp_150, undocumented).
+
+        Observed as nested ``{"enable_cliff_detection":{"value":bool},
+        "rain_sensor_threshold":{"upper_limit":int},"after_rain_stop_setting":{…},
+        …}``. Surfaced read-only; parsed defensively.
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_150: %s", payload)
+            return
+        if isinstance(data, dict):
+            self._advanced_settings = data
 
     async def on_battery_status(self, payload: str) -> None:
         """Handle battery status updates (dp_108)."""
@@ -1514,6 +1531,11 @@ class TerraMowHub:
     def operating_modes(self) -> dict[str, Any]:
         """Get the operating-mode triple (dp_154, undocumented)."""
         return self._operating_modes
+
+    @property
+    def advanced_settings(self) -> dict[str, Any]:
+        """Get the advanced settings block (dp_150, undocumented)."""
+        return self._advanced_settings
 
     @property
     def is_robot_navi_located(self) -> bool | None:

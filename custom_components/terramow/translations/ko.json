@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "예초 모드"
+      },
+      "rain_sensor_threshold": {
+        "name": "빗물 센서 임계값"
+      },
+      "after_rain_resume_delay": {
+        "name": "비 온 후 재개 지연"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "기상 이변"
+      },
+      "cliff_detection": {
+        "name": "절벽 감지"
+      },
+      "slope_detection": {
+        "name": "경사 감지"
+      },
+      "after_rain_auto_resume": {
+        "name": "비 온 후 자동 재개"
       }
     },
     "button": {

@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Košnja način"
+      },
+      "rain_sensor_threshold": {
+        "name": "Prag senzorja dežja"
+      },
+      "after_rain_resume_delay": {
+        "name": "Zakasnitev nadaljevanja po dežju"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Ekstremno vreme"
+      },
+      "cliff_detection": {
+        "name": "Zaznavanje robov"
+      },
+      "slope_detection": {
+        "name": "Zaznavanje naklona"
+      },
+      "after_rain_auto_resume": {
+        "name": "Samodejno nadaljevanje po dežju"
       }
     },
     "button": {

@@ -935,6 +935,58 @@ class MowModeSensor(_OperatingModeSensorBase):
     _unique_id_suffix = "mow_mode"
 
 
+class RainSensorThresholdSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
+    """Rain-sensor upper-limit threshold (dp_150, unofficial, read-only)."""
+
+    _push_dp_ids = (150,)
+    _attr_translation_key = "rain_sensor_threshold"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _unique_id_suffix = "rain_sensor_threshold"
+
+    @property
+    def native_value(self) -> int | None:
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower:
+            return None
+        node = lawn_mower.advanced_settings.get("rain_sensor_threshold")
+        if not isinstance(node, dict):
+            return None
+        value = node.get("upper_limit")
+        return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+class AfterRainResumeDelaySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
+    """After-rain auto-resume delay in minutes (dp_150, unofficial, read-only)."""
+
+    _push_dp_ids = (150,)
+    _attr_translation_key = "after_rain_resume_delay"
+    _attr_device_class = SensorDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.MINUTES
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _unique_id_suffix = "after_rain_resume_delay"
+
+    @property
+    def native_value(self) -> int | None:
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower:
+            return None
+        setting = lawn_mower.advanced_settings.get("after_rain_stop_setting")
+        if not isinstance(setting, dict):
+            return None
+        delay = setting.get("auto_resume_delay_time")
+        if not isinstance(delay, dict):
+            return None
+
+        def _int(value: Any) -> int | None:
+            return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+        hours, minutes = _int(delay.get("hours")), _int(delay.get("minutes"))
+        if hours is None and minutes is None:
+            return None
+        return (hours or 0) * 60 + (minutes or 0)
+
+
 class SunriseSensor(_SunTimeSensorBase):
     """Device-reported sunrise time (dp_152)."""
 
@@ -1024,6 +1076,8 @@ CurrentJobTypeSensor(basic_data, hass),
         MoveModeSensor(basic_data, hass),
         MapModeSensor(basic_data, hass),
         MowModeSensor(basic_data, hass),
+        RainSensorThresholdSensor(basic_data, hass),
+        AfterRainResumeDelaySensor(basic_data, hass),
     ]
 
     async_add_entities(entities)

@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Corte modo"
+      },
+      "rain_sensor_threshold": {
+        "name": "Limiar do sensor de chuva"
+      },
+      "after_rain_resume_delay": {
+        "name": "Atraso de retoma após chuva"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Clima extremo"
+      },
+      "cliff_detection": {
+        "name": "Deteção de bordas"
+      },
+      "slope_detection": {
+        "name": "Deteção de inclinação"
+      },
+      "after_rain_auto_resume": {
+        "name": "Retoma automática após chuva"
       }
     },
     "button": {

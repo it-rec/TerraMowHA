@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Косіння режим"
+      },
+      "rain_sensor_threshold": {
+        "name": "Поріг датчика дощу"
+      },
+      "after_rain_resume_delay": {
+        "name": "Затримка відновлення після дощу"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Екстремальна погода"
+      },
+      "cliff_detection": {
+        "name": "Виявлення урвищ"
+      },
+      "slope_detection": {
+        "name": "Виявлення схилів"
+      },
+      "after_rain_auto_resume": {
+        "name": "Автовідновлення після дощу"
       }
     },
     "button": {

@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Maaien modus"
+      },
+      "rain_sensor_threshold": {
+        "name": "Regensensordrempel"
+      },
+      "after_rain_resume_delay": {
+        "name": "Hervattingsvertraging na regen"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Extreem weer"
+      },
+      "cliff_detection": {
+        "name": "Klifdetectie"
+      },
+      "slope_detection": {
+        "name": "Hellingdetectie"
+      },
+      "after_rain_auto_resume": {
+        "name": "Auto-hervatten na regen"
       }
     },
     "button": {

@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Tonte mode"
+      },
+      "rain_sensor_threshold": {
+        "name": "Seuil du capteur de pluie"
+      },
+      "after_rain_resume_delay": {
+        "name": "Délai de reprise après pluie"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Météo extrême"
+      },
+      "cliff_detection": {
+        "name": "Détection de vide"
+      },
+      "slope_detection": {
+        "name": "Détection de pente"
+      },
+      "after_rain_auto_resume": {
+        "name": "Reprise auto après pluie"
       }
     },
     "button": {

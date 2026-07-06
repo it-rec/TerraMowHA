@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Taglio modalità"
+      },
+      "rain_sensor_threshold": {
+        "name": "Soglia sensore pioggia"
+      },
+      "after_rain_resume_delay": {
+        "name": "Ritardo ripresa dopo pioggia"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Meteo estremo"
+      },
+      "cliff_detection": {
+        "name": "Rilevamento dislivelli"
+      },
+      "slope_detection": {
+        "name": "Rilevamento pendenze"
+      },
+      "after_rain_auto_resume": {
+        "name": "Ripresa automatica dopo pioggia"
       }
     },
     "button": {

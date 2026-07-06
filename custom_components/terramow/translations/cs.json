@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Sečení režim"
+      },
+      "rain_sensor_threshold": {
+        "name": "Práh dešťového senzoru"
+      },
+      "after_rain_resume_delay": {
+        "name": "Zpoždění pokračování po dešti"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Extrémní počasí"
+      },
+      "cliff_detection": {
+        "name": "Detekce srázů"
+      },
+      "slope_detection": {
+        "name": "Detekce svahů"
+      },
+      "after_rain_auto_resume": {
+        "name": "Auto. pokračování po dešti"
       }
     },
     "button": {

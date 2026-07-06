@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Косене режим"
+      },
+      "rain_sensor_threshold": {
+        "name": "Праг на дъждовния сензор"
+      },
+      "after_rain_resume_delay": {
+        "name": "Забавяне при възобновяване след дъжд"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Екстремно време"
+      },
+      "cliff_detection": {
+        "name": "Откриване на ръбове"
+      },
+      "slope_detection": {
+        "name": "Откриване на наклон"
+      },
+      "after_rain_auto_resume": {
+        "name": "Авт. възобновяване след дъжд"
       }
     },
     "button": {

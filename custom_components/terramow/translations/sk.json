@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Kosenie režim"
+      },
+      "rain_sensor_threshold": {
+        "name": "Prah dažďového senzora"
+      },
+      "after_rain_resume_delay": {
+        "name": "Oneskorenie pokračovania po daždi"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Extrémne počasie"
+      },
+      "cliff_detection": {
+        "name": "Detekcia zrázov"
+      },
+      "slope_detection": {
+        "name": "Detekcia svahov"
+      },
+      "after_rain_auto_resume": {
+        "name": "Automatické pokračovanie po daždi"
       }
     },
     "button": {

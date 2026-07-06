@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Tuns mod"
+      },
+      "rain_sensor_threshold": {
+        "name": "Prag senzor de ploaie"
+      },
+      "after_rain_resume_delay": {
+        "name": "Întârziere reluare după ploaie"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Vreme extremă"
+      },
+      "cliff_detection": {
+        "name": "Detectare margini"
+      },
+      "slope_detection": {
+        "name": "Detectare pantă"
+      },
+      "after_rain_auto_resume": {
+        "name": "Reluare automată după ploaie"
       }
     },
     "button": {
