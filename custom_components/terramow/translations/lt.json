@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Paskutinis įvykis"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Mobilusis ryšys RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Mobilusis ryšys RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Mobilusis ryšys tipas"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Vyksta duomenų konvertavimas"
+      },
+      "cellular_enabled": {
+        "name": "Mobilusis ryšys įjungta"
       }
     },
     "button": {

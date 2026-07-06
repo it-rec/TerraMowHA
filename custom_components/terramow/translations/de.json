@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Letztes Ereignis"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Mobilfunk RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Mobilfunk RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Mobilfunk Typ"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Datenkonvertierung läuft"
+      },
+      "cellular_enabled": {
+        "name": "Mobilfunk aktiviert"
       }
     },
     "button": {

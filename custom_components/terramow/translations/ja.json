@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "最新のイベント"
+      },
+      "cellular_signal_rsrp": {
+        "name": "モバイル通信 RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "モバイル通信 RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "モバイル通信 タイプ"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "データ変換進行中"
+      },
+      "cellular_enabled": {
+        "name": "モバイル通信 有効"
       }
     },
     "button": {

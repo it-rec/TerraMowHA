@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Остання подія"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Мобільна мережа RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Мобільна мережа RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Мобільна мережа тип"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Виконується перетворення даних"
+      },
+      "cellular_enabled": {
+        "name": "Мобільна мережа увімкнено"
       }
     },
     "button": {

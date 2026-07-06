@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Laatste gebeurtenis"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Mobiel netwerk RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Mobiel netwerk RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Mobiel netwerk type"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Gegevensconversie bezig"
+      },
+      "cellular_enabled": {
+        "name": "Mobiel netwerk ingeschakeld"
       }
     },
     "button": {

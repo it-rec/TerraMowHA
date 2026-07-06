@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "最新事件"
+      },
+      "cellular_signal_rsrp": {
+        "name": "行動網路 RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "行動網路 RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "行動網路 類型"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "資料轉換進行中"
+      },
+      "cellular_enabled": {
+        "name": "行動網路 已啟用"
       }
     },
     "button": {

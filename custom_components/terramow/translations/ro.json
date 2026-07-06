@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Ultimul eveniment"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Rețea mobilă RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Rețea mobilă RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Rețea mobilă tip"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Conversie de Date în Curs"
+      },
+      "cellular_enabled": {
+        "name": "Rețea mobilă activat"
       }
     },
     "button": {

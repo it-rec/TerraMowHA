@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Τελευταίο συμβάν"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Κινητό δίκτυο RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Κινητό δίκτυο RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Κινητό δίκτυο τύπος"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Μετατροπή Δεδομένων σε Εξέλιξη"
+      },
+      "cellular_enabled": {
+        "name": "Κινητό δίκτυο ενεργό"
       }
     },
     "button": {

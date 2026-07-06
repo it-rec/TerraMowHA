@@ -11,6 +11,7 @@ from unittest.mock import MagicMock
 
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.binary_sensor import (
+    CellularEnabledSensor,
     PowerSwitchSensor,
     TerraMowChargingSensor,
     TerraMowMapDetectedBinarySensor,
@@ -31,6 +32,9 @@ from custom_components.terramow.sensor import (
     CurrentSessionProgressSensor,
     CurrentSessionTimeSensor,
     ActiveErrorsSensor,
+    CellularConnectionTypeSensor,
+    CellularSignalRsrpSensor,
+    CellularSignalRsrqSensor,
     LastEventSensor,
     MainDirectionStatusSensor,
     NextScheduledStartSensor,
@@ -86,6 +90,49 @@ def test_last_event_sensor_from_dp123() -> None:
     _feed(hub.on_event_data, {"event_list": ["oops"]})
     assert sensor.native_value is None
     assert sensor.extra_state_attributes == {}
+
+
+# ---------------------------------------------------------------------------
+# dp_135 — cellular / 4G (unofficial)
+# ---------------------------------------------------------------------------
+
+
+def test_cellular_sensors_disabled_report_none() -> None:
+    hub = _hub()
+    rsrp = CellularSignalRsrpSensor(hub.basic_data, hub.hass)
+    rsrq = CellularSignalRsrqSensor(hub.basic_data, hub.hass)
+    ctype = CellularConnectionTypeSensor(hub.basic_data, hub.hass)
+    enabled = CellularEnabledSensor(hub.basic_data, hub.hass)
+    # no dp_135 yet -> unavailable/None everywhere
+    assert rsrp.native_value is None and enabled.is_on is None
+    assert ctype.native_value is None
+    # disabled modem: signal is None, type still reported, enabled False
+    _feed(hub.on_cellular_info, {
+        "is_enabled": False, "RSRP": 0, "RSRQ": 0, "type": "CELLULAR_TYPE_UNKNOWN",
+    })
+    assert rsrp.native_value is None
+    assert rsrq.native_value is None
+    assert ctype.native_value == "CELLULAR_TYPE_UNKNOWN"
+    assert enabled.is_on is False
+    # a missing/empty type degrades to None
+    _feed(hub.on_cellular_info, {"is_enabled": False, "type": ""})
+    assert ctype.native_value is None
+
+
+def test_cellular_sensors_enabled_report_signal() -> None:
+    hub = _hub()
+    rsrp = CellularSignalRsrpSensor(hub.basic_data, hub.hass)
+    rsrq = CellularSignalRsrqSensor(hub.basic_data, hub.hass)
+    enabled = CellularEnabledSensor(hub.basic_data, hub.hass)
+    _feed(hub.on_cellular_info, {
+        "is_enabled": True, "RSRP": -95, "RSRQ": -12, "type": "CELLULAR_TYPE_LTE",
+    })
+    assert rsrp.native_value == -95
+    assert rsrq.native_value == -12
+    assert enabled.is_on is True
+    # a non-integer signal value degrades to None
+    _feed(hub.on_cellular_info, {"is_enabled": True, "RSRP": "x", "RSRQ": None})
+    assert rsrp.native_value is None and rsrq.native_value is None
 
 
 # ---------------------------------------------------------------------------

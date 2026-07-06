@@ -37,6 +37,7 @@ such an export.
 | 116 | Active-error list | `{"error_list":[]}` | **Active errors** sensor (count + `errors` attribute) |
 | 123 | Event log | `{"event_list":[{"code":8,"time":"…Z"}]}` | **Last event** sensor (latest `code` + `event_time` attribute) |
 | 129 | Per-component firmware versions | `{"ap_app":"9.9.210","main_controller":"09.09.210",…}` | firmware `update` entity `component_versions` attribute |
+| 135 | Cellular / 4G modem info (only on models with a modem) | `{"is_enabled":false,"RSRP":0,"RSRQ":0,"type":"CELLULAR_TYPE_UNKNOWN",…}` | **Cellular enabled** binary sensor; **Cellular RSRP** / **RSRQ** / **type** sensors (signal sensors are `None` while disabled) |
 
 ## Observed but not yet surfaced
 
@@ -52,7 +53,6 @@ Documented here for future work; not decoded into entities yet.
 | 119 | Command acknowledgement | `{"seq":…,"code":0}` |
 | 122 | Full schedule list (richer than dp_138) | `{"cmd_type":"SCHEDULE_CMD_TYPE_GET","schedule_list":{"items":[…]}}` |
 | 134 | Unknown enum | `{"enum_value":1}` |
-| 135 | Cellular / 4G modem info | `{"is_enabled":false,"ICCID":"","RSRP":0,"RSRQ":0,"type":"CELLULAR_TYPE_UNKNOWN",…}` |
 | 145 | Custom-passage creation status | `{"stage":"CUSTOM_PASSAGE_STAGE_INVALID","is_on_grass":false,…}` |
 | 146 | Unknown scalar | `{"int_value":1}` |
 | 150 | Advanced settings | `{"enable_cliff_detection":{…},"mow_spacing":{…},"rain_sensor_threshold":{…},…}` |

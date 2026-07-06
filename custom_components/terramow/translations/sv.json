@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Senaste händelse"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Mobilnätverk RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Mobilnätverk RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Mobilnätverk typ"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Datakonvertering pågår"
+      },
+      "cellular_enabled": {
+        "name": "Mobilnätverk aktiverad"
       }
     },
     "button": {

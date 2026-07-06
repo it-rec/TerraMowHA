@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Pēdējais notikums"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Mobilais tīkls RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Mobilais tīkls RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Mobilais tīkls veids"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Notiek datu konvertēšana"
+      },
+      "cellular_enabled": {
+        "name": "Mobilais tīkls iespējots"
       }
     },
     "button": {

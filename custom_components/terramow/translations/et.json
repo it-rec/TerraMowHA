@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Viimane sündmus"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Mobiilside RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Mobiilside RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Mobiilside tüüp"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Andmete teisendamine käib"
+      },
+      "cellular_enabled": {
+        "name": "Mobiilside lubatud"
       }
     },
     "button": {

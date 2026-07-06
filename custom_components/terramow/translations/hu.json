@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Utolsó esemény"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Mobilhálózat RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Mobilhálózat RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Mobilhálózat típus"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Adatátalakítás Folyamatban"
+      },
+      "cellular_enabled": {
+        "name": "Mobilhálózat engedélyezve"
       }
     },
     "button": {
