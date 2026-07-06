@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "Límite cerrado"
+      },
+      "state_flag_134": {
+        "name": "Indicador de estado 134"
       }
     },
     "button": {

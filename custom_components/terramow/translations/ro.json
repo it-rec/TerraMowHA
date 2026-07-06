@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "Limită închisă"
+      },
+      "state_flag_134": {
+        "name": "Indicator de stare 134"
       }
     },
     "button": {

@@ -218,6 +218,7 @@ class TerraMowHub:
         self._operating_modes: dict[str, Any] = {}  # Store dp_154 operating modes
         self._advanced_settings: dict[str, Any] = {}  # Store dp_150 advanced settings
         self._full_schedule: dict[str, Any] = {}  # Store dp_122 full weekly schedule list
+        self._state_flag_134: dict[str, Any] = {}  # Store dp_134 undecoded binary flag
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
         # Latest raw payload seen for each unhandled data point, surfaced in
@@ -369,6 +370,7 @@ class TerraMowHub:
         self.register_callback(157, self.on_weather_info)
         self.register_callback(154, self.on_operating_modes)
         self.register_callback(122, self.on_full_schedule)
+        self.register_callback(134, self.on_state_flag_134)
         self.register_callback(150, self.on_advanced_settings)
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
 
@@ -607,6 +609,21 @@ class TerraMowHub:
             schedule_list = data.get("schedule_list")
             if isinstance(schedule_list, dict):
                 self._full_schedule = schedule_list
+
+    async def on_state_flag_134(self, payload: str) -> None:
+        """Handle the undecoded binary flag (dp_134, undocumented).
+
+        Observed as ``{"enum_value":0|1}`` toggling during operation. The
+        meaning is unknown; the raw payload is cached so a diagnostic binary
+        sensor can surface it for decoding.
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_134: %s", payload)
+            return
+        if isinstance(data, dict):
+            self._state_flag_134 = data
 
     async def on_operating_modes(self, payload: str) -> None:
         """Handle the operating-mode triple (dp_154, undocumented).
@@ -1559,6 +1576,11 @@ class TerraMowHub:
     def full_schedule(self) -> dict[str, Any]:
         """Get the full weekly schedule list (dp_122, undocumented)."""
         return self._full_schedule
+
+    @property
+    def state_flag_134(self) -> dict[str, Any]:
+        """Get the undecoded binary flag payload (dp_134, undocumented)."""
+        return self._state_flag_134
 
     @property
     def advanced_settings(self) -> dict[str, Any]:

@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "Confine chiuso"
+      },
+      "state_flag_134": {
+        "name": "Flag di stato 134"
       }
     },
     "button": {

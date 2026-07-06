@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "Grens gesloten"
+      },
+      "state_flag_134": {
+        "name": "Statusvlag 134"
       }
     },
     "button": {

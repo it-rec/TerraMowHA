@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "Hranica uzavretá"
+      },
+      "state_flag_134": {
+        "name": "Stavový príznak 134"
       }
     },
     "button": {

@@ -157,6 +157,15 @@ def test_on_full_schedule_branches() -> None:
     assert hub.full_schedule == {"items": [], "global_disabled": False}
 
 
+def test_on_state_flag_134_branches() -> None:
+    hub = _hub()
+    asyncio.run(hub.on_state_flag_134("not-json"))
+    asyncio.run(hub.on_state_flag_134(json.dumps([1])))
+    assert hub.state_flag_134 == {}
+    asyncio.run(hub.on_state_flag_134(json.dumps({"enum_value": 1})))
+    assert hub.state_flag_134 == {"enum_value": 1}
+
+
 def test_request_full_schedule_publishes_get() -> None:
     hub = _hub()
     hub._request_full_schedule()

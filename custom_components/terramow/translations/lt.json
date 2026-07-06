@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "Riba uždaryta"
+      },
+      "state_flag_134": {
+        "name": "Būsenos vėliavėlė 134"
       }
     },
     "button": {

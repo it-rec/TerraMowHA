@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "Граница замкнута"
+      },
+      "state_flag_134": {
+        "name": "Флаг состояния 134"
       }
     },
     "button": {

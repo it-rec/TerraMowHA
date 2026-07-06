@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "Határ lezárva"
+      },
+      "state_flag_134": {
+        "name": "Állapotjelző 134"
       }
     },
     "button": {

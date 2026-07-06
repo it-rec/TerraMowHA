@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "Граница затворена"
+      },
+      "state_flag_134": {
+        "name": "Заставица стања 134"
       }
     },
     "button": {

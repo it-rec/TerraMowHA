@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "Raja suljettu"
+      },
+      "state_flag_134": {
+        "name": "Tilalippu 134"
       }
     },
     "button": {

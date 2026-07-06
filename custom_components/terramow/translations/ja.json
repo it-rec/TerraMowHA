@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "境界が閉じた"
+      },
+      "state_flag_134": {
+        "name": "状態フラグ 134"
       }
     },
     "button": {
