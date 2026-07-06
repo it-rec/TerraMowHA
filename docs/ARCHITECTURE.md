@@ -52,7 +52,7 @@ The 11 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
 | `button.py` | Edge-trim start, reset blade timer (dp_126←0), reset base-station timer (dp_125←0) |
 | `switch.py` | Thorough-corner-cutting toggle (writes dp_155) |
 | `event.py` | Fires HA events on mission phase transitions (started/paused/returning/docked/completed/error) |
-| `calendar.py` | Read-only calendar of the next scheduled mow (dp_138) |
+| `calendar.py` | Read-only schedule calendar — full weekly slots (dp_122) when available, else the next scheduled mow (dp_138) |
 
 ## 3. Config-entry lifecycle
 
@@ -211,6 +211,7 @@ properties (mostly through `PushUpdateMixin._push_dp_ids`).
 | 113 | in | `on_current_work_data` | `current_work_data` | current-session area/time/progress + job-type sensors | Current mowing-session work data |
 | 116 | in | `on_error_list` | `error_list` | Active-errors sensor | *Unofficial* — active-error list; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 117 | in | `on_map_status` | `map_status` | `map_status` sensor, map-detected/buildable/backing-up binary sensors | Map status flags |
+| 122 | in / **out** | `on_full_schedule` | `full_schedule` | schedule calendar (full weekly view) | *Unofficial* — full weekly schedule list; requested on connect via `SCHEDULE_CMD_TYPE_GET`, only sent in response; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 123 | in | `on_event_data` | `event_list` | Last-event sensor | *Unofficial* — device event log; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 124 | in | `on_statistics_data` | `statistics_data` | total mowing time/jobs/area sensors | Lifetime statistics |
 | 125 | in / **out** | `on_base_station_time` | `base_station_time` | remaining base-station-time sensor, reset button (writes `int_value:0`) | Base-station usage minutes; syncs maintenance repair issue |

@@ -36,6 +36,7 @@ such an export.
 |----|---------|------------------|-------------|
 | 102 | Device / network info; carries the real app firmware version | `{"version":"9.9.210","sn":"…","wifi_mac":"…","ip":"…","ssid":"…","warranty":{…}}` | firmware `update` entity version + device `sw_version` (identifiers kept private) |
 | 116 | Active-error list | `{"error_list":[]}` | **Active errors** sensor (count + `errors` attribute) |
+| 122 | Full weekly schedule (richer than dp_138). Only sent in response to a `SCHEDULE_CMD_TYPE_GET` request, which the hub issues on connect | `{"cmd_type":"SCHEDULE_CMD_TYPE_GET","schedule_list":{"items":[{"id":0,"schedule_type":"SCHEDULE_TYPE_GLOBAL_V2","global_schedule_v2":{"basic_config":{"week_days":["WEEK_DAY_MONDAY",…],"start_time":{"hour":9,"minute":30},"end_time":{"hour":11,"minute":0},"disabled":false,"run_once":false}}}],"global_disabled":false,"disabled_week_days":[],…}}` | Schedule `calendar` entity: renders every recurring weekly slot when available, otherwise falls back to the dp_138 next-slot view |
 | 123 | Event log | `{"event_list":[{"code":8,"time":"…Z"}]}` | **Last event** sensor (latest `code` + `event_time` attribute) |
 | 129 | Per-component firmware versions | `{"ap_app":"9.9.210","main_controller":"09.09.210",…}` | firmware `update` entity `component_versions` attribute |
 | 135 | Cellular / 4G modem info (only on models with a modem) | `{"is_enabled":false,"RSRP":0,"RSRQ":0,"type":"CELLULAR_TYPE_UNKNOWN",…}` | **Cellular enabled** binary sensor; **Cellular RSRP** / **RSRQ** / **type** sensors (signal sensors are `None` while disabled) |
@@ -56,7 +57,6 @@ Documented here for future work; not decoded into entities yet.
 | 114 | Unknown scalar | `{"int_value":8}` |
 | 118 | Unknown scalar (percentage?) | `{"int_value":100}` |
 | 119 | Command acknowledgement | `{"seq":…,"code":0}` |
-| 122 | Full schedule list (richer than dp_138) | `{"cmd_type":"SCHEDULE_CMD_TYPE_GET","schedule_list":{"items":[…]}}` |
 | 134 | Unknown enum | `{"enum_value":1}` |
 | 145 | Custom-passage creation status | `{"stage":"CUSTOM_PASSAGE_STAGE_INVALID","is_on_grass":false,…}` |
 | 146 | Unknown scalar | `{"int_value":1}` |
