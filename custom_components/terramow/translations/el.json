@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Αυτόματη συνέχιση μετά τη βροχή"
+      },
+      "force_single_base_station": {
+        "name": "Επιβολή μονού σταθμού βάσης"
+      },
+      "force_cellular_network": {
+        "name": "Επιβολή κινητού δικτύου"
+      },
+      "manual_mapping_relocation": {
+        "name": "Απαιτείται επανεντοπισμός"
+      },
+      "manual_mapping_takeover": {
+        "name": "Απαιτείται ανάληψη"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Το όριο έκλεισε"
       }
     },
     "button": {

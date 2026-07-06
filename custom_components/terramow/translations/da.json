@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Auto-genoptagelse efter regn"
+      },
+      "force_single_base_station": {
+        "name": "Gennemtving enkelt basestation"
+      },
+      "force_cellular_network": {
+        "name": "Gennemtving mobilnetværk"
+      },
+      "manual_mapping_relocation": {
+        "name": "Genplacering nødvendig"
+      },
+      "manual_mapping_takeover": {
+        "name": "Overtagelse nødvendig"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Grænse lukket"
       }
     },
     "button": {

@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Авт. възобновяване след дъжд"
+      },
+      "force_single_base_station": {
+        "name": "Принудително една базова станция"
+      },
+      "force_cellular_network": {
+        "name": "Принудителна мобилна мрежа"
+      },
+      "manual_mapping_relocation": {
+        "name": "Нужна релокализация"
+      },
+      "manual_mapping_takeover": {
+        "name": "Нужно поемане"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Границата е затворена"
       }
     },
     "button": {

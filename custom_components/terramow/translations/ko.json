@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "비 온 후 자동 재개"
+      },
+      "force_single_base_station": {
+        "name": "단일 기지국 강제"
+      },
+      "force_cellular_network": {
+        "name": "셀룰러 네트워크 강제"
+      },
+      "manual_mapping_relocation": {
+        "name": "재배치 필요"
+      },
+      "manual_mapping_takeover": {
+        "name": "인계 필요"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "경계 닫힘"
       }
     },
     "button": {

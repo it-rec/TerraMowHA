@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Автовідновлення після дощу"
+      },
+      "force_single_base_station": {
+        "name": "Примусово одна базова станція"
+      },
+      "force_cellular_network": {
+        "name": "Примусово мобільна мережа"
+      },
+      "manual_mapping_relocation": {
+        "name": "Потрібна релокалізація"
+      },
+      "manual_mapping_takeover": {
+        "name": "Потрібне втручання"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Межу закрито"
       }
     },
     "button": {

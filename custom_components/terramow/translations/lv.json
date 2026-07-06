@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Automātiska atsākšana pēc lietus"
+      },
+      "force_single_base_station": {
+        "name": "Piespiest vienu bāzes staciju"
+      },
+      "force_cellular_network": {
+        "name": "Piespiest mobilo tīklu"
+      },
+      "manual_mapping_relocation": {
+        "name": "Nepieciešama pārvietošana"
+      },
+      "manual_mapping_takeover": {
+        "name": "Nepieciešama pārņemšana"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Robeža aizvērta"
       }
     },
     "button": {

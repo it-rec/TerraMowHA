@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Reluare automată după ploaie"
+      },
+      "force_single_base_station": {
+        "name": "Forțează stație de bază unică"
+      },
+      "force_cellular_network": {
+        "name": "Forțează rețea mobilă"
+      },
+      "manual_mapping_relocation": {
+        "name": "Necesită relocalizare"
+      },
+      "manual_mapping_takeover": {
+        "name": "Necesită preluare"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Limită închisă"
       }
     },
     "button": {

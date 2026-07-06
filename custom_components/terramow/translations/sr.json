@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Аутоматски наставак након кише"
+      },
+      "force_single_base_station": {
+        "name": "Приморај једну базну станицу"
+      },
+      "force_cellular_network": {
+        "name": "Приморај мобилну мрежу"
+      },
+      "manual_mapping_relocation": {
+        "name": "Потребна релокација"
+      },
+      "manual_mapping_takeover": {
+        "name": "Потребно преузимање"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Граница затворена"
       }
     },
     "button": {

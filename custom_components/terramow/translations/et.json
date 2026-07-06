@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Automaatne jätkamine pärast vihma"
+      },
+      "force_single_base_station": {
+        "name": "Sunni üksik baasjaam"
+      },
+      "force_cellular_network": {
+        "name": "Sunni mobiilsidevõrk"
+      },
+      "manual_mapping_relocation": {
+        "name": "Vaja ümberpaigutamist"
+      },
+      "manual_mapping_takeover": {
+        "name": "Vaja ülevõtmist"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Piir suletud"
       }
     },
     "button": {

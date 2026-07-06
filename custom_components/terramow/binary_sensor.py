@@ -50,6 +50,11 @@ async def async_setup_entry(
         CliffDetectionSensor(basic_data, hass),
         SlopeDetectionSensor(basic_data, hass),
         AfterRainAutoResumeSensor(basic_data, hass),
+        ForceSingleBaseStationSensor(basic_data, hass),
+        ForceCellularNetworkSensor(basic_data, hass),
+        ManualMappingRelocationSensor(basic_data, hass),
+        ManualMappingTakeoverSensor(basic_data, hass),
+        ManualMappingBoundaryClosedSensor(basic_data, hass),
     ]
 
     async_add_entities(entities)
@@ -452,3 +457,68 @@ class AfterRainAutoResumeSensor(_AdvancedSettingBinarySensorBase):
     _attr_translation_key = "after_rain_auto_resume"
     _path = ("after_rain_stop_setting", "enable_auto_resume")
     _unique_id_suffix = "after_rain_auto_resume"
+
+
+class ForceSingleBaseStationSensor(_AdvancedSettingBinarySensorBase):
+    """Whether single-base-station mode is forced (dp_150)."""
+
+    _attr_translation_key = "force_single_base_station"
+    _attr_entity_registry_enabled_default = False
+    _path = ("force_single_base_station_mode", "value")
+    _unique_id_suffix = "force_single_base_station"
+
+
+class ForceCellularNetworkSensor(_AdvancedSettingBinarySensorBase):
+    """Whether the cellular network is forced (dp_150)."""
+
+    _attr_translation_key = "force_cellular_network"
+    _attr_entity_registry_enabled_default = False
+    _path = ("force_cellular_network", "value")
+    _unique_id_suffix = "force_cellular_network"
+
+
+class _ManualMappingBinarySensorBase(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
+    """Base for the dp_152 ``manual_mapping`` flags (unofficial, read-only).
+
+    Transient states during manual mapping; off by default. Set ``_field``.
+    """
+
+    _push_dp_ids = (152,)
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
+    _field = ""
+
+    @property
+    def is_on(self) -> bool | None:
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower:
+            return None
+        manual = lawn_mower.environment_info.get("manual_mapping")
+        if not isinstance(manual, dict):
+            return None
+        value = manual.get(self._field)
+        return value if isinstance(value, bool) else None
+
+
+class ManualMappingRelocationSensor(_ManualMappingBinarySensorBase):
+    """Manual mapping needs relocation (dp_152)."""
+
+    _attr_translation_key = "manual_mapping_relocation"
+    _field = "need_relocation"
+    _unique_id_suffix = "manual_mapping_relocation"
+
+
+class ManualMappingTakeoverSensor(_ManualMappingBinarySensorBase):
+    """Manual mapping needs takeover (dp_152)."""
+
+    _attr_translation_key = "manual_mapping_takeover"
+    _field = "need_takeover"
+    _unique_id_suffix = "manual_mapping_takeover"
+
+
+class ManualMappingBoundaryClosedSensor(_ManualMappingBinarySensorBase):
+    """Manual mapping boundary is closed (dp_152)."""
+
+    _attr_translation_key = "manual_mapping_boundary_closed"
+    _field = "is_boundary_closed"
+    _unique_id_suffix = "manual_mapping_boundary_closed"

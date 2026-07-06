@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Represa automàtica després de pluja"
+      },
+      "force_single_base_station": {
+        "name": "Forçar estació base única"
+      },
+      "force_cellular_network": {
+        "name": "Forçar xarxa mòbil"
+      },
+      "manual_mapping_relocation": {
+        "name": "Cal reubicació"
+      },
+      "manual_mapping_takeover": {
+        "name": "Cal intervenció"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Límit tancat"
       }
     },
     "button": {

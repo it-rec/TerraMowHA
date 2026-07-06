@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Auto-Fortsetzen nach Regen"
+      },
+      "force_single_base_station": {
+        "name": "Einzel-Basisstation erzwingen"
+      },
+      "force_cellular_network": {
+        "name": "Mobilfunk erzwingen"
+      },
+      "manual_mapping_relocation": {
+        "name": "Neulokalisierung nötig"
+      },
+      "manual_mapping_takeover": {
+        "name": "Übernahme nötig"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Grenze geschlossen"
       }
     },
     "button": {

@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Ripresa automatica dopo pioggia"
+      },
+      "force_single_base_station": {
+        "name": "Forza stazione base singola"
+      },
+      "force_cellular_network": {
+        "name": "Forza rete mobile"
+      },
+      "manual_mapping_relocation": {
+        "name": "Riposizionamento necessario"
+      },
+      "manual_mapping_takeover": {
+        "name": "Intervento necessario"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Confine chiuso"
       }
     },
     "button": {

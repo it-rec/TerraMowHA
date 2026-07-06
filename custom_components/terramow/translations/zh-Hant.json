@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "雨後自動恢復"
+      },
+      "force_single_base_station": {
+        "name": "強制單基站"
+      },
+      "force_cellular_network": {
+        "name": "強制行動網路"
+      },
+      "manual_mapping_relocation": {
+        "name": "需要重新定位"
+      },
+      "manual_mapping_takeover": {
+        "name": "需要接管"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "邊界已閉合"
       }
     },
     "button": {
