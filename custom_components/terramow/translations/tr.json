@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Yağmur sonrası devam gecikmesi"
+      },
+      "map_save_progress": {
+        "name": "Harita kaydetme ilerlemesi"
       }
     },
     "camera": {

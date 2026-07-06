@@ -166,6 +166,15 @@ def test_on_state_flag_134_branches() -> None:
     assert hub.state_flag_134 == {"enum_value": 1}
 
 
+def test_on_map_save_progress_branches() -> None:
+    hub = _hub()
+    asyncio.run(hub.on_map_save_progress("not-json"))
+    asyncio.run(hub.on_map_save_progress(json.dumps([1])))
+    assert hub.map_save_progress == {}
+    asyncio.run(hub.on_map_save_progress(json.dumps({"int_value": 55})))
+    assert hub.map_save_progress == {"int_value": 55}
+
+
 def test_request_full_schedule_publishes_get() -> None:
     hub = _hub()
     hub._request_full_schedule()

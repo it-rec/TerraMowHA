@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Καθυστέρηση συνέχισης μετά τη βροχή"
+      },
+      "map_save_progress": {
+        "name": "Πρόοδος αποθήκευσης χάρτη"
       }
     },
     "camera": {

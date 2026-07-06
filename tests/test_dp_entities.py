@@ -51,6 +51,7 @@ from custom_components.terramow.sensor import (
     AfterRainResumeDelaySensor,
     LastEventSensor,
     MainDirectionStatusSensor,
+    MapSaveProgressSensor,
     MapModeSensor,
     MoveModeSensor,
     MowModeSensor,
@@ -224,6 +225,28 @@ def test_dp150_force_and_dp152_manual_mapping_binary_sensors() -> None:
     # without a lawn mower -> None
     hub.basic_data.lawn_mower = None
     assert fsb.is_on is None and reloc.is_on is None
+
+
+def test_dp118_map_save_progress_sensor() -> None:
+    hub = _hub()
+    progress = MapSaveProgressSensor(hub.basic_data, hub.hass)
+    # transient diagnostic: disabled by default, None without data
+    assert progress.entity_registry_enabled_default is False
+    assert progress.native_value is None
+    _feed(hub.on_map_save_progress, {"int_value": 0})
+    assert progress.native_value == 0
+    _feed(hub.on_map_save_progress, {"int_value": 55})
+    assert progress.native_value == 55
+    _feed(hub.on_map_save_progress, {"int_value": 100})
+    assert progress.native_value == 100
+    # a non-int / missing value degrades to None
+    _feed(hub.on_map_save_progress, {"int_value": "x"})
+    assert progress.native_value is None
+    _feed(hub.on_map_save_progress, {"other": 1})
+    assert progress.native_value is None
+    # without a lawn mower -> None
+    hub.basic_data.lawn_mower = None
+    assert progress.native_value is None
 
 
 def test_dp134_state_flag_binary_sensor() -> None:

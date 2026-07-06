@@ -43,6 +43,7 @@ setting), then export **once** and line the timestamps up with what you did.
 |----|---------|------------------|-------------|
 | 102 | Device / network info; carries the real app firmware version | `{"version":"9.9.210","sn":"…","wifi_mac":"…","ip":"…","ssid":"…","warranty":{…}}` | firmware `update` entity version + device `sw_version` (identifiers kept private) |
 | 116 | Active-error list | `{"error_list":[]}` | **Active errors** sensor (count + `errors` attribute) |
+| 118 | Map-save / upload progress (0–100 %). Ramps while the device saves its map after a mow (`SUB_MISSION_SAVING_MAP` / "map is being saved"), confirmed by watching it climb `1 → … → 100` in lock-step with the app's on-screen "map saving %" | **Map save progress** sensor (`%`; diagnostic, **disabled by default**) |
 | 122 | Full weekly schedule (richer than dp_138). Only the `SCHEDULE_CMD_TYPE_GET` response carries a `schedule_list`; `ADD`/`DELETE` are write commands acked without one (the schedule is therefore writable over MQTT — a possible future "edit calendar" feature). The hub issues the `GET` on connect | `{"cmd_type":"SCHEDULE_CMD_TYPE_GET","schedule_list":{"items":[{"id":0,"schedule_type":"SCHEDULE_TYPE_GLOBAL_V2","global_schedule_v2":{"basic_config":{"week_days":["WEEK_DAY_MONDAY",…],"start_time":{"hour":9,"minute":30},"end_time":{"hour":11,"minute":0},"disabled":false,"run_once":false}}}],"global_disabled":false,"disabled_week_days":[],…}}` | Schedule `calendar` entity: renders every recurring weekly slot when available, otherwise falls back to the dp_138 next-slot view |
 | 123 | Event log | `{"event_list":[{"code":8,"time":"…Z"}]}` | **Last event** sensor (latest `code` + `event_time` attribute) |
 | 129 | Per-component firmware versions | `{"ap_app":"9.9.210","main_controller":"09.09.210",…}` | firmware `update` entity `component_versions` attribute |
@@ -59,11 +60,11 @@ Documented here for future work; not decoded into entities yet.
 
 | ID | Likely meaning | Observed payload (truncated) |
 |----|----------------|------------------------------|
-| 109 | **Dynamic** scalar — observed rising `54 → 55 → 58 → 61 → 67 → 68 → 70` while the mower ran, so it is a live gauge, **not** a constant. Range/behaviour is consistent with a temperature (°C) or a load/utilisation metric; needs correlation against a known quantity to confirm | `{"int_value":70}` |
+| 109 | **Dynamic** scalar, bounded ~50–70, updated every ~30–120 s. A full mow→dock→charge session showed it fluctuating **without** a cooldown trend even while idle at the dock — so it is **not** a temperature (an earlier guess now ruled out). The noisy, bounded behaviour fits a **localization / GNSS signal-quality %** (the device had relocation trouble in the same session); needs a targeted signal test to confirm | `{"int_value":62}` |
 | 110 | Unknown scalar | `{"int_value":60}` |
-| 111 | Upload progress | `{"is_uploading":false,"process":0}` |
-| 114 | Unknown scalar | `{"int_value":8}` |
-| 118 | Unknown scalar (percentage?) | `{"int_value":100}` |
+| 111 | Upload progress (companion of dp_118?) | `{"is_uploading":false,"process":0}` |
+| 114 | **Latest event code** — mirrors the newest entry of the dp_123 event log. Observed `int_value:90` at the exact moment dp_123 appended `{code:90}` (a relocation event); earlier `int_value:8` matched dp_123 code 8. Redundant with the **Last event** sensor, so not surfaced separately | `{"int_value":90}` |
 | 119 | Command acknowledgement — echoes the request's `seq` with `code:0` (= OK). The `seq` values match those sent in dp_122 `GET`/`ADD`/`DELETE` (and other writes), i.e. this is the generic per-command ack channel | `{"seq":1783335426,"code":0}` |
+| 134 | Undecoded binary flag (surfaced as **State flag 134**). Note: it stayed **constant** through a full start/pause/resume/dock session, so it is **not** tied to the mowing state — meaning still unknown | `{"enum_value":0}` |
 | 145 | Custom-passage creation status | `{"stage":"CUSTOM_PASSAGE_STAGE_INVALID","is_on_grass":false,…}` |
 | 146 | Unknown scalar | `{"int_value":1}` |

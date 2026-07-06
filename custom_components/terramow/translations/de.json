@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Fortsetzungs-Verzögerung nach Regen"
+      },
+      "map_save_progress": {
+        "name": "Kartenspeicher-Fortschritt"
       }
     },
     "camera": {

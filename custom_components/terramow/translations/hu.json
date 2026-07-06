@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Folytatási késleltetés eső után"
+      },
+      "map_save_progress": {
+        "name": "Térkép mentésének folyamata"
       }
     },
     "camera": {

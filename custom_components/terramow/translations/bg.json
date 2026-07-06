@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Забавяне при възобновяване след дъжд"
+      },
+      "map_save_progress": {
+        "name": "Напредък на запис на картата"
       }
     },
     "camera": {

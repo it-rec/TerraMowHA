@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Atsākšanas aizkave pēc lietus"
+      },
+      "map_save_progress": {
+        "name": "Kartes saglabāšanas norise"
       }
     },
     "camera": {
