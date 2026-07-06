@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Întârziere reluare după ploaie"
+      },
+      "map_save_progress": {
+        "name": "Progres salvare hartă"
       }
     },
     "camera": {

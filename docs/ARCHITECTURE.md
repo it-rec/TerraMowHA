@@ -211,6 +211,7 @@ properties (mostly through `PushUpdateMixin._push_dp_ids`).
 | 113 | in | `on_current_work_data` | `current_work_data` | current-session area/time/progress + job-type sensors | Current mowing-session work data |
 | 116 | in | `on_error_list` | `error_list` | Active-errors sensor | *Unofficial* — active-error list; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 117 | in | `on_map_status` | `map_status` | `map_status` sensor, map-detected/buildable/backing-up binary sensors | Map status flags |
+| 118 | in | `on_map_save_progress` | `map_save_progress` | Map-save-progress sensor (diagnostic, disabled by default) | *Unofficial* — map-save/upload progress 0–100 %; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 122 | in / **out** | `on_full_schedule` | `full_schedule` | schedule calendar (full weekly view) | *Unofficial* — full weekly schedule list; requested on connect via `SCHEDULE_CMD_TYPE_GET`, only sent in response; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 123 | in | `on_event_data` | `event_list` | Last-event sensor | *Unofficial* — device event log; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 124 | in | `on_statistics_data` | `statistics_data` | total mowing time/jobs/area sensors | Lifetime statistics |

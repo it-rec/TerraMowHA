@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "비 온 후 재개 지연"
+      },
+      "map_save_progress": {
+        "name": "지도 저장 진행률"
       }
     },
     "camera": {

@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Délai de reprise après pluie"
+      },
+      "map_save_progress": {
+        "name": "Progression de l'enregistrement de la carte"
       }
     },
     "camera": {

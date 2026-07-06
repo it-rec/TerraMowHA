@@ -1000,6 +1000,32 @@ class AfterRainResumeDelaySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         return (hours or 0) * 60 + (minutes or 0)
 
 
+class MapSaveProgressSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
+    """Map-save / upload progress (dp_118, unofficial).
+
+    ``int_value`` 0-100, ramping while the device saves its map after a mow
+    (``SUB_MISSION_SAVING_MAP`` / "map is being saved"). Diagnostic, disabled by
+    default. See ``docs/en/developers/data_point_unofficial.md``.
+    """
+
+    _push_dp_ids = (118,)
+    _attr_translation_key = "map_save_progress"
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    # Transient (only meaningful during a save); off by default.
+    _attr_entity_registry_enabled_default = False
+    _unique_id_suffix = "map_save_progress"
+
+    @property
+    def native_value(self) -> int | None:
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower:
+            return None
+        value = lawn_mower.map_save_progress.get("int_value")
+        return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
 class SunriseSensor(_SunTimeSensorBase):
     """Device-reported sunrise time (dp_152)."""
 
@@ -1091,6 +1117,7 @@ CurrentJobTypeSensor(basic_data, hass),
         MowModeSensor(basic_data, hass),
         RainSensorThresholdSensor(basic_data, hass),
         AfterRainResumeDelaySensor(basic_data, hass),
+        MapSaveProgressSensor(basic_data, hass),
     ]
 
     async_add_entities(entities)

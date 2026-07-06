@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Jatkamisen viive sateen jälkeen"
+      },
+      "map_save_progress": {
+        "name": "Kartan tallennuksen edistyminen"
       }
     },
     "camera": {

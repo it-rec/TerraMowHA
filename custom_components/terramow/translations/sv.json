@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Återupptagningsfördröjning efter regn"
+      },
+      "map_save_progress": {
+        "name": "Förlopp för kartsparande"
       }
     },
     "camera": {

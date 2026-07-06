@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Oneskorenie pokračovania po daždi"
+      },
+      "map_save_progress": {
+        "name": "Priebeh ukladania mapy"
       }
     },
     "camera": {

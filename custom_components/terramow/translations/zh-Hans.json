@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "雨后恢复延迟"
+      },
+      "map_save_progress": {
+        "name": "地图保存进度"
       }
     },
     "camera": {

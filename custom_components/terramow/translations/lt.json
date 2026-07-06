@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Tęsimo delsa po lietaus"
+      },
+      "map_save_progress": {
+        "name": "Žemėlapio įrašymo eiga"
       }
     },
     "camera": {

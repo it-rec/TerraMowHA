@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "After-rain resume delay"
+      },
+      "map_save_progress": {
+        "name": "Map save progress"
       }
     },
     "camera": {

@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Odgoda nastavka nakon kiše"
+      },
+      "map_save_progress": {
+        "name": "Napredak spremanja karte"
       }
     },
     "camera": {

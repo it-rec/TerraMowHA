@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Одлагање наставка након кише"
+      },
+      "map_save_progress": {
+        "name": "Напредак чувања мапе"
       }
     },
     "camera": {

@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Zakasnitev nadaljevanja po dežju"
+      },
+      "map_save_progress": {
+        "name": "Napredek shranjevanja zemljevida"
       }
     },
     "camera": {

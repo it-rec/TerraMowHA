@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Gjenopptaksforsinkelse etter regn"
+      },
+      "map_save_progress": {
+        "name": "Fremdrift for kartlagring"
       }
     },
     "camera": {

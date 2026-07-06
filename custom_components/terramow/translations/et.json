@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Jätkamise viivitus pärast vihma"
+      },
+      "map_save_progress": {
+        "name": "Kaardi salvestamise edenemine"
       }
     },
     "camera": {

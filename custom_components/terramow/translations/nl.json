@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Hervattingsvertraging na regen"
+      },
+      "map_save_progress": {
+        "name": "Voortgang kaart opslaan"
       }
     },
     "camera": {

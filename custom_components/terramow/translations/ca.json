@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Retard de represa després de pluja"
+      },
+      "map_save_progress": {
+        "name": "Progrés de desat del mapa"
       }
     },
     "camera": {

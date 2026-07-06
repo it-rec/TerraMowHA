@@ -225,6 +225,7 @@ class TerraMowHub:
         self._advanced_settings: dict[str, Any] = {}  # Store dp_150 advanced settings
         self._full_schedule: dict[str, Any] = {}  # Store dp_122 full weekly schedule list
         self._state_flag_134: dict[str, Any] = {}  # Store dp_134 undecoded binary flag
+        self._map_save_progress: dict[str, Any] = {}  # Store dp_118 map-save progress %
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
         # Bounded per-dp change history (epoch, payload) for undocumented dps, so
@@ -380,6 +381,7 @@ class TerraMowHub:
         self.register_callback(154, self.on_operating_modes)
         self.register_callback(122, self.on_full_schedule)
         self.register_callback(134, self.on_state_flag_134)
+        self.register_callback(118, self.on_map_save_progress)
         self.register_callback(150, self.on_advanced_settings)
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
 
@@ -633,6 +635,21 @@ class TerraMowHub:
             return
         if isinstance(data, dict):
             self._state_flag_134 = data
+
+    async def on_map_save_progress(self, payload: str) -> None:
+        """Handle the map-save / upload progress (dp_118, undocumented).
+
+        Observed as ``{"int_value":0..100}`` ramping while the device saves the
+        map after a mow (``SUB_MISSION_SAVING_MAP`` / "map is being saved"). The
+        raw payload is cached so a progress sensor can surface it.
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_118: %s", payload)
+            return
+        if isinstance(data, dict):
+            self._map_save_progress = data
 
     async def on_operating_modes(self, payload: str) -> None:
         """Handle the operating-mode triple (dp_154, undocumented).
@@ -1599,6 +1616,11 @@ class TerraMowHub:
     def state_flag_134(self) -> dict[str, Any]:
         """Get the undecoded binary flag payload (dp_134, undocumented)."""
         return self._state_flag_134
+
+    @property
+    def map_save_progress(self) -> dict[str, Any]:
+        """Get the map-save / upload progress payload (dp_118, undocumented)."""
+        return self._map_save_progress
 
     @property
     def advanced_settings(self) -> dict[str, Any]:

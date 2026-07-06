@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Zpoždění pokračování po dešti"
+      },
+      "map_save_progress": {
+        "name": "Průběh ukládání mapy"
       }
     },
     "camera": {

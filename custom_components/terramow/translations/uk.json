@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "Затримка відновлення після дощу"
+      },
+      "map_save_progress": {
+        "name": "Прогрес збереження карти"
       }
     },
     "camera": {

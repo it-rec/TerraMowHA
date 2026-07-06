@@ -293,6 +293,9 @@
       },
       "after_rain_resume_delay": {
         "name": "雨上がり再開遅延"
+      },
+      "map_save_progress": {
+        "name": "地図保存の進捗"
       }
     },
     "camera": {
