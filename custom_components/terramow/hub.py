@@ -213,6 +213,8 @@ class TerraMowHub:
         self._error_list: list[Any] = []  # Store dp_116 active error list
         self._event_list: list[Any] = []  # Store dp_123 event log
         self._cellular_info: dict[str, Any] = {}  # Store dp_135 cellular/4G info
+        self._environment_info: dict[str, Any] = {}  # Store dp_152 environment/status
+        self._weather_info: dict[str, Any] = {}  # Store dp_157 extreme-weather warning
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
         # Latest raw payload seen for each unhandled data point, surfaced in
@@ -360,6 +362,8 @@ class TerraMowHub:
         self.register_callback(116, self.on_error_list)
         self.register_callback(123, self.on_event_data)
         self.register_callback(135, self.on_cellular_info)
+        self.register_callback(152, self.on_environment_info)
+        self.register_callback(157, self.on_weather_info)
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
 
     async def on_global_params(self, payload: str) -> None:
@@ -550,6 +554,35 @@ class TerraMowHub:
             return
         if isinstance(data, dict):
             self._cellular_info = data
+
+    async def on_environment_info(self, payload: str) -> None:
+        """Handle environment/status info (dp_152, undocumented).
+
+        Observed as ``{"is_defogger_heating":bool,"is_illuminate_light_on":bool,
+        "sunrise":{"hour":int,"minute":int},"sunset":{…},
+        "is_not_in_daylight_period":bool,"manual_mapping":{…}}``.
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_152: %s", payload)
+            return
+        if isinstance(data, dict):
+            self._environment_info = data
+
+    async def on_weather_info(self, payload: str) -> None:
+        """Handle the extreme-weather warning (dp_157, undocumented).
+
+        Observed as ``{"has_extream_weather":bool,"extream_weather_info_url":str}``
+        (note the device's spelling of "extream").
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_157: %s", payload)
+            return
+        if isinstance(data, dict):
+            self._weather_info = data
 
     async def on_battery_status(self, payload: str) -> None:
         """Handle battery status updates (dp_108)."""
@@ -1451,6 +1484,16 @@ class TerraMowHub:
     def cellular_info(self) -> dict[str, Any]:
         """Get the cellular/4G modem info (dp_135, undocumented)."""
         return self._cellular_info
+
+    @property
+    def environment_info(self) -> dict[str, Any]:
+        """Get the environment/status info (dp_152, undocumented)."""
+        return self._environment_info
+
+    @property
+    def weather_info(self) -> dict[str, Any]:
+        """Get the extreme-weather warning info (dp_157, undocumented)."""
+        return self._weather_info
 
     @property
     def is_robot_navi_located(self) -> bool | None:

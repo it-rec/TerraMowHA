@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "Κινητό δίκτυο τύπος"
+      },
+      "sunrise": {
+        "name": "Ανατολή ηλίου"
+      },
+      "sunset": {
+        "name": "Δύση ηλίου"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "Κινητό δίκτυο ενεργό"
+      },
+      "defogger_heating": {
+        "name": "Defogger θέρμανση"
+      },
+      "illumination_light": {
+        "name": "Φωτισμός"
+      },
+      "daylight": {
+        "name": "Φως ημέρας"
+      },
+      "extreme_weather": {
+        "name": "Ακραίες καιρικές συνθήκες"
       }
     },
     "button": {

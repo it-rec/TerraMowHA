@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "蜂窝网络 类型"
+      },
+      "sunrise": {
+        "name": "日出"
+      },
+      "sunset": {
+        "name": "日落"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "蜂窝网络 已启用"
+      },
+      "defogger_heating": {
+        "name": "Defogger 加热"
+      },
+      "illumination_light": {
+        "name": "照明"
+      },
+      "daylight": {
+        "name": "白昼"
+      },
+      "extreme_weather": {
+        "name": "极端天气"
       }
     },
     "button": {

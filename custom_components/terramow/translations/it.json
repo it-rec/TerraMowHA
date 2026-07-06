@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "Rete mobile tipo"
+      },
+      "sunrise": {
+        "name": "Alba"
+      },
+      "sunset": {
+        "name": "Tramonto"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "Rete mobile attivo"
+      },
+      "defogger_heating": {
+        "name": "Defogger riscaldamento"
+      },
+      "illumination_light": {
+        "name": "Illuminazione"
+      },
+      "daylight": {
+        "name": "Luce diurna"
+      },
+      "extreme_weather": {
+        "name": "Meteo estremo"
       }
     },
     "button": {

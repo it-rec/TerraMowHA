@@ -864,6 +864,49 @@ class CellularConnectionTypeSensor(_CellularSensorBase):
         return value if isinstance(value, str) and value else None
 
 
+class _SunTimeSensorBase(PushUpdateMixin, TerraMowEntity, SensorEntity):
+    """Base for the device-reported sunrise/sunset times (dp_152, unofficial).
+
+    The device reports a local time-of-day as ``{"hour":int,"minute":int}``;
+    exposed as an ``HH:MM`` string. Set ``_field`` on the subclass.
+    """
+
+    _push_dp_ids = (152,)
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _field = ""
+
+    @property
+    def native_value(self) -> str | None:
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower:
+            return None
+        slot = lawn_mower.environment_info.get(self._field)
+        if not isinstance(slot, dict):
+            return None
+        hour, minute = slot.get("hour"), slot.get("minute")
+        if not isinstance(hour, int) or isinstance(hour, bool):
+            return None
+        if not isinstance(minute, int) or isinstance(minute, bool):
+            return None
+        return f"{hour:02d}:{minute:02d}"
+
+
+class SunriseSensor(_SunTimeSensorBase):
+    """Device-reported sunrise time (dp_152)."""
+
+    _attr_translation_key = "sunrise"
+    _field = "sunrise"
+    _unique_id_suffix = "sunrise"
+
+
+class SunsetSensor(_SunTimeSensorBase):
+    """Device-reported sunset time (dp_152)."""
+
+    _attr_translation_key = "sunset"
+    _field = "sunset"
+    _unique_id_suffix = "sunset"
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: TerraMowConfigEntry,
@@ -932,6 +975,8 @@ CurrentJobTypeSensor(basic_data, hass),
         CellularSignalRsrpSensor(basic_data, hass),
         CellularSignalRsrqSensor(basic_data, hass),
         CellularConnectionTypeSensor(basic_data, hass),
+        SunriseSensor(basic_data, hass),
+        SunsetSensor(basic_data, hass),
     ]
 
     async_add_entities(entities)

@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "Mobilais tīkls veids"
+      },
+      "sunrise": {
+        "name": "Saullēkts"
+      },
+      "sunset": {
+        "name": "Saulriets"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "Mobilais tīkls iespējots"
+      },
+      "defogger_heating": {
+        "name": "Defogger sildīšana"
+      },
+      "illumination_light": {
+        "name": "Apgaismojums"
+      },
+      "daylight": {
+        "name": "Dienasgaisma"
+      },
+      "extreme_weather": {
+        "name": "Ekstremāli laikapstākļi"
       }
     },
     "button": {

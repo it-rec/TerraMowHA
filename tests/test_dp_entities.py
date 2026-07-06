@@ -12,6 +12,10 @@ from unittest.mock import MagicMock
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.binary_sensor import (
     CellularEnabledSensor,
+    DaylightSensor,
+    DefoggerHeatingSensor,
+    ExtremeWeatherSensor,
+    IlluminationLightSensor,
     PowerSwitchSensor,
     TerraMowChargingSensor,
     TerraMowMapDetectedBinarySensor,
@@ -37,6 +41,8 @@ from custom_components.terramow.sensor import (
     CellularSignalRsrqSensor,
     LastEventSensor,
     MainDirectionStatusSensor,
+    SunriseSensor,
+    SunsetSensor,
     NextScheduledStartSensor,
     RemainingBladeTimeSensor,
     TerraMowMissionSensor,
@@ -90,6 +96,64 @@ def test_last_event_sensor_from_dp123() -> None:
     _feed(hub.on_event_data, {"event_list": ["oops"]})
     assert sensor.native_value is None
     assert sensor.extra_state_attributes == {}
+
+
+# ---------------------------------------------------------------------------
+# dp_152 / dp_157 — environment & weather (unofficial)
+# ---------------------------------------------------------------------------
+
+
+def test_environment_sensors_from_dp152() -> None:
+    hub = _hub()
+    sunrise = SunriseSensor(hub.basic_data, hub.hass)
+    sunset = SunsetSensor(hub.basic_data, hass=hub.hass)
+    defog = DefoggerHeatingSensor(hub.basic_data, hub.hass)
+    illum = IlluminationLightSensor(hub.basic_data, hub.hass)
+    daylight = DaylightSensor(hub.basic_data, hub.hass)
+    # no data yet -> None
+    assert sunrise.native_value is None and defog.is_on is None
+    _feed(hub.on_environment_info, {
+        "is_defogger_heating": True,
+        "is_illuminate_light_on": False,
+        "sunrise": {"hour": 5, "minute": 29},
+        "sunset": {"hour": 21, "minute": 7},
+        "is_not_in_daylight_period": True,
+    })
+    assert sunrise.native_value == "05:29"
+    assert sunset.native_value == "21:07"
+    assert defog.is_on is True
+    assert illum.is_on is False
+    assert daylight.is_on is False  # inverted from is_not_in_daylight_period
+    # a malformed time slot degrades to None (bad hour, bad minute, non-dict)
+    _feed(hub.on_environment_info, {
+        "sunrise": {"hour": "x", "minute": 0},   # bad hour
+        "sunset": {"hour": 5, "minute": "x"},    # valid hour, bad minute
+    })
+    assert sunrise.native_value is None
+    assert sunset.native_value is None
+    # a non-dict slot is also handled
+    _feed(hub.on_environment_info, {"sunrise": "nope"})
+    assert sunrise.native_value is None
+    # without a lawn mower the sensor reports no value
+    hub.basic_data.lawn_mower = None
+    assert sunrise.native_value is None
+
+
+def test_extreme_weather_sensor_from_dp157() -> None:
+    hub = _hub()
+    weather = ExtremeWeatherSensor(hub.basic_data, hub.hass)
+    assert weather.is_on is None
+    assert weather.extra_state_attributes == {}
+    _feed(hub.on_weather_info, {
+        "has_extream_weather": True,
+        "extream_weather_info_url": "https://example.invalid/w",
+    })
+    assert weather.is_on is True
+    assert weather.extra_state_attributes == {"info_url": "https://example.invalid/w"}
+    # no url -> no attribute
+    _feed(hub.on_weather_info, {"has_extream_weather": False, "extream_weather_info_url": ""})
+    assert weather.is_on is False
+    assert weather.extra_state_attributes == {}
 
 
 # ---------------------------------------------------------------------------

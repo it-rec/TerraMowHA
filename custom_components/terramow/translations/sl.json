@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "Mobilno omrežje vrsta"
+      },
+      "sunrise": {
+        "name": "Sončni vzhod"
+      },
+      "sunset": {
+        "name": "Sončni zahod"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "Mobilno omrežje omogočeno"
+      },
+      "defogger_heating": {
+        "name": "Defogger ogrevanje"
+      },
+      "illumination_light": {
+        "name": "Osvetlitev"
+      },
+      "daylight": {
+        "name": "Dnevna svetloba"
+      },
+      "extreme_weather": {
+        "name": "Ekstremno vreme"
       }
     },
     "button": {

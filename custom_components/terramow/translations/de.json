@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "Mobilfunk Typ"
+      },
+      "sunrise": {
+        "name": "Sonnenaufgang"
+      },
+      "sunset": {
+        "name": "Sonnenuntergang"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "Mobilfunk aktiviert"
+      },
+      "defogger_heating": {
+        "name": "Defogger Heizung"
+      },
+      "illumination_light": {
+        "name": "Beleuchtung"
+      },
+      "daylight": {
+        "name": "Tageslicht"
+      },
+      "extreme_weather": {
+        "name": "Extremwetter"
       }
     },
     "button": {

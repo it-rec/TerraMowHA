@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "モバイル通信 タイプ"
+      },
+      "sunrise": {
+        "name": "日の出"
+      },
+      "sunset": {
+        "name": "日の入り"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "モバイル通信 有効"
+      },
+      "defogger_heating": {
+        "name": "Defogger ヒーター"
+      },
+      "illumination_light": {
+        "name": "照明"
+      },
+      "daylight": {
+        "name": "昼間"
+      },
+      "extreme_weather": {
+        "name": "悪天候"
       }
     },
     "button": {

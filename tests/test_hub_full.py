@@ -116,6 +116,19 @@ def test_on_cellular_info_branches() -> None:
     assert hub.cellular_info["RSRP"] == -95
 
 
+def test_on_environment_and_weather_branches() -> None:
+    hub = _hub()
+    asyncio.run(hub.on_environment_info("not-json"))
+    asyncio.run(hub.on_environment_info(json.dumps([1])))
+    asyncio.run(hub.on_weather_info("not-json"))
+    asyncio.run(hub.on_weather_info(json.dumps([1])))
+    assert hub.environment_info == {} and hub.weather_info == {}
+    asyncio.run(hub.on_environment_info(json.dumps({"is_defogger_heating": True})))
+    asyncio.run(hub.on_weather_info(json.dumps({"has_extream_weather": True})))
+    assert hub.environment_info["is_defogger_heating"] is True
+    assert hub.weather_info["has_extream_weather"] is True
+
+
 def test_register_callback_validates_and_stores() -> None:
     hub = _hub()
     cb = MagicMock()
