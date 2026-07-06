@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Yağmur sonrası oto. devam"
+      },
+      "force_single_base_station": {
+        "name": "Tek baz istasyonu zorla"
+      },
+      "force_cellular_network": {
+        "name": "Hücresel ağı zorla"
+      },
+      "manual_mapping_relocation": {
+        "name": "Yeniden konumlandırma gerekli"
+      },
+      "manual_mapping_takeover": {
+        "name": "Devralma gerekli"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Sınır kapalı"
       }
     },
     "button": {

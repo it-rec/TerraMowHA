@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Automatikus folytatás eső után"
+      },
+      "force_single_base_station": {
+        "name": "Egyetlen bázisállomás kényszerítése"
+      },
+      "force_cellular_network": {
+        "name": "Mobilhálózat kényszerítése"
+      },
+      "manual_mapping_relocation": {
+        "name": "Áthelyezés szükséges"
+      },
+      "manual_mapping_takeover": {
+        "name": "Átvétel szükséges"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Határ lezárva"
       }
     },
     "button": {

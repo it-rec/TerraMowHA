@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Automatické pokračovanie po daždi"
+      },
+      "force_single_base_station": {
+        "name": "Vynútiť jednu základňu"
+      },
+      "force_cellular_network": {
+        "name": "Vynútiť mobilnú sieť"
+      },
+      "manual_mapping_relocation": {
+        "name": "Potrebná relokalizácia"
+      },
+      "manual_mapping_takeover": {
+        "name": "Potrebné prevzatie"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Hranica uzavretá"
       }
     },
     "button": {

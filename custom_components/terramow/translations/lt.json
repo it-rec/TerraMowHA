@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Automatinis tęsimas po lietaus"
+      },
+      "force_single_base_station": {
+        "name": "Priverstinai viena bazinė stotis"
+      },
+      "force_cellular_network": {
+        "name": "Priverstinai mobilusis ryšys"
+      },
+      "manual_mapping_relocation": {
+        "name": "Reikia perlokalizavimo"
+      },
+      "manual_mapping_takeover": {
+        "name": "Reikia perimti"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Riba uždaryta"
       }
     },
     "button": {

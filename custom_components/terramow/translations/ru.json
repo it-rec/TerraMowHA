@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Автовозобновление после дождя"
+      },
+      "force_single_base_station": {
+        "name": "Принудительно одна базовая станция"
+      },
+      "force_cellular_network": {
+        "name": "Принудительно мобильная сеть"
+      },
+      "manual_mapping_relocation": {
+        "name": "Требуется релокализация"
+      },
+      "manual_mapping_takeover": {
+        "name": "Требуется вмешательство"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Граница замкнута"
       }
     },
     "button": {

@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "雨上がり自動再開"
+      },
+      "force_single_base_station": {
+        "name": "単一基地局を強制"
+      },
+      "force_cellular_network": {
+        "name": "モバイル通信を強制"
+      },
+      "manual_mapping_relocation": {
+        "name": "再位置特定が必要"
+      },
+      "manual_mapping_takeover": {
+        "name": "引き継ぎが必要"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "境界が閉じた"
       }
     },
     "button": {

@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Auto-gjenopptak etter regn"
+      },
+      "force_single_base_station": {
+        "name": "Tving enkelt basestasjon"
+      },
+      "force_cellular_network": {
+        "name": "Tving mobilnett"
+      },
+      "manual_mapping_relocation": {
+        "name": "Relokalisering nødvendig"
+      },
+      "manual_mapping_takeover": {
+        "name": "Overtakelse nødvendig"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Grense lukket"
       }
     },
     "button": {

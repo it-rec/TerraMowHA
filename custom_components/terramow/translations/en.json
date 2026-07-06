@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "After-rain auto-resume"
+      },
+      "force_single_base_station": {
+        "name": "Force single base station"
+      },
+      "force_cellular_network": {
+        "name": "Force cellular network"
+      },
+      "manual_mapping_relocation": {
+        "name": "Relocation needed"
+      },
+      "manual_mapping_takeover": {
+        "name": "Takeover needed"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Boundary closed"
       }
     },
     "button": {

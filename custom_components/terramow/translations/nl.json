@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Auto-hervatten na regen"
+      },
+      "force_single_base_station": {
+        "name": "Forceer enkel basisstation"
+      },
+      "force_cellular_network": {
+        "name": "Forceer mobiel netwerk"
+      },
+      "manual_mapping_relocation": {
+        "name": "Herlokalisatie nodig"
+      },
+      "manual_mapping_takeover": {
+        "name": "Overname nodig"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Grens gesloten"
       }
     },
     "button": {

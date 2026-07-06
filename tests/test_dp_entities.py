@@ -17,7 +17,12 @@ from custom_components.terramow.binary_sensor import (
     DaylightSensor,
     DefoggerHeatingSensor,
     ExtremeWeatherSensor,
+    ForceCellularNetworkSensor,
+    ForceSingleBaseStationSensor,
     IlluminationLightSensor,
+    ManualMappingBoundaryClosedSensor,
+    ManualMappingRelocationSensor,
+    ManualMappingTakeoverSensor,
     PowerSwitchSensor,
     SlopeDetectionSensor,
     TerraMowChargingSensor,
@@ -186,6 +191,38 @@ def test_advanced_settings_entities_degrade_gracefully() -> None:
     # without a lawn mower -> None
     hub.basic_data.lawn_mower = None
     assert cliff.is_on is None and threshold.native_value is None and delay.native_value is None
+
+
+def test_dp150_force_and_dp152_manual_mapping_binary_sensors() -> None:
+    hub = _hub()
+    fsb = ForceSingleBaseStationSensor(hub.basic_data, hub.hass)
+    fcn = ForceCellularNetworkSensor(hub.basic_data, hub.hass)
+    reloc = ManualMappingRelocationSensor(hub.basic_data, hub.hass)
+    takeover = ManualMappingTakeoverSensor(hub.basic_data, hub.hass)
+    boundary = ManualMappingBoundaryClosedSensor(hub.basic_data, hub.hass)
+    # all disabled by default and None without data
+    for ent in (fsb, fcn, reloc, takeover, boundary):
+        assert ent.entity_registry_enabled_default is False
+        assert ent.is_on is None
+    _feed(hub.on_advanced_settings, {
+        "force_single_base_station_mode": {"value": True},
+        "force_cellular_network": {"value": False},
+    })
+    assert fsb.is_on is True and fcn.is_on is False
+    _feed(hub.on_environment_info, {
+        "manual_mapping": {
+            "need_relocation": True, "need_takeover": False, "is_boundary_closed": True,
+        },
+    })
+    assert reloc.is_on is True and takeover.is_on is False and boundary.is_on is True
+    # a non-dict manual_mapping and a non-bool field degrade to None
+    _feed(hub.on_environment_info, {"manual_mapping": "nope"})
+    assert reloc.is_on is None
+    _feed(hub.on_environment_info, {"manual_mapping": {"need_relocation": 1}})
+    assert reloc.is_on is None
+    # without a lawn mower -> None
+    hub.basic_data.lawn_mower = None
+    assert fsb.is_on is None and reloc.is_on is None
 
 
 # ---------------------------------------------------------------------------

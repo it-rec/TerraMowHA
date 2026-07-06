@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Auto-återupptagning efter regn"
+      },
+      "force_single_base_station": {
+        "name": "Tvinga enkel basstation"
+      },
+      "force_cellular_network": {
+        "name": "Tvinga mobilnätverk"
+      },
+      "manual_mapping_relocation": {
+        "name": "Omlokalisering behövs"
+      },
+      "manual_mapping_takeover": {
+        "name": "Övertagande behövs"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Gräns stängd"
       }
     },
     "button": {

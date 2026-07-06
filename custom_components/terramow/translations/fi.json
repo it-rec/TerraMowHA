@@ -360,6 +360,21 @@
       },
       "after_rain_auto_resume": {
         "name": "Automaattinen jatkaminen sateen jälkeen"
+      },
+      "force_single_base_station": {
+        "name": "Pakota yksi tukiasema"
+      },
+      "force_cellular_network": {
+        "name": "Pakota mobiiliverkko"
+      },
+      "manual_mapping_relocation": {
+        "name": "Uudelleenpaikannus tarpeen"
+      },
+      "manual_mapping_takeover": {
+        "name": "Haltuunotto tarpeen"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Raja suljettu"
       }
     },
     "button": {
