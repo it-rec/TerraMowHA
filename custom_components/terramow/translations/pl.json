@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Zachód słońca"
+      },
+      "move_mode": {
+        "name": "Ruch tryb"
+      },
+      "map_mode": {
+        "name": "Mapa tryb"
+      },
+      "mow_mode": {
+        "name": "Koszenie tryb"
       }
     },
     "camera": {

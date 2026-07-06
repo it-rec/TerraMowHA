@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "일몰"
+      },
+      "move_mode": {
+        "name": "이동 모드"
+      },
+      "map_mode": {
+        "name": "지도 모드"
+      },
+      "mow_mode": {
+        "name": "예초 모드"
       }
     },
     "camera": {

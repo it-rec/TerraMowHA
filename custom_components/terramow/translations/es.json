@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Atardecer"
+      },
+      "move_mode": {
+        "name": "Movimiento modo"
+      },
+      "map_mode": {
+        "name": "Mapa modo"
+      },
+      "mow_mode": {
+        "name": "Siega modo"
       }
     },
     "camera": {

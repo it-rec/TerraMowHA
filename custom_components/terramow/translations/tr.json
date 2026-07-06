@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Gün batımı"
+      },
+      "move_mode": {
+        "name": "Hareket mod"
+      },
+      "map_mode": {
+        "name": "Harita mod"
+      },
+      "mow_mode": {
+        "name": "Biçme mod"
       }
     },
     "camera": {

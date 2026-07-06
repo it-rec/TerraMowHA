@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Solnedgång"
+      },
+      "move_mode": {
+        "name": "Rörelse läge"
+      },
+      "map_mode": {
+        "name": "Karta läge"
+      },
+      "mow_mode": {
+        "name": "Klippning läge"
       }
     },
     "camera": {

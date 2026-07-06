@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Coucher du soleil"
+      },
+      "move_mode": {
+        "name": "Déplacement mode"
+      },
+      "map_mode": {
+        "name": "Carte mode"
+      },
+      "mow_mode": {
+        "name": "Tonte mode"
       }
     },
     "camera": {

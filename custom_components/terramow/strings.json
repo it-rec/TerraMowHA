@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Sunset"
+      },
+      "move_mode": {
+        "name": "Movement mode"
+      },
+      "map_mode": {
+        "name": "Map mode"
+      },
+      "mow_mode": {
+        "name": "Mowing mode"
       }
     },
     "camera": {

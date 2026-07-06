@@ -215,6 +215,7 @@ class TerraMowHub:
         self._cellular_info: dict[str, Any] = {}  # Store dp_135 cellular/4G info
         self._environment_info: dict[str, Any] = {}  # Store dp_152 environment/status
         self._weather_info: dict[str, Any] = {}  # Store dp_157 extreme-weather warning
+        self._operating_modes: dict[str, Any] = {}  # Store dp_154 operating modes
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
         # Latest raw payload seen for each unhandled data point, surfaced in
@@ -364,6 +365,7 @@ class TerraMowHub:
         self.register_callback(135, self.on_cellular_info)
         self.register_callback(152, self.on_environment_info)
         self.register_callback(157, self.on_weather_info)
+        self.register_callback(154, self.on_operating_modes)
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
 
     async def on_global_params(self, payload: str) -> None:
@@ -583,6 +585,19 @@ class TerraMowHub:
             return
         if isinstance(data, dict):
             self._weather_info = data
+
+    async def on_operating_modes(self, payload: str) -> None:
+        """Handle the operating-mode triple (dp_154, undocumented).
+
+        Observed as ``{"move_mode":str,"map_mode":str,"mow_mode":str}``.
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_154: %s", payload)
+            return
+        if isinstance(data, dict):
+            self._operating_modes = data
 
     async def on_battery_status(self, payload: str) -> None:
         """Handle battery status updates (dp_108)."""
@@ -1494,6 +1509,11 @@ class TerraMowHub:
     def weather_info(self) -> dict[str, Any]:
         """Get the extreme-weather warning info (dp_157, undocumented)."""
         return self._weather_info
+
+    @property
+    def operating_modes(self) -> dict[str, Any]:
+        """Get the operating-mode triple (dp_154, undocumented)."""
+        return self._operating_modes
 
     @property
     def is_robot_navi_located(self) -> bool | None:

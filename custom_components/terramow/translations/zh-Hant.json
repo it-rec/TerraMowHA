@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "日落"
+      },
+      "move_mode": {
+        "name": "移動模式"
+      },
+      "map_mode": {
+        "name": "地圖模式"
+      },
+      "mow_mode": {
+        "name": "割草模式"
       }
     },
     "camera": {

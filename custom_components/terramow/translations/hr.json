@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Zalazak sunca"
+      },
+      "move_mode": {
+        "name": "Kretanje način"
+      },
+      "map_mode": {
+        "name": "Karta način"
+      },
+      "mow_mode": {
+        "name": "Košnja način"
       }
     },
     "camera": {

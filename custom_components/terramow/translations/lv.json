@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Saulriets"
+      },
+      "move_mode": {
+        "name": "Kustība režīms"
+      },
+      "map_mode": {
+        "name": "Karte režīms"
+      },
+      "mow_mode": {
+        "name": "Pļaušana režīms"
       }
     },
     "camera": {

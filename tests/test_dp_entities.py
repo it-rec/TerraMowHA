@@ -41,6 +41,9 @@ from custom_components.terramow.sensor import (
     CellularSignalRsrqSensor,
     LastEventSensor,
     MainDirectionStatusSensor,
+    MapModeSensor,
+    MoveModeSensor,
+    MowModeSensor,
     SunriseSensor,
     SunsetSensor,
     NextScheduledStartSensor,
@@ -96,6 +99,34 @@ def test_last_event_sensor_from_dp123() -> None:
     _feed(hub.on_event_data, {"event_list": ["oops"]})
     assert sensor.native_value is None
     assert sensor.extra_state_attributes == {}
+
+
+# ---------------------------------------------------------------------------
+# dp_154 — operating modes (unofficial)
+# ---------------------------------------------------------------------------
+
+
+def test_operating_mode_sensors_from_dp154() -> None:
+    hub = _hub()
+    move = MoveModeSensor(hub.basic_data, hub.hass)
+    mapm = MapModeSensor(hub.basic_data, hub.hass)
+    mow = MowModeSensor(hub.basic_data, hub.hass)
+    assert move.native_value is None
+    _feed(hub.on_operating_modes, {
+        "move_mode": "MOVE_MODE_MOW",
+        "map_mode": "MAP_MODE_BASE_STATION",
+        "mow_mode": "MOW_MODE_GLOBAL",
+    })
+    assert move.native_value == "MOVE_MODE_MOW"
+    assert mapm.native_value == "MAP_MODE_BASE_STATION"
+    assert mow.native_value == "MOW_MODE_GLOBAL"
+    # missing / non-string field -> None
+    _feed(hub.on_operating_modes, {"move_mode": 5})
+    assert move.native_value is None
+    assert mapm.native_value is None
+    # without a lawn mower -> None
+    hub.basic_data.lawn_mower = None
+    assert move.native_value is None
 
 
 # ---------------------------------------------------------------------------

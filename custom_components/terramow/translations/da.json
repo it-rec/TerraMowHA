@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Solnedgang"
+      },
+      "move_mode": {
+        "name": "Bevægelse tilstand"
+      },
+      "map_mode": {
+        "name": "Kort tilstand"
+      },
+      "mow_mode": {
+        "name": "Klipning tilstand"
       }
     },
     "camera": {

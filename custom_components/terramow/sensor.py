@@ -891,6 +891,50 @@ class _SunTimeSensorBase(PushUpdateMixin, TerraMowEntity, SensorEntity):
         return f"{hour:02d}:{minute:02d}"
 
 
+class _OperatingModeSensorBase(PushUpdateMixin, TerraMowEntity, SensorEntity):
+    """Base for the dp_154 operating-mode string sensors (unofficial).
+
+    Reports the raw device enum (e.g. ``MOVE_MODE_MOW``) as the state; set
+    ``_field`` on the subclass.
+    """
+
+    _push_dp_ids = (154,)
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _field = ""
+
+    @property
+    def native_value(self) -> str | None:
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower:
+            return None
+        value = lawn_mower.operating_modes.get(self._field)
+        return value if isinstance(value, str) and value else None
+
+
+class MoveModeSensor(_OperatingModeSensorBase):
+    """Current movement mode (dp_154)."""
+
+    _attr_translation_key = "move_mode"
+    _field = "move_mode"
+    _unique_id_suffix = "move_mode"
+
+
+class MapModeSensor(_OperatingModeSensorBase):
+    """Current map mode (dp_154)."""
+
+    _attr_translation_key = "map_mode"
+    _field = "map_mode"
+    _unique_id_suffix = "map_mode"
+
+
+class MowModeSensor(_OperatingModeSensorBase):
+    """Current mow mode (dp_154)."""
+
+    _attr_translation_key = "mow_mode"
+    _field = "mow_mode"
+    _unique_id_suffix = "mow_mode"
+
+
 class SunriseSensor(_SunTimeSensorBase):
     """Device-reported sunrise time (dp_152)."""
 
@@ -977,6 +1021,9 @@ CurrentJobTypeSensor(basic_data, hass),
         CellularConnectionTypeSensor(basic_data, hass),
         SunriseSensor(basic_data, hass),
         SunsetSensor(basic_data, hass),
+        MoveModeSensor(basic_data, hass),
+        MapModeSensor(basic_data, hass),
+        MowModeSensor(basic_data, hass),
     ]
 
     async_add_entities(entities)

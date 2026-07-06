@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Pôr do sol"
+      },
+      "move_mode": {
+        "name": "Movimento modo"
+      },
+      "map_mode": {
+        "name": "Mapa modo"
+      },
+      "mow_mode": {
+        "name": "Corte modo"
       }
     },
     "camera": {
