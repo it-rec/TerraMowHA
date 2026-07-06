@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Последњи догађај"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Мобилна мрежа RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Мобилна мрежа RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Мобилна мрежа тип"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Конверзија података у току"
+      },
+      "cellular_enabled": {
+        "name": "Мобилна мрежа омогућено"
       }
     },
     "button": {

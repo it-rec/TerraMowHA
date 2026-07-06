@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Last event"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Cellular RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Cellular RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Cellular type"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Data Conversion in Progress"
+      },
+      "cellular_enabled": {
+        "name": "Cellular enabled"
       }
     },
     "button": {

@@ -107,6 +107,15 @@ def test_on_error_list_and_event_data_branches() -> None:
     assert hub.event_list[-1]["code"] == 8
 
 
+def test_on_cellular_info_branches() -> None:
+    hub = _hub()
+    asyncio.run(hub.on_cellular_info("not-json"))  # invalid JSON swallowed
+    asyncio.run(hub.on_cellular_info(json.dumps([1])))  # non-dict ignored
+    assert hub.cellular_info == {}
+    asyncio.run(hub.on_cellular_info(json.dumps({"is_enabled": True, "RSRP": -95})))
+    assert hub.cellular_info["RSRP"] == -95
+
+
 def test_register_callback_validates_and_stores() -> None:
     hub = _hub()
     cb = MagicMock()

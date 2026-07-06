@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Posledná udalosť"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Mobilná sieť RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Mobilná sieť RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Mobilná sieť typ"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Prebieha konverzia údajov"
+      },
+      "cellular_enabled": {
+        "name": "Mobilná sieť povolené"
       }
     },
     "button": {

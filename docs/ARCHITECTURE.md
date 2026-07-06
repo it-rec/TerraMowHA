@@ -217,6 +217,7 @@ properties (mostly through `PushUpdateMixin._push_dp_ids`).
 | 126 | in / **out** | `on_blade_time` | `blade_time` | remaining blade-time sensor, reset button (writes `int_value:0`) | Blade-disk usage minutes; syncs maintenance repair issue |
 | 127 | in / **out** | `on_compatibility_info` (`COMPATIBILITY_INFO_DP`) | `firmware_version_info`, `compatibility_status`/`_message` | version-compatibility sensor, firmware update entity (version *fallback* only) | Version/compatibility info (`overall.ha_module`, e.g. "28.3" — an internal compat number, **not** the app firmware version); requested on connect, drives compatibility repair issue + device `sw_version` fallback |
 | 129 | in | `on_component_versions` | `component_versions` | firmware `UpdateEntity` attributes | Per-component firmware versions (`ap_app`, `main_controller`, `drive_wheel`, `mow_motor`, loaders) |
+| 135 | in | `on_cellular_info` | `cellular_info` | cellular enabled/RSRP/RSRQ/type sensors | *Unofficial* — cellular/4G modem info; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 138 | in | `on_schedule_data` | `schedule_data` | next-scheduled-start sensor, schedule calendar | Upcoming scheduled mow slot |
 | 155 | in / **out** | `on_global_params` | `global_params` | mow-height/speed sensors, main-direction status, mow-speed/blade-speed/main-direction selects, all `number` entities, thorough-corner-cutting switch | Global work parameters; writes go back to dp_155 |
 

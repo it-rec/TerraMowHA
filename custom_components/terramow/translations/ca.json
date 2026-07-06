@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Últim esdeveniment"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Mòbil RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Mòbil RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Mòbil tipus"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Conversió de dades en curs"
+      },
+      "cellular_enabled": {
+        "name": "Mòbil activat"
       }
     },
     "button": {

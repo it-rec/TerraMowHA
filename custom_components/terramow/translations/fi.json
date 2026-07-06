@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Viimeisin tapahtuma"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Mobiiliverkko RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Mobiiliverkko RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Mobiiliverkko tyyppi"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Tietojen muunnos käynnissä"
+      },
+      "cellular_enabled": {
+        "name": "Mobiiliverkko käytössä"
       }
     },
     "button": {

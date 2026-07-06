@@ -40,6 +40,9 @@ async def async_setup_entry(
         TerraMowMapBackingUpBinarySensor(basic_data, hass),
         TerraMowSavingDataBinarySensor(basic_data, hass),
         TerraMowDataConversionBinarySensor(basic_data, hass),
+
+        # Unofficial / reverse-engineered diagnostic sensors
+        CellularEnabledSensor(basic_data, hass),
     ]
 
     async_add_entities(entities)
@@ -296,3 +299,25 @@ class TerraMowDataConversionBinarySensor(_TaskStatusBinarySensorBase):
     _attr_translation_key = "data_conversion"
     _task_status_field = "is_data_conversion_in_progress"
     _unique_id_suffix = "data_conversion"
+
+
+class CellularEnabledSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
+    """Whether the cellular/4G modem is enabled (dp_135, unofficial).
+
+    Only present on models with a cellular modem; ``None`` until dp_135 arrives.
+    See ``docs/en/developers/data_point_unofficial.md``.
+    """
+
+    _push_dp_ids = (135,)
+    _attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
+    _attr_translation_key = "cellular_enabled"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _unique_id_suffix = "cellular_enabled"
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return whether cellular is enabled."""
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower or not lawn_mower.cellular_info:
+            return None
+        return bool(lawn_mower.cellular_info.get("is_enabled"))

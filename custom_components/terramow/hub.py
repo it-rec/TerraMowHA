@@ -212,6 +212,7 @@ class TerraMowHub:
         self._component_versions: dict[str, Any] = {}  # Store dp_129 component firmware versions
         self._error_list: list[Any] = []  # Store dp_116 active error list
         self._event_list: list[Any] = []  # Store dp_123 event log
+        self._cellular_info: dict[str, Any] = {}  # Store dp_135 cellular/4G info
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
         # Latest raw payload seen for each unhandled data point, surfaced in
@@ -358,6 +359,7 @@ class TerraMowHub:
         self.register_callback(129, self.on_component_versions)
         self.register_callback(116, self.on_error_list)
         self.register_callback(123, self.on_event_data)
+        self.register_callback(135, self.on_cellular_info)
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
 
     async def on_global_params(self, payload: str) -> None:
@@ -534,6 +536,20 @@ class TerraMowHub:
             events = data.get("event_list")
             if isinstance(events, list):
                 self._event_list = events
+
+    async def on_cellular_info(self, payload: str) -> None:
+        """Handle cellular/4G modem info (dp_135, undocumented).
+
+        Observed as ``{"is_enabled":bool,"RSRP":int,"RSRQ":int,"type":str,…}``.
+        Only present on models with a cellular modem; parsed defensively.
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_135: %s", payload)
+            return
+        if isinstance(data, dict):
+            self._cellular_info = data
 
     async def on_battery_status(self, payload: str) -> None:
         """Handle battery status updates (dp_108)."""
@@ -1430,6 +1446,11 @@ class TerraMowHub:
     def event_list(self) -> list[Any]:
         """Get the event log (dp_123, undocumented)."""
         return self._event_list
+
+    @property
+    def cellular_info(self) -> dict[str, Any]:
+        """Get the cellular/4G modem info (dp_135, undocumented)."""
+        return self._cellular_info
 
     @property
     def is_robot_navi_located(self) -> bool | None:

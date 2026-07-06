@@ -10,6 +10,8 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import (
     PERCENTAGE,
+    SIGNAL_STRENGTH_DECIBELS,
+    SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     EntityCategory,
     UnitOfArea,
     UnitOfLength,
@@ -799,6 +801,69 @@ class LastEventSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         return {"event_time": event_time} if event_time is not None else {}
 
 
+class _CellularSensorBase(PushUpdateMixin, TerraMowEntity, SensorEntity):
+    """Base for the cellular/4G diagnostic sensors (dp_135, unofficial)."""
+
+    _push_dp_ids = (135,)
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def _cellular(self) -> dict[str, Any] | None:
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower or not lawn_mower.cellular_info:
+            return None
+        return cast("dict[str, Any]", lawn_mower.cellular_info)
+
+
+class CellularSignalRsrpSensor(_CellularSensorBase):
+    """Cellular RSRP signal strength (dp_135). None while cellular is disabled."""
+
+    _attr_translation_key = "cellular_signal_rsrp"
+    _attr_device_class = SensorDeviceClass.SIGNAL_STRENGTH
+    _attr_native_unit_of_measurement = SIGNAL_STRENGTH_DECIBELS_MILLIWATT
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _unique_id_suffix = "cellular_signal_rsrp"
+
+    @property
+    def native_value(self) -> int | None:
+        info = self._cellular()
+        if not info or not info.get("is_enabled"):
+            return None
+        value = info.get("RSRP")
+        return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+class CellularSignalRsrqSensor(_CellularSensorBase):
+    """Cellular RSRQ signal quality (dp_135). None while cellular is disabled."""
+
+    _attr_translation_key = "cellular_signal_rsrq"
+    _attr_native_unit_of_measurement = SIGNAL_STRENGTH_DECIBELS
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _unique_id_suffix = "cellular_signal_rsrq"
+
+    @property
+    def native_value(self) -> int | None:
+        info = self._cellular()
+        if not info or not info.get("is_enabled"):
+            return None
+        value = info.get("RSRQ")
+        return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+class CellularConnectionTypeSensor(_CellularSensorBase):
+    """Cellular connection type (dp_135), e.g. 'CELLULAR_TYPE_UNKNOWN'."""
+
+    _attr_translation_key = "cellular_connection_type"
+    _unique_id_suffix = "cellular_connection_type"
+
+    @property
+    def native_value(self) -> str | None:
+        info = self._cellular()
+        if not info:
+            return None
+        value = info.get("type")
+        return value if isinstance(value, str) and value else None
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: TerraMowConfigEntry,
@@ -864,6 +929,9 @@ CurrentJobTypeSensor(basic_data, hass),
         # Unofficial / reverse-engineered diagnostic sensors
         ActiveErrorsSensor(basic_data, hass),
         LastEventSensor(basic_data, hass),
+        CellularSignalRsrpSensor(basic_data, hass),
+        CellularSignalRsrqSensor(basic_data, hass),
+        CellularConnectionTypeSensor(basic_data, hass),
     ]
 
     async_add_entities(entities)

@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Siste hendelse"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Mobilnett RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Mobilnett RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Mobilnett type"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Datakonvertering pågår"
+      },
+      "cellular_enabled": {
+        "name": "Mobilnett aktivert"
       }
     },
     "button": {

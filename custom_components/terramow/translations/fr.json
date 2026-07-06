@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Dernier événement"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Réseau mobile RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Réseau mobile RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Réseau mobile type"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Conversion de données en cours"
+      },
+      "cellular_enabled": {
+        "name": "Réseau mobile activé"
       }
     },
     "button": {

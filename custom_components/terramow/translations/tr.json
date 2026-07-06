@@ -263,6 +263,15 @@
       },
       "last_event": {
         "name": "Son olay"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Hücresel RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Hücresel RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Hücresel tür"
       }
     },
     "camera": {
@@ -306,6 +315,9 @@
       },
       "data_conversion": {
         "name": "Veri Dönüştürme Sürüyor"
+      },
+      "cellular_enabled": {
+        "name": "Hücresel etkin"
       }
     },
     "button": {
