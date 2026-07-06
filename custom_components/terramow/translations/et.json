@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "Piir suletud"
+      },
+      "state_flag_134": {
+        "name": "Olekulipp 134"
       }
     },
     "button": {

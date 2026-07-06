@@ -36,9 +36,10 @@ such an export.
 |----|---------|------------------|-------------|
 | 102 | Device / network info; carries the real app firmware version | `{"version":"9.9.210","sn":"…","wifi_mac":"…","ip":"…","ssid":"…","warranty":{…}}` | firmware `update` entity version + device `sw_version` (identifiers kept private) |
 | 116 | Active-error list | `{"error_list":[]}` | **Active errors** sensor (count + `errors` attribute) |
-| 122 | Full weekly schedule (richer than dp_138). Only sent in response to a `SCHEDULE_CMD_TYPE_GET` request, which the hub issues on connect | `{"cmd_type":"SCHEDULE_CMD_TYPE_GET","schedule_list":{"items":[{"id":0,"schedule_type":"SCHEDULE_TYPE_GLOBAL_V2","global_schedule_v2":{"basic_config":{"week_days":["WEEK_DAY_MONDAY",…],"start_time":{"hour":9,"minute":30},"end_time":{"hour":11,"minute":0},"disabled":false,"run_once":false}}}],"global_disabled":false,"disabled_week_days":[],…}}` | Schedule `calendar` entity: renders every recurring weekly slot when available, otherwise falls back to the dp_138 next-slot view |
+| 122 | Full weekly schedule (richer than dp_138). Only the `SCHEDULE_CMD_TYPE_GET` response carries a `schedule_list`; `ADD`/`DELETE` are write commands acked without one (the schedule is therefore writable over MQTT — a possible future "edit calendar" feature). The hub issues the `GET` on connect | `{"cmd_type":"SCHEDULE_CMD_TYPE_GET","schedule_list":{"items":[{"id":0,"schedule_type":"SCHEDULE_TYPE_GLOBAL_V2","global_schedule_v2":{"basic_config":{"week_days":["WEEK_DAY_MONDAY",…],"start_time":{"hour":9,"minute":30},"end_time":{"hour":11,"minute":0},"disabled":false,"run_once":false}}}],"global_disabled":false,"disabled_week_days":[],…}}` | Schedule `calendar` entity: renders every recurring weekly slot when available, otherwise falls back to the dp_138 next-slot view |
 | 123 | Event log | `{"event_list":[{"code":8,"time":"…Z"}]}` | **Last event** sensor (latest `code` + `event_time` attribute) |
 | 129 | Per-component firmware versions | `{"ap_app":"9.9.210","main_controller":"09.09.210",…}` | firmware `update` entity `component_versions` attribute |
+| 134 | Undecoded binary flag. Observed toggling `enum_value` between `0` and `1` during operation — so it is a live state, **not** a constant. Its actual meaning is unknown; surfaced only so it can be correlated with mower behaviour and decoded | **State flag 134** binary sensor (raw `enum_value`: `1` → on, `0` → off; diagnostic, **disabled by default**) |
 | 135 | Cellular / 4G modem info (only on models with a modem) | `{"is_enabled":false,"RSRP":0,"RSRQ":0,"type":"CELLULAR_TYPE_UNKNOWN",…}` | **Cellular enabled** binary sensor; **Cellular RSRP** / **RSRQ** / **type** sensors (signal sensors are `None` while disabled) |
 | 150 | Advanced settings (partly writable on the device; surfaced read-only here) | `{"enable_cliff_detection":{"value":true},"enable_slope_detection":{"value":false},"rain_sensor_threshold":{"upper_limit":1000},"after_rain_stop_setting":{"enable_auto_resume":false,"auto_resume_delay_time":{"hours":2,"minutes":0}},…}` | **Cliff detection** / **Slope detection** / **After-rain auto-resume** / **Force single base station** / **Force cellular network** binary sensors; **Rain sensor threshold** / **After-rain resume delay** sensors (`mow_spacing`/`mow_speed` come via dp_155; `disable_wifi_*` truncated in the sample, not surfaced) |
 | 152 | Environment / status | `{"is_defogger_heating":false,"is_illuminate_light_on":false,"sunrise":{"hour":5,"minute":29},"sunset":{…},"is_not_in_daylight_period":false,"manual_mapping":{…}}` | **Sunrise** / **Sunset** sensors; **Defogger heating** / **Illumination** / **Daylight** binary sensors; **Manual mapping: relocation / takeover / boundary-closed** binary sensors |
@@ -51,12 +52,11 @@ Documented here for future work; not decoded into entities yet.
 
 | ID | Likely meaning | Observed payload (truncated) |
 |----|----------------|------------------------------|
-| 109 | Unknown scalar | `{"int_value":54}` |
+| 109 | **Dynamic** scalar — observed rising `54 → 55 → 58 → 61 → 67 → 68 → 70` while the mower ran, so it is a live gauge, **not** a constant. Range/behaviour is consistent with a temperature (°C) or a load/utilisation metric; needs correlation against a known quantity to confirm | `{"int_value":70}` |
 | 110 | Unknown scalar | `{"int_value":60}` |
 | 111 | Upload progress | `{"is_uploading":false,"process":0}` |
 | 114 | Unknown scalar | `{"int_value":8}` |
 | 118 | Unknown scalar (percentage?) | `{"int_value":100}` |
-| 119 | Command acknowledgement | `{"seq":…,"code":0}` |
-| 134 | Unknown enum | `{"enum_value":1}` |
+| 119 | Command acknowledgement — echoes the request's `seq` with `code:0` (= OK). The `seq` values match those sent in dp_122 `GET`/`ADD`/`DELETE` (and other writes), i.e. this is the generic per-command ack channel | `{"seq":1783335426,"code":0}` |
 | 145 | Custom-passage creation status | `{"stage":"CUSTOM_PASSAGE_STAGE_INVALID","is_on_grass":false,…}` |
 | 146 | Unknown scalar | `{"int_value":1}` |

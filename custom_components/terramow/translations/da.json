@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "Grænse lukket"
+      },
+      "state_flag_134": {
+        "name": "Statusflag 134"
       }
     },
     "button": {

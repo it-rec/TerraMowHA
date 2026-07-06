@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "边界已闭合"
+      },
+      "state_flag_134": {
+        "name": "状态标志 134"
       }
     },
     "button": {

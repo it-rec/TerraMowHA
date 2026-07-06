@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "Το όριο έκλεισε"
+      },
+      "state_flag_134": {
+        "name": "Σημαία κατάστασης 134"
       }
     },
     "button": {

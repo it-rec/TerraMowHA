@@ -55,6 +55,7 @@ async def async_setup_entry(
         ManualMappingRelocationSensor(basic_data, hass),
         ManualMappingTakeoverSensor(basic_data, hass),
         ManualMappingBoundaryClosedSensor(basic_data, hass),
+        StateFlag134Sensor(basic_data, hass),
     ]
 
     async_add_entities(entities)
@@ -522,3 +523,30 @@ class ManualMappingBoundaryClosedSensor(_ManualMappingBinarySensorBase):
     _attr_translation_key = "manual_mapping_boundary_closed"
     _field = "is_boundary_closed"
     _unique_id_suffix = "manual_mapping_boundary_closed"
+
+
+class StateFlag134Sensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
+    """Undecoded binary flag (dp_134, unofficial).
+
+    The device sends ``{"enum_value":0|1}`` which toggles during operation; its
+    meaning is unknown. Surfaced as a diagnostic, disabled-by-default binary
+    sensor purely so the flag can be correlated with mower behaviour and
+    decoded. ``1`` → on, ``0`` → off, anything else → unknown.
+    See ``docs/en/developers/data_point_unofficial.md``.
+    """
+
+    _push_dp_ids = (134,)
+    _attr_translation_key = "state_flag_134"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
+    _unique_id_suffix = "state_flag_134"
+
+    @property
+    def is_on(self) -> bool | None:
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower:
+            return None
+        value = lawn_mower.state_flag_134.get("enum_value")
+        if value == 0 or value == 1:
+            return bool(value == 1)
+        return None

@@ -25,6 +25,7 @@ from custom_components.terramow.binary_sensor import (
     ManualMappingTakeoverSensor,
     PowerSwitchSensor,
     SlopeDetectionSensor,
+    StateFlag134Sensor,
     TerraMowChargingSensor,
     TerraMowMapDetectedBinarySensor,
     TerraMowProblemSensor,
@@ -223,6 +224,26 @@ def test_dp150_force_and_dp152_manual_mapping_binary_sensors() -> None:
     # without a lawn mower -> None
     hub.basic_data.lawn_mower = None
     assert fsb.is_on is None and reloc.is_on is None
+
+
+def test_dp134_state_flag_binary_sensor() -> None:
+    hub = _hub()
+    flag = StateFlag134Sensor(hub.basic_data, hub.hass)
+    # undecoded diagnostic: disabled by default, None without data
+    assert flag.entity_registry_enabled_default is False
+    assert flag.is_on is None
+    _feed(hub.on_state_flag_134, {"enum_value": 1})
+    assert flag.is_on is True
+    _feed(hub.on_state_flag_134, {"enum_value": 0})
+    assert flag.is_on is False
+    # an unexpected (non 0/1) value degrades to unknown
+    _feed(hub.on_state_flag_134, {"enum_value": 2})
+    assert flag.is_on is None
+    _feed(hub.on_state_flag_134, {"other": 1})
+    assert flag.is_on is None
+    # without a lawn mower -> None
+    hub.basic_data.lawn_mower = None
+    assert flag.is_on is None
 
 
 # ---------------------------------------------------------------------------

@@ -375,6 +375,9 @@
       },
       "manual_mapping_boundary_closed": {
         "name": "Robeža aizvērta"
+      },
+      "state_flag_134": {
+        "name": "Stāvokļa karodziņš 134"
       }
     },
     "button": {
