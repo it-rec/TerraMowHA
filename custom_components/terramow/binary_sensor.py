@@ -103,7 +103,9 @@ class FirmwareUpgradingSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntit
 
     _push_dp_ids = (107,)
 
-    _attr_device_class = BinarySensorDeviceClass.UPDATE
+    # RUNNING (on = upgrade running), not UPDATE: this reflects an in-progress
+    # firmware install, whereas device_class=update reads as "update available".
+    _attr_device_class = BinarySensorDeviceClass.RUNNING
     _attr_translation_key = "firmware_upgrading"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 

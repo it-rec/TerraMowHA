@@ -48,7 +48,7 @@ The 11 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
 | `select.py` | Zone select, mow-speed, blade-speed, main-direction mode, high-grass edge-trim mode |
 | `number.py` | Mow height/spacing, edge-cutting distance, main-direction angles/interval (all dp_155 writers) |
 | `camera.py` | `TerraMowMapCamera` — renders map + path + history + live pose into a PNG scene; two variants (normal + clean-mode) |
-| `update.py` | Read-only firmware-version `UpdateEntity` (dp_127) |
+| `update.py` | Read-only firmware `UpdateEntity` — real version from dp_102, `in_progress` from dp_107 `is_upgrading`, component versions from dp_129 |
 | `button.py` | Edge-trim start, reset blade timer (dp_126←0), reset base-station timer (dp_125←0) |
 | `switch.py` | Thorough-corner-cutting toggle (writes dp_155) |
 | `event.py` | Fires HA events on mission phase transitions (started/paused/returning/docked/completed/error) |
@@ -202,6 +202,7 @@ properties (mostly through `PushUpdateMixin._push_dp_ids`).
 | dp_id | Dir | Hub handler | Cached property | Consumed by | Meaning |
 | --- | --- | --- | --- | --- | --- |
 | 8 | in | `on_battery_level` | `battery_level` | `BatterySensor` (push) | Battery percentage |
+| 102 | in | `on_device_info` | `firmware_version_name`, `_robot_info` | firmware `UpdateEntity` (installed/latest version), device `sw_version` | Device/network info; carries the real app firmware version (`version`, e.g. "9.9.210") plus SN/MAC/IP (kept private) |
 | 103 | **out** | — (`_start_normal_mow`, `start_select_region_clean`, `_start_edge_trim`, `_start_normal_recharge`) | — | lawn_mower, button, service | Start-mode command (global/select-region/edge-trim/return) |
 | 105 | **out** | `_send_pause_command` | — | lawn_mower pause | Pause command |
 | 106 | **out** | `_resume_mow` / `_resume_recharge` | — | lawn_mower resume | Resume command |
@@ -212,7 +213,8 @@ properties (mostly through `PushUpdateMixin._push_dp_ids`).
 | 124 | in | `on_statistics_data` | `statistics_data` | total mowing time/jobs/area sensors | Lifetime statistics |
 | 125 | in / **out** | `on_base_station_time` | `base_station_time` | remaining base-station-time sensor, reset button (writes `int_value:0`) | Base-station usage minutes; syncs maintenance repair issue |
 | 126 | in / **out** | `on_blade_time` | `blade_time` | remaining blade-time sensor, reset button (writes `int_value:0`) | Blade-disk usage minutes; syncs maintenance repair issue |
-| 127 | in / **out** | `on_compatibility_info` (`COMPATIBILITY_INFO_DP`) | `firmware_version_info`, `compatibility_status`/`_message` | version-compatibility sensor, firmware update entity | Version/compatibility info; requested on connect, response drives compatibility repair issue + device `sw_version` |
+| 127 | in / **out** | `on_compatibility_info` (`COMPATIBILITY_INFO_DP`) | `firmware_version_info`, `compatibility_status`/`_message` | version-compatibility sensor, firmware update entity (version *fallback* only) | Version/compatibility info (`overall.ha_module`, e.g. "28.3" — an internal compat number, **not** the app firmware version); requested on connect, drives compatibility repair issue + device `sw_version` fallback |
+| 129 | in | `on_component_versions` | `component_versions` | firmware `UpdateEntity` attributes | Per-component firmware versions (`ap_app`, `main_controller`, `drive_wheel`, `mow_motor`, loaders) |
 | 138 | in | `on_schedule_data` | `schedule_data` | next-scheduled-start sensor, schedule calendar | Upcoming scheduled mow slot |
 | 155 | in / **out** | `on_global_params` | `global_params` | mow-height/speed sensors, main-direction status, mow-speed/blade-speed/main-direction selects, all `number` entities, thorough-corner-cutting switch | Global work parameters; writes go back to dp_155 |
 
