@@ -219,6 +219,7 @@ properties (mostly through `PushUpdateMixin._push_dp_ids`).
 | 129 | in | `on_component_versions` | `component_versions` | firmware `UpdateEntity` attributes | Per-component firmware versions (`ap_app`, `main_controller`, `drive_wheel`, `mow_motor`, loaders) |
 | 135 | in | `on_cellular_info` | `cellular_info` | cellular enabled/RSRP/RSRQ/type sensors | *Unofficial* — cellular/4G modem info; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 138 | in | `on_schedule_data` | `schedule_data` | next-scheduled-start sensor, schedule calendar | Upcoming scheduled mow slot |
+| 150 | in | `on_advanced_settings` | `advanced_settings` | cliff/slope/after-rain-resume binary sensors, rain-threshold + resume-delay sensors | *Unofficial* — advanced settings (read-only); see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 152 | in | `on_environment_info` | `environment_info` | sunrise/sunset sensors, defogger/illumination/daylight binary sensors | *Unofficial* — environment/status; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 154 | in | `on_operating_modes` | `operating_modes` | move/map/mow-mode sensors | *Unofficial* — operating modes; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 157 | in | `on_weather_info` | `weather_info` | extreme-weather binary sensor | *Unofficial* — extreme-weather warning; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |

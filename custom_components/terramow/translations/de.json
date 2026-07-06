@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Mähen Modus"
+      },
+      "rain_sensor_threshold": {
+        "name": "Regensensor-Schwelle"
+      },
+      "after_rain_resume_delay": {
+        "name": "Fortsetzungs-Verzögerung nach Regen"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Extremwetter"
+      },
+      "cliff_detection": {
+        "name": "Klippenerkennung"
+      },
+      "slope_detection": {
+        "name": "Hangerkennung"
+      },
+      "after_rain_auto_resume": {
+        "name": "Auto-Fortsetzen nach Regen"
       }
     },
     "button": {

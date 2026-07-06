@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Pjovimas režimas"
+      },
+      "rain_sensor_threshold": {
+        "name": "Lietaus jutiklio slenkstis"
+      },
+      "after_rain_resume_delay": {
+        "name": "Tęsimo delsa po lietaus"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Ekstremalūs orai"
+      },
+      "cliff_detection": {
+        "name": "Skardžio aptikimas"
+      },
+      "slope_detection": {
+        "name": "Nuolydžio aptikimas"
+      },
+      "after_rain_auto_resume": {
+        "name": "Automatinis tęsimas po lietaus"
       }
     },
     "button": {

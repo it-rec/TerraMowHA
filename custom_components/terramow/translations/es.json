@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Siega modo"
+      },
+      "rain_sensor_threshold": {
+        "name": "Umbral del sensor de lluvia"
+      },
+      "after_rain_resume_delay": {
+        "name": "Retraso de reanudación tras lluvia"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Clima extremo"
+      },
+      "cliff_detection": {
+        "name": "Detección de bordes"
+      },
+      "slope_detection": {
+        "name": "Detección de pendientes"
+      },
+      "after_rain_auto_resume": {
+        "name": "Reanudación automática tras lluvia"
       }
     },
     "button": {

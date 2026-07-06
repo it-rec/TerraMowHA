@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Sega mode"
+      },
+      "rain_sensor_threshold": {
+        "name": "Llindar del sensor de pluja"
+      },
+      "after_rain_resume_delay": {
+        "name": "Retard de represa després de pluja"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Temps extrem"
+      },
+      "cliff_detection": {
+        "name": "Detecció de cingles"
+      },
+      "slope_detection": {
+        "name": "Detecció de pendents"
+      },
+      "after_rain_auto_resume": {
+        "name": "Represa automàtica després de pluja"
       }
     },
     "button": {

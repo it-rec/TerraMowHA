@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Niitmine režiim"
+      },
+      "rain_sensor_threshold": {
+        "name": "Vihmaanduri lävi"
+      },
+      "after_rain_resume_delay": {
+        "name": "Jätkamise viivitus pärast vihma"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Äärmuslik ilm"
+      },
+      "cliff_detection": {
+        "name": "Järsaku tuvastus"
+      },
+      "slope_detection": {
+        "name": "Kalde tuvastus"
+      },
+      "after_rain_auto_resume": {
+        "name": "Automaatne jätkamine pärast vihma"
       }
     },
     "button": {

@@ -11,12 +11,15 @@ from unittest.mock import MagicMock
 
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.binary_sensor import (
+    AfterRainAutoResumeSensor,
     CellularEnabledSensor,
+    CliffDetectionSensor,
     DaylightSensor,
     DefoggerHeatingSensor,
     ExtremeWeatherSensor,
     IlluminationLightSensor,
     PowerSwitchSensor,
+    SlopeDetectionSensor,
     TerraMowChargingSensor,
     TerraMowMapDetectedBinarySensor,
     TerraMowProblemSensor,
@@ -39,11 +42,13 @@ from custom_components.terramow.sensor import (
     CellularConnectionTypeSensor,
     CellularSignalRsrpSensor,
     CellularSignalRsrqSensor,
+    AfterRainResumeDelaySensor,
     LastEventSensor,
     MainDirectionStatusSensor,
     MapModeSensor,
     MoveModeSensor,
     MowModeSensor,
+    RainSensorThresholdSensor,
     SunriseSensor,
     SunsetSensor,
     NextScheduledStartSensor,
@@ -99,6 +104,68 @@ def test_last_event_sensor_from_dp123() -> None:
     _feed(hub.on_event_data, {"event_list": ["oops"]})
     assert sensor.native_value is None
     assert sensor.extra_state_attributes == {}
+
+
+# ---------------------------------------------------------------------------
+# dp_150 — advanced settings (unofficial, read-only)
+# ---------------------------------------------------------------------------
+
+
+def test_advanced_settings_entities_from_dp150() -> None:
+    hub = _hub()
+    cliff = CliffDetectionSensor(hub.basic_data, hub.hass)
+    slope = SlopeDetectionSensor(hub.basic_data, hub.hass)
+    resume = AfterRainAutoResumeSensor(hub.basic_data, hub.hass)
+    threshold = RainSensorThresholdSensor(hub.basic_data, hub.hass)
+    delay = AfterRainResumeDelaySensor(hub.basic_data, hub.hass)
+    # no data yet -> None everywhere
+    assert cliff.is_on is None and threshold.native_value is None and delay.native_value is None
+    _feed(hub.on_advanced_settings, {
+        "enable_cliff_detection": {"value": True},
+        "enable_slope_detection": {"value": False},
+        "rain_sensor_threshold": {"upper_limit": 1000},
+        "after_rain_stop_setting": {
+            "enable_auto_resume": True,
+            "auto_resume_delay_time": {"hours": 2, "minutes": 30},
+        },
+    })
+    assert cliff.is_on is True
+    assert slope.is_on is False
+    assert resume.is_on is True
+    assert threshold.native_value == 1000
+    assert delay.native_value == 150  # 2h30m -> 150 minutes
+
+
+def test_advanced_settings_entities_degrade_gracefully() -> None:
+    hub = _hub()
+    cliff = CliffDetectionSensor(hub.basic_data, hub.hass)
+    threshold = RainSensorThresholdSensor(hub.basic_data, hub.hass)
+    delay = AfterRainResumeDelaySensor(hub.basic_data, hub.hass)
+    # malformed / missing nested fields -> None, never a crash
+    _feed(hub.on_advanced_settings, {
+        "enable_cliff_detection": {"value": "x"},        # non-bool
+        "rain_sensor_threshold": "nope",                 # non-dict
+        "after_rain_stop_setting": {"auto_resume_delay_time": {}},  # empty delay
+    })
+    assert cliff.is_on is None
+    assert threshold.native_value is None
+    assert delay.native_value is None
+    # a partial delay (only minutes) still computes
+    _feed(hub.on_advanced_settings, {
+        "after_rain_stop_setting": {"auto_resume_delay_time": {"minutes": 45}},
+    })
+    assert delay.native_value == 45
+    # a non-dict node partway down a nested path -> None
+    _feed(hub.on_advanced_settings, {"enable_cliff_detection": "x"})
+    assert cliff.is_on is None
+    # a non-dict after_rain_stop_setting, and a dict without the delay -> None
+    _feed(hub.on_advanced_settings, {"after_rain_stop_setting": "nope"})
+    assert delay.native_value is None
+    _feed(hub.on_advanced_settings, {"after_rain_stop_setting": {}})
+    assert delay.native_value is None
+    # without a lawn mower -> None
+    hub.basic_data.lawn_mower = None
+    assert cliff.is_on is None and threshold.native_value is None and delay.native_value is None
 
 
 # ---------------------------------------------------------------------------

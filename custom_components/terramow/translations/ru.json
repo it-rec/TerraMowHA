@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Кошение режим"
+      },
+      "rain_sensor_threshold": {
+        "name": "Порог датчика дождя"
+      },
+      "after_rain_resume_delay": {
+        "name": "Задержка возобновления после дождя"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Экстремальная погода"
+      },
+      "cliff_detection": {
+        "name": "Обнаружение обрывов"
+      },
+      "slope_detection": {
+        "name": "Обнаружение уклонов"
+      },
+      "after_rain_auto_resume": {
+        "name": "Автовозобновление после дождя"
       }
     },
     "button": {

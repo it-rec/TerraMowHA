@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Fűnyírás mód"
+      },
+      "rain_sensor_threshold": {
+        "name": "Esőérzékelő küszöb"
+      },
+      "after_rain_resume_delay": {
+        "name": "Folytatási késleltetés eső után"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Szélsőséges időjárás"
+      },
+      "cliff_detection": {
+        "name": "Szakadékérzékelés"
+      },
+      "slope_detection": {
+        "name": "Lejtőérzékelés"
+      },
+      "after_rain_auto_resume": {
+        "name": "Automatikus folytatás eső után"
       }
     },
     "button": {

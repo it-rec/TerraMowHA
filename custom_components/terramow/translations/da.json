@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Klipning tilstand"
+      },
+      "rain_sensor_threshold": {
+        "name": "Regnsensortærskel"
+      },
+      "after_rain_resume_delay": {
+        "name": "Genoptagelsesforsinkelse efter regn"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Ekstremt vejr"
+      },
+      "cliff_detection": {
+        "name": "Registrering af kanter"
+      },
+      "slope_detection": {
+        "name": "Registrering af skråninger"
+      },
+      "after_rain_auto_resume": {
+        "name": "Auto-genoptagelse efter regn"
       }
     },
     "button": {

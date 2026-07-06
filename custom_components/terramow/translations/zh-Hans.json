@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "割草模式"
+      },
+      "rain_sensor_threshold": {
+        "name": "雨量传感器阈值"
+      },
+      "after_rain_resume_delay": {
+        "name": "雨后恢复延迟"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "极端天气"
+      },
+      "cliff_detection": {
+        "name": "悬崖检测"
+      },
+      "slope_detection": {
+        "name": "坡度检测"
+      },
+      "after_rain_auto_resume": {
+        "name": "雨后自动恢复"
       }
     },
     "button": {

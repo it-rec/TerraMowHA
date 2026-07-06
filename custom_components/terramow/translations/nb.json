@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Klipping modus"
+      },
+      "rain_sensor_threshold": {
+        "name": "Regnsensorterskel"
+      },
+      "after_rain_resume_delay": {
+        "name": "Gjenopptaksforsinkelse etter regn"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Ekstremvær"
+      },
+      "cliff_detection": {
+        "name": "Kantregistrering"
+      },
+      "slope_detection": {
+        "name": "Helningsregistrering"
+      },
+      "after_rain_auto_resume": {
+        "name": "Auto-gjenopptak etter regn"
       }
     },
     "button": {

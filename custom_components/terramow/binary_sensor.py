@@ -47,6 +47,9 @@ async def async_setup_entry(
         IlluminationLightSensor(basic_data, hass),
         DaylightSensor(basic_data, hass),
         ExtremeWeatherSensor(basic_data, hass),
+        CliffDetectionSensor(basic_data, hass),
+        SlopeDetectionSensor(basic_data, hass),
+        AfterRainAutoResumeSensor(basic_data, hass),
     ]
 
     async_add_entities(entities)
@@ -402,3 +405,50 @@ class ExtremeWeatherSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
             return {}
         url = lawn_mower.weather_info.get("extream_weather_info_url")
         return {"info_url": url} if isinstance(url, str) and url else {}
+
+
+class _AdvancedSettingBinarySensorBase(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
+    """Base for the dp_150 advanced-setting binary sensors (unofficial, read-only).
+
+    Reads a nested boolean via ``_path`` from the advanced-settings block.
+    """
+
+    _push_dp_ids = (150,)
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _path: tuple[str, ...] = ()
+
+    @property
+    def is_on(self) -> bool | None:
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower or not lawn_mower.advanced_settings:
+            return None
+        node: object = lawn_mower.advanced_settings
+        for key in self._path:
+            if not isinstance(node, dict):
+                return None
+            node = node.get(key)
+        return node if isinstance(node, bool) else None
+
+
+class CliffDetectionSensor(_AdvancedSettingBinarySensorBase):
+    """Whether cliff detection is enabled (dp_150)."""
+
+    _attr_translation_key = "cliff_detection"
+    _path = ("enable_cliff_detection", "value")
+    _unique_id_suffix = "cliff_detection"
+
+
+class SlopeDetectionSensor(_AdvancedSettingBinarySensorBase):
+    """Whether slope detection is enabled (dp_150)."""
+
+    _attr_translation_key = "slope_detection"
+    _path = ("enable_slope_detection", "value")
+    _unique_id_suffix = "slope_detection"
+
+
+class AfterRainAutoResumeSensor(_AdvancedSettingBinarySensorBase):
+    """Whether the mower auto-resumes after rain (dp_150)."""
+
+    _attr_translation_key = "after_rain_auto_resume"
+    _path = ("after_rain_stop_setting", "enable_auto_resume")
+    _unique_id_suffix = "after_rain_auto_resume"

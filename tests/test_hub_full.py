@@ -138,6 +138,15 @@ def test_on_operating_modes_branches() -> None:
     assert hub.operating_modes["move_mode"] == "MOVE_MODE_MOW"
 
 
+def test_on_advanced_settings_branches() -> None:
+    hub = _hub()
+    asyncio.run(hub.on_advanced_settings("not-json"))
+    asyncio.run(hub.on_advanced_settings(json.dumps([1])))
+    assert hub.advanced_settings == {}
+    asyncio.run(hub.on_advanced_settings(json.dumps({"enable_cliff_detection": {"value": True}})))
+    assert hub.advanced_settings["enable_cliff_detection"]["value"] is True
+
+
 def test_register_callback_validates_and_stores() -> None:
     hub = _hub()
     cb = MagicMock()

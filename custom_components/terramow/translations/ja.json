@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "芝刈りモード"
+      },
+      "rain_sensor_threshold": {
+        "name": "雨センサーしきい値"
+      },
+      "after_rain_resume_delay": {
+        "name": "雨上がり再開遅延"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "悪天候"
+      },
+      "cliff_detection": {
+        "name": "段差検知"
+      },
+      "slope_detection": {
+        "name": "傾斜検知"
+      },
+      "after_rain_auto_resume": {
+        "name": "雨上がり自動再開"
       }
     },
     "button": {

@@ -287,6 +287,12 @@
       },
       "mow_mode": {
         "name": "Biçme mod"
+      },
+      "rain_sensor_threshold": {
+        "name": "Yağmur sensörü eşiği"
+      },
+      "after_rain_resume_delay": {
+        "name": "Yağmur sonrası devam gecikmesi"
       }
     },
     "camera": {
@@ -345,6 +351,15 @@
       },
       "extreme_weather": {
         "name": "Aşırı hava"
+      },
+      "cliff_detection": {
+        "name": "Uçurum algılama"
+      },
+      "slope_detection": {
+        "name": "Eğim algılama"
+      },
+      "after_rain_auto_resume": {
+        "name": "Yağmur sonrası oto. devam"
       }
     },
     "button": {
