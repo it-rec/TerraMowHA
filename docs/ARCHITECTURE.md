@@ -209,7 +209,9 @@ properties (mostly through `PushUpdateMixin._push_dp_ids`).
 | 107 | in | `on_mission_status` | `task_status`, `mission`, `sub_mission`, `mission_state`, `power_mode`, `is_robot_navi_located`, `is_upgrading`, `has_error`, `back_to_station_reason`, `is_saving_data`, `is_data_conversion_in_progress` | lawn_mower, event, mission/sub-mission/state sensors, power-mode, back-to-station, problem/rain/navigation/upgrading/saving/conversion binary sensors | Mission status (drives the whole activity model); fires state listeners |
 | 108 | in | `on_battery_status` | `battery_status` | battery state/temperature sensors, charging + power-switch binary sensors, camera (battery-connected) | Battery status payload |
 | 113 | in | `on_current_work_data` | `current_work_data` | current-session area/time/progress + job-type sensors | Current mowing-session work data |
+| 116 | in | `on_error_list` | `error_list` | Active-errors sensor | *Unofficial* — active-error list; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 117 | in | `on_map_status` | `map_status` | `map_status` sensor, map-detected/buildable/backing-up binary sensors | Map status flags |
+| 123 | in | `on_event_data` | `event_list` | Last-event sensor | *Unofficial* — device event log; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 124 | in | `on_statistics_data` | `statistics_data` | total mowing time/jobs/area sensors | Lifetime statistics |
 | 125 | in / **out** | `on_base_station_time` | `base_station_time` | remaining base-station-time sensor, reset button (writes `int_value:0`) | Base-station usage minutes; syncs maintenance repair issue |
 | 126 | in / **out** | `on_blade_time` | `blade_time` | remaining blade-time sensor, reset button (writes `int_value:0`) | Blade-disk usage minutes; syncs maintenance repair issue |

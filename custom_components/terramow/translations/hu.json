@@ -257,6 +257,12 @@
           "mission_state_abort": "Megszakítva",
           "mission_state_complete": "Befejezve"
         }
+      },
+      "active_errors": {
+        "name": "Aktív hibák"
+      },
+      "last_event": {
+        "name": "Utolsó esemény"
       }
     },
     "camera": {

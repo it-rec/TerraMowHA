@@ -257,6 +257,12 @@
           "mission_state_abort": "Прекратена",
           "mission_state_complete": "Завършена"
         }
+      },
+      "active_errors": {
+        "name": "Активни грешки"
+      },
+      "last_event": {
+        "name": "Последно събитие"
       }
     },
     "camera": {

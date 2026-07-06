@@ -257,6 +257,12 @@
           "mission_state_abort": "Aborted",
           "mission_state_complete": "Completed"
         }
+      },
+      "active_errors": {
+        "name": "Active errors"
+      },
+      "last_event": {
+        "name": "Last event"
       }
     },
     "camera": {

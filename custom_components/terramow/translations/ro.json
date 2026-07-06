@@ -257,6 +257,12 @@
           "mission_state_abort": "Anulată",
           "mission_state_complete": "Finalizată"
         }
+      },
+      "active_errors": {
+        "name": "Erori active"
+      },
+      "last_event": {
+        "name": "Ultimul eveniment"
       }
     },
     "camera": {

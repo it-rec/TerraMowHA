@@ -257,6 +257,12 @@
           "mission_state_abort": "Peruutettu",
           "mission_state_complete": "Valmis"
         }
+      },
+      "active_errors": {
+        "name": "Aktiiviset virheet"
+      },
+      "last_event": {
+        "name": "Viimeisin tapahtuma"
       }
     },
     "camera": {

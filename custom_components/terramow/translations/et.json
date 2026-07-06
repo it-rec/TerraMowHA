@@ -257,6 +257,12 @@
           "mission_state_abort": "Katkestatud",
           "mission_state_complete": "Lõpetatud"
         }
+      },
+      "active_errors": {
+        "name": "Aktiivsed vead"
+      },
+      "last_event": {
+        "name": "Viimane sündmus"
       }
     },
     "camera": {

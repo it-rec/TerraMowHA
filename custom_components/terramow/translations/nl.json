@@ -257,6 +257,12 @@
           "mission_state_abort": "Afgebroken",
           "mission_state_complete": "Voltooid"
         }
+      },
+      "active_errors": {
+        "name": "Actieve fouten"
+      },
+      "last_event": {
+        "name": "Laatste gebeurtenis"
       }
     },
     "camera": {

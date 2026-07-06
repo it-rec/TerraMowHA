@@ -210,6 +210,8 @@ class TerraMowHub:
         self._battery_level: int | None = None  # Store dp_8 battery percentage
         self._robot_info: dict[str, Any] = {}  # Store dp_102 device/network info
         self._component_versions: dict[str, Any] = {}  # Store dp_129 component firmware versions
+        self._error_list: list[Any] = []  # Store dp_116 active error list
+        self._event_list: list[Any] = []  # Store dp_123 event log
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
         # Latest raw payload seen for each unhandled data point, surfaced in
@@ -354,6 +356,8 @@ class TerraMowHub:
         self.register_callback(8, self.on_battery_level)
         self.register_callback(102, self.on_device_info)
         self.register_callback(129, self.on_component_versions)
+        self.register_callback(116, self.on_error_list)
+        self.register_callback(123, self.on_event_data)
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
 
     async def on_global_params(self, payload: str) -> None:
@@ -499,6 +503,37 @@ class TerraMowHub:
             return
         if isinstance(data, dict):
             self._component_versions = data
+
+    async def on_error_list(self, payload: str) -> None:
+        """Handle the active-error list (dp_116, undocumented).
+
+        Payload observed as ``{"error_list": [...]}``. Parsed defensively; the
+        entry structure is unknown (empty on the reference device).
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_116: %s", payload)
+            return
+        if isinstance(data, dict):
+            errors = data.get("error_list")
+            if isinstance(errors, list):
+                self._error_list = errors
+
+    async def on_event_data(self, payload: str) -> None:
+        """Handle the event log (dp_123, undocumented).
+
+        Payload observed as ``{"event_list": [{"code": int, "time": str}]}``.
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_123: %s", payload)
+            return
+        if isinstance(data, dict):
+            events = data.get("event_list")
+            if isinstance(events, list):
+                self._event_list = events
 
     async def on_battery_status(self, payload: str) -> None:
         """Handle battery status updates (dp_108)."""
@@ -1385,6 +1420,16 @@ class TerraMowHub:
     def component_versions(self) -> dict[str, Any]:
         """Get the per-component firmware versions (dp_129)."""
         return self._component_versions
+
+    @property
+    def error_list(self) -> list[Any]:
+        """Get the active-error list (dp_116, undocumented)."""
+        return self._error_list
+
+    @property
+    def event_list(self) -> list[Any]:
+        """Get the event log (dp_123, undocumented)."""
+        return self._event_list
 
     @property
     def is_robot_navi_located(self) -> bool | None:

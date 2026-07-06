@@ -88,6 +88,25 @@ def test_on_device_info_and_component_versions_branches() -> None:
     assert hub.component_versions["ap_app"] == "9.9.210"
 
 
+def test_on_error_list_and_event_data_branches() -> None:
+    hub = _hub()
+    # invalid JSON is swallowed
+    asyncio.run(hub.on_error_list("not-json"))
+    asyncio.run(hub.on_event_data("not-json"))
+    assert hub.error_list == [] and hub.event_list == []
+    # non-dict / wrong-typed inner fields are ignored
+    asyncio.run(hub.on_error_list(json.dumps([1])))
+    asyncio.run(hub.on_error_list(json.dumps({"error_list": "x"})))
+    asyncio.run(hub.on_event_data(json.dumps([1])))
+    asyncio.run(hub.on_event_data(json.dumps({"event_list": 5})))
+    assert hub.error_list == [] and hub.event_list == []
+    # valid payloads are stored
+    asyncio.run(hub.on_error_list(json.dumps({"error_list": [{"code": 3}]})))
+    asyncio.run(hub.on_event_data(json.dumps({"event_list": [{"code": 8, "time": "t"}]})))
+    assert hub.error_list == [{"code": 3}]
+    assert hub.event_list[-1]["code"] == 8
+
+
 def test_register_callback_validates_and_stores() -> None:
     hub = _hub()
     cb = MagicMock()

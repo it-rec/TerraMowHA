@@ -30,6 +30,8 @@ from custom_components.terramow.sensor import (
     CurrentSessionAreaSensor,
     CurrentSessionProgressSensor,
     CurrentSessionTimeSensor,
+    ActiveErrorsSensor,
+    LastEventSensor,
     MainDirectionStatusSensor,
     NextScheduledStartSensor,
     RemainingBladeTimeSensor,
@@ -48,6 +50,42 @@ def _hub() -> TerraMowHub:
 
 def _feed(handler, payload: dict) -> None:
     asyncio.run(handler(json.dumps(payload)))
+
+
+# ---------------------------------------------------------------------------
+# dp_116 / dp_123 — active errors + event log (unofficial)
+# ---------------------------------------------------------------------------
+
+
+def test_active_errors_sensor_from_dp116() -> None:
+    hub = _hub()
+    sensor = ActiveErrorsSensor(hub.basic_data, hub.hass)
+    # no data yet -> zero active errors, no attributes
+    assert sensor.native_value == 0
+    assert sensor.extra_state_attributes == {}
+    _feed(hub.on_error_list, {"error_list": [{"code": 3}, {"code": 7}]})
+    assert sensor.native_value == 2
+    assert sensor.extra_state_attributes == {"errors": [{"code": 3}, {"code": 7}]}
+    # without a lawn mower the sensor reports no value
+    hub.basic_data.lawn_mower = None
+    assert sensor.native_value is None
+
+
+def test_last_event_sensor_from_dp123() -> None:
+    hub = _hub()
+    sensor = LastEventSensor(hub.basic_data, hub.hass)
+    assert sensor.native_value is None
+    assert sensor.extra_state_attributes == {}
+    _feed(hub.on_event_data, {"event_list": [
+        {"code": 1, "time": "2026-07-06T08:00:00Z"},
+        {"code": 8, "time": "2026-07-06T08:27:38Z"},
+    ]})
+    assert sensor.native_value == 8
+    assert sensor.extra_state_attributes == {"event_time": "2026-07-06T08:27:38Z"}
+    # a malformed latest entry / missing fields degrade gracefully
+    _feed(hub.on_event_data, {"event_list": ["oops"]})
+    assert sensor.native_value is None
+    assert sensor.extra_state_attributes == {}
 
 
 # ---------------------------------------------------------------------------

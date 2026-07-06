@@ -257,6 +257,12 @@
           "mission_state_abort": "Перервано",
           "mission_state_complete": "Завершено"
         }
+      },
+      "active_errors": {
+        "name": "Активні помилки"
+      },
+      "last_event": {
+        "name": "Остання подія"
       }
     },
     "camera": {
