@@ -257,6 +257,12 @@
           "mission_state_abort": "Pārtraukta",
           "mission_state_complete": "Pabeigta"
         }
+      },
+      "active_errors": {
+        "name": "Aktīvās kļūdas"
+      },
+      "last_event": {
+        "name": "Pēdējais notikums"
       }
     },
     "camera": {

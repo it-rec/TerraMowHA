@@ -729,6 +729,76 @@ class TerraMowPoseSensor(TerraMowEntity, SensorEntity):
             'frame': self._pose.get('frame'),
         }
 
+
+class ActiveErrorsSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
+    """Number of active device errors (dp_116, undocumented/reverse-engineered).
+
+    The device publishes ``{"error_list": [...]}``. Only the count is exposed
+    as the state; the raw list is attached as an attribute. See
+    ``docs/en/developers/data_point_unofficial.md``.
+    """
+
+    _push_dp_ids = (116,)
+    _attr_translation_key = "active_errors"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _unique_id_suffix = "active_errors"
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the number of active errors."""
+        lawn_mower = self.basic_data.lawn_mower
+        if lawn_mower is None:
+            return None
+        return len(lawn_mower.error_list)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the raw error list."""
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower or not lawn_mower.error_list:
+            return {}
+        return {"errors": lawn_mower.error_list}
+
+
+class LastEventSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
+    """Code of the most recent device event (dp_123, undocumented).
+
+    The device publishes ``{"event_list": [{"code": int, "time": str}]}``. The
+    latest event's code is the state; its timestamp is an attribute.
+    """
+
+    _push_dp_ids = (123,)
+    _attr_translation_key = "last_event"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _unique_id_suffix = "last_event"
+
+    def _latest_event(self) -> dict[str, Any] | None:
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower or not lawn_mower.event_list:
+            return None
+        last = lawn_mower.event_list[-1]
+        return last if isinstance(last, dict) else None
+
+    @property
+    def native_value(self) -> int | None:
+        """Return the latest event code."""
+        last = self._latest_event()
+        if last is None:
+            return None
+        code = last.get("code")
+        return code if isinstance(code, int) and not isinstance(code, bool) else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the latest event's timestamp."""
+        last = self._latest_event()
+        if not last:
+            return {}
+        event_time = last.get("time")
+        return {"event_time": event_time} if event_time is not None else {}
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: TerraMowConfigEntry,
@@ -790,6 +860,10 @@ CurrentJobTypeSensor(basic_data, hass),
         TerraMowMissionSensor(basic_data, hass),
         TerraMowSubMissionSensor(basic_data, hass),
         TerraMowMissionStateSensor(basic_data, hass),
+
+        # Unofficial / reverse-engineered diagnostic sensors
+        ActiveErrorsSensor(basic_data, hass),
+        LastEventSensor(basic_data, hass),
     ]
 
     async_add_entities(entities)

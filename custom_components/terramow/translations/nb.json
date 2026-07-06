@@ -257,6 +257,12 @@
           "mission_state_abort": "Avbrutt",
           "mission_state_complete": "Fullført"
         }
+      },
+      "active_errors": {
+        "name": "Aktive feil"
+      },
+      "last_event": {
+        "name": "Siste hendelse"
       }
     },
     "camera": {

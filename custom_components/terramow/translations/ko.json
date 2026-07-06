@@ -257,6 +257,12 @@
           "mission_state_abort": "중단됨",
           "mission_state_complete": "완료됨"
         }
+      },
+      "active_errors": {
+        "name": "활성 오류"
+      },
+      "last_event": {
+        "name": "마지막 이벤트"
       }
     },
     "camera": {

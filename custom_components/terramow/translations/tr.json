@@ -257,6 +257,12 @@
           "mission_state_abort": "İptal Edildi",
           "mission_state_complete": "Tamamlandı"
         }
+      },
+      "active_errors": {
+        "name": "Etkin hatalar"
+      },
+      "last_event": {
+        "name": "Son olay"
       }
     },
     "camera": {

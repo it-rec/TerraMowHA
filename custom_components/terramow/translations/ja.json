@@ -257,6 +257,12 @@
           "mission_state_abort": "中断",
           "mission_state_complete": "完了"
         }
+      },
+      "active_errors": {
+        "name": "アクティブなエラー"
+      },
+      "last_event": {
+        "name": "最新のイベント"
       }
     },
     "camera": {
