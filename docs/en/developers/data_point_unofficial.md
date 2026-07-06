@@ -30,6 +30,13 @@ registered handler is logged once and its latest payload is kept for the
 diagnostics export (`unknown_data_point_payloads`). The entries below come from
 such an export.
 
+The export also carries a **timestamped change-history** per undocumented dp
+(`unknown_data_point_history`) — only *value changes* are recorded, so it is a
+compact trace of transitions rather than raw traffic. This is the best way to
+decode the **dynamic** dps (e.g. dp_109, dp_134): enable debug logging, drive
+the mower through a few deliberate actions (start/stop mowing, dock, change a
+setting), then export **once** and line the timestamps up with what you did.
+
 ## Implemented data points
 
 | ID | Meaning | Observed payload | Surfaced as |

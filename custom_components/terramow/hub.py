@@ -17,6 +17,7 @@ import random
 import re
 import threading
 import time
+from collections import deque
 from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING, Any
@@ -57,6 +58,11 @@ _LOGGER = logging.getLogger(__name__)
 
 # Define the regular expression pattern
 TOPIC_PATTERN = re.compile(r"^data_point/(\d+)/robot$")
+
+# How many *changes* to remember per undocumented data point. Bounded so the
+# diagnostics export stays small; only value changes are recorded (see
+# ``on_mqtt_message``), so this is a window of transitions, not raw messages.
+UNKNOWN_DP_HISTORY_MAXLEN = 30
 
 
 class Mission(Enum):
@@ -221,6 +227,9 @@ class TerraMowHub:
         self._state_flag_134: dict[str, Any] = {}  # Store dp_134 undecoded binary flag
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
+        # Bounded per-dp change history (epoch, payload) for undocumented dps, so
+        # a single diagnostics export reveals how dynamic values move over time.
+        self._unknown_dp_history: dict[int, deque[tuple[float, str]]] = {}
         # Latest raw payload seen for each unhandled data point, surfaced in
         # diagnostics so undocumented dps can be identified from real data.
         self._unknown_dp_payloads: dict[int, str] = {}
@@ -949,7 +958,16 @@ class TerraMowHub:
             # while the full payload is continuously logged at DEBUG. The latest
             # payload is also kept for the diagnostics export so undocumented
             # dps can be identified from real data without live log capture.
-            self._unknown_dp_payloads[dp_id] = payload[:500]
+            truncated = payload[:500]
+            self._unknown_dp_payloads[dp_id] = truncated
+            # Record a timestamped trace of *changes* (skip repeats) so a chatty
+            # heartbeat cannot evict the real transitions we want to decode.
+            history = self._unknown_dp_history.get(dp_id)
+            if history is None:
+                history = deque(maxlen=UNKNOWN_DP_HISTORY_MAXLEN)
+                self._unknown_dp_history[dp_id] = history
+            if not history or history[-1][1] != truncated:
+                history.append((time.time(), truncated))
             if dp_id not in self._seen_unknown_dp_ids:
                 self._seen_unknown_dp_ids.add(dp_id)
                 _LOGGER.info(

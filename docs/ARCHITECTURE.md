@@ -243,9 +243,13 @@ Notes:
   seen ids accumulate in `_seen_unknown_dp_ids` and appear in diagnostics under
   `unknown_data_points_seen`, while the latest raw payload per unhandled id is
   kept in `_unknown_dp_payloads` and exported under
-  `unknown_data_point_payloads`. This is the intended way to discover new dps
-  (lift-off alarms, error codes, schedule toggles, …) — export diagnostics and
-  read the payloads to identify them.
+  `unknown_data_point_payloads`. In addition, a bounded, timestamped **change
+  history** per unhandled id (`_unknown_dp_history`, only value changes, capped
+  at `UNKNOWN_DP_HISTORY_MAXLEN`) is exported under `unknown_data_point_history`
+  so a single export shows how *dynamic* dps move over time. This is the
+  intended way to discover new dps (lift-off alarms, error codes, schedule
+  toggles, …) — export diagnostics and read the payloads/history to identify
+  them.
 
 ## 7. Map / path pipeline
 

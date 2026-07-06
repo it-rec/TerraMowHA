@@ -300,6 +300,32 @@ def test_on_mqtt_message_handles_unknown_and_invalid_topics() -> None:
     hub.on_mqtt_message(None, None, _msg("garbage/topic", "x"))
 
 
+def test_unknown_dp_history_records_changes_and_dedupes() -> None:
+    from custom_components.terramow.hub import UNKNOWN_DP_HISTORY_MAXLEN
+
+    hub = _hub()
+    topic = "data_point/109/robot"
+    # repeated identical payloads collapse to a single history entry
+    hub.on_mqtt_message(None, None, _msg(topic, '{"int_value":54}'))
+    hub.on_mqtt_message(None, None, _msg(topic, '{"int_value":54}'))
+    history = hub._unknown_dp_history[109]
+    assert [p for _, p in history] == ['{"int_value":54}']
+    # a changed payload appends a new, timestamped entry
+    hub.on_mqtt_message(None, None, _msg(topic, '{"int_value":58}'))
+    assert [p for _, p in history] == ['{"int_value":54}', '{"int_value":58}']
+    assert all(isinstance(ts, float) for ts, _ in history)
+    # a different dp gets its own independent trace
+    hub.on_mqtt_message(None, None, _msg("data_point/134/robot", '{"enum_value":1}'))
+    assert list(hub._unknown_dp_history) == [109, 134]
+    # the buffer is bounded: many distinct values keep only the most recent N
+    for value in range(UNKNOWN_DP_HISTORY_MAXLEN + 5):
+        hub.on_mqtt_message(None, None, _msg(topic, f'{{"int_value":{value}}}'))
+    assert len(hub._unknown_dp_history[109]) == UNKNOWN_DP_HISTORY_MAXLEN
+    assert hub._unknown_dp_history[109][-1][1] == (
+        f'{{"int_value":{UNKNOWN_DP_HISTORY_MAXLEN + 4}}}'
+    )
+
+
 def test_on_mqtt_message_meta_invalid_json_is_swallowed() -> None:
     hub = _hub()
     hub.on_mqtt_message(None, None, SimpleNamespace(topic=MAP_META_TOPIC, payload=b"not-json"))
