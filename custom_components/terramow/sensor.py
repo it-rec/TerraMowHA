@@ -773,6 +773,8 @@ class LastEventSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     _push_dp_ids = (123,)
     _attr_translation_key = "last_event"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    # Raw event code, niche; off by default.
+    _attr_entity_registry_enabled_default = False
     _unique_id_suffix = "last_event"
 
     def _latest_event(self) -> dict[str, Any] | None:
@@ -853,6 +855,8 @@ class CellularConnectionTypeSensor(_CellularSensorBase):
     """Cellular connection type (dp_135), e.g. 'CELLULAR_TYPE_UNKNOWN'."""
 
     _attr_translation_key = "cellular_connection_type"
+    # Niche; the enabled/RSRP/RSRQ sensors cover the useful cellular state.
+    _attr_entity_registry_enabled_default = False
     _unique_id_suffix = "cellular_connection_type"
 
     @property
@@ -873,6 +877,9 @@ class _SunTimeSensorBase(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (152,)
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    # Home Assistant already provides sunrise/sunset via the sun integration, so
+    # these device-reported times are a niche extra: off by default.
+    _attr_entity_registry_enabled_default = False
     _field = ""
 
     @property
@@ -900,6 +907,8 @@ class _OperatingModeSensorBase(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     _push_dp_ids = (154,)
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    # Advanced diagnostic enums; off by default to avoid dashboard clutter.
+    _attr_entity_registry_enabled_default = False
     _field = ""
 
     @property
@@ -942,6 +951,8 @@ class RainSensorThresholdSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     _attr_translation_key = "rain_sensor_threshold"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_state_class = SensorStateClass.MEASUREMENT
+    # Advanced config readout; off by default.
+    _attr_entity_registry_enabled_default = False
     _unique_id_suffix = "rain_sensor_threshold"
 
     @property
@@ -964,6 +975,8 @@ class AfterRainResumeDelaySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.DURATION
     _attr_native_unit_of_measurement = UnitOfTime.MINUTES
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    # Advanced config readout; off by default.
+    _attr_entity_registry_enabled_default = False
     _unique_id_suffix = "after_rain_resume_delay"
 
     @property

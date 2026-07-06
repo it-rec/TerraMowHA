@@ -13,7 +13,8 @@ Unofficial / Reverse-Engineered Data Points
 > - parses **defensively** — a missing or differently-shaped field makes the
 >   entity report `None` / `unavailable`, it never crashes the integration;
 > - is categorised as **diagnostic** so it is clearly separated from the
->   officially-supported entities;
+>   officially-supported entities; the more niche ones are **disabled by
+>   default** — enable them in the entity settings if you need them;
 > - is derived from observed payloads only, so treat the semantics below as a
 >   best-effort interpretation, not a contract.
 >

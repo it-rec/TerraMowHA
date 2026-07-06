@@ -70,6 +70,26 @@ def _feed(handler, payload: dict) -> None:
     asyncio.run(handler(json.dumps(payload)))
 
 
+def test_niche_diagnostics_disabled_by_default() -> None:
+    hub = _hub()
+    # niche / redundant readouts are off by default (enable on demand)
+    disabled = [
+        SunriseSensor, SunsetSensor, MoveModeSensor, MapModeSensor, MowModeSensor,
+        LastEventSensor, RainSensorThresholdSensor, AfterRainResumeDelaySensor,
+        CellularConnectionTypeSensor,
+    ]
+    for cls in disabled:
+        assert cls(hub.basic_data, hub.hass).entity_registry_enabled_default is False
+    # broadly-useful diagnostics stay enabled
+    enabled = [
+        ActiveErrorsSensor, ExtremeWeatherSensor, CliffDetectionSensor,
+        SlopeDetectionSensor, AfterRainAutoResumeSensor, CellularEnabledSensor,
+        CellularSignalRsrpSensor, CellularSignalRsrqSensor,
+    ]
+    for cls in enabled:
+        assert cls(hub.basic_data, hub.hass).entity_registry_enabled_default is True
+
+
 # ---------------------------------------------------------------------------
 # dp_116 / dp_123 — active errors + event log (unofficial)
 # ---------------------------------------------------------------------------
