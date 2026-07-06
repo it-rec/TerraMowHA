@@ -138,6 +138,42 @@ def test_on_operating_modes_branches() -> None:
     assert hub.operating_modes["move_mode"] == "MOVE_MODE_MOW"
 
 
+def test_on_full_schedule_branches() -> None:
+    hub = _hub()
+    # invalid JSON and non-dict payloads are ignored
+    asyncio.run(hub.on_full_schedule("not-json"))
+    asyncio.run(hub.on_full_schedule(json.dumps([1])))
+    assert hub.full_schedule == {}
+    # ADD/DELETE acks (no schedule_list) leave the cache untouched
+    asyncio.run(hub.on_full_schedule(json.dumps({"cmd_type": "SCHEDULE_CMD_TYPE_ADD"})))
+    assert hub.full_schedule == {}
+    # a non-dict schedule_list is rejected
+    asyncio.run(hub.on_full_schedule(json.dumps({"schedule_list": [1]})))
+    assert hub.full_schedule == {}
+    # a GET response with a schedule_list is stored
+    asyncio.run(
+        hub.on_full_schedule(json.dumps({"schedule_list": {"items": [], "global_disabled": False}}))
+    )
+    assert hub.full_schedule == {"items": [], "global_disabled": False}
+
+
+def test_request_full_schedule_publishes_get() -> None:
+    hub = _hub()
+    hub._request_full_schedule()
+    assert hub.mqtt_client.publish.called
+    topic = hub.mqtt_client.publish.call_args[0][0]
+    payload = json.loads(hub.mqtt_client.publish.call_args[0][1])
+    assert topic == "data_point/122/app"
+    assert payload["cmd_type"] == "SCHEDULE_CMD_TYPE_GET"
+
+
+def test_request_full_schedule_swallows_errors() -> None:
+    hub = _hub()
+    hub.mqtt_client.publish.side_effect = RuntimeError("boom")
+    # must not raise -- the MQTT worker thread keeps running
+    hub._request_full_schedule()
+
+
 def test_on_advanced_settings_branches() -> None:
     hub = _hub()
     asyncio.run(hub.on_advanced_settings("not-json"))

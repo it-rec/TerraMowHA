@@ -217,6 +217,7 @@ class TerraMowHub:
         self._weather_info: dict[str, Any] = {}  # Store dp_157 extreme-weather warning
         self._operating_modes: dict[str, Any] = {}  # Store dp_154 operating modes
         self._advanced_settings: dict[str, Any] = {}  # Store dp_150 advanced settings
+        self._full_schedule: dict[str, Any] = {}  # Store dp_122 full weekly schedule list
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
         # Latest raw payload seen for each unhandled data point, surfaced in
@@ -367,6 +368,7 @@ class TerraMowHub:
         self.register_callback(152, self.on_environment_info)
         self.register_callback(157, self.on_weather_info)
         self.register_callback(154, self.on_operating_modes)
+        self.register_callback(122, self.on_full_schedule)
         self.register_callback(150, self.on_advanced_settings)
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
 
@@ -588,6 +590,24 @@ class TerraMowHub:
         if isinstance(data, dict):
             self._weather_info = data
 
+    async def on_full_schedule(self, payload: str) -> None:
+        """Handle the full weekly schedule (dp_122, undocumented).
+
+        Only ``SCHEDULE_CMD_TYPE_GET`` responses carry a ``schedule_list``; the
+        ADD/DELETE acknowledgements do not, so only a payload that actually
+        contains a schedule list updates the cache. The device does not push
+        this on its own — it is requested via ``_request_full_schedule``.
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_122: %s", payload)
+            return
+        if isinstance(data, dict):
+            schedule_list = data.get("schedule_list")
+            if isinstance(schedule_list, dict):
+                self._full_schedule = schedule_list
+
     async def on_operating_modes(self, payload: str) -> None:
         """Handle the operating-mode triple (dp_154, undocumented).
 
@@ -799,6 +819,9 @@ class TerraMowHub:
 
             # Proactively request version compatibility information
             self._request_compatibility_info()
+            # Proactively request the full weekly schedule (dp_122 is only sent
+            # in response to a GET; without this the schedule calendar is empty)
+            self._request_full_schedule()
 
             self.connection_error = False
             self._notify_state_listeners()
@@ -1533,6 +1556,11 @@ class TerraMowHub:
         return self._operating_modes
 
     @property
+    def full_schedule(self) -> dict[str, Any]:
+        """Get the full weekly schedule list (dp_122, undocumented)."""
+        return self._full_schedule
+
+    @property
     def advanced_settings(self) -> dict[str, Any]:
         """Get the advanced settings block (dp_150, undocumented)."""
         return self._advanced_settings
@@ -1755,3 +1783,17 @@ class TerraMowHub:
             self.publish_data_point(COMPATIBILITY_INFO_DP, request_data)
         except Exception as e:
             _LOGGER.error("Failed to request version compatibility information: %s", e)
+
+    def _request_full_schedule(self) -> None:
+        """Request the full weekly schedule (dp_122 GET).
+
+        Mirrors ``_request_compatibility_info``: a read-only query the device
+        answers with its schedule list. Wrapped so a failure never kills the
+        MQTT worker thread.
+        """
+        try:
+            _LOGGER.info("Requesting full weekly schedule")
+            request_data = {"cmd_type": "SCHEDULE_CMD_TYPE_GET", "seq": self.get_cmd_seq()}
+            self.publish_data_point(122, request_data)
+        except Exception as e:
+            _LOGGER.error("Failed to request full weekly schedule: %s", e)
