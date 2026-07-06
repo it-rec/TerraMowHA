@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Päikeseloojang"
+      },
+      "move_mode": {
+        "name": "Liikumine režiim"
+      },
+      "map_mode": {
+        "name": "Kaart režiim"
+      },
+      "mow_mode": {
+        "name": "Niitmine režiim"
       }
     },
     "camera": {

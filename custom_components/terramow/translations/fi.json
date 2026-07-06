@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Auringonlasku"
+      },
+      "move_mode": {
+        "name": "Liike tila"
+      },
+      "map_mode": {
+        "name": "Kartta tila"
+      },
+      "mow_mode": {
+        "name": "Leikkuu tila"
       }
     },
     "camera": {

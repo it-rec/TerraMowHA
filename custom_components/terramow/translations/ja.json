@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "日の入り"
+      },
+      "move_mode": {
+        "name": "移動モード"
+      },
+      "map_mode": {
+        "name": "マップモード"
+      },
+      "mow_mode": {
+        "name": "芝刈りモード"
       }
     },
     "camera": {

@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Posta de sol"
+      },
+      "move_mode": {
+        "name": "Moviment mode"
+      },
+      "map_mode": {
+        "name": "Mapa mode"
+      },
+      "mow_mode": {
+        "name": "Sega mode"
       }
     },
     "camera": {

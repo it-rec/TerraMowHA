@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Západ slnka"
+      },
+      "move_mode": {
+        "name": "Pohyb režim"
+      },
+      "map_mode": {
+        "name": "Mapa režim"
+      },
+      "mow_mode": {
+        "name": "Kosenie režim"
       }
     },
     "camera": {

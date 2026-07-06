@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Saulėlydis"
+      },
+      "move_mode": {
+        "name": "Judėjimas režimas"
+      },
+      "map_mode": {
+        "name": "Žemėlapis režimas"
+      },
+      "mow_mode": {
+        "name": "Pjovimas režimas"
       }
     },
     "camera": {

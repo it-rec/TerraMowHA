@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Napnyugta"
+      },
+      "move_mode": {
+        "name": "Mozgás mód"
+      },
+      "map_mode": {
+        "name": "Térkép mód"
+      },
+      "mow_mode": {
+        "name": "Fűnyírás mód"
       }
     },
     "camera": {

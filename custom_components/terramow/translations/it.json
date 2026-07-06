@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Tramonto"
+      },
+      "move_mode": {
+        "name": "Movimento modalità"
+      },
+      "map_mode": {
+        "name": "Mappa modalità"
+      },
+      "mow_mode": {
+        "name": "Taglio modalità"
       }
     },
     "camera": {

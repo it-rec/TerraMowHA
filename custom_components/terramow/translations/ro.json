@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Apus"
+      },
+      "move_mode": {
+        "name": "Mișcare mod"
+      },
+      "map_mode": {
+        "name": "Hartă mod"
+      },
+      "mow_mode": {
+        "name": "Tuns mod"
       }
     },
     "camera": {

@@ -278,6 +278,15 @@
       },
       "sunset": {
         "name": "Zonsondergang"
+      },
+      "move_mode": {
+        "name": "Beweging modus"
+      },
+      "map_mode": {
+        "name": "Kaart modus"
+      },
+      "mow_mode": {
+        "name": "Maaien modus"
       }
     },
     "camera": {
