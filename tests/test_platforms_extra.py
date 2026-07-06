@@ -128,15 +128,16 @@ def test_lawn_mower_init_logs_when_returning_absent() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_update_added_to_hass_registers_compat_callback() -> None:
+def test_update_added_to_hass_registers_refresh_callbacks() -> None:
     hub = _hub()
     mock_lm = MagicMock()
     hub.basic_data.lawn_mower = mock_lm
     update = TerraMowFirmwareUpdate(hub.basic_data, hub.hass)
     asyncio.run(update.async_added_to_hass())
-    mock_lm.register_callback.assert_called_once_with(
-        COMPATIBILITY_INFO_DP, update._handle_compat_info
-    )
+    # refreshes on real version (102), compat fallback (127), component
+    # versions (129) and is_upgrading (107)
+    registered = {c.args[0] for c in mock_lm.register_callback.call_args_list}
+    assert registered == {102, COMPATIBILITY_INFO_DP, 129, 107}
 
 
 def test_update_added_to_hass_without_lawn_mower_is_noop() -> None:

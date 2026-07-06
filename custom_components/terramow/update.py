@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any, cast
 
 from homeassistant.components.update import (
     UpdateEntity,
@@ -54,14 +55,15 @@ class TerraMowFirmwareUpdate(TerraMowEntity, UpdateEntity):
 
     async def async_added_to_hass(self) -> None:
         # UpdateEntity.state is a cached_property; without an explicit
-        # async_write_ha_state() the cached "unknown" sticks even after
-        # firmware_version_info populates. Push a refresh on every dp_127
-        # message so the cache is invalidated as soon as data arrives.
+        # async_write_ha_state() the cached "unknown" sticks even after the
+        # version/upgrade state populates. Push a refresh on every relevant
+        # message: dp_102 (real version), dp_127 (compat fallback), dp_129
+        # (component versions) and dp_107 (is_upgrading -> in_progress).
         await super().async_added_to_hass()
-        if self.basic_data.lawn_mower:
-            self.basic_data.lawn_mower.register_callback(
-                COMPATIBILITY_INFO_DP, self._handle_compat_info
-            )
+        lawn_mower = self.basic_data.lawn_mower
+        if lawn_mower:
+            for dp_id in (102, COMPATIBILITY_INFO_DP, 129, 107):
+                lawn_mower.register_callback(dp_id, self._handle_compat_info)
 
     async def _handle_compat_info(self, _payload: str) -> None:
         safe_write_ha_state(self)
@@ -69,18 +71,26 @@ class TerraMowFirmwareUpdate(TerraMowEntity, UpdateEntity):
     _unique_id_suffix = "firmware"
 
     def _format_version(self) -> str | None:
-        """Build a version string from the firmware compatibility info."""
-        if not self.basic_data.lawn_mower:
+        """Return the firmware version to display.
+
+        Prefer the real version the TerraMow app shows (dp_102 ``version``,
+        e.g. "9.9.210"); fall back to the dp_127 compatibility number
+        ("overall.ha_module", e.g. "28.3") only until dp_102 has arrived.
+        """
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower:
             return None
 
-        info = self.basic_data.lawn_mower.firmware_version_info
+        real_version = cast("str | None", lawn_mower.firmware_version_name)
+        if real_version:
+            return real_version
+
+        info = lawn_mower.firmware_version_info
         if not info:
             return None
-
         overall = info.get("overall")
         if overall is None:
             return None
-
         ha_version = info.get("module", {}).get("home_assistant")
         if ha_version is not None:
             return f"{overall}.{ha_version}"
@@ -99,3 +109,17 @@ class TerraMowFirmwareUpdate(TerraMowEntity, UpdateEntity):
         version to indicate that no update is available from Home Assistant.
         """
         return self._format_version()
+
+    @property
+    def in_progress(self) -> bool:
+        """Return whether a firmware upgrade is currently running (dp_107)."""
+        lawn_mower = self.basic_data.lawn_mower
+        return bool(lawn_mower and lawn_mower.is_upgrading)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose the per-component firmware versions (dp_129) as attributes."""
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower or not lawn_mower.component_versions:
+            return {}
+        return {"component_versions": lawn_mower.component_versions}

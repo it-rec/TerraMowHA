@@ -68,6 +68,26 @@ def test_dp_handlers_swallow_invalid_json() -> None:
 # ---------------------------------------------------------------------------
 
 
+def test_on_device_info_and_component_versions_branches() -> None:
+    hub = _hub()
+    # invalid JSON is swallowed
+    asyncio.run(hub.on_device_info("not-json"))
+    asyncio.run(hub.on_component_versions("not-json"))
+    assert hub.firmware_version_name is None
+    # non-dict payloads are ignored
+    asyncio.run(hub.on_device_info(json.dumps([1, 2])))
+    asyncio.run(hub.on_component_versions(json.dumps("x")))
+    assert hub.component_versions == {}
+    # a dict without a version stores info but exposes no version
+    asyncio.run(hub.on_device_info(json.dumps({"sn": "X"})))
+    assert hub.firmware_version_name is None
+    # the real version (dp_102) and component versions (dp_129) are exposed
+    asyncio.run(hub.on_device_info(json.dumps({"version": "9.9.210"})))
+    assert hub.firmware_version_name == "9.9.210"
+    asyncio.run(hub.on_component_versions(json.dumps({"ap_app": "9.9.210"})))
+    assert hub.component_versions["ap_app"] == "9.9.210"
+
+
 def test_register_callback_validates_and_stores() -> None:
     hub = _hub()
     cb = MagicMock()

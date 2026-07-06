@@ -208,6 +208,8 @@ class TerraMowHub:
         self._schedule_data: dict[str, Any] = {}  # Stores dp_138 upcoming schedule
         self._battery_status: dict[str, Any] = {}  # Store dp_108 battery status
         self._battery_level: int | None = None  # Store dp_8 battery percentage
+        self._robot_info: dict[str, Any] = {}  # Store dp_102 device/network info
+        self._component_versions: dict[str, Any] = {}  # Store dp_129 component firmware versions
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
         # Latest raw payload seen for each unhandled data point, surfaced in
@@ -350,6 +352,8 @@ class TerraMowHub:
         self.register_callback(138, self.on_schedule_data)
         self.register_callback(108, self.on_battery_status)
         self.register_callback(8, self.on_battery_level)
+        self.register_callback(102, self.on_device_info)
+        self.register_callback(129, self.on_component_versions)
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
 
     async def on_global_params(self, payload: str) -> None:
@@ -468,6 +472,34 @@ class TerraMowHub:
         if isinstance(value, int) and not isinstance(value, bool):
             self._battery_level = value
 
+    async def on_device_info(self, payload: str) -> None:
+        """Handle device/network info updates (dp_102).
+
+        Carries the real firmware version the TerraMow app shows (``version``),
+        plus serial/network identifiers. Only the version is surfaced to Home
+        Assistant; the identifiers are kept private.
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_102: %s", payload)
+            return
+        if isinstance(data, dict):
+            self._robot_info = data
+            version = data.get("version")
+            if isinstance(version, str) and version:
+                self.hass.add_job(self._async_update_device_sw_version, version)
+
+    async def on_component_versions(self, payload: str) -> None:
+        """Handle per-component firmware version updates (dp_129)."""
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_129: %s", payload)
+            return
+        if isinstance(data, dict):
+            self._component_versions = data
+
     async def on_battery_status(self, payload: str) -> None:
         """Handle battery status updates (dp_108)."""
         _LOGGER.debug("Raw battery status payload: %s", payload)
@@ -547,8 +579,10 @@ class TerraMowHub:
             self.basic_data.compatibility_status = compatibility_status
             self.basic_data.firmware_version = data
 
-            # Show the firmware version on the device page (same format as the update entity)
-            sw_version = self._format_firmware_version(data)
+            # Show the firmware version on the device page. Prefer the real
+            # version from dp_102 (e.g. "9.9.210"); the dp_127 compatibility
+            # number ("28.3") is only a fallback until dp_102 has arrived.
+            sw_version = self.firmware_version_name or self._format_firmware_version(data)
             if sw_version:
                 self.hass.add_job(self._async_update_device_sw_version, sw_version)
 
@@ -1340,6 +1374,17 @@ class TerraMowHub:
     def battery_level(self) -> int | None:
         """Get the current battery percentage from dp_8."""
         return self._battery_level
+
+    @property
+    def firmware_version_name(self) -> str | None:
+        """Get the real firmware version (dp_102 ``version``), e.g. '9.9.210'."""
+        version = self._robot_info.get("version")
+        return version if isinstance(version, str) and version else None
+
+    @property
+    def component_versions(self) -> dict[str, Any]:
+        """Get the per-component firmware versions (dp_129)."""
+        return self._component_versions
 
     @property
     def is_robot_navi_located(self) -> bool | None:

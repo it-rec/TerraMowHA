@@ -366,8 +366,28 @@ def test_update_entity_reports_firmware_version() -> None:
     update = TerraMowFirmwareUpdate(hub.basic_data, hub.hass)
     assert update.installed_version is None
 
+    # dp_127 compatibility number is only a fallback until dp_102 arrives
     _feed(hub.on_compatibility_info, {"overall": 26, "module": {"home_assistant": 3}})
-
     assert update.installed_version == "26.3"
+
+    # dp_102 carries the real app version and takes precedence
+    _feed(hub.on_device_info, {"version": "9.9.210", "sn": "X"})
+    assert update.installed_version == "9.9.210"
     # updates run through the TerraMow app, so HA must not offer one
     assert update.latest_version == update.installed_version
+
+
+def test_update_entity_in_progress_from_is_upgrading() -> None:
+    hub = _hub()
+    update = TerraMowFirmwareUpdate(hub.basic_data, hub.hass)
+    assert update.in_progress is False
+    _feed(hub.on_mission_status, {"is_upgrading": True})
+    assert update.in_progress is True
+
+
+def test_update_entity_exposes_component_versions() -> None:
+    hub = _hub()
+    update = TerraMowFirmwareUpdate(hub.basic_data, hub.hass)
+    assert update.extra_state_attributes == {}
+    _feed(hub.on_component_versions, {"ap_app": "9.9.210", "main_controller": "09.09.210"})
+    assert update.extra_state_attributes["component_versions"]["ap_app"] == "9.9.210"
