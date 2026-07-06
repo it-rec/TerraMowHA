@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "Mobilní síť typ"
+      },
+      "sunrise": {
+        "name": "Východ slunce"
+      },
+      "sunset": {
+        "name": "Západ slunce"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "Mobilní síť povoleno"
+      },
+      "defogger_heating": {
+        "name": "Defogger ohřev"
+      },
+      "illumination_light": {
+        "name": "Osvětlení"
+      },
+      "daylight": {
+        "name": "Denní světlo"
+      },
+      "extreme_weather": {
+        "name": "Extrémní počasí"
       }
     },
     "button": {

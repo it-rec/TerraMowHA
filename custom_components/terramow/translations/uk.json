@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "Мобільна мережа тип"
+      },
+      "sunrise": {
+        "name": "Схід сонця"
+      },
+      "sunset": {
+        "name": "Захід сонця"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "Мобільна мережа увімкнено"
+      },
+      "defogger_heating": {
+        "name": "Defogger нагрів"
+      },
+      "illumination_light": {
+        "name": "Освітлення"
+      },
+      "daylight": {
+        "name": "Денне світло"
+      },
+      "extreme_weather": {
+        "name": "Екстремальна погода"
       }
     },
     "button": {

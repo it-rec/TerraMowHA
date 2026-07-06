@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "Réseau mobile type"
+      },
+      "sunrise": {
+        "name": "Lever du soleil"
+      },
+      "sunset": {
+        "name": "Coucher du soleil"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "Réseau mobile activé"
+      },
+      "defogger_heating": {
+        "name": "Defogger chauffage"
+      },
+      "illumination_light": {
+        "name": "Éclairage"
+      },
+      "daylight": {
+        "name": "Lumière du jour"
+      },
+      "extreme_weather": {
+        "name": "Météo extrême"
       }
     },
     "button": {

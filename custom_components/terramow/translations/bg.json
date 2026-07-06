@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "Мобилна мрежа тип"
+      },
+      "sunrise": {
+        "name": "Изгрев"
+      },
+      "sunset": {
+        "name": "Залез"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "Мобилна мрежа активирано"
+      },
+      "defogger_heating": {
+        "name": "Defogger отопление"
+      },
+      "illumination_light": {
+        "name": "Осветление"
+      },
+      "daylight": {
+        "name": "Дневна светлина"
+      },
+      "extreme_weather": {
+        "name": "Екстремно време"
       }
     },
     "button": {

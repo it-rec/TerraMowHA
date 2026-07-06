@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "Mobilhálózat típus"
+      },
+      "sunrise": {
+        "name": "Napkelte"
+      },
+      "sunset": {
+        "name": "Napnyugta"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "Mobilhálózat engedélyezve"
+      },
+      "defogger_heating": {
+        "name": "Defogger fűtés"
+      },
+      "illumination_light": {
+        "name": "Világítás"
+      },
+      "daylight": {
+        "name": "Nappal"
+      },
+      "extreme_weather": {
+        "name": "Szélsőséges időjárás"
       }
     },
     "button": {

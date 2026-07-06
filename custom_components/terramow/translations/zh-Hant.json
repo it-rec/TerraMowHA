@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "行動網路 類型"
+      },
+      "sunrise": {
+        "name": "日出"
+      },
+      "sunset": {
+        "name": "日落"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "行動網路 已啟用"
+      },
+      "defogger_heating": {
+        "name": "Defogger 加熱"
+      },
+      "illumination_light": {
+        "name": "照明"
+      },
+      "daylight": {
+        "name": "白晝"
+      },
+      "extreme_weather": {
+        "name": "極端天氣"
       }
     },
     "button": {

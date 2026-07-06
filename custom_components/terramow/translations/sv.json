@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "Mobilnätverk typ"
+      },
+      "sunrise": {
+        "name": "Soluppgång"
+      },
+      "sunset": {
+        "name": "Solnedgång"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "Mobilnätverk aktiverad"
+      },
+      "defogger_heating": {
+        "name": "Defogger uppvärmning"
+      },
+      "illumination_light": {
+        "name": "Belysning"
+      },
+      "daylight": {
+        "name": "Dagsljus"
+      },
+      "extreme_weather": {
+        "name": "Extremväder"
       }
     },
     "button": {

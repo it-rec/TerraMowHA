@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "Hücresel tür"
+      },
+      "sunrise": {
+        "name": "Gün doğumu"
+      },
+      "sunset": {
+        "name": "Gün batımı"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "Hücresel etkin"
+      },
+      "defogger_heating": {
+        "name": "Defogger ısıtma"
+      },
+      "illumination_light": {
+        "name": "Aydınlatma"
+      },
+      "daylight": {
+        "name": "Gün ışığı"
+      },
+      "extreme_weather": {
+        "name": "Aşırı hava"
       }
     },
     "button": {

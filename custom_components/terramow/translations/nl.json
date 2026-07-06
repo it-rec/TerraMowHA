@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "Mobiel netwerk type"
+      },
+      "sunrise": {
+        "name": "Zonsopkomst"
+      },
+      "sunset": {
+        "name": "Zonsondergang"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "Mobiel netwerk ingeschakeld"
+      },
+      "defogger_heating": {
+        "name": "Defogger verwarming"
+      },
+      "illumination_light": {
+        "name": "Verlichting"
+      },
+      "daylight": {
+        "name": "Daglicht"
+      },
+      "extreme_weather": {
+        "name": "Extreem weer"
       }
     },
     "button": {

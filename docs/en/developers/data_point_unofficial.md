@@ -38,6 +38,8 @@ such an export.
 | 123 | Event log | `{"event_list":[{"code":8,"time":"…Z"}]}` | **Last event** sensor (latest `code` + `event_time` attribute) |
 | 129 | Per-component firmware versions | `{"ap_app":"9.9.210","main_controller":"09.09.210",…}` | firmware `update` entity `component_versions` attribute |
 | 135 | Cellular / 4G modem info (only on models with a modem) | `{"is_enabled":false,"RSRP":0,"RSRQ":0,"type":"CELLULAR_TYPE_UNKNOWN",…}` | **Cellular enabled** binary sensor; **Cellular RSRP** / **RSRQ** / **type** sensors (signal sensors are `None` while disabled) |
+| 152 | Environment / status | `{"is_defogger_heating":false,"is_illuminate_light_on":false,"sunrise":{"hour":5,"minute":29},"sunset":{…},"is_not_in_daylight_period":false,"manual_mapping":{…}}` | **Sunrise** / **Sunset** sensors; **Defogger heating** / **Illumination** / **Daylight** binary sensors (`manual_mapping` not yet surfaced) |
+| 157 | Extreme-weather warning (note device spelling `extream`) | `{"has_extream_weather":false,"extream_weather_info_url":""}` | **Extreme weather** binary sensor (safety; `info_url` attribute) |
 
 ## Observed but not yet surfaced
 
@@ -56,6 +58,4 @@ Documented here for future work; not decoded into entities yet.
 | 145 | Custom-passage creation status | `{"stage":"CUSTOM_PASSAGE_STAGE_INVALID","is_on_grass":false,…}` |
 | 146 | Unknown scalar | `{"int_value":1}` |
 | 150 | Advanced settings | `{"enable_cliff_detection":{…},"mow_spacing":{…},"rain_sensor_threshold":{…},…}` |
-| 152 | Environment / status | `{"is_defogger_heating":false,"sunrise":{…},"sunset":{…},"is_not_in_daylight_period":false,…}` |
 | 154 | Operating modes | `{"move_mode":"MOVE_MODE_MOW","map_mode":"MAP_MODE_BASE_STATION","mow_mode":"MOW_MODE_GLOBAL"}` |
-| 157 | Extreme-weather warning | `{"has_extream_weather":false,"extream_weather_info_url":""}` |

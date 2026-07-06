@@ -43,6 +43,10 @@ async def async_setup_entry(
 
         # Unofficial / reverse-engineered diagnostic sensors
         CellularEnabledSensor(basic_data, hass),
+        DefoggerHeatingSensor(basic_data, hass),
+        IlluminationLightSensor(basic_data, hass),
+        DaylightSensor(basic_data, hass),
+        ExtremeWeatherSensor(basic_data, hass),
     ]
 
     async_add_entities(entities)
@@ -321,3 +325,80 @@ class CellularEnabledSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity)
         if not lawn_mower or not lawn_mower.cellular_info:
             return None
         return bool(lawn_mower.cellular_info.get("is_enabled"))
+
+
+class _EnvironmentBinarySensorBase(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
+    """Base for the dp_152 environment binary sensors (unofficial)."""
+
+    _push_dp_ids = (152,)
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    # Field read from environment_info and whether its boolean is inverted.
+    _field = ""
+    _invert = False
+
+    @property
+    def is_on(self) -> bool | None:
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower or not lawn_mower.environment_info:
+            return None
+        value = bool(lawn_mower.environment_info.get(self._field))
+        return not value if self._invert else value
+
+
+class DefoggerHeatingSensor(_EnvironmentBinarySensorBase):
+    """True while the station defogger is heating (dp_152)."""
+
+    _attr_device_class = BinarySensorDeviceClass.RUNNING
+    _attr_translation_key = "defogger_heating"
+    _field = "is_defogger_heating"
+    _unique_id_suffix = "defogger_heating"
+
+
+class IlluminationLightSensor(_EnvironmentBinarySensorBase):
+    """True while the robot's illumination light is on (dp_152)."""
+
+    _attr_device_class = BinarySensorDeviceClass.LIGHT
+    _attr_translation_key = "illumination_light"
+    _field = "is_illuminate_light_on"
+    _unique_id_suffix = "illumination_light"
+
+
+class DaylightSensor(_EnvironmentBinarySensorBase):
+    """True while the robot considers it daytime (dp_152).
+
+    Derived from ``is_not_in_daylight_period`` (inverted).
+    """
+
+    _attr_translation_key = "daylight"
+    _field = "is_not_in_daylight_period"
+    _invert = True
+    _unique_id_suffix = "daylight"
+
+
+class ExtremeWeatherSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
+    """Extreme-weather warning (dp_157, unofficial).
+
+    ``has_extream_weather`` (device spelling); an optional info URL is exposed
+    as an attribute. See ``docs/en/developers/data_point_unofficial.md``.
+    """
+
+    _push_dp_ids = (157,)
+    _attr_device_class = BinarySensorDeviceClass.SAFETY
+    _attr_translation_key = "extreme_weather"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _unique_id_suffix = "extreme_weather"
+
+    @property
+    def is_on(self) -> bool | None:
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower or not lawn_mower.weather_info:
+            return None
+        return bool(lawn_mower.weather_info.get("has_extream_weather"))
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str]:
+        lawn_mower = self.basic_data.lawn_mower
+        if not lawn_mower or not lawn_mower.weather_info:
+            return {}
+        url = lawn_mower.weather_info.get("extream_weather_info_url")
+        return {"info_url": url} if isinstance(url, str) and url else {}

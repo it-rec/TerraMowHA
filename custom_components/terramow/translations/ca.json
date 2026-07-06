@@ -272,6 +272,12 @@
       },
       "cellular_connection_type": {
         "name": "Mòbil tipus"
+      },
+      "sunrise": {
+        "name": "Sortida del sol"
+      },
+      "sunset": {
+        "name": "Posta de sol"
       }
     },
     "camera": {
@@ -318,6 +324,18 @@
       },
       "cellular_enabled": {
         "name": "Mòbil activat"
+      },
+      "defogger_heating": {
+        "name": "Defogger calefacció"
+      },
+      "illumination_light": {
+        "name": "Il·luminació"
+      },
+      "daylight": {
+        "name": "Llum de dia"
+      },
+      "extreme_weather": {
+        "name": "Temps extrem"
       }
     },
     "button": {
