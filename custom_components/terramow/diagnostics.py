@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import Any
 
 from homeassistant.components.diagnostics import async_redact_data
@@ -62,6 +63,22 @@ async def async_get_config_entry_diagnostics(
             str(dp_id): payload
             for dp_id, payload in sorted(
                 getattr(lawn_mower, "_unknown_dp_payloads", {}).items()
+            )
+        },
+        # Timestamped change-history per undocumented dp (only value changes are
+        # recorded). A single export therefore shows how dynamic values move —
+        # e.g. when dp_134 toggled or dp_109 climbed — which is what lets these
+        # be decoded against user actions. Times are UTC ISO-8601.
+        "unknown_data_point_history": {
+            str(dp_id): [
+                {
+                    "time": datetime.fromtimestamp(ts, tz=UTC).isoformat(),
+                    "payload": payload,
+                }
+                for ts, payload in entries
+            ]
+            for dp_id, entries in sorted(
+                getattr(lawn_mower, "_unknown_dp_history", {}).items()
             )
         },
     }
