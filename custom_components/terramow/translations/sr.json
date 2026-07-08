@@ -47,10 +47,14 @@
       "init": {
         "title": "TerraMow опције",
         "data": {
-          "map_resolution": "Излазна резолуција мапе (px)"
+          "map_resolution": "Излазна резолуција мапе (px)",
+          "map_theme": "Map theme",
+          "map_show_coverage": "Show mowed coverage"
         },
         "data_description": {
-          "map_resolution": "Дужина странице излазне PNG слике камере мапе. Веће вредности дају оштрију слику при уграђивању у контролне табле, али повећавају проток и оптерећење CPU при сваком исцртавању."
+          "map_resolution": "Дужина странице излазне PNG слике камере мапе. Веће вредности дају оштрију слику при уграђивању у контролне табле, али повећавају проток и оптерећење CPU при сваком исцртавању.",
+          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
         }
       }
     }

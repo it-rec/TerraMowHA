@@ -47,10 +47,14 @@
       "init": {
         "title": "TerraMow 選項",
         "data": {
-          "map_resolution": "地圖輸出解析度 (px)"
+          "map_resolution": "地圖輸出解析度 (px)",
+          "map_theme": "Map theme",
+          "map_show_coverage": "Show mowed coverage"
         },
         "data_description": {
-          "map_resolution": "地圖攝影機 PNG 的輸出邊長。數值越高，嵌入儀表板時影像越清晰，但每次繪製會佔用更多頻寬與 CPU。"
+          "map_resolution": "地圖攝影機 PNG 的輸出邊長。數值越高，嵌入儀表板時影像越清晰，但每次繪製會佔用更多頻寬與 CPU。",
+          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
         }
       }
     }

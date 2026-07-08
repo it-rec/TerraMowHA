@@ -115,3 +115,12 @@ DEFAULT_BLADE_DISK_SPEED_TYPE = "BLADE_DISK_SPEED_TYPE_MEDIUM"
 CONF_MAP_RESOLUTION = "map_resolution"
 DEFAULT_MAP_RESOLUTION = 1024
 MAP_RESOLUTION_OPTIONS = [1024, 1536, 2048, 3072, 4096]
+
+# Map camera color theme
+CONF_MAP_THEME = "map_theme"
+DEFAULT_MAP_THEME = "light"
+MAP_THEME_OPTIONS = ["light", "dark"]
+
+# Map camera coverage layer: shade the mowed swath at the real cutting width
+CONF_MAP_SHOW_COVERAGE = "map_show_coverage"
+DEFAULT_MAP_SHOW_COVERAGE = False

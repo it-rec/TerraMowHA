@@ -27,9 +27,14 @@ if TYPE_CHECKING:
 
 from .const import (
     CONF_MAP_RESOLUTION,
+    CONF_MAP_SHOW_COVERAGE,
+    CONF_MAP_THEME,
     DEFAULT_MAP_RESOLUTION,
+    DEFAULT_MAP_SHOW_COVERAGE,
+    DEFAULT_MAP_THEME,
     DOMAIN,
     MAP_RESOLUTION_OPTIONS,
+    MAP_THEME_OPTIONS,
     MQTT_PORT,
     MQTT_USERNAME,
 )
@@ -309,15 +314,23 @@ class TerraMowOptionsFlow(OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        current = self._config_entry.options.get(
-            CONF_MAP_RESOLUTION, DEFAULT_MAP_RESOLUTION
-        )
+        options = self._config_entry.options
         schema = vol.Schema(
             {
                 vol.Required(
                     CONF_MAP_RESOLUTION,
-                    default=current,
+                    default=options.get(CONF_MAP_RESOLUTION, DEFAULT_MAP_RESOLUTION),
                 ): vol.In(MAP_RESOLUTION_OPTIONS),
+                vol.Required(
+                    CONF_MAP_THEME,
+                    default=options.get(CONF_MAP_THEME, DEFAULT_MAP_THEME),
+                ): vol.In(MAP_THEME_OPTIONS),
+                vol.Required(
+                    CONF_MAP_SHOW_COVERAGE,
+                    default=options.get(
+                        CONF_MAP_SHOW_COVERAGE, DEFAULT_MAP_SHOW_COVERAGE
+                    ),
+                ): bool,
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

@@ -267,6 +267,46 @@ def test_camera_setup_falls_back_on_invalid_resolution() -> None:
     assert len(added) == 2
 
 
+def test_camera_setup_falls_back_on_invalid_theme() -> None:
+    hub = _hub()
+    added: list = []
+    entry = SimpleNamespace(
+        runtime_data=hub.basic_data, options={"map_theme": "bogus"}
+    )
+    asyncio.run(async_setup_entry(hub.hass, entry, added.extend))
+    assert all(cam._theme == "light" for cam in added)
+
+
+def test_calibration_points_none_before_first_render() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    # never rendered -> no snapshot -> no calibration attribute
+    assert camera._build_calibration_points() is None
+
+
+def test_draw_coverage_noop_on_degenerate_path() -> None:
+    hub = _hub()
+    camera = _camera(hub, show_coverage=True)
+    hub._map_data = MEGA_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    # two identical cleaning points collapse to a single pixel -> no swath drawn
+    asyncio.run(
+        camera._on_path_data(
+            {
+                "id": 5,
+                "map_id": 1,
+                "type": "PATH_TYPE_CLEAN",
+                "points": [
+                    {"position": {"x": 1.0, "y": 1.0}, "type": "PATH_POINT_TYPE_CLEANING"},
+                    {"position": {"x": 1.0, "y": 1.0}, "type": "PATH_POINT_TYPE_CLEANING"},
+                    {"position": {"x": 1.0, "y": 1.0}, "type": "PATH_POINT_TYPE_CLEANING"},
+                ],
+            }
+        )
+    )
+    assert _render(camera).startswith(PNG_MAGIC)
+
+
 # ---------------------------------------------------------------------------
 # _build_scene: region edges / obstacles / sub-region inner + centroid
 # ---------------------------------------------------------------------------
@@ -335,3 +375,261 @@ def test_draw_path_segment_legacy_interface() -> None:
     # a real 2-point segment draws a stroke; a too-short one is a no-op
     camera._draw_path_segment(draw, [{"x": 0.1, "y": 0.1}, {"x": 0.6, "y": 0.6}])
     camera._draw_path_segment(draw, [{"x": 0.1, "y": 0.1}])
+
+
+# ---------------------------------------------------------------------------
+# dark theme
+# ---------------------------------------------------------------------------
+
+
+def test_render_dark_theme() -> None:
+    hub = _hub()
+    camera = _camera(hub, theme="dark")
+    hub._map_data = MEGA_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    assert _render(camera).startswith(PNG_MAGIC)
+    assert camera.extra_state_attributes["map_theme"] == "dark"
+
+
+def test_invalid_theme_falls_back_to_light() -> None:
+    hub = _hub()
+    camera = _camera(hub, theme="bogus")
+    assert camera._theme == "light"
+
+
+def test_placeholder_uses_theme_before_data() -> None:
+    hub = _hub()
+    camera = _camera(hub, theme="dark")
+    # no map data yet -> placeholder path, must not raise
+    assert _render(camera).startswith(PNG_MAGIC)
+
+
+# ---------------------------------------------------------------------------
+# coverage layer
+# ---------------------------------------------------------------------------
+
+
+def test_render_coverage_layer() -> None:
+    hub = _hub()
+    camera = _camera(hub, show_coverage=True)
+    hub._map_data = MEGA_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+
+    points = [
+        {"position": {"x": 0.1 * i, "y": 0.5}, "type": "PATH_POINT_TYPE_CLEANING"}
+        for i in range(20)
+    ]
+    asyncio.run(
+        camera._on_path_data(
+            {"id": 5, "map_id": 1, "type": "PATH_TYPE_CLEAN", "points": points}
+        )
+    )
+    assert _render(camera).startswith(PNG_MAGIC)
+    assert camera.extra_state_attributes["coverage_enabled"] is True
+    assert "coverage" in camera.extra_state_attributes["rendered_layers"]
+
+
+# ---------------------------------------------------------------------------
+# calibration points for interactive map cards
+# ---------------------------------------------------------------------------
+
+
+def test_calibration_points_exposed() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = MEGA_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    _render(camera)
+
+    calibration = camera.extra_state_attributes["calibration_points"]
+    assert len(calibration) == 3
+    for point in calibration:
+        assert set(point) == {"vacuum", "map"}
+        assert set(point["vacuum"]) == {"x", "y"}
+        assert set(point["map"]) == {"x", "y"}
+
+
+def test_calibration_points_scale_with_output_resolution() -> None:
+    hub = _hub()
+    camera = _camera(hub, output_resolution=2048)
+    hub._map_data = MEGA_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    _render(camera)
+
+    calibration = camera.extra_state_attributes["calibration_points"]
+    # map pixels are expressed in the output-resolution space (2048 = 2x 1024)
+    assert max(p["map"]["x"] for p in calibration) > 1024
+
+
+def test_no_calibration_points_without_geometry() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = {"id": 1, "map_state": "MAP_STATE_INCOMPLETE"}
+    asyncio.run(camera._on_map_info({"id": 1}))
+    assert "calibration_points" not in camera.extra_state_attributes
+
+
+# ---------------------------------------------------------------------------
+# robot / station icons scale with the map
+# ---------------------------------------------------------------------------
+
+
+def test_robot_icon_rebuilds_on_scale_change() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = MEGA_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    asyncio.run(camera._on_pose({"x": 1.5, "y": 1.5, "yaw": 0.0}))
+    _render(camera)
+    length_a = camera._robot_image_length_px
+    assert length_a is not None
+    # a much larger map -> smaller robot-to-canvas ratio, icon is rebuilt
+    big_map = dict(MEGA_MAP, width=4000, height=4000)
+    hub._map_data = big_map
+    asyncio.run(camera._on_map_info({"id": 1}))
+    _render(camera)
+    assert camera._robot_image_length_px is not None
+
+
+# ---------------------------------------------------------------------------
+# scale bar
+# ---------------------------------------------------------------------------
+
+
+def test_scale_bar_and_timestamp_rendered() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = MEGA_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    assert _render(camera).startswith(PNG_MAGIC)
+    # a rebuild stamps the update time and exposes it as an attribute
+    assert camera._last_update_label is not None
+    assert camera.extra_state_attributes["map_updated_at"] == camera._last_update_label
+
+
+def test_scale_bar_choice_picks_round_distance() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    # 0.1 px/mm -> 5000 mm bar spans 500 px (too wide), 2000 mm spans 200 px (fits)
+    choice = camera._scale_bar_choice(0.1)
+    assert choice is not None
+    length_mm, length_px = choice
+    assert length_mm == 2000
+    assert length_px == 200
+
+
+def test_scale_bar_suppressed_on_extreme_zoom() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    # even the smallest 100 mm step would be far wider than the target
+    assert camera._scale_bar_choice(100.0) is None
+    # a degenerate transformer scale yields no bar
+    assert camera._scale_bar_choice(0.0) is None
+    # extremely zoomed out: every step fits but the bar collapses below 12 px
+    assert camera._scale_bar_choice(0.0001) is None
+
+
+def test_map_updated_at_absent_before_first_render() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    # no rebuild yet -> no timestamp attribute
+    assert "map_updated_at" not in camera.extra_state_attributes
+
+
+# ---------------------------------------------------------------------------
+# legend
+# ---------------------------------------------------------------------------
+
+
+def test_legend_lists_present_feature_types() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = MEGA_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    scene = camera._build_scene()
+    labels = [label for _, label in camera._legend_entries(scene)]
+    # the mega map carries no-go, required, pass-through, tunnel and obstacles
+    assert "No-go" in labels
+    assert "Required" in labels
+    assert "Tunnel" in labels
+
+
+def test_legend_empty_without_features() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    camera._map_data = {
+        "id": 1,
+        "map_state": "MAP_STATE_COMPLETE",
+        "width": 100,
+        "height": 80,
+        "resolution": 0.05,
+        "origin": {"x": 0.0, "y": 0.0},
+    }
+    scene = camera._build_scene()
+    assert camera._legend_entries(scene) == []
+
+
+# ---------------------------------------------------------------------------
+# realistic scale: scale bar + legend actually draw
+# ---------------------------------------------------------------------------
+
+
+# 400 x 320 cells @ 25 mm -> a 10 m x 8 m lawn in millimetre coordinates,
+# giving a realistic pixels-per-mm scale where the scale bar is visible.
+REALISTIC_MAP = {
+    "id": 2,
+    "name": "Lawn",
+    "map_state": "MAP_STATE_COMPLETE",
+    "width": 400,
+    "height": 320,
+    "resolution": 25,
+    "origin": {"x": 0.0, "y": 0.0},
+    "station_pose": {"x": 500, "y": 500, "theta": 0},
+    "regions": [
+        {
+            "id": 1,
+            "boundary": _poly((0, 0), (10000, 0), (10000, 8000), (0, 8000)),
+            "sub_regions": [],
+        }
+    ],
+    "forbidden_zones": [_poly((1000, 1000), (2000, 1000), (2000, 2000))],
+    "required_zones": [_poly((3000, 3000), (4000, 3000), (4000, 4000))],
+    "pass_through_zones": [_poly((5000, 1000), (6000, 1000), (6000, 2000))],
+    "cross_boundary_tunnels": [{"line": _poly((1000, 5000), (2000, 6000))}],
+    "obstacles": [_poly((7000, 2000), (7500, 2000), (7500, 2500))],
+}
+
+
+def test_realistic_map_draws_scale_bar_and_legend() -> None:
+    hub = _hub()
+    camera = _camera(hub, show_coverage=True)
+    hub._map_data = REALISTIC_MAP
+    asyncio.run(camera._on_map_info({"id": 2}))
+    points = [
+        {"position": {"x": 500 * i, "y": 4000}, "type": "PATH_POINT_TYPE_CLEANING"}
+        for i in range(15)
+    ]
+    asyncio.run(
+        camera._on_path_data(
+            {"id": 9, "map_id": 2, "type": "PATH_TYPE_CLEAN", "points": points}
+        )
+    )
+    assert _render(camera).startswith(PNG_MAGIC)
+
+    # the transformer scale is realistic -> a scale bar is chosen and drawn
+    assert camera._transformer is not None
+    assert camera._scale_bar_choice(camera._transformer.scale) is not None
+    labels = [label for _, label in camera._legend_entries(camera._build_scene())]
+    assert "Path" in labels
+    assert "Coverage" in labels
+
+
+def test_scale_bar_noop_without_transformer() -> None:
+    from PIL import Image, ImageDraw
+
+    hub = _hub()
+    camera = _camera(hub)
+    camera._transformer = None
+    draw = ImageDraw.Draw(Image.new("RGBA", (100, 100)))
+    # no transformer -> early return, no crash
+    camera._draw_scale_bar(draw)

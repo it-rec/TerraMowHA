@@ -47,10 +47,14 @@
       "init": {
         "title": "TerraMow-asetukset",
         "data": {
-          "map_resolution": "Kartan tulostustarkkuus (px)"
+          "map_resolution": "Kartan tulostustarkkuus (px)",
+          "map_theme": "Map theme",
+          "map_show_coverage": "Show mowed coverage"
         },
         "data_description": {
-          "map_resolution": "Karttakameran PNG-kuvan sivun pituus. Suuremmat arvot antavat terävämmän kuvan kojelaudoissa, mutta lisäävät kaistanleveyttä ja suorittimen kuormitusta jokaisella renderöinnillä."
+          "map_resolution": "Karttakameran PNG-kuvan sivun pituus. Suuremmat arvot antavat terävämmän kuvan kojelaudoissa, mutta lisäävät kaistanleveyttä ja suorittimen kuormitusta jokaisella renderöinnillä.",
+          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
         }
       }
     }

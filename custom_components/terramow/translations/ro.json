@@ -47,10 +47,14 @@
       "init": {
         "title": "Opțiuni TerraMow",
         "data": {
-          "map_resolution": "Rezoluția de ieșire a hărții (px)"
+          "map_resolution": "Rezoluția de ieșire a hărții (px)",
+          "map_theme": "Map theme",
+          "map_show_coverage": "Show mowed coverage"
         },
         "data_description": {
-          "map_resolution": "Lungimea laturii imaginii PNG generate de camera hărții. Valorile mai mari oferă o imagine mai clară atunci când este încorporată în tablouri de bord, dar cresc lățimea de bandă și utilizarea CPU la fiecare randare."
+          "map_resolution": "Lungimea laturii imaginii PNG generate de camera hărții. Valorile mai mari oferă o imagine mai clară atunci când este încorporată în tablouri de bord, dar cresc lățimea de bandă și utilizarea CPU la fiecare randare.",
+          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
         }
       }
     }

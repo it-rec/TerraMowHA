@@ -47,10 +47,14 @@
       "init": {
         "title": "TerraMow parinktys",
         "data": {
-          "map_resolution": "Žemėlapio išvesties raiška (px)"
+          "map_resolution": "Žemėlapio išvesties raiška (px)",
+          "map_theme": "Map theme",
+          "map_show_coverage": "Show mowed coverage"
         },
         "data_description": {
-          "map_resolution": "Žemėlapio kameros PNG kraštinės ilgis. Didesnės reikšmės suteikia ryškesnį vaizdą, kai jis įterpiamas į valdymo skydelius, tačiau padidina pralaidumo ir CPU apkrovą kiekvieno atvaizdavimo metu."
+          "map_resolution": "Žemėlapio kameros PNG kraštinės ilgis. Didesnės reikšmės suteikia ryškesnį vaizdą, kai jis įterpiamas į valdymo skydelius, tačiau padidina pralaidumo ir CPU apkrovą kiekvieno atvaizdavimo metu.",
+          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
         }
       }
     }

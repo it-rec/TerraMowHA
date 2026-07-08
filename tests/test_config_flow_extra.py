@@ -16,6 +16,10 @@ from custom_components.terramow.config_flow import (
 )
 from custom_components.terramow.const import (
     CONF_MAP_RESOLUTION,
+    CONF_MAP_SHOW_COVERAGE,
+    CONF_MAP_THEME,
+    DEFAULT_MAP_SHOW_COVERAGE,
+    DEFAULT_MAP_THEME,
     DOMAIN,
     MAP_RESOLUTION_OPTIONS,
 )
@@ -168,4 +172,27 @@ async def test_options_flow_sets_map_resolution(hass: HomeAssistant) -> None:
         result["flow_id"], {CONF_MAP_RESOLUTION: resolution}
     )
     assert result["type"] == FlowResultType.CREATE_ENTRY
-    assert result["data"] == {CONF_MAP_RESOLUTION: resolution}
+    # unset fields fall back to their defaults
+    assert result["data"] == {
+        CONF_MAP_RESOLUTION: resolution,
+        CONF_MAP_THEME: DEFAULT_MAP_THEME,
+        CONF_MAP_SHOW_COVERAGE: DEFAULT_MAP_SHOW_COVERAGE,
+    }
+
+
+async def test_options_flow_sets_theme_and_coverage(hass: HomeAssistant) -> None:
+    entry = MockConfigEntry(domain=DOMAIN, data=USER_INPUT, unique_id="192.0.2.10")
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_MAP_RESOLUTION: MAP_RESOLUTION_OPTIONS[0],
+            CONF_MAP_THEME: "dark",
+            CONF_MAP_SHOW_COVERAGE: True,
+        },
+    )
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_MAP_THEME] == "dark"
+    assert result["data"][CONF_MAP_SHOW_COVERAGE] is True
