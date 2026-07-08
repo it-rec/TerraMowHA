@@ -75,6 +75,9 @@ OUTER_MARGIN = 40
 MAP_RECT = (40, 40, 984, 728)
 SUMMARY_RECT = (40, 760, 984, 928)
 MAP_PADDING = 24
+# Reserved band at the top of the map card for the name/state chips, so the map
+# geometry is fit below them instead of running up against (or under) the chips.
+MAP_HEADER = 84
 MAP_RADIUS = 28
 CARD_RADIUS = 24
 
@@ -1615,6 +1618,15 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             # self._scene_scale is active.
             ss = SCENE_SUPERSAMPLE
             padding = 0 if self._clean_mode else MAP_PADDING
+            # Fit the geometry below the chip header band (full mode only) so
+            # the map never runs up against the name/state chips.
+            header = 0 if self._clean_mode else MAP_HEADER
+            fit_rect = (
+                self._map_rect[0],
+                self._map_rect[1] + header,
+                self._map_rect[2],
+                self._map_rect[3],
+            )
             scene_canvas = Image.new(
                 "RGBA", (IMAGE_WIDTH * ss, IMAGE_HEIGHT * ss), (0, 0, 0, 0)
             )
@@ -1622,10 +1634,10 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             self._transformer = CoordinateTransformer(
                 scene["all_points"],
                 (
-                    self._map_rect[0] * ss,
-                    self._map_rect[1] * ss,
-                    self._map_rect[2] * ss,
-                    self._map_rect[3] * ss,
+                    fit_rect[0] * ss,
+                    fit_rect[1] * ss,
+                    fit_rect[2] * ss,
+                    fit_rect[3] * ss,
                 ),
                 padding=padding * ss,
             )
@@ -1643,7 +1655,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             # every rect/padding input scales linearly with ss.
             self._transformer = CoordinateTransformer(
                 scene["all_points"],
-                self._map_rect,
+                fit_rect,
                 padding=padding,
             )
             if not self._clean_mode:
@@ -1851,9 +1863,6 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
 
         if scene["station_pose"] is not None:
             self._draw_station(image, scene["station_pose"])
-
-        if scene["origin"] is not None:
-            self._draw_origin(draw, transformer.to_pixel(scene["origin"][0], scene["origin"][1]))
 
     def _composite_draw(
         self,
@@ -2081,13 +2090,6 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         draw.ellipse([x - s(18), y - s(18), x + s(18), y + s(18)], outline=blue, width=s(3))
         draw.ellipse([x - s(10), y - s(10), x + s(10), y + s(10)], outline=blue, width=s(2))
         draw.ellipse([x - s(3), y - s(3), x + s(3), y + s(3)], fill=blue)
-
-    def _draw_origin(self, draw: ImageDraw.ImageDraw, center: tuple[int, int]) -> None:
-        """Draw the origin marker."""
-        x, y = center
-        s = self._s
-        draw.line([(x - s(8), y), (x + s(8), y)], fill=self._palette.origin, width=s(2))
-        draw.line([(x, y - s(8)), (x, y + s(8))], fill=self._palette.origin, width=s(2))
 
     def _draw_path_stroke(
         self,

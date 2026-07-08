@@ -673,3 +673,34 @@ def test_hud_localized_placeholder_chinese() -> None:
     # no data yet -> localized placeholder text, must render
     assert camera._t("waiting") == "正在等待地图数据…"
     assert _render(camera).startswith(PNG_MAGIC)
+
+
+# ---------------------------------------------------------------------------
+# header band + removed origin crosshair
+# ---------------------------------------------------------------------------
+
+
+def test_map_geometry_fits_below_chip_header() -> None:
+    from custom_components.terramow.camera import MAP_HEADER, MAP_RECT
+
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = MEGA_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    _render(camera)
+    # the map is fit into a rect that starts below the name/state chip band
+    assert camera._transformer is not None
+    assert camera._transformer.top == MAP_RECT[1] + MAP_HEADER
+
+
+def test_origin_crosshair_removed() -> None:
+    # the origin "+" marker is no longer drawn on the map
+    assert not hasattr(TerraMowMapCamera, "_draw_origin")
+    hub = _hub()
+    camera = _camera(hub)
+    # a map that carries an origin still renders fine without the crosshair
+    hub._map_data = MEGA_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    scene = camera._build_scene()
+    assert scene["origin"] is not None  # origin still tracked (summary/bounds)
+    assert _render(camera).startswith(PNG_MAGIC)
