@@ -205,7 +205,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     hub = TerraMowHub(basic_data, hass)
     hub.start()
 
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    try:
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    except Exception:
+        # A failed platform setup means async_unload_entry never runs; stop
+        # the hub here or its MQTT worker thread keeps reconnecting forever
+        # and every setup retry would stack another hub+thread on top.
+        await hub.async_stop()
+        raise
 
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
 

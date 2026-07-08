@@ -180,8 +180,13 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
             return
         self._pending.append(detected)
         # Fire on the event loop; _trigger_event / state writes are not
-        # thread-safe.
-        self.hass.add_job(self._async_drain_pending)
+        # thread-safe. The coroutine is created on the loop thread so a
+        # failed schedule can't leave an un-awaited coroutine behind.
+        self.hass.loop.call_soon_threadsafe(self._schedule_drain)
+
+    def _schedule_drain(self) -> None:
+        """Create the drain task (must run on the event loop)."""
+        self.hass.async_create_task(self._async_drain_pending())
 
     async def _async_drain_pending(self) -> None:
         """Fire any queued events on the event loop."""

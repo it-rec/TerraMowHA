@@ -57,6 +57,16 @@ def _fire(ent: TerraMowMowerEventEntity) -> None:
     asyncio.run(ent._async_drain_pending())
 
 
+def test_schedule_drain_creates_task_on_loop() -> None:
+    hub = _hub()
+    ent = _entity(hub)
+    created: list = []
+    hub.hass.async_create_task = MagicMock(side_effect=created.append)
+    ent._schedule_drain()
+    assert len(created) == 1
+    created[0].close()
+
+
 def _last_event(ent: TerraMowMowerEventEntity) -> str | None:
     if not ent._trigger_event.called:
         return None

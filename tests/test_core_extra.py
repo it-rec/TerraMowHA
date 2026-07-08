@@ -96,12 +96,60 @@ def test_mqtt_message_topic_handlers_swallow_dispatch_errors() -> None:
     )
 
     hub = _hub()
-    hub.hass.add_job = MagicMock(side_effect=RuntimeError("loop closed"))
+    hub.hass.loop.call_soon_threadsafe = MagicMock(side_effect=RuntimeError("loop closed"))
     # a registered pose callback ensures the pose branch also schedules a job
     hub.pose_callbacks.append(MagicMock())
     for topic in (MAP_META_TOPIC, PATH_META_TOPIC, PATH_HISTORY_META_TOPIC, POSE_TOPIC):
         # valid JSON, but scheduling the async handler raises -> swallowed
         hub.on_mqtt_message(None, None, _msg(topic, '{"seq": 1}'))
+
+
+def test_mqtt_message_undecodable_payload_is_dropped() -> None:
+    hub = _hub()
+    msg = MagicMock()
+    msg.topic = "data_point/8/robot"
+    msg.payload = b"\xff\xfe\xfa"  # not valid UTF-8
+    # must not raise: a raising on_message would wedge the reconnect loop
+    hub.on_mqtt_message(None, None, msg)
+    hub.hass.loop.call_soon_threadsafe.assert_not_called()
+
+
+def test_dispatch_runs_coroutine_sync_and_raising_targets() -> None:
+    hub = _hub()
+    # run the scheduled closure inline
+    hub.hass.loop.call_soon_threadsafe = MagicMock(side_effect=lambda fn: fn())
+    created: list = []
+    hub.hass.async_create_task = MagicMock(side_effect=created.append)
+
+    async def async_target(value):
+        return value
+
+    hub._dispatch(async_target, 1)
+    assert len(created) == 1
+    created[0].close()
+
+    sync_target = MagicMock()
+    hub._dispatch(sync_target, 2)
+    sync_target.assert_called_once_with(2)
+
+    # a raising target is contained inside the dispatch closure
+    hub._dispatch(MagicMock(side_effect=RuntimeError("boom")), 3)
+
+
+def test_diagnostics_snapshot_returns_copies() -> None:
+    hub = _hub()
+    hub._seen_unknown_dp_ids.add(42)
+    hub._unknown_dp_payloads[42] = "{}"
+    from collections import deque
+
+    hub._unknown_dp_history[42] = deque([(1.0, "{}")], maxlen=5)
+    snap = hub.diagnostics_snapshot()
+    assert snap["seen_unknown_dp_ids"] == [42]
+    assert snap["unknown_dp_payloads"] == {42: "{}"}
+    assert snap["unknown_dp_history"] == {42: [(1.0, "{}")]}
+    # mutating the snapshot must not touch the hub's live structures
+    snap["unknown_dp_history"][42].append((2.0, "x"))
+    assert len(hub._unknown_dp_history[42]) == 1
 
 
 def test_handle_map_info_swallows_update_error() -> None:

@@ -99,9 +99,8 @@ def test_on_mqtt_message_routes_every_topic() -> None:
     )
     hub.on_mqtt_message(None, None, _msg(MODEL_NAME_TOPIC, "TerraMow S1200"))
 
-    assert hub._map_meta == {"seq": 1}
-    assert hub._path_meta == {"seq": 2}
-    assert hub._history_path_meta == {"seq": 3}
+    # meta topics are dispatched to the loop; pose/model update local state
+    assert hub.hass.loop.call_soon_threadsafe.call_count >= 3
     assert hub._pose == {"x": 9}
     assert hub.device_model == "TerraMow S1200"
 
@@ -575,8 +574,8 @@ def test_register_callbacks_replay_cached_data() -> None:
     hub.register_path_callback(cb)
     hub.register_history_path_callback(cb)
 
-    # each register replays its cached payload via hass.add_job
-    assert hub.hass.add_job.call_count == 4
+    # each register replays its cached payload via the loop dispatch
+    assert hub.hass.loop.call_soon_threadsafe.call_count == 4
 
 
 def test_schedule_path_and_history_retry_noop_when_task_running() -> None:
