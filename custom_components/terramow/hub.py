@@ -66,6 +66,24 @@ TOPIC_PATTERN = re.compile(r"^data_point/(\d+)/robot$")
 UNKNOWN_DP_HISTORY_MAXLEN = 30
 
 
+def _make_unsubscriber[CallbackT](
+    callbacks: list[CallbackT], callback: CallbackT
+) -> Callable[[], None]:
+    """Build an unsubscribe callable removing ``callback`` from ``callbacks``.
+
+    Idempotent: calling the returned callable more than once (or after the
+    callback was removed elsewhere) is a no-op instead of a ValueError.
+    """
+
+    def _unsubscribe() -> None:
+        try:
+            callbacks.remove(callback)
+        except ValueError:
+            pass  # already removed
+
+    return _unsubscribe
+
+
 class Mission(Enum):
     MISSION_IDLE = "MISSION_IDLE"
     MISSION_RECHARGE = "MISSION_RECHARGE"
@@ -284,13 +302,16 @@ class TerraMowHub:
             },
         }
 
-    def register_state_listener(self, listener: Callable[[], None]) -> None:
+    def register_state_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
         """Register a listener called on connection/dp_107/model changes.
 
         Listeners may be invoked from the MQTT worker thread, so they must
         be thread-safe (e.g. use ``schedule_update_ha_state``).
+
+        Returns an idempotent unsubscribe callable removing the listener.
         """
         self._state_listeners.append(listener)
+        return _make_unsubscriber(self._state_listeners, listener)
 
     def _notify_state_listeners(self) -> None:
         """Notify listeners about a state change."""
@@ -1047,17 +1068,26 @@ class TerraMowHub:
             else:
                 _LOGGER.debug("Unhandled data point %d payload: %s", dp_id, payload[:2000])
 
-    def register_callback(self, dp_id: int, callback: Callable[..., Any]) -> None:
-        """Register a callback function for a specific dp_id."""
+    def register_callback(
+        self, dp_id: int, callback: Callable[..., Any]
+    ) -> Callable[[], None]:
+        """Register a callback function for a specific dp_id.
+
+        Returns an idempotent unsubscribe callable removing the callback.
+        """
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
         if dp_id not in self.callbacks:
             self.callbacks[dp_id] = []
         self.callbacks[dp_id].append(callback)
         _LOGGER.debug(f"Callback registered for dp_id: {dp_id}")
+        return _make_unsubscriber(self.callbacks[dp_id], callback)
 
-    def register_map_callback(self, callback: Callable[..., Any]) -> None:
-        """Register a callback function for map info updates."""
+    def register_map_callback(self, callback: Callable[..., Any]) -> Callable[[], None]:
+        """Register a callback function for map info updates.
+
+        Returns an idempotent unsubscribe callable removing the callback.
+        """
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
         self.map_callbacks.append(callback)
@@ -1065,33 +1095,48 @@ class TerraMowHub:
         # If map data already exists, trigger the callback immediately
         if self._map_info:
             self._dispatch(callback, self._map_info)
+        return _make_unsubscriber(self.map_callbacks, callback)
 
-    def register_pose_callback(self, callback: Callable[..., Any]) -> None:
-        """Register a callback function for pose updates."""
+    def register_pose_callback(self, callback: Callable[..., Any]) -> Callable[[], None]:
+        """Register a callback function for pose updates.
+
+        Returns an idempotent unsubscribe callable removing the callback.
+        """
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
         self.pose_callbacks.append(callback)
         _LOGGER.debug("Pose callback registered")
         if self._pose:
             self._dispatch(callback, self._pose)
+        return _make_unsubscriber(self.pose_callbacks, callback)
 
-    def register_path_callback(self, callback: Callable[..., Any]) -> None:
-        """Register a callback function for path data updates."""
+    def register_path_callback(self, callback: Callable[..., Any]) -> Callable[[], None]:
+        """Register a callback function for path data updates.
+
+        Returns an idempotent unsubscribe callable removing the callback.
+        """
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
         self.path_callbacks.append(callback)
         _LOGGER.debug("Path callback registered")
         if self._path_data:
             self._dispatch(callback, self._path_data)
+        return _make_unsubscriber(self.path_callbacks, callback)
 
-    def register_history_path_callback(self, callback: Callable[..., Any]) -> None:
-        """Register a callback function for history path data updates."""
+    def register_history_path_callback(
+        self, callback: Callable[..., Any]
+    ) -> Callable[[], None]:
+        """Register a callback function for history path data updates.
+
+        Returns an idempotent unsubscribe callable removing the callback.
+        """
         if not callable(callback):
             raise ValueError("Callback must be a callable function.")
         self.history_path_callbacks.append(callback)
         _LOGGER.debug("History path callback registered")
         if self._history_path_data:
             self._dispatch(callback, self._history_path_data)
+        return _make_unsubscriber(self.history_path_callbacks, callback)
 
     def _update_map_info(self, map_info: dict[str, Any]) -> None:
         """Update map info and notify callbacks."""

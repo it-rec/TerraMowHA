@@ -98,6 +98,20 @@ def test_added_to_hass_registers_hub_callbacks() -> None:
     assert clean._on_battery_status in hub.callbacks[BATTERY_STATUS_DP]
 
 
+def test_removal_deregisters_all_hub_callbacks() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    asyncio.run(camera.async_added_to_hass())
+    # removing the entity (which runs the async_on_remove callbacks) must
+    # deregister every hub callback so a removed camera stops being invoked
+    camera._call_on_remove_callbacks()
+    assert camera._on_map_info not in hub.map_callbacks
+    assert camera._on_path_data not in hub.path_callbacks
+    assert camera._on_history_path_data not in hub.history_path_callbacks
+    assert camera._on_pose not in hub.pose_callbacks
+    assert camera._on_battery_status not in hub.callbacks[BATTERY_STATUS_DP]
+
+
 def test_added_to_hass_without_lawn_mower() -> None:
     hub = _hub()
     orphan = TerraMowMapCamera(

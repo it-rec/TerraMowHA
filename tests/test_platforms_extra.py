@@ -264,7 +264,9 @@ def test_map_binary_sensor_registers_dp117_callback() -> None:
     hub.basic_data.lawn_mower = mock_lm
     sensor = TerraMowMapDetectedBinarySensor(hub.basic_data, hub.hass)
     asyncio.run(sensor.async_added_to_hass())
-    mock_lm.register_callback.assert_called_once_with(117, sensor._handle_dp_117)
+    mock_lm.register_callback.assert_called_once_with(117, sensor._handle_push_update)
+    # the unsubscribe returned by the hub is wired up for teardown
+    assert mock_lm.register_callback.return_value in sensor._on_remove
 
 
 def test_map_binary_sensor_added_without_lawn_mower_is_noop() -> None:
@@ -280,7 +282,7 @@ def test_map_binary_sensor_dp117_handler_writes_state() -> None:
     sensor = TerraMowMapBackingUpBinarySensor(hub.basic_data, hub.hass)
     sensor.entity_id = "binary_sensor.map_backing_up"
     sensor.async_write_ha_state = MagicMock()
-    asyncio.run(sensor._handle_dp_117(""))
+    asyncio.run(sensor._handle_push_update(""))
     sensor.async_write_ha_state.assert_called_once()
 
 
@@ -290,7 +292,9 @@ def test_task_binary_sensor_registers_dp107_callback() -> None:
     hub.basic_data.lawn_mower = mock_lm
     sensor = TerraMowSavingDataBinarySensor(hub.basic_data, hub.hass)
     asyncio.run(sensor.async_added_to_hass())
-    mock_lm.register_callback.assert_called_once_with(107, sensor._handle_dp_107)
+    mock_lm.register_callback.assert_called_once_with(107, sensor._handle_push_update)
+    # the unsubscribe returned by the hub is wired up for teardown
+    assert mock_lm.register_callback.return_value in sensor._on_remove
 
 
 def test_task_binary_sensor_added_without_lawn_mower_is_noop() -> None:
@@ -306,7 +310,7 @@ def test_task_binary_sensor_dp107_handler_writes_state() -> None:
     sensor = TerraMowSavingDataBinarySensor(hub.basic_data, hub.hass)
     sensor.entity_id = "binary_sensor.saving_data"
     sensor.async_write_ha_state = MagicMock()
-    asyncio.run(sensor._handle_dp_107(""))
+    asyncio.run(sensor._handle_push_update(""))
     sensor.async_write_ha_state.assert_called_once()
 
 

@@ -14,7 +14,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import TerraMowBasicData, TerraMowConfigEntry
 from .const import COMPATIBILITY_INFO_DP
 from .entity import TerraMowEntity
-from .entity_utils import safe_write_ha_state
+from .entity_utils import PushUpdateMixin
 
 # Push-based integration: no update throttling needed
 PARALLEL_UPDATES = 0
@@ -37,8 +37,15 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class TerraMowFirmwareUpdate(TerraMowEntity, UpdateEntity):
+class TerraMowFirmwareUpdate(PushUpdateMixin, TerraMowEntity, UpdateEntity):
     """Update entity exposing the TerraMow firmware version."""
+
+    # UpdateEntity.state is a cached_property; without an explicit
+    # async_write_ha_state() the cached "unknown" sticks even after the
+    # version/upgrade state populates. Push a refresh on every relevant
+    # message: dp_102 (real version), dp_127 (compat fallback), dp_129
+    # (component versions) and dp_107 (is_upgrading -> in_progress).
+    _push_dp_ids = (102, COMPATIBILITY_INFO_DP, 129, 107)
 
     _attr_translation_key = "firmware"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
@@ -52,21 +59,6 @@ class TerraMowFirmwareUpdate(TerraMowEntity, UpdateEntity):
         """Initialize the firmware update entity."""
         super().__init__(basic_data, hass)
         _LOGGER.debug("TerraMowFirmwareUpdate entity created")
-
-    async def async_added_to_hass(self) -> None:
-        # UpdateEntity.state is a cached_property; without an explicit
-        # async_write_ha_state() the cached "unknown" sticks even after the
-        # version/upgrade state populates. Push a refresh on every relevant
-        # message: dp_102 (real version), dp_127 (compat fallback), dp_129
-        # (component versions) and dp_107 (is_upgrading -> in_progress).
-        await super().async_added_to_hass()
-        lawn_mower = self.basic_data.lawn_mower
-        if lawn_mower:
-            for dp_id in (102, COMPATIBILITY_INFO_DP, 129, 107):
-                lawn_mower.register_callback(dp_id, self._handle_compat_info)
-
-    async def _handle_compat_info(self, _payload: str) -> None:
-        safe_write_ha_state(self)
 
     _unique_id_suffix = "firmware"
 

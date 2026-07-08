@@ -75,7 +75,7 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
     async def async_added_to_hass(self) -> None:
         """Track hub state changes (connection, dp_107, model name)."""
         await super().async_added_to_hass()
-        self.hub.register_state_listener(self._on_hub_state)
+        self.async_on_remove(self.hub.register_state_listener(self._on_hub_state))
         # The initial state may have arrived before the entity was created
         self.update_activity_from_state()
 

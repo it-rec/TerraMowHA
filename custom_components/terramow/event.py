@@ -111,7 +111,7 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
         self._was_complete = (
             self.hub.mission_state == MissionState.MISSION_STATE_COMPLETE
         )
-        self.hub.register_state_listener(self._on_hub_state)
+        self.async_on_remove(self.hub.register_state_listener(self._on_hub_state))
 
     def _compute_phase(self) -> str:
         """Derive the semantic phase from the hub state (mirrors lawn_mower)."""

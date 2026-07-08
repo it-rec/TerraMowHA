@@ -70,10 +70,17 @@ class PushUpdateMixin(_MixinBase):
         lawn_mower = getattr(self.basic_data, "lawn_mower", None)
         if lawn_mower is None:
             return
+        # Hand every unsubscribe to async_on_remove so a disabled/removed
+        # entity is deregistered from the hub instead of leaking and being
+        # invoked forever.
         for dp_id in self._push_dp_ids:
-            lawn_mower.register_callback(dp_id, self._handle_push_update)
+            self.async_on_remove(
+                lawn_mower.register_callback(dp_id, self._handle_push_update)
+            )
         if self._push_map_info:
-            lawn_mower.register_map_callback(self._handle_map_push_update)
+            self.async_on_remove(
+                lawn_mower.register_map_callback(self._handle_map_push_update)
+            )
 
     async def _handle_push_update(self, _payload: str) -> None:
         safe_write_ha_state(self)

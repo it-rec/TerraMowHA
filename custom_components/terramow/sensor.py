@@ -281,21 +281,15 @@ class CurrentSessionAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         return attrs
 
 
-class CurrentSessionProgressSensor(TerraMowEntity, SensorEntity):
+class CurrentSessionProgressSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Progress (%) of the current session, derived from dp_113 clean_area/total_area."""
+
+    _push_dp_ids = (113,)
 
     _attr_native_unit_of_measurement = PERCENTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "current_session_progress"
-
-    async def async_added_to_hass(self) -> None:
-        await super().async_added_to_hass()
-        if self.basic_data.lawn_mower:
-            self.basic_data.lawn_mower.register_callback(113, self._handle_dp_113)
-
-    async def _handle_dp_113(self, _payload: str) -> None:
-        safe_write_ha_state(self)
 
     _unique_id_suffix = "current_session_progress"
 
@@ -706,8 +700,18 @@ class TerraMowPoseSensor(TerraMowEntity, SensorEntity):
         super().__init__(basic_data, hass)
         self._pose: dict[str, Any] = {}
 
-        if hasattr(basic_data, 'lawn_mower') and basic_data.lawn_mower:
-            basic_data.lawn_mower.register_pose_callback(self._on_pose)
+    async def async_added_to_hass(self) -> None:
+        """Register the pose callback once the entity is actually added.
+
+        Registering here (with the unsubscribe handed to ``async_on_remove``)
+        instead of in ``__init__`` means a registry-disabled or removed entity
+        does not keep receiving ~2 Hz pose pushes from the hub.
+        """
+        await super().async_added_to_hass()
+        if self.basic_data.lawn_mower:
+            self.async_on_remove(
+                self.basic_data.lawn_mower.register_pose_callback(self._on_pose)
+            )
 
     _unique_id_suffix = "pose"
 
@@ -1274,22 +1278,16 @@ class BackToStationReasonSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         return None
 
 
-class _MissionEnumSensorBase(TerraMowEntity, SensorEntity):
+class _MissionEnumSensorBase(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Shared base for the dp_107 mission/sub_mission/state enum sensors."""
+
+    _push_dp_ids = (107,)
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_device_class = SensorDeviceClass.ENUM
 
     _enum_attr: str = ""
     _unique_id_suffix: str = ""
-
-    async def async_added_to_hass(self) -> None:
-        await super().async_added_to_hass()
-        if self.basic_data.lawn_mower:
-            self.basic_data.lawn_mower.register_callback(107, self._handle_dp_107)
-
-    async def _handle_dp_107(self, _payload: str) -> None:
-        safe_write_ha_state(self)
 
     @property
     def native_value(self) -> str | None:

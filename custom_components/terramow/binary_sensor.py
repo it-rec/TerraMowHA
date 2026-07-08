@@ -12,7 +12,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowBasicData, TerraMowConfigEntry
 from .entity import TerraMowEntity
-from .entity_utils import PushUpdateMixin, safe_write_ha_state
+from .entity_utils import PushUpdateMixin
 
 # Push-based integration: no update throttling needed
 PARALLEL_UPDATES = 0
@@ -215,21 +215,15 @@ class TerraMowRainSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
         )
 
 
-class _MapStatusBinarySensorBase(TerraMowEntity, BinarySensorEntity):
+class _MapStatusBinarySensorBase(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
     """Shared base for dp_117 map_status flag binary sensors."""
+
+    _push_dp_ids = (117,)
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     _map_status_field: str = ""
     _unique_id_suffix: str = ""
-
-    async def async_added_to_hass(self) -> None:
-        await super().async_added_to_hass()
-        if self.basic_data.lawn_mower:
-            self.basic_data.lawn_mower.register_callback(117, self._handle_dp_117)
-
-    async def _handle_dp_117(self, _payload: str) -> None:
-        safe_write_ha_state(self)
 
     @property
     def is_on(self) -> bool | None:
@@ -266,21 +260,15 @@ class TerraMowMapBackingUpBinarySensor(_MapStatusBinarySensorBase):
     _unique_id_suffix = "map_backing_up"
 
 
-class _TaskStatusBinarySensorBase(TerraMowEntity, BinarySensorEntity):
+class _TaskStatusBinarySensorBase(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
     """Shared base for dp_107 task_status flag binary sensors."""
+
+    _push_dp_ids = (107,)
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     _task_status_field: str = ""
     _unique_id_suffix: str = ""
-
-    async def async_added_to_hass(self) -> None:
-        await super().async_added_to_hass()
-        if self.basic_data.lawn_mower:
-            self.basic_data.lawn_mower.register_callback(107, self._handle_dp_107)
-
-    async def _handle_dp_107(self, _payload: str) -> None:
-        safe_write_ha_state(self)
 
     @property
     def is_on(self) -> bool | None:
