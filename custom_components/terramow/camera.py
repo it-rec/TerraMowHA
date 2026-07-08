@@ -872,11 +872,16 @@ def _truncate(text: str, max_length: int) -> str:
 
 
 def _format_area(total_area_tenths: Any) -> str:
-    """Format an area value."""
+    """Format an area value.
+
+    Uses ``m²`` (ASCII m + superscript two) rather than the single CJK glyph
+    ``㎡`` (U+33A1), which many of the fonts we fall back to can't render and
+    would draw as a tofu box.
+    """
     area = _coerce_float(total_area_tenths)
     if area is None:
         return "-"
-    return f"{area / 10:.1f}㎡"
+    return f"{area / 10:.1f} m²"
 
 
 def _format_file_size(value: Any) -> str:
@@ -2541,7 +2546,6 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         draw = ImageDraw.Draw(image, "RGBA")
         left, top, right, bottom = SUMMARY_RECT
         width = right - left
-        title_font = _load_font(15, bold=True)
         label_font = _load_font(13)
         value_font = _load_font(18, bold=True)
         chip_font = _load_font(13, bold=True)
@@ -2584,6 +2588,26 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
 
         chip_y = bottom - 46
         chip_x = left + 22
+
+        # The "Updated HH:MM" stamp sits at the bottom-right of the panel, on
+        # the same row as the count chips, so it never collides with the metric
+        # grid above (localized labels there can be wide).
+        stamp_font = _load_font(13)
+        stamp_right = right - 22
+        chip_limit = stamp_right
+        if self._last_update_label:
+            stamp = f"{self._t('updated')} {self._last_update_label}"
+            stamp_box = draw.textbbox((0, 0), stamp, font=stamp_font)
+            stamp_width = int(stamp_box[2] - stamp_box[0])
+            draw.text(
+                (stamp_right - stamp_width, chip_y + 7),
+                stamp,
+                fill=self._palette.text_muted,
+                font=stamp_font,
+            )
+            # keep the count chips clear of the stamp
+            chip_limit = stamp_right - stamp_width - 16
+
         count_chips = [
             f"R {scene['scene_counts']['regions']}/{scene['scene_counts']['sub_regions']}",
             f"{self._t('nogo')} {scene['scene_counts']['forbidden_zones'] + scene['scene_counts']['physical_forbidden_zones']}",
@@ -2593,7 +2617,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         for chip in count_chips:
             box = draw.textbbox((0, 0), chip, font=chip_font)
             chip_width = int(box[2] - box[0]) + 20
-            if chip_x + chip_width > right - 22:
+            if chip_x + chip_width > chip_limit:
                 break
             draw.rounded_rectangle(
                 [chip_x, chip_y, chip_x + chip_width, chip_y + 28],
@@ -2602,23 +2626,6 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             )
             draw.text((chip_x + 10, chip_y + 6), chip, fill=self._palette.text_subtle, font=chip_font)
             chip_x += chip_width + 10
-
-        title = self._t("snapshot")
-        title_box = draw.textbbox((0, 0), title, font=title_font)
-        title_x = right - 22 - (title_box[2] - title_box[0])
-        draw.text((title_x, top + 18), title, fill=self._palette.text_subtle, font=title_font)
-
-        if self._last_update_label:
-            stamp = f"{self._t('updated')} {self._last_update_label}"
-            stamp_font = _load_font(13)
-            stamp_box = draw.textbbox((0, 0), stamp, font=stamp_font)
-            stamp_x = right - 22 - (stamp_box[2] - stamp_box[0])
-            draw.text(
-                (stamp_x, top + 40),
-                stamp,
-                fill=self._palette.text_muted,
-                font=stamp_font,
-            )
 
     def _render_final_image(self) -> bytes:
         """Render the final image."""
