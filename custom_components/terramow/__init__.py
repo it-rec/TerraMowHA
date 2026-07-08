@@ -56,7 +56,9 @@ PLATFORMS: list[Platform] = [Platform.LAWN_MOWER, Platform.SENSOR, Platform.BINA
 class TerraMowBasicData:
     host: str
     password: str
-    lawn_mower: Any = None
+    # The hub; the attribute keeps its historical name from the time the
+    # lawn mower entity itself played the hub role.
+    lawn_mower: TerraMowHub | None = None
     # Stable device identity used for unique_ids and device identifiers: the
     # serial once known (config entry data), the host until then.
     device_uid: str | None = None
@@ -253,7 +255,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
 
         registry = er.async_get(hass)
 
-        targets: list[TerraMowBasicData] = []
+        targets: list[TerraMowHub] = []
         for entity_id in entity_ids:
             entry = registry.async_get(entity_id)
             if entry is None or entry.config_entry_id is None:
@@ -270,10 +272,10 @@ def _async_register_services(hass: HomeAssistant) -> None:
                     translation_key="lawn_mower_not_ready",
                     translation_placeholders={"entity_id": entity_id},
                 )
-            targets.append(basic_data)
+            targets.append(basic_data.lawn_mower)
 
-        for basic_data in targets:
-            basic_data.lawn_mower.start_select_region_clean(region_ids)
+        for hub in targets:
+            hub.start_select_region_clean(region_ids)
 
     hass.services.async_register(
         DOMAIN,

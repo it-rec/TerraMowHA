@@ -79,10 +79,11 @@ class TerraMowNumberBase(PushUpdateMixin, TerraMowEntity, NumberEntity):
         if self._cached_mode:
             return self._cached_mode
 
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        global_params = self.basic_data.lawn_mower.global_params
+        global_params = hub.global_params
         if not global_params:
             return None
 
@@ -148,10 +149,11 @@ class MowingHeightNumber(TerraMowNumberBase):
     @property
     def native_value(self) -> float | None:
         """Return the current value."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        global_params = self.basic_data.lawn_mower.global_params
+        global_params = hub.global_params
         if not global_params:
             return None
 
@@ -161,7 +163,8 @@ class MowingHeightNumber(TerraMowNumberBase):
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the mowing height."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             _LOGGER.error("Lawn mower not available")
             return
 
@@ -173,7 +176,7 @@ class MowingHeightNumber(TerraMowNumberBase):
         }
 
         _LOGGER.info("Setting mowing height to %d mm", int(value))
-        self.basic_data.lawn_mower.publish_data_point(155, command)
+        hub.publish_data_point(155, command)
 
 
 class EdgeCuttingDistanceNumber(TerraMowNumberBase):
@@ -193,10 +196,11 @@ class EdgeCuttingDistanceNumber(TerraMowNumberBase):
     @property
     def native_value(self) -> float | None:
         """Return the current value."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        global_params = self.basic_data.lawn_mower.global_params
+        global_params = hub.global_params
         if not global_params:
             return None
 
@@ -206,7 +210,8 @@ class EdgeCuttingDistanceNumber(TerraMowNumberBase):
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the edge cutting distance."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             _LOGGER.error("Lawn mower not available")
             return
 
@@ -218,7 +223,7 @@ class EdgeCuttingDistanceNumber(TerraMowNumberBase):
         }
 
         _LOGGER.info("Setting edge cutting distance to %d mm", int(value))
-        self.basic_data.lawn_mower.publish_data_point(155, command)
+        hub.publish_data_point(155, command)
 
 
 class MowingSpacingNumber(TerraMowNumberBase):
@@ -238,10 +243,11 @@ class MowingSpacingNumber(TerraMowNumberBase):
     @property
     def native_value(self) -> float | None:
         """Return the current value."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        global_params = self.basic_data.lawn_mower.global_params
+        global_params = hub.global_params
         if not global_params:
             return None
 
@@ -259,8 +265,9 @@ class MowingSpacingNumber(TerraMowNumberBase):
         # dp_155's current_mow_spacing is reported by the robot only and
         # represents the mowing spacing actually in effect (the set value may
         # not take effect until the mowing progress is reset).
-        if hasattr(self.basic_data, 'lawn_mower') and self.basic_data.lawn_mower:
-            global_params = self.basic_data.lawn_mower.global_params or {}
+        hub = self.hub
+        if hub:
+            global_params = hub.global_params or {}
             current = global_params.get('current_mow_spacing')
             if current is not None:
                 attrs['current_mow_spacing'] = current
@@ -268,7 +275,8 @@ class MowingSpacingNumber(TerraMowNumberBase):
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the mowing spacing."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             _LOGGER.error("Lawn mower not available")
             return
 
@@ -283,7 +291,7 @@ class MowingSpacingNumber(TerraMowNumberBase):
         }
 
         _LOGGER.info("Setting mowing spacing to %d mm (will reset mowing progress)", int_value)
-        self.basic_data.lawn_mower.publish_data_point(155, command)
+        hub.publish_data_point(155, command)
 
 
 class MainDirectionSingleAngleNumber(TerraMowNumberBase):
@@ -348,8 +356,9 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
         }
 
         # Add the current angle information
-        if hasattr(self.basic_data, 'lawn_mower') and self.basic_data.lawn_mower:
-            global_params = self.basic_data.lawn_mower.global_params
+        hub = self.hub
+        if hub:
+            global_params = hub.global_params
             if global_params:
                 main_direction_config = global_params.get('main_direction_angle_config', {})
                 current_angle = main_direction_config.get('current_angle')
@@ -420,8 +429,9 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
         }
 
         # Add the current angle information
-        if hasattr(self.basic_data, 'lawn_mower') and self.basic_data.lawn_mower:
-            global_params = self.basic_data.lawn_mower.global_params
+        hub = self.hub
+        if hub:
+            global_params = hub.global_params
             if global_params:
                 main_direction_config = global_params.get('main_direction_angle_config', {})
                 current_angle = main_direction_config.get('current_angle')
@@ -509,8 +519,9 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
         }
 
         # Add current angle information and second-angle information
-        if hasattr(self.basic_data, 'lawn_mower') and self.basic_data.lawn_mower:
-            global_params = self.basic_data.lawn_mower.global_params
+        hub = self.hub
+        if hub:
+            global_params = hub.global_params
             if global_params:
                 main_direction_config = global_params.get('main_direction_angle_config', {})
                 current_angle = main_direction_config.get('current_angle')
@@ -605,8 +616,9 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
         }
 
         # Add current angle information and first-angle information
-        if hasattr(self.basic_data, 'lawn_mower') and self.basic_data.lawn_mower:
-            global_params = self.basic_data.lawn_mower.global_params
+        hub = self.hub
+        if hub:
+            global_params = hub.global_params
             if global_params:
                 main_direction_config = global_params.get('main_direction_angle_config', {})
                 current_angle = main_direction_config.get('current_angle')

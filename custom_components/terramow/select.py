@@ -84,9 +84,10 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
         longer receives map pushes from the hub.
         """
         await super().async_added_to_hass()
-        if self.basic_data.lawn_mower:
+        hub = self.hub
+        if hub:
             self.async_on_remove(
-                self.basic_data.lawn_mower.register_map_callback(self._on_map_info)
+                hub.register_map_callback(self._on_map_info)
             )
 
     # Note: unique_id intentionally stays "region_select" for backward
@@ -138,15 +139,16 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
         _LOGGER.info("Starting zone clean for zone ID: %d", zone_id)
 
         # Get the lawn_mower entity to send the command
-        if hasattr(self.basic_data, 'lawn_mower') and self.basic_data.lawn_mower:
+        hub = self.hub
+        if hub:
             command = {
-                'seq': self.basic_data.lawn_mower.get_cmd_seq(),
+                'seq': hub.get_cmd_seq(),
                 'mode': 'START_MODE_SELECT_REGION_CLEAN',  # Device protocol field, keep unchanged
                 'select_region_clean': {  # Device protocol field, keep unchanged
                     'region_ids': [zone_id]  # Device protocol field name, keep unchanged
                 }
             }
-            self.basic_data.lawn_mower.publish_data_point(103, command)
+            hub.publish_data_point(103, command)
             _LOGGER.info("Zone clean command sent: zone_id=%d", zone_id)
         else:
             _LOGGER.error("Cannot send zone clean command: lawn_mower not available")
@@ -278,10 +280,11 @@ class MowSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
 
     def _get_device_speed_type(self) -> str | None:
         """Get the mow-speed enum currently reported by the device."""
-        if not hasattr(self.basic_data, "lawn_mower") or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        global_params = self.basic_data.lawn_mower.global_params
+        global_params = hub.global_params
         if not global_params:
             return None
 
@@ -320,10 +323,11 @@ class MowSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
     @property
     def current_option(self) -> str | None:
         """Return the current selected option."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return to_ha_enum_state(self._current_option)
 
-        global_params = self.basic_data.lawn_mower.global_params
+        global_params = hub.global_params
         if not global_params:
             return to_ha_enum_state(self._current_option)
 
@@ -367,7 +371,8 @@ class MowSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
             self.async_write_ha_state()
             return
 
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             _LOGGER.error("Lawn mower not available")
             return
 
@@ -379,7 +384,7 @@ class MowSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         }
 
         _LOGGER.info("Setting mow speed to %s", option)
-        self.basic_data.lawn_mower.publish_data_point(155, command)
+        hub.publish_data_point(155, command)
         self._current_option = option
         self._unknown_speed_type = None
         self.async_write_ha_state()
@@ -440,10 +445,11 @@ class BladeSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
     @property
     def current_option(self) -> str | None:
         """Return the current selected option."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return to_ha_enum_state(self._current_option)
 
-        global_params = self.basic_data.lawn_mower.global_params
+        global_params = hub.global_params
         if not global_params:
             return to_ha_enum_state(self._current_option)
 
@@ -463,7 +469,8 @@ class BladeSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
             _LOGGER.error("Invalid blade speed option: %s", option)
             return
 
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             _LOGGER.error("Lawn mower not available")
             return
 
@@ -475,7 +482,7 @@ class BladeSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         }
 
         _LOGGER.info("Setting blade speed to %s", option)
-        self.basic_data.lawn_mower.publish_data_point(155, command)
+        hub.publish_data_point(155, command)
         self._current_option = option
         self.async_write_ha_state()
 
@@ -550,8 +557,9 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
             return self._pending_mode
 
         # Otherwise try to get the actual mode from the device
-        if hasattr(self.basic_data, 'lawn_mower') and self.basic_data.lawn_mower:
-            global_params = self.basic_data.lawn_mower.global_params
+        hub = self.hub
+        if hub:
+            global_params = hub.global_params
             if global_params:
                 main_direction_config = global_params.get('main_direction_angle_config', {})
                 device_mode = main_direction_config.get('mode')
@@ -580,7 +588,8 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
             _LOGGER.error("Invalid main direction mode option: %s", option)
             return
 
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             _LOGGER.error("Lawn mower not available")
             return
 
@@ -598,7 +607,7 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         self._notify_angle_controllers_mode_change(old_mode, option)
 
         # Get the current global params to preserve the other configuration
-        global_params = self.basic_data.lawn_mower.global_params or {}
+        global_params = hub.global_params or {}
         current_main_direction = global_params.get('main_direction_angle_config', {})
 
         # Build the main-direction configuration
@@ -632,7 +641,7 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         }
 
         _LOGGER.info("Setting main direction mode from %s to %s", old_mode, option)
-        self.basic_data.lawn_mower.publish_data_point(155, command)
+        hub.publish_data_point(155, command)
 
         # Set a timeout to clear the pending state (prevents a failed device response from leaving the state stuck)
         self._schedule_pending_mode_timeout()
@@ -703,8 +712,9 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
             attrs['status'] = 'active'
 
         # Add detailed information about the current configuration
-        if hasattr(self.basic_data, 'lawn_mower') and self.basic_data.lawn_mower:
-            global_params = self.basic_data.lawn_mower.global_params
+        hub = self.hub
+        if hub:
+            global_params = hub.global_params
             if global_params:
                 main_direction_config = global_params.get('main_direction_angle_config', {})
                 current_angle = main_direction_config.get('current_angle')
@@ -748,9 +758,10 @@ class HighGrassEdgeTrimModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity)
     _unique_id_suffix = "high_grass_edge_trim_mode"
 
     def _get_mow_param(self) -> dict[str, Any] | None:
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
-        map_info = self.basic_data.lawn_mower.map_info
+        map_info = hub.map_info
         if not map_info:
             return None
         mow_param = map_info.get('mow_param')
@@ -783,7 +794,8 @@ class HighGrassEdgeTrimModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity)
             _LOGGER.error("Invalid high grass edge trim mode option: %s", option)
             return
 
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             _LOGGER.error("Lawn mower not available")
             return
 
@@ -794,5 +806,5 @@ class HighGrassEdgeTrimModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity)
         }
 
         _LOGGER.info("Setting high grass edge trim mode to %s", option)
-        self.basic_data.lawn_mower.publish_data_point(155, command)
+        hub.publish_data_point(155, command)
         self.async_write_ha_state()

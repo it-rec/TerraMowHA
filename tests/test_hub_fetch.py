@@ -123,67 +123,67 @@ async def test_handle_map_meta_success_updates_map() -> None:
     hub.map_callbacks.append(cb)
     resp = _FakeResp(status=200, body=b'{"id": 1, "map_state": "MAP_STATE_COMPLETE"}')
     with _patch_session(resp):
-        await hub._async_handle_map_meta(META)
+        await hub._async_handle_meta(hub._map_channel, META)
     assert hub.map_data["id"] == 1
-    assert hub._map_seq == 5
+    assert hub._map_channel.seq == 5
 
 
 async def test_handle_map_meta_seq_guard_skips_duplicate() -> None:
     hub = _hub()
-    hub._map_seq = 10
+    hub._map_channel.seq = 10
     called = MagicMock()
     with patch(
         "custom_components.terramow.hub.async_get_clientsession", called
     ):
         # seq == current (not backward) -> skipped by the seq guard
-        await hub._async_handle_map_meta({"seq": 10, "http_port": 1, "http_path": "/m", "token": "t"})
+        await hub._async_handle_meta(hub._map_channel, {"seq": 10, "http_port": 1, "http_path": "/m", "token": "t"})
     called.assert_not_called()
 
 
 async def test_handle_map_meta_backward_seq_resets_and_refetches() -> None:
     hub = _hub()
-    hub._map_seq = 10
+    hub._map_channel.seq = 10
     resp = _FakeResp(status=200, body=b'{"id": 9, "map_state": "MAP_STATE_COMPLETE"}')
     # seq 4 < 10 -> new-session reset, then the fetch proceeds (a new map would
     # otherwise stay hidden behind the seq guard until a reload)
     with _patch_session(resp):
-        await hub._async_handle_map_meta({"seq": 4, "http_port": 1, "http_path": "/m", "token": "t"})
+        await hub._async_handle_meta(hub._map_channel, {"seq": 4, "http_port": 1, "http_path": "/m", "token": "t"})
     assert hub.map_data["id"] == 9
-    assert hub._map_seq == 4
+    assert hub._map_channel.seq == 4
 
 
 async def test_handle_map_meta_schedules_retry_on_failure() -> None:
     hub = _hub()
     resp = _FakeResp(status=500)
     with _patch_session(resp):
-        await hub._async_handle_map_meta(META)
+        await hub._async_handle_meta(hub._map_channel, META)
     # a retry task was scheduled and retry meta cached
-    assert hub._map_retry_meta == META
+    assert hub._map_channel.retry_meta == META
     assert hub.hass.async_create_task.called
 
 
 async def test_handle_path_meta_success_and_backward_reset() -> None:
     hub = _hub()
-    hub._path_seq = 8
+    hub._path_channel.seq = 8
     cb = MagicMock()
     hub.path_callbacks.append(cb)
     resp = _FakeResp(status=200, body=b'{"id": 2, "map_id": 1, "points": []}')
     # seq 3 < 8 -> backward reset, then fetch proceeds
     with _patch_session(resp):
-        await hub._async_handle_path_meta({"seq": 3, "http_port": 1, "http_path": "/p", "token": "t"})
+        await hub._async_handle_meta(hub._path_channel, {"seq": 3, "http_port": 1, "http_path": "/p", "token": "t"})
     assert hub.path_data["id"] == 2
-    assert hub._path_seq == 3
+    assert hub._path_channel.seq == 3
 
 
 async def test_handle_history_path_meta_success() -> None:
     hub = _hub()
     resp = _FakeResp(status=200, body=b'{"id": 7, "map_id": 1, "points": []}')
     with _patch_session(resp):
-        await hub._async_handle_history_path_meta(
+        await hub._async_handle_meta(hub._history_path_channel, 
             {"seq": 2, "http_port": 1, "http_path": "/h", "token": "t"}
         )
     assert hub.history_path_data["id"] == 7
-    assert hub._history_path_seq == 2
+    assert hub._history_path_channel.seq == 2
 
 
 # ---------------------------------------------------------------------------
@@ -209,18 +209,18 @@ def test_retry_delay_progression_and_reset() -> None:
     assert hub._get_retry_delay(99) == 30.0  # clamps to the last delay
 
     # scheduling then resetting clears the retry state
-    hub._schedule_map_retry(META)
-    assert hub._map_retry_meta == META
-    hub._reset_map_retry()
-    assert hub._map_retry_meta is None and hub._map_retry_count == 0
-    hub._schedule_path_retry(META)
-    hub._reset_path_retry()
-    assert hub._path_retry_meta is None
-    hub._schedule_history_path_retry(META)
-    hub._reset_history_path_retry()
-    assert hub._history_path_retry_meta is None
+    hub._schedule_meta_retry(hub._map_channel, META)
+    assert hub._map_channel.retry_meta == META
+    hub._reset_meta_retry(hub._map_channel)
+    assert hub._map_channel.retry_meta is None and hub._map_channel.retry_count == 0
+    hub._schedule_meta_retry(hub._path_channel, META)
+    hub._reset_meta_retry(hub._path_channel)
+    assert hub._path_channel.retry_meta is None
+    hub._schedule_meta_retry(hub._history_path_channel, META)
+    hub._reset_meta_retry(hub._history_path_channel)
+    assert hub._history_path_channel.retry_meta is None
     hub._reset_pending_meta()
-    assert hub._pending_map_meta is None
+    assert hub._map_channel.pending_meta is None
 
 
 def test_schedule_retry_noop_after_stop_requested() -> None:
@@ -229,13 +229,13 @@ def test_schedule_retry_noop_after_stop_requested() -> None:
     hub = _hub()
     hub._stop_event.set()
     hub.hass.async_create_task.reset_mock()
-    hub._schedule_map_retry(META)
-    hub._schedule_path_retry(META)
-    hub._schedule_history_path_retry(META)
+    hub._schedule_meta_retry(hub._map_channel, META)
+    hub._schedule_meta_retry(hub._path_channel, META)
+    hub._schedule_meta_retry(hub._history_path_channel, META)
     hub.hass.async_create_task.assert_not_called()
-    assert hub._map_retry_meta is None
-    assert hub._path_retry_meta is None
-    assert hub._history_path_retry_meta is None
+    assert hub._map_channel.retry_meta is None
+    assert hub._path_channel.retry_meta is None
+    assert hub._history_path_channel.retry_meta is None
 
 
 def test_build_map_info_from_map_data() -> None:
@@ -257,34 +257,34 @@ def test_build_map_info_from_map_data() -> None:
 async def test_retry_coroutines_refetch() -> None:
     resp = _FakeResp(status=200, body=b'{"id": 1, "map_state": "MAP_STATE_COMPLETE"}')
     hub = _hub()
-    hub._map_retry_meta = META
+    hub._map_channel.retry_meta = META
     with patch("asyncio.sleep", AsyncMock()), _patch_session(resp):
-        await hub._async_retry_map(0.0)
+        await hub._async_retry_meta(hub._map_channel, 0.0)
     assert hub.map_data["id"] == 1
 
     hub2 = _hub()
-    hub2._path_retry_meta = {"seq": 1, "http_port": 1, "http_path": "/p", "token": "t"}
+    hub2._path_channel.retry_meta = {"seq": 1, "http_port": 1, "http_path": "/p", "token": "t"}
     with patch("asyncio.sleep", AsyncMock()), _patch_session(
         _FakeResp(body=b'{"id": 2, "map_id": 1, "points": []}')
     ):
-        await hub2._async_retry_path(0.0)
+        await hub2._async_retry_meta(hub2._path_channel, 0.0)
     assert hub2.path_data["id"] == 2
 
     hub3 = _hub()
-    hub3._history_path_retry_meta = {"seq": 1, "http_port": 1, "http_path": "/h", "token": "t"}
+    hub3._history_path_channel.retry_meta = {"seq": 1, "http_port": 1, "http_path": "/h", "token": "t"}
     with patch("asyncio.sleep", AsyncMock()), _patch_session(
         _FakeResp(body=b'{"id": 3, "map_id": 1, "points": []}')
     ):
-        await hub3._async_retry_history_path(0.0)
+        await hub3._async_retry_meta(hub3._history_path_channel, 0.0)
     assert hub3.history_path_data["id"] == 3
 
 
 async def test_retry_coroutine_cancelled() -> None:
     hub = _hub()
-    hub._map_retry_meta = META
+    hub._map_channel.retry_meta = META
     # a cancelled sleep returns early without fetching
     with patch("asyncio.sleep", AsyncMock(side_effect=asyncio.CancelledError)):
-        await hub._async_retry_map(0.0)
+        await hub._async_retry_meta(hub._map_channel, 0.0)
     assert hub.map_data == {}
 
 
@@ -293,12 +293,12 @@ async def test_map_meta_no_seq_is_throttled() -> None:
     resp = _FakeResp(status=200, body=b'{"id": 1, "map_state": "MAP_STATE_COMPLETE"}')
     no_seq = {"http_port": 1, "http_path": "/m", "token": "t"}  # no seq -> -1
     with _patch_session(resp):
-        await hub._async_handle_map_meta(no_seq)
+        await hub._async_handle_meta(hub._map_channel, no_seq)
     assert hub.map_data["id"] == 1
     # an immediate second no-seq meta is throttled (min interval not elapsed)
     session_call = MagicMock()
     with patch("custom_components.terramow.hub.async_get_clientsession", session_call):
-        await hub._async_handle_map_meta(no_seq)
+        await hub._async_handle_meta(hub._map_channel, no_seq)
     session_call.assert_not_called()
 
 

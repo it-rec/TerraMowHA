@@ -171,6 +171,62 @@ RECHARGE_MISSIONS: tuple[Mission, ...] = (
 )
 
 
+def compute_phase(hub: TerraMowHub, *, connection_error_is_error: bool) -> str:
+    """Map the hub's mission state onto a semantic phase string.
+
+    Shared by the lawn-mower activity mapping and the event entity's phase
+    detection so the two can never disagree. ``connection_error_is_error``
+    is the one intentional difference between them: the lawn mower surfaces
+    a lost MQTT connection as its ERROR activity, while the event entity
+    ignores it — a dropped connection is routine (mower asleep/docked/after
+    a DHCP IP change) and must not fire a spurious error event every cycle.
+
+    Returns one of ``"error"``, ``"mowing"``, ``"paused"``, ``"returning"``
+    or ``"docked"``.
+    """
+    if (connection_error_is_error and hub.connection_error) or hub.has_error:
+        return "error"
+    if hub.mission_state == MissionState.MISSION_STATE_RUNNING:
+        if hub.mission in MOW_MISSIONS:
+            if hub.sub_mission == SubMission.SUB_MISSION_FLEXIBLE_STATION_WAIT:
+                # Waiting at the base station, equivalent to paused
+                return "paused"
+            if hub.sub_mission == SubMission.SUB_MISSION_SAVING_MAP:
+                # Saving the map, equivalent to finished
+                return "docked"
+            return "mowing"
+        if hub.mission in RECHARGE_MISSIONS:
+            return "returning"
+        return "docked"
+    if hub.mission_state == MissionState.MISSION_STATE_PAUSE:
+        return "paused"
+    return "docked"
+
+
+class _MetaFetchChannel:
+    """State for one map/path/history-path meta-fetch pipeline.
+
+    The three channels share the exact same seq/etag/retry/pending
+    bookkeeping (see ``TerraMowHub._async_handle_meta``); only how the
+    fetched data is applied differs (``apply_data``). ``label`` names the
+    channel in log messages.
+    """
+
+    def __init__(
+        self, label: str, apply_data: Callable[[dict[str, Any]], None]
+    ) -> None:
+        self.label = label
+        self.apply_data = apply_data
+        self.seq = -1  # highest successfully fetched seq (-1 = none yet)
+        self.etag: str | None = None  # ETag for conditional HTTP fetches
+        self.pending_meta: dict[str, Any] | None = None  # meta queued during a fetch
+        self.retry_meta: dict[str, Any] | None = None  # meta to retry after a failure
+        self.retry_count = 0
+        self.retry_task: asyncio.Task[Any] | None = None
+        self.no_seq_last_fetch = 0.0  # throttle timestamp for seq-less metas
+        self.fetching = False  # a fetch for this channel is in flight
+
+
 class TerraMowHub:
     """Owns the MQTT connection, protocol state and device commands."""
 
@@ -198,31 +254,24 @@ class TerraMowHub:
         self._path_data: dict[str, Any] = {}  # Stores path data fetched over HTTP
         self._history_path_data: dict[str, Any] = {}  # Stores history path data fetched over HTTP
         self._pose: dict[str, Any] = {}  # Stores the real-time pose
-        self._pending_map_meta: dict[str, Any] | None = None
-        self._pending_path_meta: dict[str, Any] | None = None
-        self._pending_history_path_meta: dict[str, Any] | None = None
-        self._map_retry_meta: dict[str, Any] | None = None
-        self._path_retry_meta: dict[str, Any] | None = None
-        self._history_path_retry_meta: dict[str, Any] | None = None
-        self._map_retry_count = 0
-        self._path_retry_count = 0
-        self._history_path_retry_count = 0
-        self._map_retry_task: asyncio.Task[Any] | None = None
-        self._path_retry_task: asyncio.Task[Any] | None = None
-        self._history_path_retry_task: asyncio.Task[Any] | None = None
-        self._map_no_seq_last_fetch = 0.0
-        self._path_no_seq_last_fetch = 0.0
-        self._history_path_no_seq_last_fetch = 0.0
+        # One meta-fetch channel per HTTP-backed resource; each bundles the
+        # seq/etag/retry/pending bookkeeping for its meta topic.
+        self._map_channel = _MetaFetchChannel("map", self._apply_map_data)
+        self._path_channel = _MetaFetchChannel("path", self._apply_path_data)
+        self._history_path_channel = _MetaFetchChannel(
+            "history path", self._apply_history_path_data
+        )
+        self._meta_channels: tuple[_MetaFetchChannel, ...] = (
+            self._map_channel,
+            self._path_channel,
+            self._history_path_channel,
+        )
+        self._meta_topic_channels: dict[str, _MetaFetchChannel] = {
+            MAP_META_TOPIC: self._map_channel,
+            PATH_META_TOPIC: self._path_channel,
+            PATH_HISTORY_META_TOPIC: self._history_path_channel,
+        }
         self._no_seq_min_interval = 5.0
-        self._map_seq = -1
-        self._path_seq = -1
-        self._history_path_seq = -1
-        self._map_etag: str | None = None
-        self._path_etag: str | None = None
-        self._history_path_etag: str | None = None
-        self._fetching_map = False
-        self._fetching_path = False
-        self._fetching_history_path = False
         self._global_params: dict[str, Any] = {}  # Stores dp_155 global work parameters
         self._map_status: dict[str, Any] = {}  # Stores dp_117 map status
         self._current_work_data: dict[str, Any] = {}  # Stores dp_113 current work data
@@ -403,9 +452,8 @@ class TerraMowHub:
         """Stop the MQTT client and clean up resources."""
         _LOGGER.info("Stopping MQTT client")
         self._stop_event.set()
-        self._reset_map_retry()
-        self._reset_path_retry()
-        self._reset_history_path_retry()
+        for channel in self._meta_channels:
+            self._reset_meta_retry(channel)
         self._reset_pending_meta()
         if self.mqtt_client:
             # disconnect() makes loop_forever() return so the worker thread can
@@ -969,37 +1017,18 @@ class TerraMowHub:
         if topic != POSE_TOPIC:
             _LOGGER.debug("Received MQTT message: topic=%s, payload=%s", topic, payload)
 
-        # Handle map meta info
-        if topic == MAP_META_TOPIC:
+        # Handle map / path / history path meta info
+        channel = self._meta_topic_channels.get(topic)
+        if channel is not None:
             try:
                 meta = json.loads(payload)
-                self._dispatch(self._async_handle_map_meta, meta)
+                self._dispatch(self._async_handle_meta, channel, meta)
             except json.JSONDecodeError:
-                _LOGGER.error("Failed to parse map meta JSON: %s", payload[:200])
+                _LOGGER.error(
+                    "Failed to parse %s meta JSON: %s", channel.label, payload[:200]
+                )
             except Exception as e:
-                _LOGGER.error("Error handling map meta: %s", e)
-            return
-
-        # Handle path meta info
-        if topic == PATH_META_TOPIC:
-            try:
-                meta = json.loads(payload)
-                self._dispatch(self._async_handle_path_meta, meta)
-            except json.JSONDecodeError:
-                _LOGGER.error("Failed to parse path meta JSON: %s", payload[:200])
-            except Exception as e:
-                _LOGGER.error("Error handling path meta: %s", e)
-            return
-
-        # Handle history path meta info
-        if topic == PATH_HISTORY_META_TOPIC:
-            try:
-                meta = json.loads(payload)
-                self._dispatch(self._async_handle_history_path_meta, meta)
-            except json.JSONDecodeError:
-                _LOGGER.error("Failed to parse history path meta JSON: %s", payload[:200])
-            except Exception as e:
-                _LOGGER.error("Error handling history path meta: %s", e)
+                _LOGGER.error("Error handling %s meta: %s", channel.label, e)
             return
 
         # Handle the real-time pose
@@ -1214,106 +1243,49 @@ class TerraMowHub:
             return delays[count]
         return delays[-1]
 
-    def _reset_map_retry(self) -> None:
-        """Clear the map fetch retry state."""
-        self._map_retry_meta = None
-        self._map_retry_count = 0
-        if self._map_retry_task and not self._map_retry_task.done():
-            self._map_retry_task.cancel()
-        self._map_retry_task = None
-
-    def _reset_path_retry(self) -> None:
-        """Clear the path fetch retry state."""
-        self._path_retry_meta = None
-        self._path_retry_count = 0
-        if self._path_retry_task and not self._path_retry_task.done():
-            self._path_retry_task.cancel()
-        self._path_retry_task = None
-
-    def _reset_history_path_retry(self) -> None:
-        """Clear the history path fetch retry state."""
-        self._history_path_retry_meta = None
-        self._history_path_retry_count = 0
-        if self._history_path_retry_task and not self._history_path_retry_task.done():
-            self._history_path_retry_task.cancel()
-        self._history_path_retry_task = None
+    def _reset_meta_retry(self, channel: _MetaFetchChannel) -> None:
+        """Clear a channel's fetch retry state."""
+        channel.retry_meta = None
+        channel.retry_count = 0
+        if channel.retry_task and not channel.retry_task.done():
+            channel.retry_task.cancel()
+        channel.retry_task = None
 
     def _reset_pending_meta(self) -> None:
         """Clear the pending meta."""
-        self._pending_map_meta = None
-        self._pending_path_meta = None
-        self._pending_history_path_meta = None
+        for channel in self._meta_channels:
+            channel.pending_meta = None
 
-    def _schedule_map_retry(self, meta: dict[str, Any]) -> None:
-        """Schedule a map fetch retry."""
+    def _schedule_meta_retry(
+        self, channel: _MetaFetchChannel, meta: dict[str, Any]
+    ) -> None:
+        """Schedule a fetch retry for a channel."""
         # Don't schedule a new retry once shutdown has started; an in-flight
         # retry that already woke and cleared its task handle could otherwise
         # spawn a fresh retry task against a torn-down entry (leaks work).
         if self._stop_event.is_set():
             return
-        self._map_retry_meta = meta
-        if self._map_retry_task and not self._map_retry_task.done():
+        channel.retry_meta = meta
+        if channel.retry_task and not channel.retry_task.done():
             return
-        delay = self._get_retry_delay(self._map_retry_count)
-        self._map_retry_count += 1
-        self._map_retry_task = self.hass.async_create_task(self._async_retry_map(delay))
-
-    def _schedule_path_retry(self, meta: dict[str, Any]) -> None:
-        """Schedule a path fetch retry."""
-        if self._stop_event.is_set():
-            return
-        self._path_retry_meta = meta
-        if self._path_retry_task and not self._path_retry_task.done():
-            return
-        delay = self._get_retry_delay(self._path_retry_count)
-        self._path_retry_count += 1
-        self._path_retry_task = self.hass.async_create_task(self._async_retry_path(delay))
-
-    def _schedule_history_path_retry(self, meta: dict[str, Any]) -> None:
-        """Schedule a history path fetch retry."""
-        if self._stop_event.is_set():
-            return
-        self._history_path_retry_meta = meta
-        if self._history_path_retry_task and not self._history_path_retry_task.done():
-            return
-        delay = self._get_retry_delay(self._history_path_retry_count)
-        self._history_path_retry_count += 1
-        self._history_path_retry_task = self.hass.async_create_task(
-            self._async_retry_history_path(delay)
+        delay = self._get_retry_delay(channel.retry_count)
+        channel.retry_count += 1
+        channel.retry_task = self.hass.async_create_task(
+            self._async_retry_meta(channel, delay)
         )
 
-    async def _async_retry_map(self, delay: float) -> None:
-        """Retry the map fetch after a delay."""
+    async def _async_retry_meta(
+        self, channel: _MetaFetchChannel, delay: float
+    ) -> None:
+        """Retry a channel's fetch after a delay."""
         try:
             await asyncio.sleep(delay)
         except asyncio.CancelledError:
             return
-        self._map_retry_task = None
-        meta = self._map_retry_meta
+        channel.retry_task = None
+        meta = channel.retry_meta
         if meta:
-            await self._async_handle_map_meta(meta)
-
-    async def _async_retry_path(self, delay: float) -> None:
-        """Retry the path fetch after a delay."""
-        try:
-            await asyncio.sleep(delay)
-        except asyncio.CancelledError:
-            return
-        self._path_retry_task = None
-        meta = self._path_retry_meta
-        if meta:
-            await self._async_handle_path_meta(meta)
-
-    async def _async_retry_history_path(self, delay: float) -> None:
-        """Retry the history path fetch after a delay."""
-        try:
-            await asyncio.sleep(delay)
-        except asyncio.CancelledError:
-            return
-        self._history_path_retry_task = None
-        meta = self._history_path_retry_meta
-        if meta:
-            await self._async_handle_history_path_meta(meta)
+            await self._async_handle_meta(channel, meta)
 
     def _handle_map_info(self, payload: str) -> None:
         """Handle map info message."""
@@ -1326,177 +1298,85 @@ class TerraMowHub:
         except Exception as e:
             _LOGGER.error("Error handling map info: %s", e)
 
-    async def _async_handle_map_meta(self, meta: dict[str, Any]) -> None:
-        """Handle map meta message and fetch map data via HTTP."""
-        seq = self._get_meta_seq(meta, "map")
+    def _apply_map_data(self, data: dict[str, Any]) -> None:
+        """Apply fetched map data: cache it and derive/notify map info."""
+        self._map_data = data
+        map_info = self._build_map_info_from_map_data(data)
+        if map_info is not None:
+            self._update_map_info(map_info)
 
-        # Same session-reset handling as the path/history meta handlers: when a
-        # new map is created/switched/restored the device republishes meta with
-        # a seq counted from 0 again. Without this reset the new meta is dropped
-        # by the seq <= _map_seq guard and the camera keeps showing the old map
-        # until the integration is reloaded. Treat a backward seq as a reset.
-        if seq != -1 and self._map_seq != -1 and seq < self._map_seq:
+    def _apply_path_data(self, data: dict[str, Any]) -> None:
+        """Apply fetched path data: cache it and notify path callbacks."""
+        self._path_data = data
+        for callback in self.path_callbacks:
+            self.hass.async_create_task(callback(data))
+
+    def _apply_history_path_data(self, data: dict[str, Any]) -> None:
+        """Apply fetched history path data: cache it and notify callbacks."""
+        self._history_path_data = data
+        for callback in self.history_path_callbacks:
+            self.hass.async_create_task(callback(data))
+
+    async def _async_handle_meta(
+        self, channel: _MetaFetchChannel, meta: dict[str, Any]
+    ) -> None:
+        """Handle a channel's meta message and fetch its data via HTTP."""
+        seq = self._get_meta_seq(meta, channel.label)
+
+        # When a new session starts (map created/switched/restored, new mowing
+        # run) the device republishes meta with a seq counted from 0 again.
+        # Without this reset the new meta is dropped by the seq <= channel.seq
+        # guard and the stale data stays visible (e.g. the camera keeps showing
+        # the old map) until the integration is reloaded. Treat a backward seq
+        # as a reset.
+        if seq != -1 and channel.seq != -1 and seq < channel.seq:
             _LOGGER.info(
-                "Map seq went backward (%d -> %d); treating as new session",
-                self._map_seq, seq,
+                "%s seq went backward (%d -> %d); treating as new session",
+                channel.label.capitalize(), channel.seq, seq,
             )
-            self._map_seq = -1
-            self._map_etag = None
-        if seq != -1 and seq <= self._map_seq:
+            channel.seq = -1
+            channel.etag = None
+        if seq != -1 and seq <= channel.seq:
             return
-        if seq != -1 and seq > self._map_seq:
-            self._reset_map_retry()
+        if seq != -1 and seq > channel.seq:
+            self._reset_meta_retry(channel)
         if seq == -1:
             now = time.monotonic()
-            if (now - self._map_no_seq_last_fetch) < self._no_seq_min_interval:
+            if (now - channel.no_seq_last_fetch) < self._no_seq_min_interval:
                 return
-        if self._fetching_map:
-            if self._should_replace_pending(self._pending_map_meta, seq, "map"):
-                self._pending_map_meta = meta
+        if channel.fetching:
+            if self._should_replace_pending(channel.pending_meta, seq, channel.label):
+                channel.pending_meta = meta
             return
 
-        self._fetching_map = True
+        channel.fetching = True
         try:
-            data, etag, ok, _not_modified = await self._async_fetch_json(meta, self._map_etag)
+            data, etag, ok, _not_modified = await self._async_fetch_json(meta, channel.etag)
             if ok:
                 if seq != -1:
-                    self._map_seq = seq
+                    channel.seq = seq
                 else:
-                    self._map_no_seq_last_fetch = time.monotonic()
-                self._reset_map_retry()
+                    channel.no_seq_last_fetch = time.monotonic()
+                self._reset_meta_retry(channel)
             if etag:
-                self._map_etag = etag
+                channel.etag = etag
             if data is not None:
-                self._map_data = data
-                map_info = self._build_map_info_from_map_data(data)
-                if map_info is not None:
-                    self._update_map_info(map_info)
+                channel.apply_data(data)
             if not ok:
-                self._schedule_map_retry(meta)
+                self._schedule_meta_retry(channel, meta)
         except Exception as e:
-            _LOGGER.error("Failed to fetch map data: %s", e)
-            self._schedule_map_retry(meta)
+            _LOGGER.error("Failed to fetch %s data: %s", channel.label, e)
+            self._schedule_meta_retry(channel, meta)
         finally:
-            self._fetching_map = False
-            pending_meta = self._pending_map_meta
-            self._pending_map_meta = None
+            channel.fetching = False
+            pending_meta = channel.pending_meta
+            channel.pending_meta = None
             if pending_meta:
-                pending_seq = self._get_meta_seq(pending_meta, "map", warn=False)
-                if pending_seq == -1 or pending_seq > self._map_seq:
-                    self.hass.async_create_task(self._async_handle_map_meta(pending_meta))
-
-    async def _async_handle_path_meta(self, meta: dict[str, Any]) -> None:
-        """Handle path meta message and fetch path data via HTTP."""
-        seq = self._get_meta_seq(meta, "path")
-
-        # When a new mowing session starts, the device republishes path meta
-        # with seq counted from 0 again. Without this reset, the new meta is
-        # discarded by the seq <= _path_seq guard and the path stays hidden
-        # until the integration is reloaded. Treat a backward seq as a reset.
-        if seq != -1 and self._path_seq != -1 and seq < self._path_seq:
-            _LOGGER.info(
-                "Path seq went backward (%d -> %d); treating as new session",
-                self._path_seq, seq,
-            )
-            self._path_seq = -1
-            self._path_etag = None
-        if seq != -1 and seq <= self._path_seq:
-            return
-        if seq != -1 and seq > self._path_seq:
-            self._reset_path_retry()
-        if seq == -1:
-            now = time.monotonic()
-            if (now - self._path_no_seq_last_fetch) < self._no_seq_min_interval:
-                return
-        if self._fetching_path:
-            if self._should_replace_pending(self._pending_path_meta, seq, "path"):
-                self._pending_path_meta = meta
-            return
-
-        self._fetching_path = True
-        try:
-            data, etag, ok, _not_modified = await self._async_fetch_json(meta, self._path_etag)
-            if ok:
-                if seq != -1:
-                    self._path_seq = seq
-                else:
-                    self._path_no_seq_last_fetch = time.monotonic()
-                self._reset_path_retry()
-            if etag:
-                self._path_etag = etag
-            if data is not None:
-                self._path_data = data
-                for callback in self.path_callbacks:
-                    self.hass.async_create_task(callback(data))
-            if not ok:
-                self._schedule_path_retry(meta)
-        except Exception as e:
-            _LOGGER.error("Failed to fetch path data: %s", e)
-            self._schedule_path_retry(meta)
-        finally:
-            self._fetching_path = False
-            pending_meta = self._pending_path_meta
-            self._pending_path_meta = None
-            if pending_meta:
-                pending_seq = self._get_meta_seq(pending_meta, "path", warn=False)
-                if pending_seq == -1 or pending_seq > self._path_seq:
-                    self.hass.async_create_task(self._async_handle_path_meta(pending_meta))
-
-    async def _async_handle_history_path_meta(self, meta: dict[str, Any]) -> None:
-        """Handle history path meta message and fetch history path data via HTTP."""
-        seq = self._get_meta_seq(meta, "history path")
-
-        # Same session-reset handling as _async_handle_path_meta: a new mowing
-        # session republishes meta with a seq starting from 0, which would
-        # otherwise be dropped by the seq guard.
-        if seq != -1 and self._history_path_seq != -1 and seq < self._history_path_seq:
-            _LOGGER.info(
-                "History path seq went backward (%d -> %d); treating as new session",
-                self._history_path_seq, seq,
-            )
-            self._history_path_seq = -1
-            self._history_path_etag = None
-        if seq != -1 and seq <= self._history_path_seq:
-            return
-        if seq != -1 and seq > self._history_path_seq:
-            self._reset_history_path_retry()
-        if seq == -1:
-            now = time.monotonic()
-            if (now - self._history_path_no_seq_last_fetch) < self._no_seq_min_interval:
-                return
-        if self._fetching_history_path:
-            if self._should_replace_pending(self._pending_history_path_meta, seq, "history path"):
-                self._pending_history_path_meta = meta
-            return
-
-        self._fetching_history_path = True
-        try:
-            data, etag, ok, _not_modified = await self._async_fetch_json(meta, self._history_path_etag)
-            if ok:
-                if seq != -1:
-                    self._history_path_seq = seq
-                else:
-                    self._history_path_no_seq_last_fetch = time.monotonic()
-                self._reset_history_path_retry()
-            if etag:
-                self._history_path_etag = etag
-            if data is not None:
-                self._history_path_data = data
-                for callback in self.history_path_callbacks:
-                    self.hass.async_create_task(callback(data))
-            if not ok:
-                self._schedule_history_path_retry(meta)
-        except Exception as e:
-            _LOGGER.error("Failed to fetch history path data: %s", e)
-            self._schedule_history_path_retry(meta)
-        finally:
-            self._fetching_history_path = False
-            pending_meta = self._pending_history_path_meta
-            self._pending_history_path_meta = None
-            if pending_meta:
-                pending_seq = self._get_meta_seq(pending_meta, "history path", warn=False)
-                if pending_seq == -1 or pending_seq > self._history_path_seq:
-                    self.hass.async_create_task(self._async_handle_history_path_meta(pending_meta))
+                pending_seq = self._get_meta_seq(pending_meta, channel.label, warn=False)
+                if pending_seq == -1 or pending_seq > channel.seq:
+                    self.hass.async_create_task(
+                        self._async_handle_meta(channel, pending_meta)
+                    )
 
     async def _async_fetch_json(
         self,
