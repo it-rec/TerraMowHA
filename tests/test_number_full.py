@@ -310,6 +310,22 @@ def test_mode_number_connection_guard_beats_cached_mode() -> None:
         hub.mqtt_client.publish.assert_not_called()
 
 
+def test_plain_number_available_follows_connection_only() -> None:
+    # entities without a _required_mode use the base connectivity check alone
+    hub = _hub()
+    number = MowingHeightNumber(hub.basic_data, hub.hass)
+    assert number.available is True
+    hub.connection_error = True
+    assert number.available is False
+
+
+def test_mode_helper_returns_none_without_lawn_mower() -> None:
+    hub = _hub()
+    number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
+    hub.basic_data.lawn_mower = None
+    assert number._current_main_direction_mode() is None
+
+
 def test_mode_helper_cached_and_empty_paths_for_all() -> None:
     for cls in _ALL_MODE_NUMBERS:
         # cached mode is preferred and retained across reads

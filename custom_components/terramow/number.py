@@ -310,9 +310,7 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
         if not self.available:
             return None
 
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            return None
-
+        # available already implies the hub exists (base connectivity check)
         global_params = self.basic_data.lawn_mower.global_params
         if not global_params:
             return None
@@ -326,10 +324,6 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
         """Set the single main direction angle."""
         if not self.available:
             _LOGGER.error("Single angle control not available in current mode")
-            return
-
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            _LOGGER.error("Lawn mower not available")
             return
 
         # Ensure the angle value stays within the 0-359 range
@@ -389,9 +383,7 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
         if not self.available:
             return None
 
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            return None
-
+        # available already implies the hub exists (base connectivity check)
         global_params = self.basic_data.lawn_mower.global_params
         if not global_params:
             return None
@@ -405,10 +397,6 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
         """Set the auto rotate interval."""
         if not self.available:
             _LOGGER.error("Auto rotate interval control not available in current mode")
-            return
-
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            _LOGGER.error("Lawn mower not available")
             return
 
         interval_value = int(value)
@@ -467,9 +455,7 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
         if not self.available:
             return None
 
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            return None
-
+        # available already implies the hub exists (base connectivity check)
         global_params = self.basic_data.lawn_mower.global_params
         if not global_params:
             return None
@@ -485,10 +471,6 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
         """Set the first multiple direction angle."""
         if not self.available:
             _LOGGER.error("Multiple direction angle1 control not available in current mode")
-            return
-
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            _LOGGER.error("Lawn mower not available")
             return
 
         # Ensure the angle value stays within the 0-359 range
@@ -569,9 +551,7 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
         if not self.available:
             return None
 
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            return None
-
+        # available already implies the hub exists (base connectivity check)
         global_params = self.basic_data.lawn_mower.global_params
         if not global_params:
             return None
@@ -587,10 +567,6 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
         """Set the second multiple direction angle."""
         if not self.available:
             _LOGGER.error("Multiple direction angle2 control not available in current mode")
-            return
-
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            _LOGGER.error("Lawn mower not available")
             return
 
         # Ensure the angle value stays within the 0-359 range
