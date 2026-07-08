@@ -62,7 +62,8 @@ def _patch_client(rc: int = 0, connect_raises: bool = False):
         {"rc": rc, "connect_raises": connect_raises},
     )
     return patch(
-        "custom_components.terramow.config_flow.mqtt_client.Client", client_cls
+        "custom_components.terramow.config_flow.create_mqtt_client",
+        side_effect=client_cls,
     )
 
 
