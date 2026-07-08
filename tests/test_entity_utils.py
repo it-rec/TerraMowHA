@@ -54,8 +54,14 @@ def test_push_update_mixin_registers_callbacks() -> None:
     from custom_components.terramow.entity_utils import PushUpdateMixin
 
     class Base:
+        def __init__(self) -> None:
+            self.on_remove_callbacks = []
+
         async def async_added_to_hass(self) -> None:
             return None
+
+        def async_on_remove(self, func) -> None:
+            self.on_remove_callbacks.append(func)
 
     class Probe(PushUpdateMixin, Base):
         _push_dp_ids = (108, 155)
@@ -75,3 +81,9 @@ def test_push_update_mixin_registers_callbacks() -> None:
     registered = [call.args[0] for call in lawn_mower.register_callback.call_args_list]
     assert registered == [108, 155]
     lawn_mower.register_map_callback.assert_called_once()
+    # every registration handed its unsubscribe to async_on_remove
+    assert probe.on_remove_callbacks == [
+        lawn_mower.register_callback.return_value,
+        lawn_mower.register_callback.return_value,
+        lawn_mower.register_map_callback.return_value,
+    ]

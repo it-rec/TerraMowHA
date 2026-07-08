@@ -121,7 +121,7 @@ def test_firmware_update_push_callback() -> None:
     update = TerraMowFirmwareUpdate(hub.basic_data, hub.hass)
     update.entity_id = "update.fw"
     update.async_write_ha_state = MagicMock()
-    asyncio.run(update._handle_compat_info(""))
+    asyncio.run(update._handle_push_update(""))
 
 
 # ---------------------------------------------------------------------------

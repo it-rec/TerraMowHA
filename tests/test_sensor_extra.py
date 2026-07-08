@@ -155,7 +155,7 @@ def test_current_session_progress_hook_and_zero_area_guard() -> None:
     assert 113 in hub.callbacks
 
     # dp_113 hook just schedules a state write; must not raise
-    asyncio.run(sensor._handle_dp_113(""))
+    asyncio.run(sensor._handle_push_update(""))
 
     # total_area <= 0 -> progress is None
     _feed(hub.on_current_work_data, {"total_area": 0, "clean_area": 10})
@@ -286,6 +286,7 @@ def test_pose_sensor_without_lawn_mower_skips_registration() -> None:
     hub = _hub()
     hub.basic_data.lawn_mower = None
     sensor = TerraMowPoseSensor(hub.basic_data, hub.hass)
+    asyncio.run(sensor.async_added_to_hass())  # must not raise
     assert sensor.native_value is None
     assert sensor.extra_state_attributes == {}
 

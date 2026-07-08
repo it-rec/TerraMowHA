@@ -324,10 +324,11 @@ def test_multiple_angle2_write_warns_when_equal_to_angle1() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_zone_select_init_without_lawn_mower_skips_callback() -> None:
+def test_zone_select_added_without_lawn_mower_skips_callback() -> None:
     hub = _shub()
     hub.basic_data.lawn_mower = None
     select = TerraMowZoneSelect(hub.basic_data, hub.hass)
+    asyncio.run(select.async_added_to_hass())  # must not raise
     assert select.options == ["no_zones_available"]
 
 

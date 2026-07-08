@@ -29,9 +29,18 @@ class TerraMowMapSensorBase(TerraMowEntity, SensorEntity):
         super().__init__(basic_data, hass)
         self._map_info: dict[str, Any] = {}
 
-        # Register the map info callback
-        if hasattr(basic_data, 'lawn_mower') and basic_data.lawn_mower:
-            basic_data.lawn_mower.register_map_callback(self._on_map_info)
+    async def async_added_to_hass(self) -> None:
+        """Register the map info callback once the entity is actually added.
+
+        Registering here (with the unsubscribe handed to ``async_on_remove``)
+        instead of in ``__init__`` means a disabled or removed entity no
+        longer receives map pushes from the hub.
+        """
+        await super().async_added_to_hass()
+        if self.basic_data.lawn_mower:
+            self.async_on_remove(
+                self.basic_data.lawn_mower.register_map_callback(self._on_map_info)
+            )
 
     async def _on_map_info(self, map_info: dict[str, Any]) -> None:
         """Handle a map info update."""

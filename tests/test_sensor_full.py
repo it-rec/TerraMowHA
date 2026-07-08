@@ -303,7 +303,7 @@ def test_mission_enum_sensor_handle_dp107_writes_state() -> None:
     sensor.hass = hub.hass
     sensor.entity_id = "sensor.mission"
     # the dp_107 callback just schedules a state write; must not raise
-    asyncio.run(sensor._handle_dp_107(""))
+    asyncio.run(sensor._handle_push_update(""))
 
 
 def test_mission_enum_sensors_from_dp107() -> None:

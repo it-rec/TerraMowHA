@@ -1019,11 +1019,17 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         await super().async_added_to_hass()
         lawn_mower = self.basic_data.lawn_mower
         if lawn_mower:
-            lawn_mower.register_map_callback(self._on_map_info)
-            lawn_mower.register_path_callback(self._on_path_data)
-            lawn_mower.register_history_path_callback(self._on_history_path_data)
-            lawn_mower.register_pose_callback(self._on_pose)
-            lawn_mower.register_callback(BATTERY_STATUS_DP, self._on_battery_status)
+            # Hand each unsubscribe to async_on_remove so a removed/disabled
+            # camera is deregistered from the hub instead of leaking.
+            self.async_on_remove(lawn_mower.register_map_callback(self._on_map_info))
+            self.async_on_remove(lawn_mower.register_path_callback(self._on_path_data))
+            self.async_on_remove(
+                lawn_mower.register_history_path_callback(self._on_history_path_data)
+            )
+            self.async_on_remove(lawn_mower.register_pose_callback(self._on_pose))
+            self.async_on_remove(
+                lawn_mower.register_callback(BATTERY_STATUS_DP, self._on_battery_status)
+            )
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
