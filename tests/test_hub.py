@@ -63,8 +63,9 @@ def test_mission_status_invalid_enum_keeps_previous_value() -> None:
     hub = _make_hub()
     _feed_dp107(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
     _feed_dp107(hub, mission="MISSION_FROM_THE_FUTURE")
-    # Unknown enum value maps to None and must not crash the handler
-    assert hub.mission is None
+    # An unknown enum value (e.g. newer firmware) keeps the previous known
+    # state instead of clobbering it with None
+    assert hub.mission is Mission.MISSION_GLOBAL_CLEAN
     assert hub.mission_state is MissionState.MISSION_STATE_RUNNING
 
 
@@ -160,11 +161,14 @@ def test_dp_callback_dispatch_and_unknown_dp_logging() -> None:
     received = MagicMock()
     hub.register_callback(8, received)
 
+    # run the thread->loop dispatch inline so the callback fires synchronously
+    hub.hass.loop.call_soon_threadsafe = MagicMock(side_effect=lambda fn, *a: fn(*a))
+
     msg = MagicMock()
     msg.topic = "data_point/8/robot"
     msg.payload = b'{"int_value": 55}'
     hub.on_mqtt_message(None, None, msg)
-    hub.hass.add_job.assert_called_with(received, '{"int_value": 55}')
+    received.assert_called_with('{"int_value": 55}')
 
     unknown = MagicMock()
     unknown.topic = "data_point/199/robot"

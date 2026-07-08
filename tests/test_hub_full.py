@@ -225,7 +225,7 @@ def test_register_map_pose_path_callbacks_fire_when_data_present() -> None:
     ):
         register(MagicMock())
     # each registrar scheduled its immediate callback on the loop
-    assert hub.hass.add_job.call_count == 4
+    assert hub.hass.loop.call_soon_threadsafe.call_count == 4
 
     with pytest.raises(ValueError):
         hub.register_map_callback("nope")
@@ -241,8 +241,10 @@ def test_on_mqtt_connect_subscribes_and_clears_error() -> None:
     hub.connection_error = True
     client = MagicMock()
     hub.on_mqtt_connect(client, None, None, 0)
-    # 201 data-point topics + info/meta/pose/model subscriptions
-    assert client.subscribe.call_count > 200
+    # wildcard data-point topic + info/meta/pose/model subscriptions
+    subscribed = [c.args[0] for c in client.subscribe.call_args_list]
+    assert "data_point/+/robot" in subscribed
+    assert client.subscribe.call_count == 7
     assert hub.connection_error is False
     # a compatibility-info request was published
     assert hub.mqtt_client.publish.called
@@ -270,11 +272,10 @@ def test_on_mqtt_disconnect_unexpected_sets_error() -> None:
 def test_on_mqtt_message_routes_meta_and_pose_topics() -> None:
     hub = _hub()
     hub.on_mqtt_message(None, None, _msg(MAP_META_TOPIC, {"url": "u"}))
-    assert hub._map_meta == {"url": "u"}
     hub.on_mqtt_message(None, None, _msg(PATH_META_TOPIC, {"url": "p"}))
-    assert hub._path_meta == {"url": "p"}
     hub.on_mqtt_message(None, None, _msg(PATH_HISTORY_META_TOPIC, {"url": "h"}))
-    assert hub._history_path_meta == {"url": "h"}
+    # each meta topic was dispatched to its async handler on the loop
+    assert hub.hass.loop.call_soon_threadsafe.call_count == 3
 
     pose_cb = MagicMock()
     hub.pose_callbacks.append(pose_cb)
@@ -296,7 +297,7 @@ def test_on_mqtt_message_routes_data_point_to_callbacks() -> None:
     cb = MagicMock()
     hub.register_callback(155, cb)
     hub.on_mqtt_message(None, None, _msg("data_point/155/robot", {"v": 1}))
-    assert hub.hass.add_job.called
+    assert hub.hass.loop.call_soon_threadsafe.called
 
 
 def test_on_mqtt_message_handles_unknown_and_invalid_topics() -> None:
@@ -338,8 +339,8 @@ def test_unknown_dp_history_records_changes_and_dedupes() -> None:
 def test_on_mqtt_message_meta_invalid_json_is_swallowed() -> None:
     hub = _hub()
     hub.on_mqtt_message(None, None, SimpleNamespace(topic=MAP_META_TOPIC, payload=b"not-json"))
-    # nothing stored, no exception
-    assert hub._map_meta in ({}, None) or hub._map_meta == {}
+    # nothing dispatched, no exception
+    hub.hass.loop.call_soon_threadsafe.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -353,7 +354,7 @@ def test_handle_map_info_updates_and_notifies() -> None:
     hub.map_callbacks.append(cb)
     hub._handle_map_info(json.dumps({"id": 7, "map_state": "MAP_STATE_COMPLETE"}))
     assert hub.map_info["id"] == 7
-    assert hub.hass.add_job.called
+    assert hub.hass.loop.call_soon_threadsafe.called
     # invalid JSON is swallowed
     hub._handle_map_info("not-json")
 

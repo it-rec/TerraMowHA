@@ -55,6 +55,28 @@ async def test_setup_entry_cannot_connect_raises_not_ready(hass: HomeAssistant) 
         await async_setup_entry(hass, entry)
 
 
+async def test_setup_entry_stops_hub_when_platform_setup_fails(
+    hass: HomeAssistant,
+) -> None:
+    # A failed platform forward must stop the hub, or its MQTT worker thread
+    # keeps reconnecting and every setup retry stacks another hub+thread.
+    entry = _entry(hass)
+    hub = MagicMock()
+    hub.async_stop = AsyncMock()
+    with (
+        patch("custom_components.terramow.validate_input", return_value={}),
+        patch("custom_components.terramow.TerraMowHub", return_value=hub),
+        patch.object(
+            hass.config_entries,
+            "async_forward_entry_setups",
+            AsyncMock(side_effect=RuntimeError("platform boom")),
+        ),
+        pytest.raises(RuntimeError),
+    ):
+        await async_setup_entry(hass, entry)
+    hub.async_stop.assert_awaited_once()
+
+
 async def test_setup_entry_migrates_device_identifier(hass: HomeAssistant) -> None:
     """The old misspelled 'TerraMowLanwMower' identifier is migrated."""
     entry = _entry(hass)

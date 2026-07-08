@@ -174,9 +174,6 @@ class TerraMowHub:
         self._state_listeners: list[Callable[[], None]] = []  # State change listeners (connection state, dp_107, model)
         self.connection_error = False  # Whether the MQTT connection is in an error state
         self._map_info: dict[str, Any] = {}  # Stores the current map info
-        self._map_meta: dict[str, Any] = {}  # Stores map meta info
-        self._path_meta: dict[str, Any] = {}  # Stores path meta info
-        self._history_path_meta: dict[str, Any] = {}  # Stores history path meta info
         self._map_data: dict[str, Any] = {}  # Stores map data fetched over HTTP
         self._path_data: dict[str, Any] = {}  # Stores path data fetched over HTTP
         self._history_path_data: dict[str, Any] = {}  # Stores history path data fetched over HTTP
@@ -254,8 +251,10 @@ class TerraMowHub:
         # so the increment must be atomic to avoid handing out a duplicate seq.
         self._cmd_seq_lock = threading.Lock()
 
-        self._last_control_time = time.monotonic()
         self._control_interval = 1.0  # Control interval time
+        # Start outside the rate-limit window so the first command after a
+        # (re)load is accepted instead of erroring for a second.
+        self._last_control_time = time.monotonic() - self._control_interval
 
         _LOGGER.debug("TerraMowHub created with host %s", self.host)
 
@@ -268,6 +267,22 @@ class TerraMowHub:
     def device_model(self, model_name: str) -> None:
         """Update the device model."""
         self._device_model = model_name
+
+    def diagnostics_snapshot(self) -> dict[str, Any]:
+        """Return copies of the unknown-dp bookkeeping for the diagnostics export.
+
+        The MQTT worker thread appends to these structures; handing out
+        copies keeps the export from iterating live objects (a deque mutated
+        during iteration raises RuntimeError).
+        """
+        return {
+            "seen_unknown_dp_ids": sorted(self._seen_unknown_dp_ids),
+            "unknown_dp_payloads": dict(self._unknown_dp_payloads),
+            "unknown_dp_history": {
+                dp_id: list(history)
+                for dp_id, history in list(self._unknown_dp_history.items())
+            },
+        }
 
     def register_state_listener(self, listener: Callable[[], None]) -> None:
         """Register a listener called on connection/dp_107/model changes.
@@ -293,6 +308,27 @@ class TerraMowHub:
         if self.connection_error != value:
             self.connection_error = value
             self._notify_state_listeners()
+
+    def _dispatch(self, target: Callable[..., Any], *args: Any) -> None:
+        """Schedule a handler onto the Home Assistant event loop from any thread.
+
+        The MQTT worker thread must never touch loop-bound APIs directly;
+        the deprecated ``hass.add_job`` used to provide this bridge.
+        Coroutine functions become tasks on the loop; plain callables run
+        directly. ``call_soon_threadsafe`` is also safe when already called
+        from the loop thread.
+        """
+
+        def _run_on_loop() -> None:
+            try:
+                if asyncio.iscoroutinefunction(target):
+                    self.hass.async_create_task(target(*args))
+                else:
+                    target(*args)
+            except Exception as err:
+                _LOGGER.error("Error dispatching %s: %s", target, err)
+
+        self.hass.loop.call_soon_threadsafe(_run_on_loop)
 
     def _can_accept_command(self) -> bool:
         """Check if control commands can be accepted"""
@@ -327,13 +363,17 @@ class TerraMowHub:
         self.mqtt_client.on_disconnect = self.on_mqtt_disconnect
         self.mqtt_client.on_message = self.on_mqtt_message
 
+        # Register the hub's own dp handlers before the network thread starts,
+        # so retained messages delivered right after connect cannot arrive
+        # ahead of registration and be misfiled as undocumented data points.
+        self.register_all_callbacks()
+
         # Start MQTT loop thread
         _LOGGER.debug("Starting MQTT thread")
         self.mqtt_thread = threading.Thread(target=self.mqtt_loop)
         self.mqtt_thread.daemon = True
         self.mqtt_thread.start()
 
-        self.register_all_callbacks()
         _LOGGER.debug("MQTT client startup completed")
 
     async def async_stop(self) -> None:
@@ -518,7 +558,7 @@ class TerraMowHub:
             self._robot_info = data
             version = data.get("version")
             if isinstance(version, str) and version:
-                self.hass.add_job(self._async_update_device_sw_version, version)
+                self._dispatch(self._async_update_device_sw_version, version)
 
     async def on_component_versions(self, payload: str) -> None:
         """Handle per-component firmware version updates (dp_129)."""
@@ -730,7 +770,10 @@ class TerraMowHub:
                     _LOGGER.debug("Converted %s: %s -> %s", key, old_value, data[key])
                 except (ValueError, KeyError) as e:
                     _LOGGER.error("Invalid value for %s: %s (error: %s)", key, data[key], e)
-                    data[key] = None
+                    # Unknown value (e.g. newer firmware): drop the key so the
+                    # .get(...) fallbacks below keep the previous known state
+                    # instead of clobbering it with None.
+                    del data[key]
 
         # Store old values for logging
         old_mission = self.mission
@@ -764,7 +807,7 @@ class TerraMowHub:
             # number ("28.3") is only a fallback until dp_102 has arrived.
             sw_version = self.firmware_version_name or self._format_firmware_version(data)
             if sw_version:
-                self.hass.add_job(self._async_update_device_sw_version, sw_version)
+                self._dispatch(self._async_update_device_sw_version, sw_version)
 
             # Log the compatibility check result
             message = self.basic_data.get_compatibility_message()
@@ -836,10 +879,10 @@ class TerraMowHub:
         """Callback when connected to MQTT Broker."""
         if rc == 0:
             _LOGGER.info("MQTT connected")
-            # Subscribe to topics
-            for dp_id in range(201):
-                topic = f"data_point/{dp_id}/robot"
-                client.subscribe(topic)
+            # One wildcard subscription covers every data point, including ids
+            # above the historical 0-200 range; the regex dispatcher in
+            # on_mqtt_message already handles arbitrary ids.
+            client.subscribe("data_point/+/robot")
             # Subscribe to the map info topic (for older firmware compatibility)
             client.subscribe(MAP_INFO_TOPIC)
             _LOGGER.debug("Subscribed to %s topic", MAP_INFO_TOPIC)
@@ -885,7 +928,15 @@ class TerraMowHub:
     def on_mqtt_message(self, _client: Any, _userdata: Any, msg: Any) -> None:
         """Callback when a message is received."""
         topic = msg.topic
-        payload = msg.payload.decode()
+        try:
+            payload = msg.payload.decode()
+        except UnicodeDecodeError:
+            # A raising on_message callback propagates out of loop_forever(),
+            # which the reconnect loop treats as a connection failure; a
+            # retained undecodable payload would then wedge the connection in
+            # a reconnect/redeliver cycle. Drop the message instead.
+            _LOGGER.warning("Ignoring undecodable MQTT payload on topic %s", topic)
+            return
 
         if topic != POSE_TOPIC:
             _LOGGER.debug("Received MQTT message: topic=%s, payload=%s", topic, payload)
@@ -894,8 +945,7 @@ class TerraMowHub:
         if topic == MAP_META_TOPIC:
             try:
                 meta = json.loads(payload)
-                self._map_meta = meta
-                self.hass.add_job(self._async_handle_map_meta, meta)
+                self._dispatch(self._async_handle_map_meta, meta)
             except json.JSONDecodeError:
                 _LOGGER.error("Failed to parse map meta JSON: %s", payload[:200])
             except Exception as e:
@@ -906,8 +956,7 @@ class TerraMowHub:
         if topic == PATH_META_TOPIC:
             try:
                 meta = json.loads(payload)
-                self._path_meta = meta
-                self.hass.add_job(self._async_handle_path_meta, meta)
+                self._dispatch(self._async_handle_path_meta, meta)
             except json.JSONDecodeError:
                 _LOGGER.error("Failed to parse path meta JSON: %s", payload[:200])
             except Exception as e:
@@ -918,8 +967,7 @@ class TerraMowHub:
         if topic == PATH_HISTORY_META_TOPIC:
             try:
                 meta = json.loads(payload)
-                self._history_path_meta = meta
-                self.hass.add_job(self._async_handle_history_path_meta, meta)
+                self._dispatch(self._async_handle_history_path_meta, meta)
             except json.JSONDecodeError:
                 _LOGGER.error("Failed to parse history path meta JSON: %s", payload[:200])
             except Exception as e:
@@ -931,8 +979,10 @@ class TerraMowHub:
             try:
                 pose = json.loads(payload)
                 self._pose = pose
-                for callback in self.pose_callbacks:
-                    self.hass.add_job(callback, pose)
+                # Snapshot: entities append callbacks from the event loop while
+                # this runs on the MQTT worker thread.
+                for callback in list(self.pose_callbacks):
+                    self._dispatch(callback, pose)
             except json.JSONDecodeError:
                 _LOGGER.error("Failed to parse pose JSON: %s", payload[:200])
             except Exception as e:
@@ -968,8 +1018,8 @@ class TerraMowHub:
         callbacks = self.callbacks.get(dp_id)
         if callbacks:
             _LOGGER.debug("Calling %d callbacks for dp_id %d", len(callbacks), dp_id)
-            for callback in callbacks:
-                self.hass.add_job(callback, payload)
+            for callback in list(callbacks):
+                self._dispatch(callback, payload)
         else:
             # Help discover undocumented data points (e.g. lift alarms, schedule
             # switches, error codes): each unknown dp_id is logged once at INFO,
@@ -1014,7 +1064,7 @@ class TerraMowHub:
         _LOGGER.debug("Map callback registered")
         # If map data already exists, trigger the callback immediately
         if self._map_info:
-            self.hass.add_job(callback, self._map_info)
+            self._dispatch(callback, self._map_info)
 
     def register_pose_callback(self, callback: Callable[..., Any]) -> None:
         """Register a callback function for pose updates."""
@@ -1023,7 +1073,7 @@ class TerraMowHub:
         self.pose_callbacks.append(callback)
         _LOGGER.debug("Pose callback registered")
         if self._pose:
-            self.hass.add_job(callback, self._pose)
+            self._dispatch(callback, self._pose)
 
     def register_path_callback(self, callback: Callable[..., Any]) -> None:
         """Register a callback function for path data updates."""
@@ -1032,7 +1082,7 @@ class TerraMowHub:
         self.path_callbacks.append(callback)
         _LOGGER.debug("Path callback registered")
         if self._path_data:
-            self.hass.add_job(callback, self._path_data)
+            self._dispatch(callback, self._path_data)
 
     def register_history_path_callback(self, callback: Callable[..., Any]) -> None:
         """Register a callback function for history path data updates."""
@@ -1041,15 +1091,15 @@ class TerraMowHub:
         self.history_path_callbacks.append(callback)
         _LOGGER.debug("History path callback registered")
         if self._history_path_data:
-            self.hass.add_job(callback, self._history_path_data)
+            self._dispatch(callback, self._history_path_data)
 
     def _update_map_info(self, map_info: dict[str, Any]) -> None:
         """Update map info and notify callbacks."""
         self._map_info = map_info
         _LOGGER.debug("Map info updated: id=%s, name=%s, state=%s",
                      map_info.get('id'), map_info.get('name'), map_info.get('map_state'))
-        for callback in self.map_callbacks:
-            self.hass.add_job(callback, map_info)
+        for callback in list(self.map_callbacks):
+            self._dispatch(callback, map_info)
 
     def _get_map_field(self, data: dict[str, Any], *keys: str) -> Any | None:
         """Get a value from among the possible field names."""
@@ -1487,8 +1537,7 @@ class TerraMowHub:
                 self.device_model = model_name
                 _LOGGER.info("Device model updated: %s -> %s", old_model, model_name)
 
-                # Use hass.add_job to schedule the async device registry update onto the main event loop
-                self.hass.add_job(self._async_update_device_model, model_name)
+                self._dispatch(self._async_update_device_model, model_name)
 
                 # Notify entities to refresh (e.g. the model in device_info)
                 self._notify_state_listeners()

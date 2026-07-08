@@ -269,16 +269,14 @@ def test_handle_model_name_updates_and_notifies() -> None:
 
     assert hub.device_model == "TerraMow S800"
     listener.assert_called_once()
-    hub.hass.add_job.assert_called_once_with(
-        hub._async_update_device_model, "TerraMow S800"
-    )
+    hub.hass.loop.call_soon_threadsafe.assert_called_once()
 
 
 def test_handle_empty_model_name_keeps_default() -> None:
     hub = _hub()
     hub._handle_model_name("   ")
     assert hub.device_model == "TerraMow S1200"
-    hub.hass.add_job.assert_not_called()
+    hub.hass.loop.call_soon_threadsafe.assert_not_called()
 
 
 def test_format_firmware_version() -> None:
@@ -298,10 +296,8 @@ def test_compatibility_info_updates_basic_data() -> None:
         "overall": 26,
         "module": {"home_assistant": 3},
     }
-    # device page firmware version scheduled
-    hub.hass.add_job.assert_called_once_with(
-        hub._async_update_device_sw_version, "26.3"
-    )
+    # device page firmware version scheduled onto the loop
+    hub.hass.loop.call_soon_threadsafe.assert_called_once()
     assert hub.firmware_version_info == {"overall": 26, "module": {"home_assistant": 3}}
 
 
@@ -326,13 +322,14 @@ def _msg(topic: str, payload: bytes):
 
 def test_pose_topic_dispatches_to_pose_callbacks() -> None:
     hub = _hub()
+    hub.hass.loop.call_soon_threadsafe = MagicMock(side_effect=lambda fn, *a: fn(*a))
     cb = MagicMock()
     hub.register_pose_callback(cb)
 
     hub.on_mqtt_message(None, None, _msg("pose/current", b'{"x": 1.5, "yaw": 90}'))
 
     assert hub.pose == {"x": 1.5, "yaw": 90}
-    hub.hass.add_job.assert_called_with(cb, {"x": 1.5, "yaw": 90})
+    cb.assert_called_with({"x": 1.5, "yaw": 90})
 
 
 def test_model_topic_routes_to_model_handler() -> None:
@@ -346,25 +343,27 @@ def test_map_info_topic_updates_map_and_notifies_callbacks() -> None:
     cb = MagicMock()
     hub.register_map_callback(cb)
 
+    hub.hass.loop.call_soon_threadsafe = MagicMock(side_effect=lambda fn, *a: fn(*a))
     payload = json.dumps({"id": 1, "name": "Rasen", "map_state": "MAP_STATE_COMPLETE"})
     hub.on_mqtt_message(None, None, _msg("map/current/info", payload.encode()))
 
     assert hub.map_info["name"] == "Rasen"
-    hub.hass.add_job.assert_called_with(cb, hub.map_info)
+    cb.assert_called_with(hub.map_info)
 
 
 def test_register_map_callback_replays_existing_data() -> None:
     hub = _hub()
+    hub.hass.loop.call_soon_threadsafe = MagicMock(side_effect=lambda fn, *a: fn(*a))
     hub._map_info = {"id": 1}
     cb = MagicMock()
     hub.register_map_callback(cb)
-    hub.hass.add_job.assert_called_once_with(cb, {"id": 1})
+    cb.assert_called_once_with({"id": 1})
 
 
 def test_invalid_topic_is_ignored() -> None:
     hub = _hub()
     hub.on_mqtt_message(None, None, _msg("something/else", b"{}"))
-    hub.hass.add_job.assert_not_called()
+    hub.hass.loop.call_soon_threadsafe.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

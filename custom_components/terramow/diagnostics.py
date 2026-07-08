@@ -44,6 +44,10 @@ async def async_get_config_entry_diagnostics(
         diagnostics["device"] = None
         return diagnostics
 
+    # Copies of the unknown-dp bookkeeping; the MQTT worker thread keeps
+    # appending to the live structures while this export runs.
+    unknown = lawn_mower.diagnostics_snapshot()
+
     diagnostics["device"] = {
         "model": lawn_mower.device_model,
         "mission": str(lawn_mower.mission),
@@ -54,16 +58,12 @@ async def async_get_config_entry_diagnostics(
             lawn_mower.mqtt_client and lawn_mower.mqtt_client.is_connected()
         ),
         "registered_data_points": sorted(lawn_mower.callbacks),
-        "unknown_data_points_seen": sorted(
-            getattr(lawn_mower, "_seen_unknown_dp_ids", [])
-        ),
+        "unknown_data_points_seen": unknown["seen_unknown_dp_ids"],
         # Latest raw payload per unhandled data point, to identify undocumented
         # dps from real data. Keyed by dp id (as a string for JSON portability).
         "unknown_data_point_payloads": {
             str(dp_id): payload
-            for dp_id, payload in sorted(
-                getattr(lawn_mower, "_unknown_dp_payloads", {}).items()
-            )
+            for dp_id, payload in sorted(unknown["unknown_dp_payloads"].items())
         },
         # Timestamped change-history per undocumented dp (only value changes are
         # recorded). A single export therefore shows how dynamic values move —
@@ -77,9 +77,7 @@ async def async_get_config_entry_diagnostics(
                 }
                 for ts, payload in entries
             ]
-            for dp_id, entries in sorted(
-                getattr(lawn_mower, "_unknown_dp_history", {}).items()
-            )
+            for dp_id, entries in sorted(unknown["unknown_dp_history"].items())
         },
     }
     diagnostics["state"] = {
