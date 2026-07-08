@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 import threading
 from collections import deque
-from typing import Any
+from typing import Any, cast
 
 from homeassistant.components.event import EventEntity
 from homeassistant.core import HomeAssistant
@@ -20,13 +20,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowBasicData, TerraMowConfigEntry
 from .entity import TerraMowEntity
-from .hub import (
-    MOW_MISSIONS,
-    RECHARGE_MISSIONS,
-    MissionState,
-    SubMission,
-    TerraMowHub,
-)
+from .hub import MissionState, TerraMowHub, compute_phase
 
 # Push-based integration: no update throttling needed
 PARALLEL_UPDATES = 0
@@ -94,7 +88,7 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
     @property
     def hub(self) -> TerraMowHub:
         """Return the hub behind this entity."""
-        return self.basic_data.lawn_mower  # type: ignore[no-any-return]
+        return cast("TerraMowHub", self.basic_data.lawn_mower)
 
     @property
     def available(self) -> bool:
@@ -115,28 +109,12 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
 
     def _compute_phase(self) -> str:
         """Derive the semantic phase from the hub state (mirrors lawn_mower)."""
-        hub = self.hub
         # Only a real device fault is an ``error`` event. A dropped MQTT
-        # connection is routine (mower asleep/docked/after a DHCP IP change)
-        # and must not fire a spurious error event on every cycle; the phase
-        # then falls back to the last known mission state. The lawn_mower
-        # entity already surfaces the connection loss as an ERROR state.
-        if hub.has_error:
-            return "error"
-        state = hub.mission_state
-        if state == MissionState.MISSION_STATE_RUNNING:
-            if hub.mission in MOW_MISSIONS:
-                if hub.sub_mission == SubMission.SUB_MISSION_FLEXIBLE_STATION_WAIT:
-                    return "paused"
-                if hub.sub_mission == SubMission.SUB_MISSION_SAVING_MAP:
-                    return "docked"
-                return "mowing"
-            if hub.mission in RECHARGE_MISSIONS:
-                return "returning"
-            return "docked"
-        if state == MissionState.MISSION_STATE_PAUSE:
-            return "paused"
-        return "docked"
+        # connection must not fire a spurious error event on every cycle;
+        # the phase then falls back to the last known mission state. The
+        # lawn_mower entity already surfaces the connection loss as an
+        # ERROR state (see compute_phase).
+        return compute_phase(self.hub, connection_error_is_error=False)
 
     def _event_attributes(self) -> dict[str, Any]:
         """Snapshot the raw mission fields as event attributes."""

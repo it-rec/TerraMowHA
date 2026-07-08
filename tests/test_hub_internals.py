@@ -200,59 +200,59 @@ def test_map_meta_fetches_and_dedupes_by_seq() -> None:
     calls = _stub_fetch(hub, [({"id": 1}, "e1", True, False)])
     meta = {"seq": 3, **META}
 
-    asyncio.run(hub._async_handle_map_meta(meta))
-    assert hub._map_seq == 3
+    asyncio.run(hub._async_handle_meta(hub._map_channel, meta))
+    assert hub._map_channel.seq == 3
     assert hub._map_data == {"id": 1}
-    assert hub._map_etag == "e1"
+    assert hub._map_channel.etag == "e1"
     assert len(calls) == 1
 
     # same seq again -> ignored, no second fetch
-    asyncio.run(hub._async_handle_map_meta(meta))
+    asyncio.run(hub._async_handle_meta(hub._map_channel, meta))
     assert len(calls) == 1
 
 
 def test_map_meta_schedules_retry_on_failure() -> None:
     hub = _hub()
     _stub_fetch(hub, [(None, None, False, False)])
-    hub._schedule_map_retry = MagicMock()
+    hub._schedule_meta_retry = MagicMock()
 
     meta = {"seq": 1, **META}
-    asyncio.run(hub._async_handle_map_meta(meta))
+    asyncio.run(hub._async_handle_meta(hub._map_channel, meta))
 
-    hub._schedule_map_retry.assert_called_once_with(meta)
-    assert hub._map_seq == -1  # failed fetch must not consume the seq
+    hub._schedule_meta_retry.assert_called_once_with(hub._map_channel, meta)
+    assert hub._map_channel.seq == -1  # failed fetch must not consume the seq
 
 
 def test_path_meta_backward_seq_resets_session() -> None:
     hub = _hub()
-    hub._path_seq = 50
-    hub._path_etag = "old"
+    hub._path_channel.seq = 50
+    hub._path_channel.etag = "old"
     _stub_fetch(hub, [({"points": []}, "new", True, False)])
 
-    asyncio.run(hub._async_handle_path_meta({"seq": 2, **META}))
+    asyncio.run(hub._async_handle_meta(hub._path_channel, {"seq": 2, **META}))
 
     # backward seq means a new mowing session: old state cleared, fetch ran
-    assert hub._path_seq == 2
-    assert hub._path_etag == "new"
+    assert hub._path_channel.seq == 2
+    assert hub._path_channel.etag == "new"
     assert hub._path_data == {"points": []}
 
 
 def test_history_path_meta_backward_seq_resets_session() -> None:
     hub = _hub()
-    hub._history_path_seq = 9
+    hub._history_path_channel.seq = 9
     _stub_fetch(hub, [({"paths": [1]}, None, True, False)])
 
-    asyncio.run(hub._async_handle_history_path_meta({"seq": 0, **META}))
+    asyncio.run(hub._async_handle_meta(hub._history_path_channel, {"seq": 0, **META}))
 
-    assert hub._history_path_seq == 0
+    assert hub._history_path_channel.seq == 0
     assert hub._history_path_data == {"paths": [1]}
 
 
 def test_map_meta_stores_pending_while_fetching() -> None:
     hub = _hub()
-    hub._fetching_map = True
-    asyncio.run(hub._async_handle_map_meta({"seq": 5, **META}))
-    assert hub._pending_map_meta == {"seq": 5, **META}
+    hub._map_channel.fetching = True
+    asyncio.run(hub._async_handle_meta(hub._map_channel, {"seq": 5, **META}))
+    assert hub._map_channel.pending_meta == {"seq": 5, **META}
 
 
 # ---------------------------------------------------------------------------
@@ -376,13 +376,13 @@ def test_async_stop_disconnects_and_clears_state() -> None:
     hub.mqtt_client = MagicMock()
     hub.mqtt_client.is_connected.return_value = True
     hub.mqtt_client.publish.return_value.rc = 0
-    hub._pending_map_meta = {"seq": 1}
+    hub._map_channel.pending_meta = {"seq": 1}
 
     asyncio.run(hub.async_stop())
 
     assert hub._stop_event.is_set()
     hub.mqtt_client.disconnect.assert_called_once()
-    assert hub._pending_map_meta is None
+    assert hub._map_channel.pending_meta is None
 
 
 # ---------------------------------------------------------------------------

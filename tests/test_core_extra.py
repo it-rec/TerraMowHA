@@ -194,10 +194,10 @@ def _patch_session(resp):
 
 def test_path_meta_equal_seq_is_skipped() -> None:
     hub = _hub()
-    hub._path_seq = 5
+    hub._path_channel.seq = 5
     with patch("custom_components.terramow.hub.async_get_clientsession") as session:
         asyncio.run(
-            hub._async_handle_path_meta(
+            hub._async_handle_meta(hub._path_channel, 
                 {"seq": 5, "http_port": 1, "http_path": "/p", "token": "t"}
             )
         )
@@ -206,10 +206,10 @@ def test_path_meta_equal_seq_is_skipped() -> None:
 
 def test_history_path_meta_equal_seq_is_skipped() -> None:
     hub = _hub()
-    hub._history_path_seq = 5
+    hub._history_path_channel.seq = 5
     with patch("custom_components.terramow.hub.async_get_clientsession") as session:
         asyncio.run(
-            hub._async_handle_history_path_meta(
+            hub._async_handle_meta(hub._history_path_channel, 
                 {"seq": 5, "http_port": 1, "http_path": "/h", "token": "t"}
             )
         )
@@ -220,16 +220,16 @@ def test_path_meta_no_seq_success_records_fetch_time() -> None:
     hub = _hub()
     no_seq = {"seq": -1, "http_port": 1, "http_path": "/p", "token": "t"}
     with _patch_session(_FakeResp()):
-        asyncio.run(hub._async_handle_path_meta(no_seq))
-    assert hub._path_no_seq_last_fetch > 0
+        asyncio.run(hub._async_handle_meta(hub._path_channel, no_seq))
+    assert hub._path_channel.no_seq_last_fetch > 0
 
 
 def test_history_path_meta_no_seq_success_records_fetch_time() -> None:
     hub = _hub()
     no_seq = {"seq": -1, "http_port": 1, "http_path": "/h", "token": "t"}
     with _patch_session(_FakeResp()):
-        asyncio.run(hub._async_handle_history_path_meta(no_seq))
-    assert hub._history_path_no_seq_last_fetch > 0
+        asyncio.run(hub._async_handle_meta(hub._history_path_channel, no_seq))
+    assert hub._history_path_channel.no_seq_last_fetch > 0
 
 
 def test_request_compatibility_info_swallows_publish_error() -> None:
@@ -272,12 +272,13 @@ def test_get_meta_seq_invalid_without_warn() -> None:
 def test_retry_coroutines_noop_without_cached_meta() -> None:
     hub = _hub()
     with patch("asyncio.sleep", AsyncMock()):
-        for retry in (
-            hub._async_retry_map,
-            hub._async_retry_path,
-            hub._async_retry_history_path,
+        for channel in (
+            hub._map_channel,
+            hub._path_channel,
+            hub._history_path_channel,
         ):
-            asyncio.run(retry(0.0))  # no cached meta -> nothing to re-fetch
+            # no cached meta -> nothing to re-fetch
+            asyncio.run(hub._async_retry_meta(channel, 0.0))
 
 
 def test_map_meta_fetch_exception_schedules_retry() -> None:
@@ -288,11 +289,11 @@ def test_map_meta_fetch_exception_schedules_retry() -> None:
 
     hub._async_fetch_json = boom  # type: ignore[method-assign]
     asyncio.run(
-        hub._async_handle_map_meta(
+        hub._async_handle_meta(hub._map_channel, 
             {"seq": 5, "http_port": 1, "http_path": "/m", "token": "t"}
         )
     )
-    assert hub._map_retry_meta is not None
+    assert hub._map_channel.retry_meta is not None
 
 
 def test_map_meta_success_without_data_or_pending() -> None:
@@ -304,11 +305,11 @@ def test_map_meta_success_without_data_or_pending() -> None:
 
     hub._async_fetch_json = no_data  # type: ignore[method-assign]
     asyncio.run(
-        hub._async_handle_map_meta(
+        hub._async_handle_meta(hub._map_channel, 
             {"seq": 7, "http_port": 1, "http_path": "/m", "token": "t"}
         )
     )
-    assert hub._map_seq == 7
+    assert hub._map_channel.seq == 7
 
 
 def test_update_device_sw_version_noop_when_unchanged() -> None:
@@ -390,15 +391,15 @@ def test_mqtt_loop_skips_connect_when_already_connected() -> None:
 
 def test_map_meta_keeps_newer_pending_while_fetching() -> None:
     hub = _hub()
-    hub._fetching_map = True
-    hub._pending_map_meta = {"seq": 99, "http_port": 1, "http_path": "/m", "token": "t"}
+    hub._map_channel.fetching = True
+    hub._map_channel.pending_meta = {"seq": 99, "http_port": 1, "http_path": "/m", "token": "t"}
     # an older meta arrives -> the newer pending is kept
     asyncio.run(
-        hub._async_handle_map_meta(
+        hub._async_handle_meta(hub._map_channel, 
             {"seq": 5, "http_port": 1, "http_path": "/m", "token": "t"}
         )
     )
-    assert hub._pending_map_meta["seq"] == 99
+    assert hub._map_channel.pending_meta["seq"] == 99
 
 
 def test_map_meta_data_without_map_info_skips_update() -> None:
@@ -410,7 +411,7 @@ def test_map_meta_data_without_map_info_skips_update() -> None:
     hub._async_fetch_json = fetch  # type: ignore[method-assign]
     hub._build_map_info_from_map_data = lambda data: None  # type: ignore[method-assign]
     asyncio.run(
-        hub._async_handle_map_meta(
+        hub._async_handle_meta(hub._map_channel, 
             {"seq": 6, "http_port": 1, "http_path": "/m", "token": "t"}
         )
     )
@@ -422,61 +423,61 @@ def test_map_meta_stale_pending_is_not_requeued() -> None:
 
     async def fetch(meta, etag):
         # a stale (older) meta is queued during the fetch
-        hub._pending_map_meta = {"seq": 1, "http_port": 1, "http_path": "/m", "token": "t"}
+        hub._map_channel.pending_meta = {"seq": 1, "http_port": 1, "http_path": "/m", "token": "t"}
         return {"id": 1, "map_state": "MAP_STATE_COMPLETE"}, "e", True, False
 
     hub._async_fetch_json = fetch  # type: ignore[method-assign]
     asyncio.run(
-        hub._async_handle_map_meta(
+        hub._async_handle_meta(hub._map_channel, 
             {"seq": 7, "http_port": 1, "http_path": "/m", "token": "t"}
         )
     )
     # map_seq advanced to 7; the stale pending (seq 1) is dropped, not requeued
-    assert hub._map_seq == 7
-    assert hub._pending_map_meta is None
+    assert hub._map_channel.seq == 7
+    assert hub._map_channel.pending_meta is None
 
 
 def test_path_meta_keeps_newer_pending_while_fetching() -> None:
     hub = _hub()
-    hub._fetching_path = True
-    hub._pending_path_meta = {"seq": 99, "http_port": 1, "http_path": "/p", "token": "t"}
+    hub._path_channel.fetching = True
+    hub._path_channel.pending_meta = {"seq": 99, "http_port": 1, "http_path": "/p", "token": "t"}
     asyncio.run(
-        hub._async_handle_path_meta(
+        hub._async_handle_meta(hub._path_channel, 
             {"seq": 5, "http_port": 1, "http_path": "/p", "token": "t"}
         )
     )
-    assert hub._pending_path_meta["seq"] == 99
+    assert hub._path_channel.pending_meta["seq"] == 99
 
 
 def test_path_meta_stale_pending_is_not_requeued() -> None:
     hub = _hub()
 
     async def fetch(meta, etag):
-        hub._pending_path_meta = {"seq": 1, "http_port": 1, "http_path": "/p", "token": "t"}
+        hub._path_channel.pending_meta = {"seq": 1, "http_port": 1, "http_path": "/p", "token": "t"}
         return {"id": 1, "points": []}, "e", True, False
 
     hub._async_fetch_json = fetch  # type: ignore[method-assign]
     asyncio.run(
-        hub._async_handle_path_meta(
+        hub._async_handle_meta(hub._path_channel, 
             {"seq": 7, "http_port": 1, "http_path": "/p", "token": "t"}
         )
     )
-    assert hub._path_seq == 7
-    assert hub._pending_path_meta is None
+    assert hub._path_channel.seq == 7
+    assert hub._path_channel.pending_meta is None
 
 
 def test_history_meta_keeps_newer_pending_while_fetching() -> None:
     hub = _hub()
-    hub._fetching_history_path = True
-    hub._pending_history_path_meta = {
+    hub._history_path_channel.fetching = True
+    hub._history_path_channel.pending_meta = {
         "seq": 99, "http_port": 1, "http_path": "/h", "token": "t"
     }
     asyncio.run(
-        hub._async_handle_history_path_meta(
+        hub._async_handle_meta(hub._history_path_channel, 
             {"seq": 5, "http_port": 1, "http_path": "/h", "token": "t"}
         )
     )
-    assert hub._pending_history_path_meta["seq"] == 99
+    assert hub._history_path_channel.pending_meta["seq"] == 99
 
 
 def test_history_meta_success_invokes_callbacks_and_drops_stale_pending() -> None:
@@ -484,19 +485,19 @@ def test_history_meta_success_invokes_callbacks_and_drops_stale_pending() -> Non
     hub.history_path_callbacks.append(MagicMock())
 
     async def fetch(meta, etag):
-        hub._pending_history_path_meta = {
+        hub._history_path_channel.pending_meta = {
             "seq": 1, "http_port": 1, "http_path": "/h", "token": "t"
         }
         return {"id": 1, "points": []}, "e", True, False
 
     hub._async_fetch_json = fetch  # type: ignore[method-assign]
     asyncio.run(
-        hub._async_handle_history_path_meta(
+        hub._async_handle_meta(hub._history_path_channel, 
             {"seq": 7, "http_port": 1, "http_path": "/h", "token": "t"}
         )
     )
     assert hub._history_path_data == {"id": 1, "points": []}
-    assert hub._pending_history_path_meta is None
+    assert hub._history_path_channel.pending_meta is None
 
 
 # ---------------------------------------------------------------------------

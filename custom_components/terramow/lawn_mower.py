@@ -21,13 +21,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import TerraMowBasicData, TerraMowConfigEntry
 from .entity import TerraMowEntity
 from .entity_utils import safe_schedule_update_ha_state
-from .hub import (
-    MOW_MISSIONS,
-    RECHARGE_MISSIONS,
-    MissionState,
-    SubMission,
-    TerraMowHub,
-)
+from .hub import TerraMowHub, compute_phase
 
 # Push-based integration: no update throttling needed
 PARALLEL_UPDATES = 0
@@ -118,31 +112,24 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
 
     def update_activity_from_state(self) -> None:
         """Update activity based on the hub's mission state."""
-        hub = self.hub
         last_activity = self.activity
 
-        if hub.connection_error or hub.has_error:
+        # The mission-state mapping is shared with the event entity; only the
+        # connection-error handling differs (a lost connection surfaces as
+        # ERROR here, see compute_phase).
+        phase = compute_phase(self.hub, connection_error_is_error=True)
+        if phase == "error":
             self.activity = LawnMowerActivity.ERROR
-        elif hub.mission_state == MissionState.MISSION_STATE_RUNNING:
-            if hub.mission in MOW_MISSIONS:
-                if hub.sub_mission == SubMission.SUB_MISSION_FLEXIBLE_STATION_WAIT:
-                    # Waiting at the base station, equivalent to paused
-                    self.activity = LawnMowerActivity.PAUSED
-                elif hub.sub_mission == SubMission.SUB_MISSION_SAVING_MAP:
-                    # Saving the map, equivalent to finished
-                    self.activity = LawnMowerActivity.DOCKED
-                else:
-                    self.activity = LawnMowerActivity.MOWING
-            elif hub.mission in RECHARGE_MISSIONS:
-                if self._has_returning:
-                    self.activity = LawnMowerActivity.RETURNING
-                else:
-                    # Older HA versions lack a RETURNING state; use DOCKED instead
-                    self.activity = LawnMowerActivity.DOCKED
-            else:
-                self.activity = LawnMowerActivity.DOCKED
-        elif hub.mission_state == MissionState.MISSION_STATE_PAUSE:
+        elif phase == "mowing":
+            self.activity = LawnMowerActivity.MOWING
+        elif phase == "paused":
             self.activity = LawnMowerActivity.PAUSED
+        elif phase == "returning":
+            if self._has_returning:
+                self.activity = LawnMowerActivity.RETURNING
+            else:
+                # Older HA versions lack a RETURNING state; use DOCKED instead
+                self.activity = LawnMowerActivity.DOCKED
         else:
             self.activity = LawnMowerActivity.DOCKED
 

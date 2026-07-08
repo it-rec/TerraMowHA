@@ -162,53 +162,53 @@ def test_async_stop_joins_alive_thread_and_warns() -> None:
 
 def test_path_meta_pending_replacement_while_fetching() -> None:
     hub = _hub()
-    hub._fetching_path = True
-    asyncio.run(hub._async_handle_path_meta(META_P))
-    assert hub._pending_path_meta == META_P
+    hub._path_channel.fetching = True
+    asyncio.run(hub._async_handle_meta(hub._path_channel, META_P))
+    assert hub._path_channel.pending_meta == META_P
 
 
 def test_history_path_meta_pending_replacement_while_fetching() -> None:
     hub = _hub()
-    hub._fetching_history_path = True
-    asyncio.run(hub._async_handle_history_path_meta(META_H))
-    assert hub._pending_history_path_meta == META_H
+    hub._history_path_channel.fetching = True
+    asyncio.run(hub._async_handle_meta(hub._history_path_channel, META_H))
+    assert hub._history_path_channel.pending_meta == META_H
 
 
 def test_path_meta_no_seq_throttle_skips_fetch() -> None:
     hub = _hub()
-    hub._path_no_seq_last_fetch = time.monotonic()
+    hub._path_channel.no_seq_last_fetch = time.monotonic()
     no_seq = {"seq": -1, "http_port": 1, "http_path": "/p", "token": "t"}
     with patch(
         "custom_components.terramow.hub.async_get_clientsession"
     ) as session:
-        asyncio.run(hub._async_handle_path_meta(no_seq))
+        asyncio.run(hub._async_handle_meta(hub._path_channel, no_seq))
     session.assert_not_called()
 
 
 def test_history_path_meta_no_seq_throttle_skips_fetch() -> None:
     hub = _hub()
-    hub._history_path_no_seq_last_fetch = time.monotonic()
+    hub._history_path_channel.no_seq_last_fetch = time.monotonic()
     no_seq = {"seq": -1, "http_port": 1, "http_path": "/h", "token": "t"}
     with patch(
         "custom_components.terramow.hub.async_get_clientsession"
     ) as session:
-        asyncio.run(hub._async_handle_history_path_meta(no_seq))
+        asyncio.run(hub._async_handle_meta(hub._history_path_channel, no_seq))
     session.assert_not_called()
 
 
 def test_path_meta_failure_schedules_retry() -> None:
     hub = _hub()
     with _patch_session(_FakeResp(status=500)):
-        asyncio.run(hub._async_handle_path_meta(META_P))
-    assert hub._path_retry_meta == META_P
+        asyncio.run(hub._async_handle_meta(hub._path_channel, META_P))
+    assert hub._path_channel.retry_meta == META_P
     assert hub.hass.async_create_task.called
 
 
 def test_history_path_meta_failure_schedules_retry() -> None:
     hub = _hub()
     with _patch_session(_FakeResp(status=500)):
-        asyncio.run(hub._async_handle_history_path_meta(META_H))
-    assert hub._history_path_retry_meta == META_H
+        asyncio.run(hub._async_handle_meta(hub._history_path_channel, META_H))
+    assert hub._history_path_channel.retry_meta == META_H
 
 
 def test_path_meta_requeues_pending_after_completion() -> None:
@@ -217,14 +217,14 @@ def test_path_meta_requeues_pending_after_completion() -> None:
 
     async def fake_fetch(meta, etag):
         # a newer meta arrives while this fetch is in flight
-        hub._pending_path_meta = newer
+        hub._path_channel.pending_meta = newer
         return ({"id": 1, "points": []}, "e", True, False)
 
     hub._async_fetch_json = fake_fetch  # type: ignore[method-assign]
-    asyncio.run(hub._async_handle_path_meta(META_P))
+    asyncio.run(hub._async_handle_meta(hub._path_channel, META_P))
     # the finally block requeues the newer pending meta
     assert hub.hass.async_create_task.called
-    assert hub._pending_path_meta is None
+    assert hub._path_channel.pending_meta is None
 
 
 def test_map_meta_requeues_pending_after_completion() -> None:
@@ -232,13 +232,13 @@ def test_map_meta_requeues_pending_after_completion() -> None:
     newer = {"seq": 99, "http_port": 1, "http_path": "/m", "token": "t"}
 
     async def fake_fetch(meta, etag):
-        hub._pending_map_meta = newer
+        hub._map_channel.pending_meta = newer
         return ({"id": 1, "map_state": "MAP_STATE_COMPLETE"}, "e", True, False)
 
     hub._async_fetch_json = fake_fetch  # type: ignore[method-assign]
-    asyncio.run(hub._async_handle_map_meta(META_M))
+    asyncio.run(hub._async_handle_meta(hub._map_channel, META_M))
     assert hub.hass.async_create_task.called
-    assert hub._pending_map_meta is None
+    assert hub._map_channel.pending_meta is None
 
 
 # ---------------------------------------------------------------------------
@@ -248,47 +248,47 @@ def test_map_meta_requeues_pending_after_completion() -> None:
 
 def test_async_retry_path_runs_cached_meta() -> None:
     hub = _hub()
-    hub._path_retry_meta = META_P
+    hub._path_channel.retry_meta = META_P
     with (
         patch("asyncio.sleep", AsyncMock()),
         _patch_session(_FakeResp(200, b'{"id": 3, "points": []}')),
     ):
-        asyncio.run(hub._async_retry_path(0.0))
+        asyncio.run(hub._async_retry_meta(hub._path_channel, 0.0))
     assert hub.path_data["id"] == 3
 
 
 def test_async_retry_path_cancelled_returns_cleanly() -> None:
     hub = _hub()
-    hub._path_retry_meta = META_P
+    hub._path_channel.retry_meta = META_P
     with patch("asyncio.sleep", AsyncMock(side_effect=asyncio.CancelledError)):
-        asyncio.run(hub._async_retry_path(1.0))
+        asyncio.run(hub._async_retry_meta(hub._path_channel, 1.0))
     # cancellation short-circuits before re-fetching
     assert hub.path_data == {}
 
 
 def test_reset_retry_cancels_active_tasks() -> None:
     hub = _hub()
-    for attr, reset in (
-        ("_map_retry_task", hub._reset_map_retry),
-        ("_path_retry_task", hub._reset_path_retry),
-        ("_history_path_retry_task", hub._reset_history_path_retry),
+    for channel in (
+        hub._map_channel,
+        hub._path_channel,
+        hub._history_path_channel,
     ):
         task = MagicMock()
         task.done.return_value = False
-        setattr(hub, attr, task)
-        reset()
+        channel.retry_task = task
+        hub._reset_meta_retry(channel)
         task.cancel.assert_called_once()
-        assert getattr(hub, attr) is None
+        assert channel.retry_task is None
 
 
 def test_schedule_retry_is_noop_when_task_still_running() -> None:
     hub = _hub()
     task = MagicMock()
     task.done.return_value = False
-    hub._map_retry_task = task
-    hub._schedule_map_retry(META_M)
+    hub._map_channel.retry_task = task
+    hub._schedule_meta_retry(hub._map_channel, META_M)
     # the existing task is kept; no new task scheduled
-    assert hub._map_retry_task is task
+    assert hub._map_channel.retry_task is task
 
 
 # ---------------------------------------------------------------------------
@@ -446,8 +446,8 @@ def test_path_meta_fetch_exception_schedules_retry() -> None:
         raise RuntimeError("network down")
 
     hub._async_fetch_json = boom  # type: ignore[method-assign]
-    asyncio.run(hub._async_handle_path_meta(META_P))
-    assert hub._path_retry_meta == META_P
+    asyncio.run(hub._async_handle_meta(hub._path_channel, META_P))
+    assert hub._path_channel.retry_meta == META_P
 
 
 def test_history_path_meta_fetch_exception_schedules_retry() -> None:
@@ -457,8 +457,8 @@ def test_history_path_meta_fetch_exception_schedules_retry() -> None:
         raise RuntimeError("network down")
 
     hub._async_fetch_json = boom  # type: ignore[method-assign]
-    asyncio.run(hub._async_handle_history_path_meta(META_H))
-    assert hub._history_path_retry_meta == META_H
+    asyncio.run(hub._async_handle_meta(hub._history_path_channel, META_H))
+    assert hub._history_path_channel.retry_meta == META_H
 
 
 def test_history_path_meta_requeues_pending_after_completion() -> None:
@@ -466,20 +466,20 @@ def test_history_path_meta_requeues_pending_after_completion() -> None:
     newer = {"seq": 99, "http_port": 1, "http_path": "/h", "token": "t"}
 
     async def fake_fetch(meta, etag):
-        hub._pending_history_path_meta = newer
+        hub._history_path_channel.pending_meta = newer
         return ({"id": 1, "points": []}, "e", True, False)
 
     hub._async_fetch_json = fake_fetch  # type: ignore[method-assign]
-    asyncio.run(hub._async_handle_history_path_meta(META_H))
+    asyncio.run(hub._async_handle_meta(hub._history_path_channel, META_H))
     assert hub.hass.async_create_task.called
-    assert hub._pending_history_path_meta is None
+    assert hub._history_path_channel.pending_meta is None
 
 
 def test_async_retry_history_path_cancelled_returns_cleanly() -> None:
     hub = _hub()
-    hub._history_path_retry_meta = META_H
+    hub._history_path_channel.retry_meta = META_H
     with patch("asyncio.sleep", AsyncMock(side_effect=asyncio.CancelledError)):
-        asyncio.run(hub._async_retry_history_path(1.0))
+        asyncio.run(hub._async_retry_meta(hub._history_path_channel, 1.0))
     assert hub.history_path_data == {}
 
 
@@ -580,16 +580,16 @@ def test_register_callbacks_replay_cached_data() -> None:
 
 def test_schedule_path_and_history_retry_noop_when_task_running() -> None:
     hub = _hub()
-    for attr, schedule, meta in (
-        ("_path_retry_task", hub._schedule_path_retry, META_P),
-        ("_history_path_retry_task", hub._schedule_history_path_retry, META_H),
+    for channel, meta in (
+        (hub._path_channel, META_P),
+        (hub._history_path_channel, META_H),
     ):
         task = MagicMock()
         task.done.return_value = False
-        setattr(hub, attr, task)
-        schedule(meta)
+        channel.retry_task = task
+        hub._schedule_meta_retry(channel, meta)
         # the running task is preserved; no replacement scheduled
-        assert getattr(hub, attr) is task
+        assert channel.retry_task is task
 
 
 def test_request_compatibility_info_publishes_request() -> None:

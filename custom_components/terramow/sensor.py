@@ -63,10 +63,11 @@ class BatterySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return {}
 
-        battery_status = self.basic_data.lawn_mower.battery_status
+        battery_status = hub.battery_status
         if not battery_status:
             return {}
 
@@ -97,10 +98,11 @@ class BatteryStateSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> str | None:
         """Return the state of the sensor."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        battery_status = self.basic_data.lawn_mower.battery_status
+        battery_status = hub.battery_status
         if not battery_status:
             return None
 
@@ -129,10 +131,11 @@ class BatteryTemperatureStateSensor(PushUpdateMixin, TerraMowEntity, SensorEntit
     @property
     def native_value(self) -> str | None:
         """Return the state of the sensor."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        battery_status = self.basic_data.lawn_mower.battery_status
+        battery_status = hub.battery_status
         if not battery_status:
             return None
 
@@ -159,10 +162,11 @@ class TotalMowingTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return the state of the sensor."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        statistics_data = self.basic_data.lawn_mower.statistics_data
+        statistics_data = hub.statistics_data
         if not statistics_data:
             return None
 
@@ -184,10 +188,11 @@ class TotalMowingJobsSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return the state of the sensor."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        statistics_data = self.basic_data.lawn_mower.statistics_data
+        statistics_data = hub.statistics_data
         if not statistics_data:
             return None
 
@@ -211,10 +216,11 @@ class TotalMowedAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         """Return the lifetime mowed area in square meters."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        statistics_data = self.basic_data.lawn_mower.statistics_data
+        statistics_data = hub.statistics_data
         if not statistics_data:
             return None
 
@@ -242,10 +248,11 @@ class CurrentSessionAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         """Return the state of the sensor."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        current_work_data = self.basic_data.lawn_mower.current_work_data
+        current_work_data = hub.current_work_data
         if not current_work_data:
             return None
 
@@ -258,10 +265,11 @@ class CurrentSessionAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return {}
 
-        current_work_data = self.basic_data.lawn_mower.current_work_data
+        current_work_data = hub.current_work_data
         if not current_work_data:
             return {}
 
@@ -295,9 +303,10 @@ class CurrentSessionProgressSensor(PushUpdateMixin, TerraMowEntity, SensorEntity
 
     @property
     def native_value(self) -> float | None:
-        if not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
-        current_work_data = self.basic_data.lawn_mower.current_work_data
+        current_work_data = hub.current_work_data
         if not current_work_data:
             return None
         total_area = current_work_data.get('total_area') or 0
@@ -326,10 +335,11 @@ class CurrentSessionTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return the state of the sensor."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        current_work_data = self.basic_data.lawn_mower.current_work_data
+        current_work_data = hub.current_work_data
         if not current_work_data:
             return None
 
@@ -359,10 +369,11 @@ class CurrentJobTypeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> str | None:
         """Return the state of the sensor."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        current_work_data = self.basic_data.lawn_mower.current_work_data
+        current_work_data = hub.current_work_data
         if not current_work_data:
             return None
 
@@ -388,10 +399,11 @@ class RemainingBladeTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return the state of the sensor."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        blade_time = self.basic_data.lawn_mower.blade_time
+        blade_time = hub.blade_time
         if not blade_time:
             return None
 
@@ -403,10 +415,11 @@ class RemainingBladeTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return {}
 
-        blade_time = self.basic_data.lawn_mower.blade_time
+        blade_time = hub.blade_time
         if not blade_time:
             return {}
 
@@ -435,10 +448,11 @@ class RemainingBaseStationTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEnti
     @property
     def native_value(self) -> int | None:
         """Return the state of the sensor."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        base_station_time = self.basic_data.lawn_mower.base_station_time
+        base_station_time = hub.base_station_time
         if not base_station_time:
             return None
 
@@ -450,10 +464,11 @@ class RemainingBaseStationTimeSensor(PushUpdateMixin, TerraMowEntity, SensorEnti
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return {}
 
-        base_station_time = self.basic_data.lawn_mower.base_station_time
+        base_station_time = hub.base_station_time
         if not base_station_time:
             return {}
 
@@ -482,10 +497,11 @@ class TerraMowMowHeightSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return the state of the sensor."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        global_params = self.basic_data.lawn_mower.global_params
+        global_params = hub.global_params
         if not global_params:
             return None
 
@@ -516,10 +532,11 @@ class TerraMowMowSpeedSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> str | None:
         """Return the state of the sensor."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        global_params = self.basic_data.lawn_mower.global_params
+        global_params = hub.global_params
         if not global_params:
             return None
 
@@ -546,10 +563,11 @@ class TerraMowMowSpeedSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return {}
 
-        global_params = self.basic_data.lawn_mower.global_params
+        global_params = hub.global_params
         if not global_params:
             return {}
 
@@ -590,10 +608,11 @@ class NextScheduledStartSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> str | None:
         """Return the state of the sensor."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        schedule_data = self.basic_data.lawn_mower.schedule_data
+        schedule_data = hub.schedule_data
         if not schedule_data:
             return None
 
@@ -613,10 +632,11 @@ class NextScheduledStartSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return {}
 
-        schedule_data = self.basic_data.lawn_mower.schedule_data
+        schedule_data = hub.schedule_data
         if not schedule_data:
             return {}
 
@@ -708,9 +728,10 @@ class TerraMowPoseSensor(TerraMowEntity, SensorEntity):
         does not keep receiving ~2 Hz pose pushes from the hub.
         """
         await super().async_added_to_hass()
-        if self.basic_data.lawn_mower:
+        hub = self.hub
+        if hub:
             self.async_on_remove(
-                self.basic_data.lawn_mower.register_pose_callback(self._on_pose)
+                hub.register_pose_callback(self._on_pose)
             )
 
     _unique_id_suffix = "pose"
@@ -1152,12 +1173,13 @@ class PowerModeSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> str | None:
         """Return the current power mode."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        power_mode = to_ha_enum_state(self.basic_data.lawn_mower.power_mode)
+        power_mode = to_ha_enum_state(hub.power_mode)
         if power_mode in self._attr_options:
-            return cast("str", power_mode)
+            return power_mode
         return None
 
 
@@ -1174,10 +1196,11 @@ class MainDirectionStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> str | None:
         """Return the sensor value."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        global_params = self.basic_data.lawn_mower.global_params
+        global_params = hub.global_params
         if not global_params:
             return None
 
@@ -1192,10 +1215,11 @@ class MainDirectionStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         """Return entity specific state attributes."""
         attrs: dict[str, Any] = {}
 
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return attrs
 
-        global_params = self.basic_data.lawn_mower.global_params
+        global_params = hub.global_params
         if not global_params:
             return attrs
 
@@ -1270,11 +1294,12 @@ class BackToStationReasonSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> str | None:
         """Return the raw back_to_station_reason enum string."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
-        reason = to_ha_enum_state(self.basic_data.lawn_mower.back_to_station_reason)
+        reason = to_ha_enum_state(hub.back_to_station_reason)
         if reason in self._attr_options:
-            return cast("str", reason)
+            return reason
         return None
 
 
@@ -1291,9 +1316,10 @@ class _MissionEnumSensorBase(PushUpdateMixin, TerraMowEntity, SensorEntity):
 
     @property
     def native_value(self) -> str | None:
-        if not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
-        member = getattr(self.basic_data.lawn_mower, self._enum_attr, None)
+        member = getattr(hub, self._enum_attr, None)
         if member is None:
             return None
         value = member.value if hasattr(member, "value") else str(member)

@@ -37,9 +37,10 @@ class TerraMowMapSensorBase(TerraMowEntity, SensorEntity):
         longer receives map pushes from the hub.
         """
         await super().async_added_to_hass()
-        if self.basic_data.lawn_mower:
+        hub = self.hub
+        if hub:
             self.async_on_remove(
-                self.basic_data.lawn_mower.register_map_callback(self._on_map_info)
+                hub.register_map_callback(self._on_map_info)
             )
 
     async def _on_map_info(self, map_info: dict[str, Any]) -> None:
@@ -62,10 +63,11 @@ class TerraMowMapStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def native_value(self) -> str | None:
         """Return the state of the sensor."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        map_status = self.basic_data.lawn_mower.map_status
+        map_status = hub.map_status
         if not map_status:
             return None
 
@@ -75,10 +77,11 @@ class TerraMowMapStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return {}
 
-        map_status = self.basic_data.lawn_mower.map_status
+        map_status = hub.map_status
         if not map_status:
             return {}
 

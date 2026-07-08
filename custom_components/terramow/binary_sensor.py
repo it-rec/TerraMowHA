@@ -84,10 +84,11 @@ class TerraMowChargingSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity
     @property
     def is_on(self) -> bool | None:
         """Return true if the binary sensor is on."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        battery_status = self.basic_data.lawn_mower.battery_status
+        battery_status = hub.battery_status
         charger_connected = battery_status.get('charger_connected')
 
         return bool(charger_connected) if charger_connected is not None else None
@@ -106,10 +107,11 @@ class NavigationLocatedSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntit
     @property
     def is_on(self) -> bool | None:
         """Return true if the robot is navigation-located."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        value = self.basic_data.lawn_mower.is_robot_navi_located
+        value = hub.is_robot_navi_located
         return bool(value) if value is not None else None
 
 
@@ -129,10 +131,11 @@ class FirmwareUpgradingSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntit
     @property
     def is_on(self) -> bool | None:
         """Return true if the firmware is upgrading."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        value = self.basic_data.lawn_mower.is_upgrading
+        value = hub.is_upgrading
         return bool(value) if value is not None else None
 
 
@@ -150,10 +153,11 @@ class PowerSwitchSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool | None:
         """Return true if the binary sensor is on."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
 
-        battery_status = self.basic_data.lawn_mower.battery_status
+        battery_status = hub.battery_status
         is_switch_on = battery_status.get('is_switch_on')
 
         return bool(is_switch_on) if is_switch_on is not None else None
@@ -181,9 +185,10 @@ class TerraMowProblemSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity)
     @property
     def is_on(self) -> bool | None:
         """Return true if the robot reports an error."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
-        return bool(self.basic_data.lawn_mower.has_error)
+        return bool(hub.has_error)
 
 
 class TerraMowRainSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
@@ -207,10 +212,11 @@ class TerraMowRainSensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool | None:
         """Return true if the back-to-station reason is raining."""
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
         return bool(
-            self.basic_data.lawn_mower.back_to_station_reason
+            hub.back_to_station_reason
             == "BACK_TO_STATION_REASON_RAINING"
         )
 
@@ -227,9 +233,10 @@ class _MapStatusBinarySensorBase(PushUpdateMixin, TerraMowEntity, BinarySensorEn
 
     @property
     def is_on(self) -> bool | None:
-        if not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
-        map_status = self.basic_data.lawn_mower.map_status
+        map_status = hub.map_status
         if not map_status:
             return None
         value = map_status.get(self._map_status_field)
@@ -272,9 +279,10 @@ class _TaskStatusBinarySensorBase(PushUpdateMixin, TerraMowEntity, BinarySensorE
 
     @property
     def is_on(self) -> bool | None:
-        if not self.basic_data.lawn_mower:
+        hub = self.hub
+        if not hub:
             return None
-        task_status = self.basic_data.lawn_mower.task_status
+        task_status = hub.task_status
         if not task_status:
             return None
         value = task_status.get(self._task_status_field)

@@ -12,6 +12,7 @@ from .const import DOMAIN
 
 if TYPE_CHECKING:
     from . import TerraMowBasicData
+    from .hub import TerraMowHub
 
 
 class TerraMowEntity(Entity):
@@ -39,6 +40,11 @@ class TerraMowEntity(Entity):
         self.host = basic_data.host
         if hass is not None:
             self.hass = hass
+
+    @property
+    def hub(self) -> TerraMowHub | None:
+        """Return the hub, or None while the integration is (un)loading."""
+        return self.basic_data.lawn_mower
 
     @property
     def device_uid(self) -> str:
