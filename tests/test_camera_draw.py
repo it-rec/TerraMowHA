@@ -361,22 +361,6 @@ def test_render_clean_mode_camera() -> None:
     assert _render(camera).startswith(PNG_MAGIC)
 
 
-def test_draw_path_segment_legacy_interface() -> None:
-    from PIL import Image, ImageDraw
-
-    hub = _hub()
-    camera = _camera(hub)
-    hub._map_data = MEGA_MAP
-    asyncio.run(camera._on_map_info({"id": 1}))
-    _render(camera)  # a render establishes the coordinate transformer
-
-    img = Image.new("RGBA", (100, 100))
-    draw = ImageDraw.Draw(img)
-    # a real 2-point segment draws a stroke; a too-short one is a no-op
-    camera._draw_path_segment(draw, [{"x": 0.1, "y": 0.1}, {"x": 0.6, "y": 0.6}])
-    camera._draw_path_segment(draw, [{"x": 0.1, "y": 0.1}])
-
-
 # ---------------------------------------------------------------------------
 # dark theme
 # ---------------------------------------------------------------------------
@@ -481,14 +465,14 @@ def test_robot_icon_rebuilds_on_scale_change() -> None:
     asyncio.run(camera._on_map_info({"id": 1}))
     asyncio.run(camera._on_pose({"x": 1.5, "y": 1.5, "yaw": 0.0}))
     _render(camera)
-    length_a = camera._robot_image_length_px
-    assert length_a is not None
+    icon_a = camera._robot_icon
+    assert icon_a is not None
     # a much larger map -> smaller robot-to-canvas ratio, icon is rebuilt
     big_map = dict(MEGA_MAP, width=4000, height=4000)
     hub._map_data = big_map
     asyncio.run(camera._on_map_info({"id": 1}))
     _render(camera)
-    assert camera._robot_image_length_px is not None
+    assert camera._robot_icon is not None
 
 
 # ---------------------------------------------------------------------------

@@ -169,7 +169,6 @@ from PIL import Image, ImageDraw, ImageFont  # noqa: E402
 from custom_components.terramow.camera import (  # noqa: E402
     _collect_recursive_points,
     _enum_label,
-    _extract_all_map_points,
     _extract_marker_points,
     _load_font,
     _simplify_path_pixels,
@@ -244,37 +243,6 @@ def test_enum_label_without_known_prefix() -> None:
     assert _enum_label("custom_value") == "Custom Value"
 
 
-def test_extract_all_map_points_missing_station_and_non_dict_clean_info() -> None:
-    points = _extract_all_map_points(
-        {
-            "width": 10,
-            "height": 10,
-            "resolution": 0.1,
-            "origin": {"x": 0, "y": 0},
-            "regions": [
-                {"boundary": _poly((0, 0), (2, 0), (2, 2)), "sub_regions": [], "obstacles": []}
-            ],
-            # no station_pose -> skip; clean_info is not a dict -> skip
-            "clean_info": "nope",
-        }
-    )
-    assert points
-
-
-def test_extract_all_map_points_non_dict_clean_subsections() -> None:
-    points = _extract_all_map_points(
-        {
-            "width": 10,
-            "height": 10,
-            "resolution": 0.1,
-            "origin": {"x": 0, "y": 0},
-            "station_pose": {"x": 0, "y": 0, "theta": 0},
-            "clean_info": {"draw_region": "x", "move_to_target_point": "y"},
-        }
-    )
-    assert points
-
-
 # ---------------------------------------------------------------------------
 # robot-state helpers
 # ---------------------------------------------------------------------------
@@ -327,13 +295,15 @@ def test_orphan_camera_callbacks_and_empty_payloads() -> None:
     orphan = TerraMowMapCamera(
         TerraMowBasicData(host="192.0.2.202", password="secret"), hub.hass
     )
-    # No lawn mower -> map_data stays empty; the "empty everything" rebuild path
-    # sets the static image to None.
+    # No lawn mower -> map_data stays empty; the empty-map skip leaves no
+    # render snapshot behind.
     asyncio.run(orphan._on_map_info({"id": 1}))
-    assert orphan._static_image is None
-    # Empty path payloads skip the one-shot debug logging branch.
+    assert orphan._render_snapshot is None
+    # Empty path payloads skip the one-shot debug logging branch and hit the
+    # "empty everything" rebuild path, which keeps the snapshot at None.
     asyncio.run(orphan._on_path_data({}))
     asyncio.run(orphan._on_history_path_data({}))
+    assert orphan._render_snapshot is None
     asyncio.run(orphan._on_battery_status("{}"))
     assert orphan._cached_png is None
     # Nothing to render -> the placeholder PNG.
@@ -577,10 +547,12 @@ def test_render_reuses_robot_image_on_second_pass() -> None:
     asyncio.run(camera._on_map_info({"id": 1}))
     asyncio.run(camera._on_pose({"x": 1.5, "y": 1.5, "yaw": 0.5}))
     assert _render(camera).startswith(PNG_MAGIC)
-    assert camera._robot_image is not None
+    icon = camera._robot_icon
+    assert icon is not None
     # invalidate only the PNG cache; the cached robot sprite must be reused
     camera._cached_png = None
     assert _render(camera).startswith(PNG_MAGIC)
+    assert camera._robot_icon is icon
 
 
 # ---------------------------------------------------------------------------
@@ -633,10 +605,9 @@ def test_draw_helpers_requiring_transformer() -> None:
     image, draw = _draw_ctx()
 
     # three coincident points collapse to a single pixel after simplify, so the
-    # path layer / segment bail out on the post-simplify length guard
+    # path layer bails out on the post-simplify length guard
     coincident = [{"x": 1.0, "y": 1.0}, {"x": 1.0, "y": 1.0}, {"x": 1.0, "y": 1.0}]
     camera._draw_path_layer(image, coincident, "current")
-    camera._draw_path_segment(draw, coincident)
     # a station pose that carries no theta -> yaw defaults to zero
     camera._draw_station(image, {"x": 1.0, "y": 1.0})
     assert camera._transformer is not None
