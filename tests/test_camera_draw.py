@@ -633,3 +633,43 @@ def test_scale_bar_noop_without_transformer() -> None:
     draw = ImageDraw.Draw(Image.new("RGBA", (100, 100)))
     # no transformer -> early return, no crash
     camera._draw_scale_bar(draw)
+
+
+# ---------------------------------------------------------------------------
+# HUD localization
+# ---------------------------------------------------------------------------
+
+
+def test_hud_defaults_to_english() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    # a MagicMock hass has no real language string -> English
+    assert camera._language == "en"
+    assert camera._t("snapshot") == "Map Snapshot"
+    assert camera.extra_state_attributes["map_language"] == "en"
+
+
+def test_hud_localized_for_german() -> None:
+    hub = _hub()
+    hub.hass.config.language = "de-DE"
+    camera = _camera(hub)
+    hub._map_data = REALISTIC_MAP
+    asyncio.run(camera._on_map_info({"id": 2}))
+
+    assert camera._language == "de"
+    assert camera._t("snapshot") == "Karten-Schnappschuss"
+    assert camera._t("nogo") == "Sperrzone"
+    labels = [label for _, label in camera._legend_entries(camera._build_scene())]
+    assert "Sperrzone" in labels
+    assert camera.extra_state_attributes["map_language"] == "de"
+    # the localized image still renders
+    assert _render(camera).startswith(PNG_MAGIC)
+
+
+def test_hud_localized_placeholder_chinese() -> None:
+    hub = _hub()
+    hub.hass.config.language = "zh-Hans"
+    camera = _camera(hub)
+    # no data yet -> localized placeholder text, must render
+    assert camera._t("waiting") == "正在等待地图数据…"
+    assert _render(camera).startswith(PNG_MAGIC)

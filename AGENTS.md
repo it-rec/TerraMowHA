@@ -55,6 +55,7 @@ Run the tests and ruff locally before pushing.
 ## Conventions
 
 - **Translations**: user-facing entity/config strings live in `custom_components/terramow/strings.json` and are mirrored in `custom_components/terramow/translations/*.json` (33 languages). When adding or renaming a translation key, update `strings.json` **and** every translation file — at minimum copy the English text so all files stay key-complete. The same applies to the localized READMEs in `docs/README_*.md` when changing user-facing docs.
+- **Map HUD strings**: text baked into the rendered map camera PNG cannot use the `strings.json` categories (hassfest rejects unknown categories). It lives in `custom_components/terramow/map_strings.py` as an in-code table selected by the HA UI language, with English as the complete fallback. Add new HUD labels there (English key required; other languages optional) and render them via the camera's `self._t(key)`.
 - **Manifest**: `custom_components/terramow/manifest.json` holds the integration version; releases bump it there. Keep `requirements` in sync with actual imports.
 - **Entities**: subclass `TerraMowEntity`, register state via the hub's data-point callbacks, and never poll. New entities need tests (see `tests/test_dp_entities.py` and `tests/test_platform_entities.py` for patterns).
 - **Typing**: code is fully typed; mypy is configured with `disallow_untyped_defs = true`.

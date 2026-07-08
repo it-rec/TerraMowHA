@@ -33,6 +33,7 @@ from .const import (
 )
 from .entity import TerraMowEntity
 from .entity_utils import safe_write_ha_state
+from .map_strings import hud_strings, resolve_language
 
 # Push-based integration: no update throttling needed
 PARALLEL_UPDATES = 0
@@ -984,6 +985,11 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         self._theme = theme if theme in PALETTES else DEFAULT_MAP_THEME
         self._palette = PALETTES[self._theme]
         self._show_coverage = show_coverage
+        # HUD label table for the Home Assistant UI language (English-filled).
+        config = getattr(hass, "config", None)
+        language = getattr(config, "language", None)
+        self._language = resolve_language(language)
+        self._hud = hud_strings(language)
         # Wall-clock label (HA timezone) of the last static-layer rebuild, shown
         # in the HUD so a stale image is recognisable.
         self._last_update_label: str | None = None
@@ -1035,6 +1041,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             rendered_layers.append("robot")
         attributes["rendered_layers"] = rendered_layers
         attributes["map_theme"] = self._theme
+        attributes["map_language"] = self._language
         attributes["coverage_enabled"] = self._show_coverage
         if self._last_update_label is not None:
             attributes["map_updated_at"] = self._last_update_label
@@ -1659,6 +1666,10 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         """Scale a 1x pixel dimension to the active scene canvas scale."""
         return max(1, int(round(value * self._scene_scale)))
 
+    def _t(self, key: str) -> str:
+        """Return the localized HUD label for a key (English-filled)."""
+        return self._hud.get(key, key)
+
     def _draw_background(self, image: Image.Image) -> None:
         """Draw the canvas background and cards."""
         pal = self._palette
@@ -1683,7 +1694,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         title_font = _load_font(28, bold=True)
         body_font = _load_font(18)
         title = self._map_data.get("name") or "TerraMow Map"
-        subtitle = "Map metadata received, but there are no spatial points to draw"
+        subtitle = self._t("empty_subtitle")
         title_box = draw.textbbox((0, 0), title, font=title_font)
         body_box = draw.textbbox((0, 0), subtitle, font=body_font)
         center_x = (self._map_rect[0] + self._map_rect[2]) / 2
@@ -2433,21 +2444,21 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         counts = scene.get("scene_counts", {})
         entries: list[tuple[tuple[int, int, int, int], str]] = []
         if scene.get("path_points"):
-            entries.append((pal.path_current, "Path"))
+            entries.append((pal.path_current, self._t("path")))
         if self._show_coverage and scene.get("path_points"):
-            entries.append((pal.coverage, "Coverage"))
+            entries.append((pal.coverage, self._t("coverage")))
         if counts.get("forbidden_zones", 0) or counts.get("physical_forbidden_zones", 0):
-            entries.append((pal.restricted_outline, "No-go"))
+            entries.append((pal.restricted_outline, self._t("nogo")))
         if counts.get("required_zones", 0):
-            entries.append((pal.required_outline, "Required"))
+            entries.append((pal.required_outline, self._t("required")))
         if counts.get("pass_through_zones", 0):
-            entries.append((pal.pass_through_outline, "Pass-through"))
+            entries.append((pal.pass_through_outline, self._t("pass_through")))
         if counts.get("cross_boundary_tunnels", 0) or counts.get(
             "virtual_cross_boundary_tunnels", 0
         ):
-            entries.append((pal.channel, "Tunnel"))
+            entries.append((pal.channel, self._t("tunnel")))
         if counts.get("obstacles", 0):
-            entries.append((pal.obstacle_outline, "Obstacle"))
+            entries.append((pal.obstacle_outline, self._t("obstacle")))
         return entries
 
     def _draw_legend(self, draw: ImageDraw.ImageDraw, scene: dict[str, Any]) -> None:
@@ -2543,22 +2554,22 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         if self._map_data.get("has_bird_view"):
             flags.append(f"Bird {self._map_data.get('bird_view_index', 0)}")
         if self._map_data.get("enable_advanced_edge_cutting"):
-            flags.append("Adv Edge")
-        flags.append("Locked" if self._map_data.get("is_boundary_locked") else "Unlocked")
-        flags.append("Build Map" if self._map_data.get("is_able_to_run_build_map") else "Build Off")
+            flags.append(self._t("flag_adv_edge"))
+        flags.append(self._t("flag_locked") if self._map_data.get("is_boundary_locked") else self._t("flag_unlocked"))
+        flags.append(self._t("flag_build_on") if self._map_data.get("is_able_to_run_build_map") else self._t("flag_build_off"))
 
         backup_info = self._map_data.get("backup_info_list", [])
-        backup_text = "Off"
+        backup_text = self._t("backup_off")
         if self._map_data.get("has_backup") or backup_info:
-            backup_text = f"{len(backup_info) if isinstance(backup_info, list) else 0} item"
+            backup_text = f"{len(backup_info) if isinstance(backup_info, list) else 0} {self._t('backup_item')}"
         metrics = [
-            ("Map", _truncate(f"#{self._map_data.get('id', '-')} · {self._map_data.get('name', '-')}", 22)),
-            ("Area", _format_area(self._map_data.get("total_area"))),
-            ("Mode", _truncate(_enum_label(self._map_data.get("clean_info", {}).get("mode")), 20)),
-            ("Size", _truncate(_format_size(self._map_data), 24)),
-            ("Origin", _format_point(_point_tuple(self._map_data.get("origin")))),
-            ("Backup", _truncate(f"{backup_text} · {_format_file_size(self._map_data.get('file_size'))}", 24)),
-            ("Flags", _truncate(" / ".join(flags), 24)),
+            (self._t("lbl_map"), _truncate(f"#{self._map_data.get('id', '-')} · {self._map_data.get('name', '-')}", 22)),
+            (self._t("lbl_area"), _format_area(self._map_data.get("total_area"))),
+            (self._t("lbl_mode"), _truncate(_enum_label(self._map_data.get("clean_info", {}).get("mode")), 20)),
+            (self._t("lbl_size"), _truncate(_format_size(self._map_data), 24)),
+            (self._t("lbl_origin"), _format_point(_point_tuple(self._map_data.get("origin")))),
+            (self._t("lbl_backup"), _truncate(f"{backup_text} · {_format_file_size(self._map_data.get('file_size'))}", 24)),
+            (self._t("lbl_flags"), _truncate(" / ".join(flags), 24)),
         ]
 
         for index, (label, value) in enumerate(metrics):
@@ -2573,9 +2584,9 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         chip_x = left + 22
         count_chips = [
             f"R {scene['scene_counts']['regions']}/{scene['scene_counts']['sub_regions']}",
-            f"No-go {scene['scene_counts']['forbidden_zones'] + scene['scene_counts']['physical_forbidden_zones']}",
-            f"Pass {scene['scene_counts']['pass_through_zones']}",
-            f"Tunnel {scene['scene_counts']['cross_boundary_tunnels'] + scene['scene_counts']['virtual_cross_boundary_tunnels']}",
+            f"{self._t('nogo')} {scene['scene_counts']['forbidden_zones'] + scene['scene_counts']['physical_forbidden_zones']}",
+            f"{self._t('pass_short')} {scene['scene_counts']['pass_through_zones']}",
+            f"{self._t('tunnel')} {scene['scene_counts']['cross_boundary_tunnels'] + scene['scene_counts']['virtual_cross_boundary_tunnels']}",
         ]
         for chip in count_chips:
             box = draw.textbbox((0, 0), chip, font=chip_font)
@@ -2590,13 +2601,13 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             draw.text((chip_x + 10, chip_y + 6), chip, fill=self._palette.text_subtle, font=chip_font)
             chip_x += chip_width + 10
 
-        title = "Map Snapshot"
+        title = self._t("snapshot")
         title_box = draw.textbbox((0, 0), title, font=title_font)
         title_x = right - 22 - (title_box[2] - title_box[0])
         draw.text((title_x, top + 18), title, fill=self._palette.text_subtle, font=title_font)
 
         if self._last_update_label:
-            stamp = f"Updated {self._last_update_label}"
+            stamp = f"{self._t('updated')} {self._last_update_label}"
             stamp_font = _load_font(13)
             stamp_box = draw.textbbox((0, 0), stamp, font=stamp_font)
             stamp_x = right - 22 - (stamp_box[2] - stamp_box[0])
@@ -2617,7 +2628,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         # transformer that doesn't match the copied static image.
         snapshot = self._render_snapshot
         if snapshot is None:
-            return _render_placeholder(palette=self._palette)
+            return _render_placeholder(self._t("waiting"), palette=self._palette)
         static_image, transformer = snapshot
 
         image = static_image.copy()

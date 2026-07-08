@@ -124,6 +124,12 @@ distance, a compact **color legend** for the feature types present, and an
 time) so a stale image is easy to spot. The timestamp is also exposed as the
 `map_updated_at` camera attribute.
 
+The HUD labels (legend, summary panel, chips, placeholder text) follow your
+**Home Assistant UI language** — German, French, Spanish, Italian, Dutch,
+Portuguese and Chinese (simplified/traditional) are translated, and any other
+language falls back to English. The resolved language is exposed as the
+`map_language` camera attribute.
+
 ### Interactive map cards
 
 The map camera publishes a `calibration_points` attribute (three
