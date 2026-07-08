@@ -6,7 +6,6 @@ import logging
 import threading
 from typing import TYPE_CHECKING, Any
 
-import paho.mqtt.client as mqtt_client
 import voluptuous as vol
 from homeassistant.config_entries import (
     ConfigEntry,
@@ -38,6 +37,7 @@ from .const import (
     MQTT_PORT,
     MQTT_USERNAME,
 )
+from .mqtt_compat import create_mqtt_client
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
                 auth_failed = True
             event.set()
 
-        client = mqtt_client.Client()
+        client = create_mqtt_client()
         client.username_pw_set(MQTT_USERNAME, data[CONF_PASSWORD])
         client.on_connect = on_connect
         try:

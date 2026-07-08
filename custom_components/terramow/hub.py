@@ -50,6 +50,7 @@ from .issues import (
     async_sync_blade_maintenance_issue,
     async_sync_compatibility_issue,
 )
+from .mqtt_compat import create_mqtt_client
 
 if TYPE_CHECKING:
     from . import TerraMowBasicData
@@ -318,9 +319,9 @@ class TerraMowHub:
     def start(self) -> None:
         """Start the MQTT client in a separate thread."""
         _LOGGER.info("Starting MQTT client, connecting to %s:%d", self.host, MQTT_PORT)
-        _LOGGER.debug("MQTT connection params: username=%s, password=%s", MQTT_USERNAME, self.password)
+        _LOGGER.debug("MQTT connection params: username=%s", MQTT_USERNAME)
 
-        self.mqtt_client = mqtt_client.Client()
+        self.mqtt_client = create_mqtt_client()
         self.mqtt_client.username_pw_set(MQTT_USERNAME, self.password)
         self.mqtt_client.on_connect = self.on_mqtt_connect
         self.mqtt_client.on_disconnect = self.on_mqtt_disconnect

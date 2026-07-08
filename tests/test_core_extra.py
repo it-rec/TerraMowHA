@@ -614,7 +614,7 @@ def test_validate_input_tolerates_disconnect_error() -> None:
     hass = MagicMock()
     hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *a: fn(*a))
 
-    with patch.object(cf.mqtt_client, "Client", return_value=fake):
+    with patch.object(cf, "create_mqtt_client", return_value=fake):
         result = asyncio.run(
             cf.validate_input(hass, {CONF_HOST: "192.0.2.1", CONF_PASSWORD: "p"})
         )
