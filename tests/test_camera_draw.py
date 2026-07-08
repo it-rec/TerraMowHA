@@ -465,14 +465,14 @@ def test_robot_icon_rebuilds_on_scale_change() -> None:
     asyncio.run(camera._on_map_info({"id": 1}))
     asyncio.run(camera._on_pose({"x": 1.5, "y": 1.5, "yaw": 0.0}))
     _render(camera)
-    icon_a = camera._robot_icon
+    icon_a = camera._renderer._robot_icon
     assert icon_a is not None
     # a much larger map -> smaller robot-to-canvas ratio, icon is rebuilt
     big_map = dict(MEGA_MAP, width=4000, height=4000)
     hub._map_data = big_map
     asyncio.run(camera._on_map_info({"id": 1}))
     _render(camera)
-    assert camera._robot_icon is not None
+    assert camera._renderer._robot_icon is not None
 
 
 # ---------------------------------------------------------------------------
@@ -495,7 +495,7 @@ def test_scale_bar_choice_picks_round_distance() -> None:
     hub = _hub()
     camera = _camera(hub)
     # 0.1 px/mm -> 5000 mm bar spans 500 px (too wide), 2000 mm spans 200 px (fits)
-    choice = camera._scale_bar_choice(0.1)
+    choice = camera._renderer._scale_bar_choice(0.1)
     assert choice is not None
     length_mm, length_px = choice
     assert length_mm == 2000
@@ -506,11 +506,11 @@ def test_scale_bar_suppressed_on_extreme_zoom() -> None:
     hub = _hub()
     camera = _camera(hub)
     # even the smallest 100 mm step would be far wider than the target
-    assert camera._scale_bar_choice(100.0) is None
+    assert camera._renderer._scale_bar_choice(100.0) is None
     # a degenerate transformer scale yields no bar
-    assert camera._scale_bar_choice(0.0) is None
+    assert camera._renderer._scale_bar_choice(0.0) is None
     # extremely zoomed out: every step fits but the bar collapses below 12 px
-    assert camera._scale_bar_choice(0.0001) is None
+    assert camera._renderer._scale_bar_choice(0.0001) is None
 
 
 def test_map_updated_at_absent_before_first_render() -> None:
@@ -531,7 +531,7 @@ def test_legend_lists_present_feature_types() -> None:
     hub._map_data = MEGA_MAP
     asyncio.run(camera._on_map_info({"id": 1}))
     scene = camera._build_scene()
-    labels = [label for _, label in camera._legend_entries(scene)]
+    labels = [label for _, label in camera._renderer._legend_entries(scene)]
     # the mega map carries no-go, required, pass-through, tunnel and obstacles
     assert "No-go" in labels
     assert "Required" in labels
@@ -550,7 +550,7 @@ def test_legend_empty_without_features() -> None:
         "origin": {"x": 0.0, "y": 0.0},
     }
     scene = camera._build_scene()
-    assert camera._legend_entries(scene) == []
+    assert camera._renderer._legend_entries(scene) == []
 
 
 # ---------------------------------------------------------------------------
@@ -601,9 +601,9 @@ def test_realistic_map_draws_scale_bar_and_legend() -> None:
     assert _render(camera).startswith(PNG_MAGIC)
 
     # the transformer scale is realistic -> a scale bar is chosen and drawn
-    assert camera._transformer is not None
-    assert camera._scale_bar_choice(camera._transformer.scale) is not None
-    labels = [label for _, label in camera._legend_entries(camera._build_scene())]
+    assert camera._renderer._transformer is not None
+    assert camera._renderer._scale_bar_choice(camera._renderer._transformer.scale) is not None
+    labels = [label for _, label in camera._renderer._legend_entries(camera._build_scene())]
     assert "Path" in labels
     assert "Coverage" in labels
 
@@ -613,10 +613,10 @@ def test_scale_bar_noop_without_transformer() -> None:
 
     hub = _hub()
     camera = _camera(hub)
-    camera._transformer = None
+    camera._renderer._transformer = None
     draw = ImageDraw.Draw(Image.new("RGBA", (100, 100)))
     # no transformer -> early return, no crash
-    camera._draw_scale_bar(draw)
+    camera._renderer._draw_scale_bar(draw)
 
 
 # ---------------------------------------------------------------------------
@@ -643,7 +643,7 @@ def test_hud_localized_for_german() -> None:
     assert camera._language == "de"
     assert camera._t("snapshot") == "Karten-Schnappschuss"
     assert camera._t("nogo") == "Sperrzone"
-    labels = [label for _, label in camera._legend_entries(camera._build_scene())]
+    labels = [label for _, label in camera._renderer._legend_entries(camera._build_scene())]
     assert "Sperrzone" in labels
     assert camera.extra_state_attributes["map_language"] == "de"
     # the localized image still renders
@@ -665,7 +665,7 @@ def test_hud_localized_placeholder_chinese() -> None:
 
 
 def test_map_geometry_fits_below_chip_header() -> None:
-    from custom_components.terramow.camera import MAP_HEADER, MAP_RECT
+    from custom_components.terramow.map_render import MAP_HEADER, MAP_RECT
 
     hub = _hub()
     camera = _camera(hub)
@@ -673,8 +673,8 @@ def test_map_geometry_fits_below_chip_header() -> None:
     asyncio.run(camera._on_map_info({"id": 1}))
     _render(camera)
     # the map is fit into a rect that starts below the name/state chip band
-    assert camera._transformer is not None
-    assert camera._transformer.top == MAP_RECT[1] + MAP_HEADER
+    assert camera._renderer._transformer is not None
+    assert camera._renderer._transformer.top == MAP_RECT[1] + MAP_HEADER
 
 
 def test_origin_crosshair_removed() -> None:

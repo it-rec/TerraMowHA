@@ -19,10 +19,12 @@ from custom_components.terramow import TerraMowBasicData  # noqa: E402
 from custom_components.terramow.camera import (  # noqa: E402
     BATTERY_STATUS_DP,
     TerraMowMapCamera,
-    _load_font,
-    _render_placeholder,
 )
 from custom_components.terramow.hub import TerraMowHub  # noqa: E402
+from custom_components.terramow.map_render import (  # noqa: E402
+    _load_font,
+    render_placeholder,
+)
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
@@ -250,7 +252,7 @@ def test_stale_render_does_not_repopulate_cache() -> None:
     def _invalidate(*_args) -> None:
         camera._invalidate_png_cache()
 
-    with patch.object(camera, "_draw_robot", side_effect=_invalidate):
+    with patch.object(camera._renderer, "_draw_robot", side_effect=_invalidate):
         stale = camera._render_final_image()
     assert stale.startswith(PNG_MAGIC)
     assert camera._cached_png is None
@@ -266,11 +268,11 @@ def test_stale_render_does_not_repopulate_cache() -> None:
 
 
 def test_placeholder_png_is_cached_per_text_and_palette() -> None:
-    first = _render_placeholder("Cache me")
+    first = render_placeholder("Cache me")
     assert first.startswith(PNG_MAGIC)
     # repeated waiting-for-data polls reuse the encoded PNG object
-    assert _render_placeholder("Cache me") is first
-    assert _render_placeholder("Different text") is not first
+    assert render_placeholder("Cache me") is first
+    assert render_placeholder("Different text") is not first
 
 
 # ---------------------------------------------------------------------------
@@ -285,7 +287,7 @@ def test_composite_polygon_fill_matches_full_canvas_overlay() -> None:
     fill = (255, 0, 0, 60)
 
     cropped = Image.new("RGBA", (64, 64), (10, 20, 30, 255))
-    camera._composite_polygon_fill(cropped, pixels, fill)
+    camera._renderer._composite_polygon_fill(cropped, pixels, fill)
 
     # reference: the old full-canvas overlay compositing
     reference = Image.new("RGBA", (64, 64), (10, 20, 30, 255))
@@ -304,7 +306,7 @@ def test_apply_hatch_matches_full_canvas_overlay() -> None:
     spacing = 7
 
     cropped = Image.new("RGBA", (64, 64), (10, 20, 30, 255))
-    camera._apply_hatch(cropped, pixels, color, spacing=spacing)
+    camera._renderer._apply_hatch(cropped, pixels, color, spacing=spacing)
 
     # reference: the old full-canvas mask/overlay hatch
     reference = Image.new("RGBA", (64, 64), (10, 20, 30, 255))
@@ -341,13 +343,13 @@ def test_composite_helpers_skip_off_canvas_and_empty_shapes() -> None:
     before = image.tobytes()
 
     # a shape entirely off the canvas yields no overlay box
-    assert camera._overlay_bbox(image, [(-20, -20), (-5, -5)], 1) is None
-    camera._composite_polygon_fill(
+    assert camera._renderer._overlay_bbox(image, [(-20, -20), (-5, -5)], 1) is None
+    camera._renderer._composite_polygon_fill(
         image, [(-20, -20), (-5, -20), (-5, -5)], (255, 0, 0, 128)
     )
-    camera._apply_hatch(image, [(-20, -20), (-5, -20), (-5, -5)], (255, 0, 0, 128))
+    camera._renderer._apply_hatch(image, [(-20, -20), (-5, -20), (-5, -5)], (255, 0, 0, 128))
     # an empty point list is a no-op
-    camera._composite_draw(image, [], lambda draw, shifted: None)
+    camera._renderer._composite_draw(image, [], lambda draw, shifted: None)
 
     assert image.tobytes() == before
 
@@ -363,7 +365,7 @@ def test_chip_width_matches_textbbox_measurement() -> None:
     text = "Map #1 · Garten"
     draw = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
     box = draw.textbbox((0, 0), text, font=_load_font(15, bold=True))
-    assert camera._chip_width(text) == int(box[2] - box[0] + 24)
+    assert camera._renderer._chip_width(text) == int(box[2] - box[0] + 24)
 
 
 # ---------------------------------------------------------------------------

@@ -166,12 +166,14 @@ from unittest.mock import patch  # noqa: E402
 
 from PIL import Image, ImageDraw, ImageFont  # noqa: E402
 
-from custom_components.terramow.camera import (  # noqa: E402
-    _collect_recursive_points,
+from custom_components.terramow.map_render import (  # noqa: E402
     _enum_label,
-    _extract_marker_points,
     _load_font,
-    _simplify_path_pixels,
+)
+from custom_components.terramow.map_scene import (  # noqa: E402
+    _collect_recursive_points,
+    _extract_marker_points,
+    simplify_path_pixels,
 )
 
 
@@ -205,7 +207,7 @@ def test_load_font_falls_back_to_default() -> None:
         return real_truetype(font, *args, **kwargs)
 
     with patch(
-        "custom_components.terramow.camera.ImageFont.truetype",
+        "custom_components.terramow.map_render.ImageFont.truetype",
         side_effect=_reject_paths,
     ):
         font = _load_font(997, bold=True)
@@ -227,7 +229,7 @@ def test_extract_marker_points_centroid_none() -> None:
     # Defensive branch: a featureful item whose centroid resolves to None is
     # dropped (forced via patch since a non-empty point list always has one).
     with patch(
-        "custom_components.terramow.camera._polygon_centroid", return_value=None
+        "custom_components.terramow.map_scene._polygon_centroid", return_value=None
     ):
         assert _extract_marker_points([_poly((0, 0), (2, 0), (2, 2))]) == []
 
@@ -235,7 +237,7 @@ def test_extract_marker_points_centroid_none() -> None:
 def test_simplify_path_pixels_close_middle_and_equal_endpoint() -> None:
     # A near-degenerate closed loop: the single middle point is within the
     # min-segment gap (skipped) and the endpoint equals the kept start point.
-    assert _simplify_path_pixels([(0, 0), (1, 0), (0, 0)], 0.5, 5.0) == [(0, 0)]
+    assert simplify_path_pixels([(0, 0), (1, 0), (0, 0)], 0.5, 5.0) == [(0, 0)]
 
 
 def test_enum_label_without_known_prefix() -> None:
@@ -278,7 +280,7 @@ def test_dock_fallback_without_station_theta() -> None:
     camera._pose = {"x": 0.0, "y": 0.0, "yaw": 0.0}
     # Defensive branch: station angle resolving to None leaves robot yaw unset.
     with patch(
-        "custom_components.terramow.camera._coerce_angle_radians", return_value=None
+        "custom_components.terramow.camera.coerce_angle_radians", return_value=None
     ):
         state = camera._get_display_robot_state()
     assert state["source"] == "dock_fallback"
@@ -547,12 +549,12 @@ def test_render_reuses_robot_image_on_second_pass() -> None:
     asyncio.run(camera._on_map_info({"id": 1}))
     asyncio.run(camera._on_pose({"x": 1.5, "y": 1.5, "yaw": 0.5}))
     assert _render(camera).startswith(PNG_MAGIC)
-    icon = camera._robot_icon
+    icon = camera._renderer._robot_icon
     assert icon is not None
     # invalidate only the PNG cache; the cached robot sprite must be reused
     camera._cached_png = None
     assert _render(camera).startswith(PNG_MAGIC)
-    assert camera._robot_icon is icon
+    assert camera._renderer._robot_icon is icon
 
 
 # ---------------------------------------------------------------------------
@@ -567,30 +569,30 @@ def test_draw_helpers_degenerate_inputs() -> None:
 
     # transformer is None -> _draw_scene / _draw_station return immediately
     scene = camera._build_scene()
-    camera._draw_scene(image, scene)
-    camera._draw_station(image, {"x": 0.0, "y": 0.0, "theta": 0})
+    camera._renderer._draw_scene(image, scene)
+    camera._renderer._draw_station(image, {"x": 0.0, "y": 0.0, "theta": 0})
 
     # polygon helpers with too-few points or a fully transparent fill
-    camera._draw_polygon_pixels(
+    camera._renderer._draw_polygon_pixels(
         image, draw, [(0, 0), (1, 1)], (0, 0, 0, 255), (0, 0, 0, 255), 1
     )
-    camera._draw_polygon_pixels(
+    camera._renderer._draw_polygon_pixels(
         image, draw, [(0, 0), (10, 0), (10, 10)], (0, 0, 0, 0), (0, 0, 0, 255), 1
     )
-    camera._draw_polygon(image, draw, None, [(0, 0), (1, 1)], (0, 0, 0, 0), (0, 0, 0, 255), 1)
+    camera._renderer._draw_polygon(image, draw, None, [(0, 0), (1, 1)], (0, 0, 0, 0), (0, 0, 0, 255), 1)
 
     # polyline / dashed / hatch degenerate paths
-    camera._draw_polyline(draw, None, [(0.0, 0.0)], (0, 0, 0, 255), 1)
-    camera._draw_dashed_polyline(draw, [(0, 0)], (0, 0, 0, 255), 1, 4, 4)
-    camera._draw_dashed_polyline(draw, [(5, 5), (5, 5), (20, 5)], (0, 0, 0, 255), 1, 4, 4)
-    camera._apply_hatch(image, [(0, 0), (10, 0)], (0, 0, 0, 255))
+    camera._renderer._draw_polyline(draw, None, [(0.0, 0.0)], (0, 0, 0, 255), 1)
+    camera._renderer._draw_dashed_polyline(draw, [(0, 0)], (0, 0, 0, 255), 1, 4, 4)
+    camera._renderer._draw_dashed_polyline(draw, [(5, 5), (5, 5), (20, 5)], (0, 0, 0, 255), 1, 4, 4)
+    camera._renderer._apply_hatch(image, [(0, 0), (10, 0)], (0, 0, 0, 255))
 
     # marker with an unknown kind -> the fallback dot
-    camera._draw_marker(draw, (40, 40), (0, 0, 0, 255), "circle")
+    camera._renderer._draw_marker(draw, (40, 40), (0, 0, 0, 255), "circle")
 
     # path stroke: too-few points, then the dashed variant
-    camera._draw_path_stroke(draw, [(0, 0)], (0, 0, 0, 255), 4, (0, 0, 0, 128), 8)
-    camera._draw_path_stroke(
+    camera._renderer._draw_path_stroke(draw, [(0, 0)], (0, 0, 0, 255), 4, (0, 0, 0, 128), 8)
+    camera._renderer._draw_path_stroke(
         draw, [(0, 0), (30, 30)], (0, 0, 0, 255), 4, (0, 0, 0, 128), 8, dash=6, gap=4
     )
     assert image.mode == "RGBA"
@@ -601,16 +603,16 @@ def test_draw_helpers_requiring_transformer() -> None:
     camera = _camera(hub)
     hub._map_data = MAP_DRAW
     asyncio.run(camera._on_map_info({"id": 1}))
-    _render(camera)  # establishes camera._transformer
+    _render(camera)  # establishes camera._renderer._transformer
     image, draw = _draw_ctx()
 
     # three coincident points collapse to a single pixel after simplify, so the
     # path layer bails out on the post-simplify length guard
     coincident = [{"x": 1.0, "y": 1.0}, {"x": 1.0, "y": 1.0}, {"x": 1.0, "y": 1.0}]
-    camera._draw_path_layer(image, coincident, "current")
+    camera._renderer._draw_path_layer(image, coincident, "current")
     # a station pose that carries no theta -> yaw defaults to zero
-    camera._draw_station(image, {"x": 1.0, "y": 1.0})
-    assert camera._transformer is not None
+    camera._renderer._draw_station(image, {"x": 1.0, "y": 1.0})
+    assert camera._renderer._transformer is not None
 
 
 def test_draw_summary_panel_breaks_on_overflowing_chips() -> None:
@@ -631,5 +633,7 @@ def test_draw_summary_panel_breaks_on_overflowing_chips() -> None:
             "virtual_cross_boundary_tunnels": huge,
         }
     }
-    camera._draw_summary_panel(image, scene)
+    camera._renderer._draw_summary_panel(
+        image, scene, camera._map_data, camera._last_update_label
+    )
     assert image.mode == "RGBA"
