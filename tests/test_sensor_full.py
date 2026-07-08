@@ -15,50 +15,34 @@ from unittest.mock import MagicMock
 from custom_components.terramow import DOMAIN, TerraMowBasicData
 from custom_components.terramow.hub import TerraMowHub
 from custom_components.terramow.sensor import (
-    BackToStationReasonSensor,
-    BatteryStateSensor,
-    BatteryTemperatureStateSensor,
-    CurrentJobTypeSensor,
-    CurrentSessionAreaSensor,
-    CurrentSessionProgressSensor,
-    CurrentSessionTimeSensor,
-    MainDirectionStatusSensor,
-    NextScheduledStartSensor,
-    PowerModeSensor,
-    RemainingBaseStationTimeSensor,
-    RemainingBladeTimeSensor,
-    TerraMowMissionSensor,
-    TerraMowMissionStateSensor,
-    TerraMowMowHeightSensor,
+    SENSORS,
     TerraMowMowSpeedSensor,
     TerraMowPoseSensor,
-    TerraMowSubMissionSensor,
-    TotalMowedAreaSensor,
-    TotalMowingJobsSensor,
-    TotalMowingTimeSensor,
+    TerraMowSensor,
     VersionCompatibilitySensor,
     async_setup_entry,
 )
 
+_DESCRIPTIONS = {description.key: description for description in SENSORS}
+
 # sensors that expose native_value None both when the hub is missing and when
 # the backing dp payload has not arrived yet
-_NONE_SENSORS = (
-    BatteryStateSensor,
-    BatteryTemperatureStateSensor,
-    TotalMowingTimeSensor,
-    TotalMowingJobsSensor,
-    TotalMowedAreaSensor,
-    CurrentSessionAreaSensor,
-    CurrentSessionProgressSensor,
-    CurrentSessionTimeSensor,
-    CurrentJobTypeSensor,
-    TerraMowMowHeightSensor,
-    TerraMowMowSpeedSensor,
-    RemainingBladeTimeSensor,
-    RemainingBaseStationTimeSensor,
-    NextScheduledStartSensor,
-    PowerModeSensor,
-    BackToStationReasonSensor,
+_NONE_SENSOR_KEYS = (
+    "battery_state",
+    "battery_temperature_state",
+    "total_mowing_time",
+    "total_mowing_jobs",
+    "total_mowed_area",
+    "current_session_area",
+    "current_session_progress",
+    "current_session_time",
+    "current_job_type",
+    "mow_height",
+    "remaining_blade_time",
+    "remaining_base_station_time",
+    "next_scheduled_start",
+    "power_mode",
+    "back_to_station_reason",
 )
 
 
@@ -69,6 +53,10 @@ def _hub() -> TerraMowHub:
     hub.mqtt_client.is_connected.return_value = True
     hub.mqtt_client.publish.return_value.rc = 0
     return hub
+
+
+def _sensor(hub: TerraMowHub, key: str) -> TerraMowSensor:
+    return TerraMowSensor(hub.basic_data, hub.hass, _DESCRIPTIONS[key])
 
 
 def _feed(handler, payload: dict) -> None:
@@ -98,20 +86,19 @@ def test_async_setup_entry_creates_all_sensors() -> None:
 def test_sensors_return_none_without_lawn_mower() -> None:
     hub = _hub()
     hub.basic_data.lawn_mower = None
-    for cls in (
-        TerraMowMowSpeedSensor,
-        NextScheduledStartSensor,
-        RemainingBladeTimeSensor,
-        RemainingBaseStationTimeSensor,
-        BackToStationReasonSensor,
-        TerraMowMissionSensor,
-        TerraMowSubMissionSensor,
-        TerraMowMissionStateSensor,
+    assert TerraMowMowSpeedSensor(hub.basic_data, hub.hass).native_value is None
+    for key in (
+        "next_scheduled_start",
+        "remaining_blade_time",
+        "remaining_base_station_time",
+        "back_to_station_reason",
+        "mission",
+        "sub_mission",
+        "mission_state",
     ):
-        sensor = cls(hub.basic_data, hub.hass)
-        assert sensor.native_value is None
+        assert _sensor(hub, key).native_value is None
     # the main-direction status sensor reports a sentinel instead of None
-    assert MainDirectionStatusSensor(hub.basic_data, hub.hass).native_value is None
+    assert _sensor(hub, "main_direction_status").native_value is None
 
 
 # ---------------------------------------------------------------------------
@@ -122,20 +109,28 @@ def test_sensors_return_none_without_lawn_mower() -> None:
 def test_all_sensors_none_without_lawn_mower() -> None:
     hub = _hub()
     hub.basic_data.lawn_mower = None
-    for cls in _NONE_SENSORS:
-        assert cls(hub.basic_data, hub.hass).native_value is None
+    for key in _NONE_SENSOR_KEYS:
+        assert _sensor(hub, key).native_value is None
+    assert TerraMowMowSpeedSensor(hub.basic_data, hub.hass).native_value is None
 
 
 def test_all_sensors_none_before_dp_payloads() -> None:
     # hub present but no dp_108/113/124/125/126/138/155/107 payloads yet
     hub = _hub()
-    for cls in _NONE_SENSORS:
-        assert cls(hub.basic_data, hub.hass).native_value is None
+    for key in _NONE_SENSOR_KEYS:
+        assert _sensor(hub, key).native_value is None
+    assert TerraMowMowSpeedSensor(hub.basic_data, hub.hass).native_value is None
+
+
+def test_sensors_without_attributes_fn_report_no_attributes() -> None:
+    hub = _hub()
+    # descriptions without an attributes_fn fall back to the entity default
+    assert _sensor(hub, "total_mowing_time").extra_state_attributes is None
 
 
 def test_next_scheduled_start_formats_time_and_attributes() -> None:
     hub = _hub()
-    sensor = NextScheduledStartSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "next_scheduled_start")
     _feed(hub.on_schedule_data, {
         "exist": True,
         "item_id": 3,
@@ -151,7 +146,7 @@ def test_next_scheduled_start_formats_time_and_attributes() -> None:
 
 def test_next_scheduled_start_none_when_no_schedule() -> None:
     hub = _hub()
-    sensor = NextScheduledStartSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "next_scheduled_start")
     _feed(hub.on_schedule_data, {"exist": False})
     assert sensor.native_value is None
     assert sensor.extra_state_attributes["has_schedule"] is False
@@ -193,15 +188,17 @@ def test_mow_speed_sensor_none_when_empty() -> None:
 
 def test_remaining_time_sensors_expose_attributes() -> None:
     hub = _hub()
-    blade = RemainingBladeTimeSensor(hub.basic_data, hub.hass)
-    base = RemainingBaseStationTimeSensor(hub.basic_data, hub.hass)
+    blade = _sensor(hub, "remaining_blade_time")
+    base = _sensor(hub, "remaining_base_station_time")
     _feed(hub.on_blade_time, {"int_value": 15000})   # past the 14400 cycle
     _feed(hub.on_base_station_time, {"int_value": 100})
     assert blade.native_value == 0  # clamped
     blade_attrs = blade.extra_state_attributes
     assert blade_attrs["used_time"] == 15000
+    assert blade_attrs["recommended_cycle_hours"] == 240
     assert blade_attrs["needs_maintenance"] is True
     base_attrs = base.extra_state_attributes
+    assert base_attrs["recommended_cycle_days"] == 30
     assert base_attrs["needs_maintenance"] is False
 
 
@@ -248,7 +245,7 @@ def test_version_compatibility_attributes_include_firmware() -> None:
 
 def test_main_direction_status_no_config_and_modes() -> None:
     hub = _hub()
-    sensor = MainDirectionStatusSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "main_direction_status")
     _feed(hub.on_global_params, {})  # empty -> unknown
     assert sensor.native_value is None
 
@@ -274,7 +271,7 @@ def test_main_direction_status_no_config_and_modes() -> None:
 
 def test_main_direction_status_single_and_auto_modes() -> None:
     hub = _hub()
-    sensor = MainDirectionStatusSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "main_direction_status")
 
     _feed(hub.on_global_params, {
         "main_direction_angle_config": {
@@ -299,7 +296,7 @@ def test_main_direction_status_single_and_auto_modes() -> None:
 
 def test_mission_enum_sensor_handle_dp107_writes_state() -> None:
     hub = _hub()
-    sensor = TerraMowMissionSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "mission")
     sensor.hass = hub.hass
     sensor.entity_id = "sensor.mission"
     # the dp_107 callback just schedules a state write; must not raise
@@ -308,9 +305,9 @@ def test_mission_enum_sensor_handle_dp107_writes_state() -> None:
 
 def test_mission_enum_sensors_from_dp107() -> None:
     hub = _hub()
-    mission = TerraMowMissionSensor(hub.basic_data, hub.hass)
-    sub = TerraMowSubMissionSensor(hub.basic_data, hub.hass)
-    state = TerraMowMissionStateSensor(hub.basic_data, hub.hass)
+    mission = _sensor(hub, "mission")
+    sub = _sensor(hub, "sub_mission")
+    state = _sensor(hub, "mission_state")
     _feed(hub.on_mission_status, {
         "mission": "MISSION_GLOBAL_CLEAN",
         "sub_mission": "SUB_MISSION_FLEXIBLE_STATION_WAIT",
@@ -323,7 +320,7 @@ def test_mission_enum_sensors_from_dp107() -> None:
 
 def test_mission_sensor_none_when_member_unset() -> None:
     hub = _hub()
-    mission = TerraMowMissionSensor(hub.basic_data, hub.hass)
+    mission = _sensor(hub, "mission")
     # an unset mission member reports None
     hub.mission = None
     assert mission.native_value is None
@@ -331,6 +328,6 @@ def test_mission_sensor_none_when_member_unset() -> None:
 
 def test_back_to_station_reason_unknown_value_is_none() -> None:
     hub = _hub()
-    sensor = BackToStationReasonSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "back_to_station_reason")
     _feed(hub.on_mission_status, {"back_to_station_reason": "BACK_TO_STATION_REASON_ALIEN"})
     assert sensor.native_value is None

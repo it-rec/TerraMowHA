@@ -18,9 +18,8 @@ from homeassistant.components.lawn_mower.const import LawnMowerEntityFeature
 import custom_components.terramow.lawn_mower as lawn_mower_module
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.binary_sensor import (
-    TerraMowMapBackingUpBinarySensor,
-    TerraMowMapDetectedBinarySensor,
-    TerraMowSavingDataBinarySensor,
+    BINARY_SENSORS,
+    TerraMowBinarySensor,
 )
 from custom_components.terramow.const import COMPATIBILITY_INFO_DP
 from custom_components.terramow.hub import TerraMowHub
@@ -32,6 +31,14 @@ from custom_components.terramow.map_sensor import (
 )
 from custom_components.terramow.switch import ThoroughCornerCuttingSwitch
 from custom_components.terramow.update import TerraMowFirmwareUpdate
+
+_BINARY_DESCRIPTIONS = {
+    description.key: description for description in BINARY_SENSORS
+}
+
+
+def _binary(hub: TerraMowHub, key: str) -> TerraMowBinarySensor:
+    return TerraMowBinarySensor(hub.basic_data, hub.hass, _BINARY_DESCRIPTIONS[key])
 
 
 def _hub() -> TerraMowHub:
@@ -262,7 +269,7 @@ def test_map_binary_sensor_registers_dp117_callback() -> None:
     hub = _hub()
     mock_lm = MagicMock()
     hub.basic_data.lawn_mower = mock_lm
-    sensor = TerraMowMapDetectedBinarySensor(hub.basic_data, hub.hass)
+    sensor = _binary(hub, "map_detected")
     asyncio.run(sensor.async_added_to_hass())
     mock_lm.register_callback.assert_called_once_with(117, sensor._handle_push_update)
     # the unsubscribe returned by the hub is wired up for teardown
@@ -272,14 +279,14 @@ def test_map_binary_sensor_registers_dp117_callback() -> None:
 def test_map_binary_sensor_added_without_lawn_mower_is_noop() -> None:
     hub = _hub()
     hub.basic_data.lawn_mower = None
-    sensor = TerraMowMapDetectedBinarySensor(hub.basic_data, hub.hass)
+    sensor = _binary(hub, "map_detected")
     asyncio.run(sensor.async_added_to_hass())  # must not raise
     assert sensor.is_on is None
 
 
 def test_map_binary_sensor_dp117_handler_writes_state() -> None:
     hub = _hub()
-    sensor = TerraMowMapBackingUpBinarySensor(hub.basic_data, hub.hass)
+    sensor = _binary(hub, "map_backing_up")
     sensor.entity_id = "binary_sensor.map_backing_up"
     sensor.async_write_ha_state = MagicMock()
     asyncio.run(sensor._handle_push_update(""))
@@ -290,7 +297,7 @@ def test_task_binary_sensor_registers_dp107_callback() -> None:
     hub = _hub()
     mock_lm = MagicMock()
     hub.basic_data.lawn_mower = mock_lm
-    sensor = TerraMowSavingDataBinarySensor(hub.basic_data, hub.hass)
+    sensor = _binary(hub, "saving_data")
     asyncio.run(sensor.async_added_to_hass())
     mock_lm.register_callback.assert_called_once_with(107, sensor._handle_push_update)
     # the unsubscribe returned by the hub is wired up for teardown
@@ -300,14 +307,14 @@ def test_task_binary_sensor_registers_dp107_callback() -> None:
 def test_task_binary_sensor_added_without_lawn_mower_is_noop() -> None:
     hub = _hub()
     hub.basic_data.lawn_mower = None
-    sensor = TerraMowSavingDataBinarySensor(hub.basic_data, hub.hass)
+    sensor = _binary(hub, "saving_data")
     asyncio.run(sensor.async_added_to_hass())  # must not raise
     assert sensor.is_on is None
 
 
 def test_task_binary_sensor_dp107_handler_writes_state() -> None:
     hub = _hub()
-    sensor = TerraMowSavingDataBinarySensor(hub.basic_data, hub.hass)
+    sensor = _binary(hub, "saving_data")
     sensor.entity_id = "binary_sensor.saving_data"
     sensor.async_write_ha_state = MagicMock()
     asyncio.run(sensor._handle_push_update(""))
@@ -317,5 +324,5 @@ def test_task_binary_sensor_dp107_handler_writes_state() -> None:
 def test_task_binary_sensor_none_when_task_status_empty() -> None:
     hub = _hub()
     # lawn_mower present but no dp_107 payload -> empty task_status -> None
-    sensor = TerraMowSavingDataBinarySensor(hub.basic_data, hub.hass)
+    sensor = _binary(hub, "saving_data")
     assert sensor.is_on is None

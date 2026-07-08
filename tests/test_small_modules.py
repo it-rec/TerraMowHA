@@ -15,15 +15,8 @@ from homeassistant.const import CONF_HOST, CONF_PASSWORD
 
 from custom_components.terramow import DOMAIN, TerraMowBasicData
 from custom_components.terramow.binary_sensor import (
-    FirmwareUpgradingSensor,
-    NavigationLocatedSensor,
-    PowerSwitchSensor,
-    TerraMowChargingSensor,
-    TerraMowMapBuildableBinarySensor,
-    TerraMowMapDetectedBinarySensor,
-    TerraMowProblemSensor,
-    TerraMowRainSensor,
-    TerraMowSavingDataBinarySensor,
+    BINARY_SENSORS,
+    TerraMowBinarySensor,
     async_setup_entry as binary_setup,
 )
 from custom_components.terramow.switch import ThoroughCornerCuttingSwitch
@@ -48,6 +41,14 @@ from custom_components.terramow.update import (
     TerraMowFirmwareUpdate,
     async_setup_entry as update_setup,
 )
+
+_BINARY_DESCRIPTIONS = {
+    description.key: description for description in BINARY_SENSORS
+}
+
+
+def _binary(hub: TerraMowHub, key: str) -> TerraMowBinarySensor:
+    return TerraMowBinarySensor(hub.basic_data, hub.hass, _BINARY_DESCRIPTIONS[key])
 
 
 def _hub() -> TerraMowHub:
@@ -237,8 +238,8 @@ def test_lawn_mower_commands_delegate_to_hub() -> None:
 
 def test_map_and_task_binary_sensors() -> None:
     hub = _hub()
-    detected = TerraMowMapDetectedBinarySensor(hub.basic_data, hub.hass)
-    saving = TerraMowSavingDataBinarySensor(hub.basic_data, hub.hass)
+    detected = _binary(hub, "map_detected")
+    saving = _binary(hub, "saving_data")
     assert detected.is_on is None  # no map_status yet
 
     _feed(hub.on_map_status, {"is_map_detected": True})
@@ -250,7 +251,7 @@ def test_map_and_task_binary_sensors() -> None:
 
 def test_push_update_mixin_handlers() -> None:
     hub = _hub()
-    sensor = TerraMowChargingSensor(hub.basic_data, hub.hass)
+    sensor = _binary(hub, "charging_state")
     sensor.entity_id = "binary_sensor.charging"
     sensor.async_write_ha_state = MagicMock()
     asyncio.run(sensor._handle_push_update(""))
@@ -260,49 +261,49 @@ def test_push_update_mixin_handlers() -> None:
 
 def test_binary_sensors_none_without_data() -> None:
     hub = _hub()
-    for cls in (
-        TerraMowChargingSensor,
-        NavigationLocatedSensor,
-        FirmwareUpgradingSensor,
-        PowerSwitchSensor,
-        TerraMowMapBuildableBinarySensor,
+    for key in (
+        "charging_state",
+        "navigation_located",
+        "firmware_upgrading",
+        "power_switch",
+        "map_buildable",
     ):
-        assert cls(hub.basic_data, hub.hass).is_on is None
+        assert _binary(hub, key).is_on is None
     # problem/rain default to a concrete False rather than None
-    assert TerraMowProblemSensor(hub.basic_data, hub.hass).is_on is False
-    assert TerraMowRainSensor(hub.basic_data, hub.hass).is_on is False
+    assert _binary(hub, "problem").is_on is False
+    assert _binary(hub, "rain_detected").is_on is False
 
 
 def test_binary_sensors_none_without_lawn_mower() -> None:
     hub = _hub()
     hub.basic_data.lawn_mower = None
-    for cls in (
-        TerraMowChargingSensor,
-        NavigationLocatedSensor,
-        FirmwareUpgradingSensor,
-        PowerSwitchSensor,
-        TerraMowProblemSensor,
-        TerraMowRainSensor,
-        TerraMowMapDetectedBinarySensor,
-        TerraMowSavingDataBinarySensor,
+    for key in (
+        "charging_state",
+        "navigation_located",
+        "firmware_upgrading",
+        "power_switch",
+        "problem",
+        "rain_detected",
+        "map_detected",
+        "saving_data",
     ):
-        assert cls(hub.basic_data, hub.hass).is_on is None
+        assert _binary(hub, key).is_on is None
 
 
 def test_map_task_binary_sensor_missing_fields() -> None:
     hub = _hub()
     # map_status present but the specific flag is absent -> None
     _feed(hub.on_map_status, {"map_id": 1})
-    assert TerraMowMapDetectedBinarySensor(hub.basic_data, hub.hass).is_on is None
+    assert _binary(hub, "map_detected").is_on is None
     _feed(hub.on_mission_status, {"mission": "MISSION_IDLE"})
-    assert TerraMowSavingDataBinarySensor(hub.basic_data, hub.hass).is_on is None
+    assert _binary(hub, "saving_data").is_on is None
 
 
 def test_binary_sensors_reflect_device_flags() -> None:
     hub = _hub()
     _feed(hub.on_battery_status, {"charger_connected": True, "is_switch_on": True})
-    assert TerraMowChargingSensor(hub.basic_data, hub.hass).is_on is True
-    assert PowerSwitchSensor(hub.basic_data, hub.hass).is_on is True
+    assert _binary(hub, "charging_state").is_on is True
+    assert _binary(hub, "power_switch").is_on is True
 
     _feed(hub.on_mission_status, {
         "is_robot_navi_located": True,
@@ -310,10 +311,10 @@ def test_binary_sensors_reflect_device_flags() -> None:
         "has_error": True,
         "back_to_station_reason": "BACK_TO_STATION_REASON_RAINING",
     })
-    assert NavigationLocatedSensor(hub.basic_data, hub.hass).is_on is True
-    assert FirmwareUpgradingSensor(hub.basic_data, hub.hass).is_on is True
-    assert TerraMowProblemSensor(hub.basic_data, hub.hass).is_on is True
-    assert TerraMowRainSensor(hub.basic_data, hub.hass).is_on is True
+    assert _binary(hub, "navigation_located").is_on is True
+    assert _binary(hub, "firmware_upgrading").is_on is True
+    assert _binary(hub, "problem").is_on is True
+    assert _binary(hub, "rain_detected").is_on is True
 
 
 # ---------------------------------------------------------------------------

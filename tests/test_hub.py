@@ -268,10 +268,11 @@ def test_activity_error_on_connection_loss_and_recovery() -> None:
 
 def test_connection_error_availability_split() -> None:
     """Entities go unavailable on connection loss; the mower stays to show ERROR."""
-    from custom_components.terramow.sensor import BatteryStateSensor
+    from custom_components.terramow.sensor import SENSORS, TerraMowSensor
 
     probe = _Activity()
-    sensor = BatteryStateSensor(probe.hub.basic_data, probe.hub.hass)
+    description = next(d for d in SENSORS if d.key == "battery_state")
+    sensor = TerraMowSensor(probe.hub.basic_data, probe.hub.hass, description)
     assert sensor.available is True
     assert probe.entity.available is True
 

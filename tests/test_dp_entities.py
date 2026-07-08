@@ -11,66 +11,37 @@ from unittest.mock import MagicMock
 
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.binary_sensor import (
-    AfterRainAutoResumeSensor,
-    CellularEnabledSensor,
-    CliffDetectionSensor,
-    DaylightSensor,
-    DefoggerHeatingSensor,
-    ExtremeWeatherSensor,
-    ForceCellularNetworkSensor,
-    ForceSingleBaseStationSensor,
-    IlluminationLightSensor,
-    ManualMappingBoundaryClosedSensor,
-    ManualMappingRelocationSensor,
-    ManualMappingTakeoverSensor,
-    PowerSwitchSensor,
-    SlopeDetectionSensor,
-    StateFlag134Sensor,
-    TerraMowChargingSensor,
-    TerraMowMapDetectedBinarySensor,
-    TerraMowProblemSensor,
-    TerraMowRainSensor,
-    TerraMowSavingDataBinarySensor,
+    BINARY_SENSORS,
+    TerraMowBinarySensor,
 )
 from custom_components.terramow.const import BLADE_MAINTENANCE_CYCLE_MINUTES
 from custom_components.terramow.hub import TerraMowHub
 from custom_components.terramow.number import MowingHeightNumber
 from custom_components.terramow.select import MowSpeedSelect
 from custom_components.terramow.sensor import (
+    SENSORS,
     BatterySensor,
-    BatteryStateSensor,
-    BatteryTemperatureStateSensor,
-    CurrentJobTypeSensor,
-    CurrentSessionAreaSensor,
-    CurrentSessionProgressSensor,
-    CurrentSessionTimeSensor,
-    ActiveErrorsSensor,
-    CellularConnectionTypeSensor,
-    CellularSignalRsrpSensor,
-    CellularSignalRsrqSensor,
-    AfterRainResumeDelaySensor,
-    LastEventSensor,
-    MainDirectionStatusSensor,
-    MapSaveProgressSensor,
-    MapModeSensor,
-    MoveModeSensor,
-    MowModeSensor,
-    RainSensorThresholdSensor,
-    SunriseSensor,
-    SunsetSensor,
-    NextScheduledStartSensor,
-    RemainingBladeTimeSensor,
-    TerraMowMissionSensor,
-    TotalMowedAreaSensor,
-    TotalMowingJobsSensor,
-    TotalMowingTimeSensor,
+    TerraMowSensor,
 )
 from custom_components.terramow.switch import ThoroughCornerCuttingSwitch
+
+_SENSOR_DESCRIPTIONS = {description.key: description for description in SENSORS}
+_BINARY_DESCRIPTIONS = {
+    description.key: description for description in BINARY_SENSORS
+}
 
 
 def _hub() -> TerraMowHub:
     basic_data = TerraMowBasicData(host="192.0.2.10", password="secret")
     return TerraMowHub(basic_data, MagicMock())
+
+
+def _sensor(hub: TerraMowHub, key: str) -> TerraMowSensor:
+    return TerraMowSensor(hub.basic_data, hub.hass, _SENSOR_DESCRIPTIONS[key])
+
+
+def _binary(hub: TerraMowHub, key: str) -> TerraMowBinarySensor:
+    return TerraMowBinarySensor(hub.basic_data, hub.hass, _BINARY_DESCRIPTIONS[key])
 
 
 def _feed(handler, payload: dict) -> None:
@@ -81,20 +52,24 @@ def test_niche_diagnostics_disabled_by_default() -> None:
     hub = _hub()
     # niche / redundant readouts are off by default (enable on demand)
     disabled = [
-        SunriseSensor, SunsetSensor, MoveModeSensor, MapModeSensor, MowModeSensor,
-        LastEventSensor, RainSensorThresholdSensor, AfterRainResumeDelaySensor,
-        CellularConnectionTypeSensor,
+        "sunrise", "sunset", "move_mode", "map_mode", "mow_mode",
+        "last_event", "rain_sensor_threshold", "after_rain_resume_delay",
+        "cellular_connection_type",
     ]
-    for cls in disabled:
-        assert cls(hub.basic_data, hub.hass).entity_registry_enabled_default is False
+    for key in disabled:
+        assert _sensor(hub, key).entity_registry_enabled_default is False
     # broadly-useful diagnostics stay enabled
-    enabled = [
-        ActiveErrorsSensor, ExtremeWeatherSensor, CliffDetectionSensor,
-        SlopeDetectionSensor, AfterRainAutoResumeSensor, CellularEnabledSensor,
-        CellularSignalRsrpSensor, CellularSignalRsrqSensor,
+    enabled_sensors = [
+        "active_errors", "cellular_signal_rsrp", "cellular_signal_rsrq",
     ]
-    for cls in enabled:
-        assert cls(hub.basic_data, hub.hass).entity_registry_enabled_default is True
+    for key in enabled_sensors:
+        assert _sensor(hub, key).entity_registry_enabled_default is True
+    enabled_binary = [
+        "extreme_weather", "cliff_detection", "slope_detection",
+        "after_rain_auto_resume", "cellular_enabled",
+    ]
+    for key in enabled_binary:
+        assert _binary(hub, key).entity_registry_enabled_default is True
 
 
 # ---------------------------------------------------------------------------
@@ -104,7 +79,7 @@ def test_niche_diagnostics_disabled_by_default() -> None:
 
 def test_active_errors_sensor_from_dp116() -> None:
     hub = _hub()
-    sensor = ActiveErrorsSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "active_errors")
     # no data yet -> zero active errors, no attributes
     assert sensor.native_value == 0
     assert sensor.extra_state_attributes == {}
@@ -118,7 +93,7 @@ def test_active_errors_sensor_from_dp116() -> None:
 
 def test_last_event_sensor_from_dp123() -> None:
     hub = _hub()
-    sensor = LastEventSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "last_event")
     assert sensor.native_value is None
     assert sensor.extra_state_attributes == {}
     _feed(hub.on_event_data, {"event_list": [
@@ -140,11 +115,11 @@ def test_last_event_sensor_from_dp123() -> None:
 
 def test_advanced_settings_entities_from_dp150() -> None:
     hub = _hub()
-    cliff = CliffDetectionSensor(hub.basic_data, hub.hass)
-    slope = SlopeDetectionSensor(hub.basic_data, hub.hass)
-    resume = AfterRainAutoResumeSensor(hub.basic_data, hub.hass)
-    threshold = RainSensorThresholdSensor(hub.basic_data, hub.hass)
-    delay = AfterRainResumeDelaySensor(hub.basic_data, hub.hass)
+    cliff = _binary(hub, "cliff_detection")
+    slope = _binary(hub, "slope_detection")
+    resume = _binary(hub, "after_rain_auto_resume")
+    threshold = _sensor(hub, "rain_sensor_threshold")
+    delay = _sensor(hub, "after_rain_resume_delay")
     # no data yet -> None everywhere
     assert cliff.is_on is None and threshold.native_value is None and delay.native_value is None
     _feed(hub.on_advanced_settings, {
@@ -165,9 +140,9 @@ def test_advanced_settings_entities_from_dp150() -> None:
 
 def test_advanced_settings_entities_degrade_gracefully() -> None:
     hub = _hub()
-    cliff = CliffDetectionSensor(hub.basic_data, hub.hass)
-    threshold = RainSensorThresholdSensor(hub.basic_data, hub.hass)
-    delay = AfterRainResumeDelaySensor(hub.basic_data, hub.hass)
+    cliff = _binary(hub, "cliff_detection")
+    threshold = _sensor(hub, "rain_sensor_threshold")
+    delay = _sensor(hub, "after_rain_resume_delay")
     # malformed / missing nested fields -> None, never a crash
     _feed(hub.on_advanced_settings, {
         "enable_cliff_detection": {"value": "x"},        # non-bool
@@ -197,11 +172,11 @@ def test_advanced_settings_entities_degrade_gracefully() -> None:
 
 def test_dp150_force_and_dp152_manual_mapping_binary_sensors() -> None:
     hub = _hub()
-    fsb = ForceSingleBaseStationSensor(hub.basic_data, hub.hass)
-    fcn = ForceCellularNetworkSensor(hub.basic_data, hub.hass)
-    reloc = ManualMappingRelocationSensor(hub.basic_data, hub.hass)
-    takeover = ManualMappingTakeoverSensor(hub.basic_data, hub.hass)
-    boundary = ManualMappingBoundaryClosedSensor(hub.basic_data, hub.hass)
+    fsb = _binary(hub, "force_single_base_station")
+    fcn = _binary(hub, "force_cellular_network")
+    reloc = _binary(hub, "manual_mapping_relocation")
+    takeover = _binary(hub, "manual_mapping_takeover")
+    boundary = _binary(hub, "manual_mapping_boundary_closed")
     # all disabled by default and None without data
     for ent in (fsb, fcn, reloc, takeover, boundary):
         assert ent.entity_registry_enabled_default is False
@@ -229,7 +204,7 @@ def test_dp150_force_and_dp152_manual_mapping_binary_sensors() -> None:
 
 def test_dp118_map_save_progress_sensor() -> None:
     hub = _hub()
-    progress = MapSaveProgressSensor(hub.basic_data, hub.hass)
+    progress = _sensor(hub, "map_save_progress")
     # transient diagnostic: disabled by default, None without data
     assert progress.entity_registry_enabled_default is False
     assert progress.native_value is None
@@ -251,10 +226,12 @@ def test_dp118_map_save_progress_sensor() -> None:
 
 def test_dp134_state_flag_binary_sensor() -> None:
     hub = _hub()
-    flag = StateFlag134Sensor(hub.basic_data, hub.hass)
+    flag = _binary(hub, "state_flag_134")
     # undecoded diagnostic: disabled by default, None without data
     assert flag.entity_registry_enabled_default is False
     assert flag.is_on is None
+    # no attributes_fn -> the entity default (no extra attributes)
+    assert flag.extra_state_attributes is None
     _feed(hub.on_state_flag_134, {"enum_value": 1})
     assert flag.is_on is True
     _feed(hub.on_state_flag_134, {"enum_value": 0})
@@ -276,9 +253,9 @@ def test_dp134_state_flag_binary_sensor() -> None:
 
 def test_operating_mode_sensors_from_dp154() -> None:
     hub = _hub()
-    move = MoveModeSensor(hub.basic_data, hub.hass)
-    mapm = MapModeSensor(hub.basic_data, hub.hass)
-    mow = MowModeSensor(hub.basic_data, hub.hass)
+    move = _sensor(hub, "move_mode")
+    mapm = _sensor(hub, "map_mode")
+    mow = _sensor(hub, "mow_mode")
     assert move.native_value is None
     _feed(hub.on_operating_modes, {
         "move_mode": "MOVE_MODE_MOW",
@@ -304,11 +281,11 @@ def test_operating_mode_sensors_from_dp154() -> None:
 
 def test_environment_sensors_from_dp152() -> None:
     hub = _hub()
-    sunrise = SunriseSensor(hub.basic_data, hub.hass)
-    sunset = SunsetSensor(hub.basic_data, hass=hub.hass)
-    defog = DefoggerHeatingSensor(hub.basic_data, hub.hass)
-    illum = IlluminationLightSensor(hub.basic_data, hub.hass)
-    daylight = DaylightSensor(hub.basic_data, hub.hass)
+    sunrise = _sensor(hub, "sunrise")
+    sunset = _sensor(hub, "sunset")
+    defog = _binary(hub, "defogger_heating")
+    illum = _binary(hub, "illumination_light")
+    daylight = _binary(hub, "daylight")
     # no data yet -> None
     assert sunrise.native_value is None and defog.is_on is None
     _feed(hub.on_environment_info, {
@@ -340,7 +317,7 @@ def test_environment_sensors_from_dp152() -> None:
 
 def test_extreme_weather_sensor_from_dp157() -> None:
     hub = _hub()
-    weather = ExtremeWeatherSensor(hub.basic_data, hub.hass)
+    weather = _binary(hub, "extreme_weather")
     assert weather.is_on is None
     assert weather.extra_state_attributes == {}
     _feed(hub.on_weather_info, {
@@ -353,6 +330,9 @@ def test_extreme_weather_sensor_from_dp157() -> None:
     _feed(hub.on_weather_info, {"has_extream_weather": False, "extream_weather_info_url": ""})
     assert weather.is_on is False
     assert weather.extra_state_attributes == {}
+    # without a lawn mower -> empty attributes
+    hub.basic_data.lawn_mower = None
+    assert weather.extra_state_attributes == {}
 
 
 # ---------------------------------------------------------------------------
@@ -362,10 +342,10 @@ def test_extreme_weather_sensor_from_dp157() -> None:
 
 def test_cellular_sensors_disabled_report_none() -> None:
     hub = _hub()
-    rsrp = CellularSignalRsrpSensor(hub.basic_data, hub.hass)
-    rsrq = CellularSignalRsrqSensor(hub.basic_data, hub.hass)
-    ctype = CellularConnectionTypeSensor(hub.basic_data, hub.hass)
-    enabled = CellularEnabledSensor(hub.basic_data, hub.hass)
+    rsrp = _sensor(hub, "cellular_signal_rsrp")
+    rsrq = _sensor(hub, "cellular_signal_rsrq")
+    ctype = _sensor(hub, "cellular_connection_type")
+    enabled = _binary(hub, "cellular_enabled")
     # no dp_135 yet -> unavailable/None everywhere
     assert rsrp.native_value is None and enabled.is_on is None
     assert ctype.native_value is None
@@ -384,9 +364,9 @@ def test_cellular_sensors_disabled_report_none() -> None:
 
 def test_cellular_sensors_enabled_report_signal() -> None:
     hub = _hub()
-    rsrp = CellularSignalRsrpSensor(hub.basic_data, hub.hass)
-    rsrq = CellularSignalRsrqSensor(hub.basic_data, hub.hass)
-    enabled = CellularEnabledSensor(hub.basic_data, hub.hass)
+    rsrp = _sensor(hub, "cellular_signal_rsrp")
+    rsrq = _sensor(hub, "cellular_signal_rsrq")
+    enabled = _binary(hub, "cellular_enabled")
     _feed(hub.on_cellular_info, {
         "is_enabled": True, "RSRP": -95, "RSRQ": -12, "type": "CELLULAR_TYPE_LTE",
     })
@@ -418,13 +398,13 @@ def test_battery_status_sensors_from_dp108() -> None:
         "charger_connected": True,
         "is_switch_on": False,
     })
-    assert BatteryStateSensor(hub.basic_data, hub.hass).native_value == "battery_state_charging"
+    assert _sensor(hub, "battery_state").native_value == "battery_state_charging"
     assert (
-        BatteryTemperatureStateSensor(hub.basic_data, hub.hass).native_value
+        _sensor(hub, "battery_temperature_state").native_value
         == "battery_tempreture_normal"
     )
-    assert TerraMowChargingSensor(hub.basic_data, hub.hass).is_on is True
-    assert PowerSwitchSensor(hub.basic_data, hub.hass).is_on is False
+    assert _binary(hub, "charging_state").is_on is True
+    assert _binary(hub, "power_switch").is_on is False
 
 
 # ---------------------------------------------------------------------------
@@ -439,9 +419,9 @@ def test_statistics_sensors_from_dp124() -> None:
         "clean_times": 12,
         "clean_area": 1234,  # 0.1 m² units
     })
-    assert TotalMowingTimeSensor(hub.basic_data, hub.hass).native_value == 7200
-    assert TotalMowingJobsSensor(hub.basic_data, hub.hass).native_value == 12
-    assert TotalMowedAreaSensor(hub.basic_data, hub.hass).native_value == 123.4
+    assert _sensor(hub, "total_mowing_time").native_value == 7200
+    assert _sensor(hub, "total_mowing_jobs").native_value == 12
+    assert _sensor(hub, "total_mowed_area").native_value == 123.4
 
 
 # ---------------------------------------------------------------------------
@@ -458,22 +438,22 @@ def test_current_session_sensors_from_dp113() -> None:
         "type": "MAP_AREA_TYPE_CLEANING",
         "is_completed": False,
     })
-    assert CurrentSessionAreaSensor(hub.basic_data, hub.hass).native_value == 50.0
-    assert CurrentSessionProgressSensor(hub.basic_data, hub.hass).native_value == 50.0
-    assert CurrentSessionTimeSensor(hub.basic_data, hub.hass).native_value == 903
-    assert CurrentJobTypeSensor(hub.basic_data, hub.hass).native_value == "map_area_type_cleaning"
+    assert _sensor(hub, "current_session_area").native_value == 50.0
+    assert _sensor(hub, "current_session_progress").native_value == 50.0
+    assert _sensor(hub, "current_session_time").native_value == 903
+    assert _sensor(hub, "current_job_type").native_value == "map_area_type_cleaning"
 
 
 def test_session_progress_is_capped_at_100() -> None:
     hub = _hub()
     _feed(hub.on_current_work_data, {"clean_area": 1050, "total_area": 1000})
-    assert CurrentSessionProgressSensor(hub.basic_data, hub.hass).native_value == 100.0
+    assert _sensor(hub, "current_session_progress").native_value == 100.0
 
 
 def test_unknown_job_type_reports_none() -> None:
     hub = _hub()
     _feed(hub.on_current_work_data, {"type": "MAP_AREA_TYPE_FROM_THE_FUTURE"})
-    assert CurrentJobTypeSensor(hub.basic_data, hub.hass).native_value is None
+    assert _sensor(hub, "current_job_type").native_value is None
 
 
 # ---------------------------------------------------------------------------
@@ -484,7 +464,7 @@ def test_unknown_job_type_reports_none() -> None:
 def test_remaining_blade_time_from_dp126() -> None:
     hub = _hub()
     _feed(hub.on_blade_time, {"int_value": 400})
-    sensor = RemainingBladeTimeSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "remaining_blade_time")
     assert sensor.native_value == BLADE_MAINTENANCE_CYCLE_MINUTES - 400
 
     # An overdue blade must clamp at 0, not go negative
@@ -500,7 +480,7 @@ def test_remaining_blade_time_from_dp126() -> None:
 
 def test_next_scheduled_start_from_dp138() -> None:
     hub = _hub()
-    sensor = NextScheduledStartSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "next_scheduled_start")
     _feed(hub.on_schedule_data, {"exist": True, "start_time": {"hour": 9, "minute": 5}})
     assert sensor.native_value == "09:05"
 
@@ -522,10 +502,10 @@ def test_task_status_binary_sensors_from_dp107() -> None:
         "is_saving_data": True,
         "back_to_station_reason": "BACK_TO_STATION_REASON_RAINING",
     })
-    assert TerraMowProblemSensor(hub.basic_data, hub.hass).is_on is True
-    assert TerraMowRainSensor(hub.basic_data, hub.hass).is_on is True
-    assert TerraMowSavingDataBinarySensor(hub.basic_data, hub.hass).is_on is True
-    assert TerraMowMissionSensor(hub.basic_data, hub.hass).native_value == "mission_global_clean"
+    assert _binary(hub, "problem").is_on is True
+    assert _binary(hub, "rain_detected").is_on is True
+    assert _binary(hub, "saving_data").is_on is True
+    assert _sensor(hub, "mission").native_value == "mission_global_clean"
 
 
 # ---------------------------------------------------------------------------
@@ -535,7 +515,7 @@ def test_task_status_binary_sensors_from_dp107() -> None:
 
 def test_map_detected_from_dp117() -> None:
     hub = _hub()
-    sensor = TerraMowMapDetectedBinarySensor(hub.basic_data, hub.hass)
+    sensor = _binary(hub, "map_detected")
     _feed(hub.on_map_status, {"is_map_detected": True, "map_id": 3})
     assert sensor.is_on is True
     _feed(hub.on_map_status, {"is_map_detected": False})
@@ -559,7 +539,7 @@ def test_global_param_sensors_from_dp155() -> None:
         MowSpeedSelect(hub.basic_data, hub.hass).current_option == "mow_speed_type_low"
     )
     assert (
-        MainDirectionStatusSensor(hub.basic_data, hub.hass).native_value
+        _sensor(hub, "main_direction_status").native_value
         == "main_direction_mode_multiple"
     )
 
