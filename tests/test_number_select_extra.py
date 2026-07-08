@@ -159,10 +159,11 @@ def test_single_angle_available_and_value_with_empty_params() -> None:
     number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
     assert number.available is False
 
-    # available via the selector but empty params -> no value
-    hub2 = _hub(states_get=_state("MAIN_DIRECTION_MODE_SINGLE"))
+    # available via the cached event mode but empty params -> no value
+    hub2 = _hub()
     _feed(hub2.on_global_params, {})
     number2 = MainDirectionSingleAngleNumber(hub2.basic_data, hub2.hass)
+    number2._cached_mode = "MAIN_DIRECTION_MODE_SINGLE"
     assert number2.available is True
     assert number2.native_value is None
 
@@ -174,9 +175,10 @@ def test_mode_numbers_available_false_and_value_none_with_empty_params() -> None
         number = cls(hub.basic_data, hub.hass)
         assert number.available is False
 
-        hub2 = _hub(states_get=_state(mode))
+        hub2 = _hub()
         _feed(hub2.on_global_params, {})
         number2 = cls(hub2.basic_data, hub2.hass)
+        number2._cached_mode = mode
         assert number2.available is True
         assert number2.native_value is None
 
@@ -286,9 +288,12 @@ def test_multiple_angle2_attributes_short_circuits() -> None:
 
 
 def test_multiple_angle1_write_warns_when_equal_to_angle2() -> None:
-    hub = _hub(states_get=_state("MAIN_DIRECTION_MODE_MULTIPLE"))
+    hub = _hub()
     _feed(hub.on_global_params, {
-        "main_direction_angle_config": {"multiple_mode_config": {"angles": [30, 90]}},
+        "main_direction_angle_config": {
+            "mode": "MAIN_DIRECTION_MODE_MULTIPLE",
+            "multiple_mode_config": {"angles": [30, 90]},
+        },
     })
     number = MultipleDirectionAngle1Number(hub.basic_data, hub.hass)
     # set angle1 equal to the existing angle2 (90) -> warning branch, still publishes
@@ -299,9 +304,12 @@ def test_multiple_angle1_write_warns_when_equal_to_angle2() -> None:
 
 
 def test_multiple_angle2_write_warns_when_equal_to_angle1() -> None:
-    hub = _hub(states_get=_state("MAIN_DIRECTION_MODE_MULTIPLE"))
+    hub = _hub()
     _feed(hub.on_global_params, {
-        "main_direction_angle_config": {"multiple_mode_config": {"angles": [45, 200]}},
+        "main_direction_angle_config": {
+            "mode": "MAIN_DIRECTION_MODE_MULTIPLE",
+            "multiple_mode_config": {"angles": [45, 200]},
+        },
     })
     number = MultipleDirectionAngle2Number(hub.basic_data, hub.hass)
     # set angle2 equal to the existing angle1 (45) -> warning branch, still publishes
@@ -575,52 +583,22 @@ def test_mode_select_unknown_mode_publishes_bare_config() -> None:
     assert cfg == {"mode": "MAIN_DIRECTION_MODE_EXTRA"}
 
 
-def test_mode_select_notify_schedules_force_update_on_loop() -> None:
+def test_mode_select_notify_only_fires_event() -> None:
     hub = _shub()
-    hub.hass.states.get = MagicMock(return_value=None)  # no related entities exist
-    collected: list = []
-    hub.hass.async_create_task = MagicMock(side_effect=collected.append)
-
     select = MainDirectionModeSelect(hub.basic_data, hub.hass)
     select._notify_angle_controllers_mode_change("A", "B")
     assert hub.hass.bus.fire.called
-    assert collected
-    # the refresh is scheduled directly on the event loop (no executor hop);
-    # running it must reach _force_update_related_entities without touching
-    # async_add_executor_job (which is not needed for loop-only work)
-    called = {"executor": False}
-    hub.hass.async_add_executor_job = MagicMock(
-        side_effect=lambda *a, **k: called.__setitem__("executor", True)
-    )
-    for coro in collected:
-        asyncio.run(coro)
-    assert called["executor"] is False
+    # the angle controllers refresh via their own event listener; no ad-hoc
+    # entity updates are scheduled here
+    hub.hass.async_create_task.assert_not_called()
 
 
-def test_mode_select_force_update_swallows_entity_error(monkeypatch) -> None:
-    hub = _shub()
-    hub.hass.states.get = MagicMock(return_value=SimpleNamespace(state="1"))
-    select = MainDirectionModeSelect(hub.basic_data, hub.hass)
-
-    def _boom(*_a, **_k):
-        raise RuntimeError("nope")
-
-    monkeypatch.setattr(select_mod.entity_component, "async_update_entity", _boom)
-    # the per-entity update failure is caught at debug level, not re-raised
-    select._force_update_related_entities()
-
-
-def test_mode_select_timeout_noop_without_pending(monkeypatch) -> None:
+def test_mode_select_timeout_noop_without_pending() -> None:
     hub = _shub()
     select = MainDirectionModeSelect(hub.basic_data, hub.hass)
     select.async_write_ha_state = MagicMock()
     select._pending_mode = None
-
-    async def _instant(_seconds):
-        return None
-
-    monkeypatch.setattr("asyncio.sleep", _instant)
-    asyncio.run(select._clear_pending_mode_after_timeout())
+    select._on_pending_mode_timeout(None)
     select.async_write_ha_state.assert_not_called()
 
 

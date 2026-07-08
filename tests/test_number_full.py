@@ -1,8 +1,8 @@
 """Thorough coverage for the number platform.
 
 Covers async_setup_entry, the lawn-mower-missing / no-global-params branches,
-the mode-selector fast path (event cache, selector state, unavailable
-fallback), the mode-change event listener and each entity's
+the mode availability chain (event cache, device-data fallback, connection
+guard), the mode-change event listener and each entity's
 extra_state_attributes.
 """
 
@@ -90,37 +90,53 @@ def test_mowing_spacing_attributes_without_current_value() -> None:
 
 
 # ---------------------------------------------------------------------------
-# mode-selector fast path
+# mode availability chain
 # ---------------------------------------------------------------------------
 
 
-def test_single_angle_available_from_selector_state() -> None:
-    hub = _hub(states_get=_state("MAIN_DIRECTION_MODE_SINGLE"))
+def test_single_angle_available_from_cached_mode() -> None:
+    hub = _hub()
     number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
+    number._cached_mode = "MAIN_DIRECTION_MODE_SINGLE"
     assert number.available is True
 
-    hub2 = _hub(states_get=_state("MAIN_DIRECTION_MODE_MULTIPLE"))
+    hub2 = _hub()
     number2 = MainDirectionSingleAngleNumber(hub2.basic_data, hub2.hass)
+    number2._cached_mode = "MAIN_DIRECTION_MODE_MULTIPLE"
     assert number2.available is False
 
 
-def test_selector_unavailable_state_falls_back_to_device() -> None:
-    hub = _hub(states_get=_state("unavailable"))
+def test_availability_follows_device_reported_mode() -> None:
+    hub = _hub()
     number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
     _feed(hub.on_global_params, {
         "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_SINGLE"},
     })
-    # selector state is "unavailable" -> device data decides
     assert number.available is True
 
+    _feed(hub.on_global_params, {
+        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MULTIPLE"},
+    })
+    assert number.available is False
 
-def test_cached_mode_takes_priority_and_is_cleared() -> None:
-    hub = _hub(states_get=_state("MAIN_DIRECTION_MODE_MULTIPLE"))
+
+def test_cached_mode_takes_priority_until_device_push() -> None:
+    hub = _hub()
     number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
+    _feed(hub.on_global_params, {
+        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MULTIPLE"},
+    })
     number._cached_mode = "MAIN_DIRECTION_MODE_SINGLE"
-    assert number._get_current_mode_from_selector() == "MAIN_DIRECTION_MODE_SINGLE"
-    # cache is consumed on read
+    assert number._current_main_direction_mode() == "MAIN_DIRECTION_MODE_SINGLE"
+    # the cache survives reads (availability is evaluated repeatedly per write)
+    assert number._cached_mode == "MAIN_DIRECTION_MODE_SINGLE"
+
+    # a dp_155 push makes the device data authoritative again
+    number.entity_id = "number.terramow_test"
+    number.async_write_ha_state = MagicMock()
+    asyncio.run(number._handle_push_update("{}"))
     assert number._cached_mode is None
+    assert number._current_main_direction_mode() == "MAIN_DIRECTION_MODE_MULTIPLE"
 
 
 def test_mode_change_listener_updates_cache() -> None:
@@ -196,7 +212,7 @@ def test_mode_numbers_expose_current_angle_attributes() -> None:
 
 
 def test_single_angle_native_value_none_when_angle_missing() -> None:
-    hub = _hub(states_get=_state("MAIN_DIRECTION_MODE_SINGLE"))
+    hub = _hub()
     number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
     _feed(hub.on_global_params, {
         "main_direction_angle_config": {
@@ -213,7 +229,8 @@ def test_single_angle_native_value_none_when_angle_missing() -> None:
 
 
 def test_single_angle_write_publishes_wrapped_angle() -> None:
-    hub = _hub(states_get=_state("MAIN_DIRECTION_MODE_SINGLE"))
+    hub = _hub()
+    _device_mode(hub, "MAIN_DIRECTION_MODE_SINGLE")
     number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
     asyncio.run(number.async_set_native_value(365.0))
     _topic, payload = hub.mqtt_client.publish.call_args.args
@@ -275,36 +292,53 @@ def test_mode_numbers_unavailable_without_lawn_mower() -> None:
         hub.mqtt_client.publish.assert_not_called()
 
 
-def test_mode_number_set_guards_missing_lawn_mower() -> None:
-    # selector reports the entity's mode (available True) but the hub has no
-    # lawn_mower yet -> the write must bail on the lawn-mower guard.
+def test_mode_number_connection_guard_beats_cached_mode() -> None:
+    # Regression: even with a matching cached mode, the base connectivity
+    # check must win — a disconnected/missing hub means unavailable.
     for cls, mode in (
         (MainDirectionSingleAngleNumber, "MAIN_DIRECTION_MODE_SINGLE"),
         (MainDirectionAutoRotateIntervalNumber, "MAIN_DIRECTION_MODE_AUTO_ROTATE"),
         (MultipleDirectionAngle1Number, "MAIN_DIRECTION_MODE_MULTIPLE"),
         (MultipleDirectionAngle2Number, "MAIN_DIRECTION_MODE_MULTIPLE"),
     ):
-        hub = _hub(states_get=_state(mode))
-        hub.basic_data.lawn_mower = None
+        hub = _hub()
         number = cls(hub.basic_data, hub.hass)
-        assert number.available is True
+        number._cached_mode = mode
+        hub.basic_data.lawn_mower = None
+        assert number.available is False
         asyncio.run(number.async_set_native_value(20.0))
         hub.mqtt_client.publish.assert_not_called()
 
 
-def test_selector_helper_cached_and_exception_paths_for_all() -> None:
+def test_plain_number_available_follows_connection_only() -> None:
+    # entities without a _required_mode use the base connectivity check alone
+    hub = _hub()
+    number = MowingHeightNumber(hub.basic_data, hub.hass)
+    assert number.available is True
+    hub.connection_error = True
+    assert number.available is False
+
+
+def test_mode_helper_returns_none_without_lawn_mower() -> None:
+    hub = _hub()
+    number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
+    hub.basic_data.lawn_mower = None
+    assert number._current_main_direction_mode() is None
+
+
+def test_mode_helper_cached_and_empty_paths_for_all() -> None:
     for cls in _ALL_MODE_NUMBERS:
-        # cached mode is returned and consumed
-        hub = _hub(states_get=_state("MAIN_DIRECTION_MODE_SINGLE"))
+        # cached mode is preferred and retained across reads
+        hub = _hub()
         number = cls(hub.basic_data, hub.hass)
         number._cached_mode = "MAIN_DIRECTION_MODE_AUTO_ROTATE"
-        assert number._get_current_mode_from_selector() == "MAIN_DIRECTION_MODE_AUTO_ROTATE"
-        assert number._cached_mode is None
+        assert number._current_main_direction_mode() == "MAIN_DIRECTION_MODE_AUTO_ROTATE"
+        assert number._cached_mode == "MAIN_DIRECTION_MODE_AUTO_ROTATE"
 
-        # a raising states.get is swallowed and yields None
-        raising = _hub(states_get=MagicMock(side_effect=RuntimeError("boom")))
-        number2 = cls(raising.basic_data, raising.hass)
-        assert number2._get_current_mode_from_selector() is None
+        # no cache and no device data yet -> mode unknown
+        hub2 = _hub()
+        number2 = cls(hub2.basic_data, hub2.hass)
+        assert number2._current_main_direction_mode() is None
 
 
 def test_every_mode_number_registers_a_working_listener() -> None:

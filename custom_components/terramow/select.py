@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from typing import Any
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.const import EntityCategory
-from homeassistant.core import Event, HomeAssistant
-from homeassistant.helpers import entity_component
+from homeassistant.core import CALLBACK_TYPE, Event, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_call_later
 
 from . import DOMAIN, TerraMowBasicData, TerraMowConfigEntry
 from .const import (
@@ -26,6 +27,10 @@ from .entity_utils import PushUpdateMixin, safe_write_ha_state
 
 # Push-based integration: no update throttling needed
 PARALLEL_UPDATES = 0
+
+# Seconds to wait for the device to confirm a mode change before clearing
+# the optimistic pending state.
+PENDING_MODE_TIMEOUT = 10
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -496,11 +501,13 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         super().__init__(basic_data, hass)
         self._current_option = "MAIN_DIRECTION_MODE_SINGLE"  # Default: single main direction
         self._pending_mode: str | None = None  # Cache the mode pending activation
+        self._pending_timeout_unsub: CALLBACK_TYPE | None = None
 
     async def async_added_to_hass(self) -> None:
         """Register push callbacks and the device-confirmation listener."""
         await super().async_added_to_hass()
         self._register_device_confirmation_listener()
+        self.async_on_remove(self._cancel_pending_mode_timeout)
 
     def _register_device_confirmation_listener(self) -> None:
         """Refresh pending state on the device-confirmation event.
@@ -615,11 +622,12 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         self.basic_data.lawn_mower.publish_data_point(155, command)
 
         # Set a timeout to clear the pending state (prevents a failed device response from leaving the state stuck)
-        self.hass.async_create_task(self._clear_pending_mode_after_timeout())
+        self._schedule_pending_mode_timeout()
 
     def _notify_angle_controllers_mode_change(self, old_mode: str, new_mode: str) -> None:
         """Notify the related angle controllers that the mode has changed."""
-        # Fire a Home Assistant event that the angle controllers can listen for
+        # Fire a Home Assistant event that the angle controllers listen for;
+        # their listener refreshes availability/state immediately.
         self.hass.bus.fire(f"{DOMAIN}_main_direction_mode_changed", {
             "device_host": self.host,
             "old_mode": old_mode,
@@ -627,62 +635,31 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
             "source": "mode_select"
         })
 
-        # Refresh the related angle controllers. This runs directly on the
-        # event loop: _force_update_related_entities only touches loop-bound
-        # APIs (hass.states.get / hass.async_create_task), which are not
-        # thread-safe and must never be called from an executor thread.
-        self.hass.async_create_task(self._async_force_update_related_entities())
+    def _schedule_pending_mode_timeout(self) -> None:
+        """(Re)arm the timer that clears a pending mode the device never confirms."""
+        self._cancel_pending_mode_timeout()
+        self._pending_timeout_unsub = async_call_later(
+            self.hass, PENDING_MODE_TIMEOUT, self._on_pending_mode_timeout
+        )
 
-    async def _async_force_update_related_entities(self) -> None:
-        """Force a state update of the related angle controllers (on the loop)."""
-        self._force_update_related_entities()
+    def _cancel_pending_mode_timeout(self) -> None:
+        """Cancel a scheduled pending-mode timeout, if any."""
+        if self._pending_timeout_unsub is not None:
+            self._pending_timeout_unsub()
+            self._pending_timeout_unsub = None
 
-    def _force_update_related_entities(self) -> None:
-        """Force a state update of the related angle-control entities."""
-        try:
-            # Simplified entity-update approach: update directly by inferring the entity_id
-            related_entity_patterns = [
-                "main_direction_single_angle",
-                "main_direction_auto_rotate_interval",
-                "multiple_direction_angle1",
-                "multiple_direction_angle2"
-            ]
-
-            entities_to_update = []
-            host_suffix = self.host.replace('.', '_')
-
-            for pattern in related_entity_patterns:
-                # Construct the expected entity_id
-                entity_id = f"number.terramow_{host_suffix}_{pattern}"
-                # Check whether the entity exists
-                if self.hass.states.get(entity_id):
-                    entities_to_update.append(entity_id)
-
-            # Trigger a state update for these entities
-            for entity_id in entities_to_update:
-                try:
-                    # Schedule the update asynchronously
-                    self.hass.async_create_task(
-                        entity_component.async_update_entity(self.hass, entity_id)
-                    )
-                except Exception as update_error:
-                    _LOGGER.debug("Could not update entity %s: %s", entity_id, update_error)
-
-            _LOGGER.debug("Triggered state update for angle control entities: %s", entities_to_update)
-        except Exception as e:
-            _LOGGER.warning("Failed to force update related entities: %s", e)
-
-    async def _clear_pending_mode_after_timeout(self) -> None:
-        """Clear the pending state after a timeout."""
-        import asyncio
-        await asyncio.sleep(10)  # 10-second timeout
+    @callback
+    def _on_pending_mode_timeout(self, _now: datetime) -> None:
+        """Clear the pending state after the confirmation timeout."""
+        self._pending_timeout_unsub = None
         if self._pending_mode:
             _LOGGER.info("Clearing pending mode %s after timeout", self._pending_mode)
             self._pending_mode = None
-            self.async_write_ha_state()
+            safe_write_ha_state(self)
 
     def on_device_mode_confirmed(self, confirmed_mode: str) -> None:
         """Callback invoked after the device confirms a mode change."""
+        self._cancel_pending_mode_timeout()
         if self._pending_mode == confirmed_mode:
             _LOGGER.debug("Device confirmed mode change to %s, clearing pending state", confirmed_mode)
             self._pending_mode = None

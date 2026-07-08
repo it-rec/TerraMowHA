@@ -53,11 +53,50 @@ class TerraMowNumberBase(PushUpdateMixin, TerraMowEntity, NumberEntity):
     # mode-change event; the plain number entities leave this False.
     _listens_for_mode_change: bool = False
 
+    # Angle controllers are only usable while the device is in a specific
+    # main-direction mode (device enum string); None means always usable.
+    _required_mode: str | None = None
+
     async def async_added_to_hass(self) -> None:
         """Register push callbacks and, for angle controllers, the mode listener."""
         await super().async_added_to_hass()
         if self._listens_for_mode_change:
             self._register_mode_change_listener()
+
+    async def _handle_push_update(self, _payload: str) -> None:
+        # Device data is authoritative once it arrives; drop the optimistic
+        # mode cached from the selector's mode-change event.
+        self._cached_mode = None
+        await super()._handle_push_update(_payload)
+
+    def _current_main_direction_mode(self) -> str | None:
+        """Return the effective main-direction mode as a device enum string.
+
+        Prefers the mode cached from the selector's mode-change event (instant
+        feedback while the device has not confirmed yet) and falls back to the
+        device-reported global params.
+        """
+        if self._cached_mode:
+            return self._cached_mode
+
+        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
+            return None
+
+        global_params = self.basic_data.lawn_mower.global_params
+        if not global_params:
+            return None
+
+        main_direction_config = global_params.get('main_direction_angle_config', {})
+        return str(main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE'))
+
+    @property
+    def available(self) -> bool:
+        """Return True when connected and, for angle controls, in the right mode."""
+        if not super().available:
+            return False
+        if self._required_mode is None:
+            return True
+        return self._current_main_direction_mode() == self._required_mode
 
     def _register_mode_change_listener(self) -> None:
         """Refresh on the shared main-direction mode-change event.
@@ -261,47 +300,9 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
     _attr_native_max_value = 359
     _attr_native_step = 1
     _listens_for_mode_change = True
-
-    def _get_current_mode_from_selector(self) -> str | None:
-        """Try to get the current mode from the mode selector."""
-        # Prefer the mode cached from the event
-        if hasattr(self, '_cached_mode') and self._cached_mode:
-            mode = self._cached_mode
-            # Clear the cache so the next read uses the actual state
-            self._cached_mode = None
-            return mode
-
-        try:
-            # Look up the mode selector entity for the same device
-            mode_selector_entity_id = f"select.terramow_{self.host.replace('.', '_')}_main_direction_mode"
-            mode_selector_state = self.hass.states.get(mode_selector_entity_id)
-            if mode_selector_state and mode_selector_state.state != "unavailable":
-                return mode_selector_state.state
-        except Exception:
-            pass
-        return None
+    _required_mode = 'MAIN_DIRECTION_MODE_SINGLE'
 
     _unique_id_suffix = "main_direction_single_angle"
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available (only in single mode)."""
-        # First try to get the immediate state from the mode selector
-        current_mode = self._get_current_mode_from_selector()
-        if current_mode:
-            return current_mode == 'MAIN_DIRECTION_MODE_SINGLE'
-
-        # Fallback: get it from the device data
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            return False
-
-        global_params = self.basic_data.lawn_mower.global_params
-        if not global_params:
-            return False
-
-        main_direction_config = global_params.get('main_direction_angle_config', {})
-        mode = main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE')
-        return bool(mode == 'MAIN_DIRECTION_MODE_SINGLE')
 
     @property
     def native_value(self) -> float | None:
@@ -309,6 +310,7 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
         if not self.available:
             return None
 
+        # available already implies the hub exists (base connectivity check)
         global_params = self.basic_data.lawn_mower.global_params
         if not global_params:
             return None
@@ -322,10 +324,6 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
         """Set the single main direction angle."""
         if not self.available:
             _LOGGER.error("Single angle control not available in current mode")
-            return
-
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            _LOGGER.error("Lawn mower not available")
             return
 
         # Ensure the angle value stays within the 0-359 range
@@ -375,47 +373,9 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
     _attr_native_max_value = 180
     _attr_native_step = 1
     _listens_for_mode_change = True
-
-    def _get_current_mode_from_selector(self) -> str | None:
-        """Try to get the current mode from the mode selector."""
-        # Prefer the mode cached from the event
-        if hasattr(self, '_cached_mode') and self._cached_mode:
-            mode = self._cached_mode
-            # Clear the cache so the next read uses the actual state
-            self._cached_mode = None
-            return mode
-
-        try:
-            # Look up the mode selector entity for the same device
-            mode_selector_entity_id = f"select.terramow_{self.host.replace('.', '_')}_main_direction_mode"
-            mode_selector_state = self.hass.states.get(mode_selector_entity_id)
-            if mode_selector_state and mode_selector_state.state != "unavailable":
-                return mode_selector_state.state
-        except Exception:
-            pass
-        return None
+    _required_mode = 'MAIN_DIRECTION_MODE_AUTO_ROTATE'
 
     _unique_id_suffix = "main_direction_auto_rotate_interval"
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available (only in auto rotate mode)."""
-        # First try to get the immediate state from the mode selector
-        current_mode = self._get_current_mode_from_selector()
-        if current_mode:
-            return current_mode == 'MAIN_DIRECTION_MODE_AUTO_ROTATE'
-
-        # Fallback: get it from the device data
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            return False
-
-        global_params = self.basic_data.lawn_mower.global_params
-        if not global_params:
-            return False
-
-        main_direction_config = global_params.get('main_direction_angle_config', {})
-        mode = main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE')
-        return bool(mode == 'MAIN_DIRECTION_MODE_AUTO_ROTATE')
 
     @property
     def native_value(self) -> float | None:
@@ -423,6 +383,7 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
         if not self.available:
             return None
 
+        # available already implies the hub exists (base connectivity check)
         global_params = self.basic_data.lawn_mower.global_params
         if not global_params:
             return None
@@ -436,10 +397,6 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
         """Set the auto rotate interval."""
         if not self.available:
             _LOGGER.error("Auto rotate interval control not available in current mode")
-            return
-
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            _LOGGER.error("Lawn mower not available")
             return
 
         interval_value = int(value)
@@ -488,47 +445,9 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
     _attr_native_max_value = 359
     _attr_native_step = 1
     _listens_for_mode_change = True
-
-    def _get_current_mode_from_selector(self) -> str | None:
-        """Try to get the current mode from the mode selector."""
-        # Prefer the mode cached from the event
-        if hasattr(self, '_cached_mode') and self._cached_mode:
-            mode = self._cached_mode
-            # Clear the cache so the next read uses the actual state
-            self._cached_mode = None
-            return mode
-
-        try:
-            # Look up the mode selector entity for the same device
-            mode_selector_entity_id = f"select.terramow_{self.host.replace('.', '_')}_main_direction_mode"
-            mode_selector_state = self.hass.states.get(mode_selector_entity_id)
-            if mode_selector_state and mode_selector_state.state != "unavailable":
-                return mode_selector_state.state
-        except Exception:
-            pass
-        return None
+    _required_mode = 'MAIN_DIRECTION_MODE_MULTIPLE'
 
     _unique_id_suffix = "multiple_direction_angle1"
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available (only in multiple mode)."""
-        # First try to get the immediate state from the mode selector
-        current_mode = self._get_current_mode_from_selector()
-        if current_mode:
-            return current_mode == 'MAIN_DIRECTION_MODE_MULTIPLE'
-
-        # Fallback: get it from the device data
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            return False
-
-        global_params = self.basic_data.lawn_mower.global_params
-        if not global_params:
-            return False
-
-        main_direction_config = global_params.get('main_direction_angle_config', {})
-        mode = main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE')
-        return bool(mode == 'MAIN_DIRECTION_MODE_MULTIPLE')
 
     @property
     def native_value(self) -> float | None:
@@ -536,6 +455,7 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
         if not self.available:
             return None
 
+        # available already implies the hub exists (base connectivity check)
         global_params = self.basic_data.lawn_mower.global_params
         if not global_params:
             return None
@@ -551,10 +471,6 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
         """Set the first multiple direction angle."""
         if not self.available:
             _LOGGER.error("Multiple direction angle1 control not available in current mode")
-            return
-
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            _LOGGER.error("Lawn mower not available")
             return
 
         # Ensure the angle value stays within the 0-359 range
@@ -625,47 +541,9 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
     _attr_native_max_value = 359
     _attr_native_step = 1
     _listens_for_mode_change = True
-
-    def _get_current_mode_from_selector(self) -> str | None:
-        """Try to get the current mode from the mode selector."""
-        # Prefer the mode cached from the event
-        if hasattr(self, '_cached_mode') and self._cached_mode:
-            mode = self._cached_mode
-            # Clear the cache so the next read uses the actual state
-            self._cached_mode = None
-            return mode
-
-        try:
-            # Look up the mode selector entity for the same device
-            mode_selector_entity_id = f"select.terramow_{self.host.replace('.', '_')}_main_direction_mode"
-            mode_selector_state = self.hass.states.get(mode_selector_entity_id)
-            if mode_selector_state and mode_selector_state.state != "unavailable":
-                return mode_selector_state.state
-        except Exception:
-            pass
-        return None
+    _required_mode = 'MAIN_DIRECTION_MODE_MULTIPLE'
 
     _unique_id_suffix = "multiple_direction_angle2"
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available (only in multiple mode)."""
-        # First try to get the immediate state from the mode selector
-        current_mode = self._get_current_mode_from_selector()
-        if current_mode:
-            return current_mode == 'MAIN_DIRECTION_MODE_MULTIPLE'
-
-        # Fallback: get it from the device data
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            return False
-
-        global_params = self.basic_data.lawn_mower.global_params
-        if not global_params:
-            return False
-
-        main_direction_config = global_params.get('main_direction_angle_config', {})
-        mode = main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE')
-        return bool(mode == 'MAIN_DIRECTION_MODE_MULTIPLE')
 
     @property
     def native_value(self) -> float | None:
@@ -673,6 +551,7 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
         if not self.available:
             return None
 
+        # available already implies the hub exists (base connectivity check)
         global_params = self.basic_data.lawn_mower.global_params
         if not global_params:
             return None
@@ -688,10 +567,6 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
         """Set the second multiple direction angle."""
         if not self.available:
             _LOGGER.error("Multiple direction angle2 control not available in current mode")
-            return
-
-        if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            _LOGGER.error("Lawn mower not available")
             return
 
         # Ensure the angle value stays within the 0-359 range

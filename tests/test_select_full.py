@@ -131,16 +131,11 @@ def test_mode_select_device_confirmation_clears_pending() -> None:
     assert select._current_option == "MAIN_DIRECTION_MODE_AUTO_ROTATE"
 
 
-def test_mode_select_timeout_clears_pending(monkeypatch) -> None:
+def test_mode_select_timeout_clears_pending() -> None:
     hub = _hub()
     select = _mode_select(hub)
     select._pending_mode = "MAIN_DIRECTION_MODE_MULTIPLE"
-
-    async def _instant(_seconds):
-        return None
-
-    monkeypatch.setattr("asyncio.sleep", _instant)
-    asyncio.run(select._clear_pending_mode_after_timeout())
+    select._on_pending_mode_timeout(None)
     assert select._pending_mode is None
 
 
@@ -180,17 +175,15 @@ def test_mow_speed_current_option_none_when_speed_type_empty() -> None:
     assert select.current_option is None
 
 
-def test_mode_select_force_update_related_entities() -> None:
+def test_mode_select_confirmation_cancels_pending_timeout() -> None:
     hub = _hub()
     select = MainDirectionModeSelect(hub.basic_data, hub.hass)
-    # states.get returns a truthy state for every angle-controller entity id
-    hub.hass.states.get = MagicMock(return_value=SimpleNamespace(state="1"))
-    select._force_update_related_entities()
-    assert hub.hass.async_create_task.called
-
-    # the whole helper is defensively wrapped; a raising states.get is swallowed
-    hub.hass.states.get = MagicMock(side_effect=RuntimeError("boom"))
-    select._force_update_related_entities()
+    unsub = MagicMock()
+    select._pending_timeout_unsub = unsub
+    select._pending_mode = "MAIN_DIRECTION_MODE_MULTIPLE"
+    select.on_device_mode_confirmed("MAIN_DIRECTION_MODE_MULTIPLE")
+    unsub.assert_called_once()
+    assert select._pending_timeout_unsub is None
 
 
 # ---------------------------------------------------------------------------
