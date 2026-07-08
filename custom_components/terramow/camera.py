@@ -17,6 +17,7 @@ from typing import Any
 from homeassistant.components.camera import Camera
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
 from PIL import Image, ImageDraw, ImageFont
 
 from . import TerraMowBasicData, TerraMowConfigEntry
@@ -62,6 +63,11 @@ ROBOT_MIN_PX = 18
 ROBOT_MAX_PX = 90
 STATION_MIN_PX = 16
 STATION_MAX_PX = 80
+
+# Candidate scale-bar lengths in millimetres (0.1 m … 50 m). The renderer picks
+# the largest one that fits SCALE_BAR_TARGET_PX so the bar shows a round number.
+SCALE_BAR_STEPS_MM = (100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000)
+SCALE_BAR_TARGET_PX = 200
 
 # Layout
 OUTER_MARGIN = 40
@@ -698,23 +704,39 @@ def _point_line_distance(
 
 
 def _rdp_simplify_pixels(points: list[tuple[int, int]], epsilon: float) -> list[tuple[int, int]]:
-    """Simplify a pixel polyline using the RDP algorithm."""
-    if len(points) <= 2:
+    """Simplify a pixel polyline using the RDP algorithm.
+
+    Iterative (explicit stack) rather than recursive so a very long mowing
+    session — tens of thousands of points — can't exceed Python's recursion
+    limit.
+    """
+    count = len(points)
+    if count <= 2:
         return list(points)
-    max_distance = 0.0
-    max_index = 0
-    start = points[0]
-    end = points[-1]
-    for index in range(1, len(points) - 1):
-        distance = _point_line_distance(points[index], start, end)
-        if distance > max_distance:
-            max_distance = distance
-            max_index = index
-    if max_distance <= epsilon:
-        return [start, end]
-    left = _rdp_simplify_pixels(points[: max_index + 1], epsilon)
-    right = _rdp_simplify_pixels(points[max_index:], epsilon)
-    return left[:-1] + right
+
+    # keep[i] marks whether points[i] survives simplification.
+    keep = [False] * count
+    keep[0] = keep[count - 1] = True
+    stack = [(0, count - 1)]
+    while stack:
+        first, last = stack.pop()
+        if last <= first + 1:
+            continue
+        start = points[first]
+        end = points[last]
+        max_distance = 0.0
+        max_index = first
+        for index in range(first + 1, last):
+            distance = _point_line_distance(points[index], start, end)
+            if distance > max_distance:
+                max_distance = distance
+                max_index = index
+        if max_distance > epsilon:
+            keep[max_index] = True
+            stack.append((first, max_index))
+            stack.append((max_index, last))
+
+    return [point for point, kept in zip(points, keep, strict=True) if kept]
 
 
 def _simplify_path_pixels(
@@ -962,6 +984,9 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         self._theme = theme if theme in PALETTES else DEFAULT_MAP_THEME
         self._palette = PALETTES[self._theme]
         self._show_coverage = show_coverage
+        # Wall-clock label (HA timezone) of the last static-layer rebuild, shown
+        # in the HUD so a stale image is recognisable.
+        self._last_update_label: str | None = None
 
         self._map_data: dict[str, Any] = {}
         self._path_data: dict[str, Any] = {}
@@ -1011,6 +1036,8 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         attributes["rendered_layers"] = rendered_layers
         attributes["map_theme"] = self._theme
         attributes["coverage_enabled"] = self._show_coverage
+        if self._last_update_label is not None:
+            attributes["map_updated_at"] = self._last_update_label
         calibration = self._build_calibration_points()
         if calibration is not None:
             attributes["calibration_points"] = calibration
@@ -1568,6 +1595,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             self._render_snapshot = None
             return
 
+        self._last_update_label = dt_util.now().strftime("%H:%M")
         bg_color = (0, 0, 0, 0) if self._clean_mode else self._palette.app_bg
         image = Image.new("RGBA", (IMAGE_WIDTH, IMAGE_HEIGHT), bg_color)
         if not self._clean_mode:
@@ -1612,7 +1640,10 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
                 padding=padding,
             )
             if not self._clean_mode:
-                self._draw_map_chips(ImageDraw.Draw(image, "RGBA"), scene)
+                chip_draw = ImageDraw.Draw(image, "RGBA")
+                self._draw_map_chips(chip_draw, scene)
+                self._draw_scale_bar(chip_draw)
+                self._draw_legend(chip_draw, scene)
         else:
             self._transformer = None
             self._draw_empty_map_card(image, scene)
@@ -2064,13 +2095,17 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         if dash is not None and gap is not None:
             self._draw_dashed_polyline(draw, pixels, glow_color, glow_width, dash, gap)
             self._draw_dashed_polyline(draw, pixels, inner_color, inner_width, dash, gap)
-        else:
-            draw.line(pixels, fill=glow_color, width=glow_width, joint="curve")
-            draw.line(pixels, fill=inner_color, width=inner_width, joint="curve")
+            return
 
+        draw.line(pixels, fill=glow_color, width=glow_width, joint="curve")
+        draw.line(pixels, fill=inner_color, width=inner_width, joint="curve")
+
+        # joint="curve" already rounds the interior vertices, so only the two
+        # endpoints need round caps — drawing a circle per vertex would be
+        # O(N) ellipses for no visible gain on a long mowing track.
         glow_radius = max(1, glow_width // 2)
         inner_radius = max(1, inner_width // 2)
-        for x, y in pixels:
+        for x, y in (pixels[0], pixels[-1]):
             draw.ellipse(
                 [x - glow_radius, y - glow_radius, x + glow_radius, y + glow_radius],
                 fill=glow_color,
@@ -2340,6 +2375,124 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         badge_color = pal.badge_blue if "Complete" in state else pal.badge_orange if state != "-" else pal.badge_gray
         self._draw_chip(draw, (left, top + 42), state, badge_color, pal.text_white)
 
+    def _scale_bar_choice(self, scale: float) -> tuple[int, int] | None:
+        """Pick (length_mm, length_px) for the scale bar, or None if unusable.
+
+        ``scale`` is 1x pixels per millimetre. The largest round distance whose
+        bar stays within SCALE_BAR_TARGET_PX wins; if even the smallest step is
+        too wide (extreme zoom), the bar is suppressed.
+        """
+        if scale <= 0:
+            return None
+        chosen_mm: int | None = None
+        for step_mm in SCALE_BAR_STEPS_MM:
+            length_px = step_mm * scale
+            if length_px <= SCALE_BAR_TARGET_PX:
+                chosen_mm = step_mm
+            else:
+                break
+        if chosen_mm is None:
+            return None
+        length_px = int(round(chosen_mm * scale))
+        if length_px < 12:
+            return None
+        return chosen_mm, length_px
+
+    def _draw_scale_bar(self, draw: ImageDraw.ImageDraw) -> None:
+        """Draw a scale bar with a round metric distance in the map's corner."""
+        transformer = self._transformer
+        if transformer is None:
+            return
+        choice = self._scale_bar_choice(transformer.scale)
+        if choice is None:
+            return
+        length_mm, length_px = choice
+
+        pal = self._palette
+        x0 = MAP_RECT[0] + 22
+        y = MAP_RECT[3] - 26
+        x1 = x0 + length_px
+        draw.line([(x0, y), (x1, y)], fill=pal.text_subtle, width=3)
+        for tick_x in (x0, x1):
+            draw.line([(tick_x, y - 6), (tick_x, y + 6)], fill=pal.text_subtle, width=3)
+
+        meters = length_mm / 1000
+        label = f"{meters:g} m"
+        font = _load_font(14, bold=True)
+        box = draw.textbbox((0, 0), label, font=font)
+        draw.text(
+            (x0 + (length_px - (box[2] - box[0])) / 2, y - 24),
+            label,
+            fill=pal.text_subtle,
+            font=font,
+        )
+
+    def _legend_entries(self, scene: dict[str, Any]) -> list[tuple[tuple[int, int, int, int], str]]:
+        """Color/label pairs for the feature types present in the scene."""
+        pal = self._palette
+        counts = scene.get("scene_counts", {})
+        entries: list[tuple[tuple[int, int, int, int], str]] = []
+        if scene.get("path_points"):
+            entries.append((pal.path_current, "Path"))
+        if self._show_coverage and scene.get("path_points"):
+            entries.append((pal.coverage, "Coverage"))
+        if counts.get("forbidden_zones", 0) or counts.get("physical_forbidden_zones", 0):
+            entries.append((pal.restricted_outline, "No-go"))
+        if counts.get("required_zones", 0):
+            entries.append((pal.required_outline, "Required"))
+        if counts.get("pass_through_zones", 0):
+            entries.append((pal.pass_through_outline, "Pass-through"))
+        if counts.get("cross_boundary_tunnels", 0) or counts.get(
+            "virtual_cross_boundary_tunnels", 0
+        ):
+            entries.append((pal.channel, "Tunnel"))
+        if counts.get("obstacles", 0):
+            entries.append((pal.obstacle_outline, "Obstacle"))
+        return entries
+
+    def _draw_legend(self, draw: ImageDraw.ImageDraw, scene: dict[str, Any]) -> None:
+        """Draw a compact color legend in the map's top-right corner."""
+        entries = self._legend_entries(scene)
+        if not entries:
+            return
+        pal = self._palette
+        font = _load_font(13, bold=True)
+        row_height = 22
+        swatch = 12
+        text_gap = 8
+        pad = 12
+        text_width = max(
+            (draw.textbbox((0, 0), label, font=font)[2] for _, label in entries),
+            default=0,
+        )
+        box_width = pad * 2 + swatch + text_gap + text_width
+        box_height = pad * 2 + row_height * len(entries) - (row_height - swatch)
+        right = MAP_RECT[2] - 18
+        top = MAP_RECT[1] + 18
+        left = right - box_width
+
+        overlay_color = (*pal.card_bg[:3], 220)
+        draw.rounded_rectangle(
+            [left, top, right, top + box_height],
+            radius=12,
+            fill=overlay_color,
+            outline=pal.card_border,
+        )
+        y = top + pad
+        for color, label in entries:
+            draw.rounded_rectangle(
+                [left + pad, y, left + pad + swatch, y + swatch],
+                radius=3,
+                fill=color,
+            )
+            draw.text(
+                (left + pad + swatch + text_gap, y - 1),
+                label,
+                fill=pal.text,
+                font=font,
+            )
+            y += row_height
+
     def _draw_chip(
         self,
         draw: ImageDraw.ImageDraw,
@@ -2441,6 +2594,18 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         title_box = draw.textbbox((0, 0), title, font=title_font)
         title_x = right - 22 - (title_box[2] - title_box[0])
         draw.text((title_x, top + 18), title, fill=self._palette.text_subtle, font=title_font)
+
+        if self._last_update_label:
+            stamp = f"Updated {self._last_update_label}"
+            stamp_font = _load_font(13)
+            stamp_box = draw.textbbox((0, 0), stamp, font=stamp_font)
+            stamp_x = right - 22 - (stamp_box[2] - stamp_box[0])
+            draw.text(
+                (stamp_x, top + 40),
+                stamp,
+                fill=self._palette.text_muted,
+                font=stamp_font,
+            )
 
     def _render_final_image(self) -> bytes:
         """Render the final image."""

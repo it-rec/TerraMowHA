@@ -118,6 +118,12 @@ The map geometry is rendered supersampled and downsampled, so polygon and path
 edges are anti-aliased, and the robot and station icons are drawn true to scale
 (clamped so they stay legible on very large or very small lawns).
 
+The full (non-clean) map also overlays a **scale bar** with a round metric
+distance, a compact **color legend** for the feature types present, and an
+**"Updated HH:MM"** timestamp in the summary panel (in Home Assistant's local
+time) so a stale image is easy to spot. The timestamp is also exposed as the
+`map_updated_at` camera attribute.
+
 ### Interactive map cards
 
 The map camera publishes a `calibration_points` attribute (three

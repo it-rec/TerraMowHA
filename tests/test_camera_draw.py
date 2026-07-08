@@ -489,3 +489,147 @@ def test_robot_icon_rebuilds_on_scale_change() -> None:
     asyncio.run(camera._on_map_info({"id": 1}))
     _render(camera)
     assert camera._robot_image_length_px is not None
+
+
+# ---------------------------------------------------------------------------
+# scale bar
+# ---------------------------------------------------------------------------
+
+
+def test_scale_bar_and_timestamp_rendered() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = MEGA_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    assert _render(camera).startswith(PNG_MAGIC)
+    # a rebuild stamps the update time and exposes it as an attribute
+    assert camera._last_update_label is not None
+    assert camera.extra_state_attributes["map_updated_at"] == camera._last_update_label
+
+
+def test_scale_bar_choice_picks_round_distance() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    # 0.1 px/mm -> 5000 mm bar spans 500 px (too wide), 2000 mm spans 200 px (fits)
+    choice = camera._scale_bar_choice(0.1)
+    assert choice is not None
+    length_mm, length_px = choice
+    assert length_mm == 2000
+    assert length_px == 200
+
+
+def test_scale_bar_suppressed_on_extreme_zoom() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    # even the smallest 100 mm step would be far wider than the target
+    assert camera._scale_bar_choice(100.0) is None
+    # a degenerate transformer scale yields no bar
+    assert camera._scale_bar_choice(0.0) is None
+    # extremely zoomed out: every step fits but the bar collapses below 12 px
+    assert camera._scale_bar_choice(0.0001) is None
+
+
+def test_map_updated_at_absent_before_first_render() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    # no rebuild yet -> no timestamp attribute
+    assert "map_updated_at" not in camera.extra_state_attributes
+
+
+# ---------------------------------------------------------------------------
+# legend
+# ---------------------------------------------------------------------------
+
+
+def test_legend_lists_present_feature_types() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = MEGA_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    scene = camera._build_scene()
+    labels = [label for _, label in camera._legend_entries(scene)]
+    # the mega map carries no-go, required, pass-through, tunnel and obstacles
+    assert "No-go" in labels
+    assert "Required" in labels
+    assert "Tunnel" in labels
+
+
+def test_legend_empty_without_features() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    camera._map_data = {
+        "id": 1,
+        "map_state": "MAP_STATE_COMPLETE",
+        "width": 100,
+        "height": 80,
+        "resolution": 0.05,
+        "origin": {"x": 0.0, "y": 0.0},
+    }
+    scene = camera._build_scene()
+    assert camera._legend_entries(scene) == []
+
+
+# ---------------------------------------------------------------------------
+# realistic scale: scale bar + legend actually draw
+# ---------------------------------------------------------------------------
+
+
+# 400 x 320 cells @ 25 mm -> a 10 m x 8 m lawn in millimetre coordinates,
+# giving a realistic pixels-per-mm scale where the scale bar is visible.
+REALISTIC_MAP = {
+    "id": 2,
+    "name": "Lawn",
+    "map_state": "MAP_STATE_COMPLETE",
+    "width": 400,
+    "height": 320,
+    "resolution": 25,
+    "origin": {"x": 0.0, "y": 0.0},
+    "station_pose": {"x": 500, "y": 500, "theta": 0},
+    "regions": [
+        {
+            "id": 1,
+            "boundary": _poly((0, 0), (10000, 0), (10000, 8000), (0, 8000)),
+            "sub_regions": [],
+        }
+    ],
+    "forbidden_zones": [_poly((1000, 1000), (2000, 1000), (2000, 2000))],
+    "required_zones": [_poly((3000, 3000), (4000, 3000), (4000, 4000))],
+    "pass_through_zones": [_poly((5000, 1000), (6000, 1000), (6000, 2000))],
+    "cross_boundary_tunnels": [{"line": _poly((1000, 5000), (2000, 6000))}],
+    "obstacles": [_poly((7000, 2000), (7500, 2000), (7500, 2500))],
+}
+
+
+def test_realistic_map_draws_scale_bar_and_legend() -> None:
+    hub = _hub()
+    camera = _camera(hub, show_coverage=True)
+    hub._map_data = REALISTIC_MAP
+    asyncio.run(camera._on_map_info({"id": 2}))
+    points = [
+        {"position": {"x": 500 * i, "y": 4000}, "type": "PATH_POINT_TYPE_CLEANING"}
+        for i in range(15)
+    ]
+    asyncio.run(
+        camera._on_path_data(
+            {"id": 9, "map_id": 2, "type": "PATH_TYPE_CLEAN", "points": points}
+        )
+    )
+    assert _render(camera).startswith(PNG_MAGIC)
+
+    # the transformer scale is realistic -> a scale bar is chosen and drawn
+    assert camera._transformer is not None
+    assert camera._scale_bar_choice(camera._transformer.scale) is not None
+    labels = [label for _, label in camera._legend_entries(camera._build_scene())]
+    assert "Path" in labels
+    assert "Coverage" in labels
+
+
+def test_scale_bar_noop_without_transformer() -> None:
+    from PIL import Image, ImageDraw
+
+    hub = _hub()
+    camera = _camera(hub)
+    camera._transformer = None
+    draw = ImageDraw.Draw(Image.new("RGBA", (100, 100)))
+    # no transformer -> early return, no crash
+    camera._draw_scale_bar(draw)
