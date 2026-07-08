@@ -318,7 +318,7 @@ def _real_hub(hass: HomeAssistant):
     reg = dr.async_get(hass)
     reg.async_get_or_create(
         config_entry_id=entry.entry_id,
-        identifiers={("TerraMowLawnMower", "192.0.2.120")},
+        identifiers={("terramow", "192.0.2.120")},
     )
     return hub, reg
 
@@ -327,7 +327,7 @@ async def test_update_device_sw_version_and_model(hass: HomeAssistant) -> None:
     hub, reg = _real_hub(hass)
     await hub._async_update_device_sw_version("26.3")
     await hub._async_update_device_model("TerraMow-Pro")
-    device = reg.async_get_device({("TerraMowLawnMower", "192.0.2.120")})
+    device = reg.async_get_device({("terramow", "192.0.2.120")})
     assert device.sw_version == "26.3"
     assert device.model == "TerraMow-Pro"
 

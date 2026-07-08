@@ -28,6 +28,7 @@ from .const import (
     CONF_MAP_RESOLUTION,
     CONF_MAP_SHOW_COVERAGE,
     CONF_MAP_THEME,
+    CONF_SERIAL,
     DEFAULT_MAP_RESOLUTION,
     DEFAULT_MAP_SHOW_COVERAGE,
     DEFAULT_MAP_THEME,
@@ -142,6 +143,10 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
                 _LOGGER.info('Setting up for host "%s"', host)
                 await self.async_set_unique_id(host)
                 self._abort_if_unique_id_configured()
+                if self._host_already_configured(host):
+                    # Serial-keyed entries are not keyed by host, so the
+                    # unique-id check alone would let a duplicate through.
+                    return self.async_abort(reason="already_configured")
                 return self.async_create_entry(
                     title=info["title"],
                     data=user_input,
@@ -163,13 +168,31 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
 
         _LOGGER.info("Zeroconf discovered TerraMow at %s", host)
 
-        await self.async_set_unique_id(host)
+        # Prefer the serial from the announcement's TXT properties as the
+        # stable identity; entries created before serial adoption (or
+        # announcements without one) fall back to the host. Matching a
+        # serial-keyed entry updates its host, which is what heals a DHCP
+        # address change.
+        properties = getattr(discovery_info, "properties", None)
+        serial = properties.get("sn") if isinstance(properties, dict) else None
+        await self.async_set_unique_id(serial or host)
         self._abort_if_unique_id_configured(updates={CONF_HOST: host})
+        if self._host_already_configured(host):
+            # A serial-keyed entry rediscovered without a serial in the
+            # announcement does not match the unique id; dedupe by host.
+            return self.async_abort(reason="already_configured")
 
         self._discovered_host = host
         self.context["title_placeholders"] = {"host": host}
 
         return await self.async_step_user_pass()
+
+    def _host_already_configured(self, host: str) -> bool:
+        """Return True if an existing entry already uses this host."""
+        return any(
+            entry.data.get(CONF_HOST) == host
+            for entry in self._async_current_entries()
+        )
 
     async def async_step_user_pass(
         self, user_input: dict[str, Any] | None = None
@@ -271,7 +294,7 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
             else:
                 new_host = user_input[CONF_HOST]
-                # The unique ID is the hostname; abort if the new host is already used by another entry.
+                # Abort if the new host is already used by another entry.
                 for other in self.hass.config_entries.async_entries(DOMAIN):
                     if (
                         other.entry_id != entry.entry_id
@@ -279,11 +302,17 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
                     ):
                         return self.async_abort(reason="already_configured")
                 _LOGGER.info('Reconfiguring host to "%s"', new_host)
+                serial = entry.data.get(CONF_SERIAL)
                 self.hass.config_entries.async_update_entry(
                     entry,
                     title=info["title"],
-                    data=user_input,
-                    unique_id=new_host,
+                    # Keep the adopted serial (the mower moved address, it
+                    # did not change identity) and the serial-based unique
+                    # id; host-keyed entries keep following the host.
+                    data={**user_input, CONF_SERIAL: serial}
+                    if serial
+                    else user_input,
+                    unique_id=serial or new_host,
                 )
                 await self.hass.config_entries.async_reload(entry.entry_id)
                 return self.async_abort(reason="reconfigure_successful")

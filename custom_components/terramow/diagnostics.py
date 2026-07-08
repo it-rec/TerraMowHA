@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant
 from . import TerraMowConfigEntry
 
 # The hostname/IP and password are private information; redact them before export.
-TO_REDACT = {CONF_HOST, CONF_PASSWORD, "host"}
+TO_REDACT = {CONF_HOST, CONF_PASSWORD, "host", "serial"}
 
 
 async def async_get_config_entry_diagnostics(

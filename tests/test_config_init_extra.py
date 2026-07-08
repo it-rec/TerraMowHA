@@ -100,7 +100,7 @@ async def test_setup_entry_migration_conflict_keeps_old_device(hass: HomeAssista
     )
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
-        identifiers={("TerraMowLawnMower", "192.0.2.10")},
+        identifiers={("terramow", "192.0.2.10")},
     )
     from homeassistant.exceptions import ConfigEntryNotReady
 

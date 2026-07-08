@@ -95,8 +95,7 @@ async def test_setup_entry_migrates_device_identifier(hass: HomeAssistant) -> No
         await async_setup_entry(hass, entry)
 
     assert (
-        device_registry.async_get_device({("TerraMowLawnMower", "192.0.2.10")})
-        is not None
+        device_registry.async_get_device({("terramow", "192.0.2.10")}) is not None
     )
     assert (
         device_registry.async_get_device({("TerraMowLanwMower", "192.0.2.10")}) is None
