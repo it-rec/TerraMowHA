@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberMode
-from homeassistant.const import EntityCategory, UnitOfLength
+from homeassistant.const import DEGREE, EntityCategory, UnitOfLength
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -272,11 +272,8 @@ class MowingSpacingNumber(TerraMowNumberBase):
             _LOGGER.error("Lawn mower not available")
             return
 
-        # Validate the input range
+        # Home Assistant already enforces the entity's min/max before calling
         int_value = int(value)
-        if int_value < 80 or int_value > 140:
-            _LOGGER.error("Invalid mowing spacing value: %d mm. Valid range: 80-140mm", int_value)
-            return
 
         # Send the set command to dp_155
         command = {
@@ -292,7 +289,7 @@ class MowingSpacingNumber(TerraMowNumberBase):
 class MainDirectionSingleAngleNumber(TerraMowNumberBase):
     """Single main-direction angle setting controller - uses dp_155 data."""
 
-    _attr_native_unit_of_measurement = "°"
+    _attr_native_unit_of_measurement = DEGREE
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "main_direction_single_angle"
     _attr_mode = NumberMode.BOX
@@ -365,7 +362,7 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
 class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
     """Auto-rotate main-direction interval setting controller - uses dp_155 data."""
 
-    _attr_native_unit_of_measurement = "°"
+    _attr_native_unit_of_measurement = DEGREE
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "main_direction_auto_rotate_interval"
     _attr_mode = NumberMode.BOX
@@ -437,7 +434,7 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
 class MultipleDirectionAngle1Number(TerraMowNumberBase):
     """First multiple-main-direction angle setting controller - uses dp_155 data."""
 
-    _attr_native_unit_of_measurement = "°"
+    _attr_native_unit_of_measurement = DEGREE
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "multiple_direction_angle1"
     _attr_mode = NumberMode.BOX
@@ -533,7 +530,7 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
 class MultipleDirectionAngle2Number(TerraMowNumberBase):
     """Second multiple-main-direction angle setting controller - uses dp_155 data."""
 
-    _attr_native_unit_of_measurement = "°"
+    _attr_native_unit_of_measurement = DEGREE
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "multiple_direction_angle2"
     _attr_mode = NumberMode.BOX

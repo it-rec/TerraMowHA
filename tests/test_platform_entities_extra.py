@@ -85,7 +85,7 @@ def test_edge_cutting_distance_number_read_and_write() -> None:
     assert command == {"edge_cutting_distance": {"value": 30}}
 
 
-def test_mowing_spacing_number_rejects_out_of_range() -> None:
+def test_mowing_spacing_number_publishes_value() -> None:
     hub = _hub()
     number = MowingSpacingNumber(hub.basic_data, hub.hass)
     _feed(hub.on_global_params, {
@@ -95,15 +95,11 @@ def test_mowing_spacing_number_rejects_out_of_range() -> None:
     assert number.native_value == 100.0
     assert number.extra_state_attributes["current_mow_spacing"] == 90
 
-    # valid value publishes
+    # the write publishes as-is; Home Assistant enforces the entity's
+    # min/max before async_set_native_value is ever called
     asyncio.run(number.async_set_native_value(120.0))
     topic, command = _published(hub)
     assert command == {"mow_spacing": {"value": 120}}
-
-    # out-of-range value is rejected without publishing
-    hub.mqtt_client.publish.reset_mock()
-    asyncio.run(number.async_set_native_value(200.0))
-    hub.mqtt_client.publish.assert_not_called()
 
 
 def _mode_number(number, hub):

@@ -111,7 +111,7 @@ def test_sensors_return_none_without_lawn_mower() -> None:
         sensor = cls(hub.basic_data, hub.hass)
         assert sensor.native_value is None
     # the main-direction status sensor reports a sentinel instead of None
-    assert MainDirectionStatusSensor(hub.basic_data, hub.hass).native_value == "unavailable"
+    assert MainDirectionStatusSensor(hub.basic_data, hub.hass).native_value is None
 
 
 # ---------------------------------------------------------------------------
@@ -249,8 +249,8 @@ def test_version_compatibility_attributes_include_firmware() -> None:
 def test_main_direction_status_no_config_and_modes() -> None:
     hub = _hub()
     sensor = MainDirectionStatusSensor(hub.basic_data, hub.hass)
-    _feed(hub.on_global_params, {})  # empty -> no_config
-    assert sensor.native_value == "no_config"
+    _feed(hub.on_global_params, {})  # empty -> unknown
+    assert sensor.native_value is None
 
     _feed(hub.on_global_params, {
         "main_direction_angle_config": {

@@ -9,30 +9,14 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import EntityCategory, UnitOfArea
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from . import TerraMowBasicData, TerraMowConfigEntry
+from . import TerraMowBasicData
 from .const import to_ha_enum_state
 from .entity import TerraMowEntity
-from .entity_utils import safe_write_ha_state
+from .entity_utils import PushUpdateMixin, safe_write_ha_state
 
-
-async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: TerraMowConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    """Set up TerraMow map sensors."""
-    basic_data = config_entry.runtime_data
-
-    # Create the map sensor entities
-    entities = [
-        TerraMowMapStatusSensor(basic_data, hass),
-        TerraMowMapAreaSensor(basic_data, hass),
-        TerraMowCleanModeSensor(basic_data, hass),
-    ]
-
-    async_add_entities(entities)
+# Note: this module is not a platform of its own. sensor.py imports these
+# classes and adds them from its async_setup_entry.
 
 class TerraMowMapSensorBase(TerraMowEntity, SensorEntity):
     """Base class for map sensors."""
@@ -54,8 +38,10 @@ class TerraMowMapSensorBase(TerraMowEntity, SensorEntity):
         self._map_info = map_info
         safe_write_ha_state(self)
 
-class TerraMowMapStatusSensor(TerraMowEntity, SensorEntity):
+class TerraMowMapStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Map status sensor - uses dp_117 data."""
+
+    _push_dp_ids = (117,)
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "map_status"
@@ -103,7 +89,8 @@ class TerraMowMapAreaSensor(TerraMowMapSensorBase):
     """Map area sensor."""
 
     _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
-    _attr_device_class = None  # no standard device class for area
+    # SensorDeviceClass.AREA exists since HA 2024.12; stay None on older cores
+    _attr_device_class = getattr(SensorDeviceClass, "AREA", None)
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "map_area"
@@ -117,8 +104,10 @@ class TerraMowMapAreaSensor(TerraMowMapSensorBase):
             return None
 
         # total_area is in units of 0.1 square meters; convert to square meters
-        total_area = self._map_info.get('total_area', 0)
-        return round(total_area / 10, 1) if total_area else None
+        total_area = self._map_info.get('total_area')
+        if total_area is None:
+            return None
+        return round(total_area / 10, 1)
 
 
 class TerraMowCleanModeSensor(TerraMowMapSensorBase):

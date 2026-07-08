@@ -213,6 +213,12 @@ def test_zone_select_empty_and_populated_options() -> None:
     assert attrs["sub_zones_count"] == 1
     assert attrs["currently_selected_zones"] == [7]
 
+    # a sub-zone without an id can never be selected -> not offered
+    asyncio.run(select._on_map_info({
+        "regions": [{"id": 1, "sub_regions": [{"name": "Kaputt"}, {"id": 9}]}],
+    }))
+    assert select.options == ["all_zones", "Sub-zone 9 (ID: 9)"]
+
 
 def test_zone_select_invalid_option_parsing() -> None:
     hub = _hub()

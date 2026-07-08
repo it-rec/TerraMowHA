@@ -24,6 +24,8 @@ from . import TerraMowBasicData, TerraMowConfigEntry
 from .const import (
     BASE_STATION_MAINTENANCE_CYCLE_MINUTES,
     BLADE_MAINTENANCE_CYCLE_MINUTES,
+    CURRENT_HA_VERSION,
+    MIN_REQUIRED_OVERALL_VERSION,
     MOW_SPEED_TYPES,
     to_ha_enum_state,
 )
@@ -198,6 +200,8 @@ class TotalMowedAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     _push_dp_ids = (124,)
 
     _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
+    # SensorDeviceClass.AREA exists since HA 2024.12; stay None on older cores
+    _attr_device_class = getattr(SensorDeviceClass, "AREA", None)
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "total_mowed_area"
@@ -227,7 +231,8 @@ class CurrentSessionAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     _push_dp_ids = (113,)
 
     _attr_native_unit_of_measurement = UnitOfArea.SQUARE_METERS
-    _attr_device_class = None
+    # SensorDeviceClass.AREA exists since HA 2024.12; stay None on older cores
+    _attr_device_class = getattr(SensorDeviceClass, "AREA", None)
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "current_session_area"
@@ -245,8 +250,10 @@ class CurrentSessionAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
             return None
 
         # clean_area is in units of 0.1 square meters; convert to square meters
-        clean_area = current_work_data.get('clean_area', 0)
-        return round(clean_area / 10, 1) if clean_area else None
+        clean_area = current_work_data.get('clean_area')
+        if clean_area is None:
+            return None
+        return round(clean_area / 10, 1)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -675,7 +682,6 @@ class VersionCompatibilitySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
             attributes["firmware_map_version"] = module_info.get("map", "unknown")
             attributes["firmware_control_version"] = module_info.get("control", "unknown")
 
-        from .const import CURRENT_HA_VERSION, MIN_REQUIRED_OVERALL_VERSION
         attributes["plugin_ha_version"] = CURRENT_HA_VERSION
         attributes["min_required_overall_version"] = MIN_REQUIRED_OVERALL_VERSION
 
@@ -1080,7 +1086,7 @@ async def async_setup_entry(
         CurrentSessionAreaSensor(basic_data, hass),
         CurrentSessionProgressSensor(basic_data, hass),
         CurrentSessionTimeSensor(basic_data, hass),
-CurrentJobTypeSensor(basic_data, hass),
+        CurrentJobTypeSensor(basic_data, hass),
 
         # Maintenance reminder sensors
         RemainingBladeTimeSensor(basic_data, hass),
@@ -1165,11 +1171,11 @@ class MainDirectionStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     def native_value(self) -> str | None:
         """Return the sensor value."""
         if not hasattr(self.basic_data, 'lawn_mower') or not self.basic_data.lawn_mower:
-            return "unavailable"
+            return None
 
         global_params = self.basic_data.lawn_mower.global_params
         if not global_params:
-            return "no_config"
+            return None
 
         main_direction_config = global_params.get('main_direction_angle_config', {})
         mode = main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE')
