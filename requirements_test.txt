@@ -1,3 +1,6 @@
 pytest-homeassistant-custom-component
 tzdata
 pytest-cov
+# Imported by homeassistant.components.camera, which the full-stack
+# integration tests (tests/test_integration_setup.py) set up for real.
+PyTurboJPEG
