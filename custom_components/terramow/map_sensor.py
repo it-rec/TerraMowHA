@@ -107,7 +107,7 @@ class TerraMowMapAreaSensor(TerraMowMapSensorBase):
         total_area = self._map_info.get('total_area')
         if total_area is None:
             return None
-        return round(total_area / 10, 1)
+        return round(float(total_area) / 10, 1)
 
 
 class TerraMowCleanModeSensor(TerraMowMapSensorBase):

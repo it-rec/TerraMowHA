@@ -253,7 +253,7 @@ class CurrentSessionAreaSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         clean_area = current_work_data.get('clean_area')
         if clean_area is None:
             return None
-        return round(clean_area / 10, 1)
+        return round(float(clean_area) / 10, 1)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
