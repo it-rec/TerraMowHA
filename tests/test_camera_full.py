@@ -15,15 +15,21 @@ from unittest.mock import AsyncMock, MagicMock
 sys.modules.setdefault("turbojpeg", MagicMock())
 
 from custom_components.terramow import TerraMowBasicData  # noqa: E402
-from custom_components.terramow.camera import (  # noqa: E402
-    TerraMowMapCamera,
-    _coerce_angle_radians,
-    _coerce_float,
-    _coerce_int,
+from custom_components.terramow.camera import TerraMowMapCamera  # noqa: E402
+from custom_components.terramow.hub import TerraMowHub  # noqa: E402
+from custom_components.terramow.map_render import (  # noqa: E402
+    _enum_label,
+    _format_area,
+    _format_file_size,
+    _format_point,
+    _format_size,
+    _truncate,
+    render_placeholder,
+)
+from custom_components.terramow.map_scene import (  # noqa: E402
     _collect_recursive_points,
     _dedupe_points,
     _ellipse_points,
-    _enum_label,
     _extract_map_extent,
     _extract_marker_points,
     _extract_path_points,
@@ -31,25 +37,21 @@ from custom_components.terramow.camera import (  # noqa: E402
     _extract_polylines,
     _feature_points,
     _filter_cleaning_path_points,
-    _format_area,
-    _format_file_size,
-    _format_point,
-    _format_size,
     _line_points,
     _merge_path_points,
-    _normalize_angle_radians,
     _path_map_id,
     _point_line_distance,
-    _point_tuple,
     _polygon_centroid,
     _polygon_points,
-    _pose_tuple,
     _rdp_simplify_pixels,
-    _render_placeholder,
-    _simplify_path_pixels,
-    _truncate,
+    coerce_angle_radians,
+    coerce_float,
+    coerce_int,
+    normalize_angle_radians,
+    point_tuple,
+    pose_tuple,
+    simplify_path_pixels,
 )
-from custom_components.terramow.hub import TerraMowHub  # noqa: E402
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
@@ -64,22 +66,22 @@ def _poly(*pts):
 
 
 def test_coerce_float_and_int() -> None:
-    assert _coerce_float("3.5") == 3.5
-    assert _coerce_float(None) is None
-    assert _coerce_float("nope") is None
-    assert _coerce_int("7") == 7
-    assert _coerce_int(None) is None
-    assert _coerce_int("bad") is None
+    assert coerce_float("3.5") == 3.5
+    assert coerce_float(None) is None
+    assert coerce_float("nope") is None
+    assert coerce_int("7") == 7
+    assert coerce_int(None) is None
+    assert coerce_int("bad") is None
 
 
 def test_point_and_pose_tuple() -> None:
-    assert _point_tuple({"x": 1, "y": 2}) == (1.0, 2.0)
-    assert _point_tuple({"x": 1}) is None
-    assert _point_tuple(None) is None
+    assert point_tuple({"x": 1, "y": 2}) == (1.0, 2.0)
+    assert point_tuple({"x": 1}) is None
+    assert point_tuple(None) is None
     # theta falls back to yaw, then to 0.0
-    assert _pose_tuple({"x": 0, "y": 0, "yaw": 5})["theta"] == 5.0
-    assert _pose_tuple({"x": 0, "y": 0})["theta"] == 0.0
-    assert _pose_tuple(None) is None
+    assert pose_tuple({"x": 0, "y": 0, "yaw": 5})["theta"] == 5.0
+    assert pose_tuple({"x": 0, "y": 0})["theta"] == 0.0
+    assert pose_tuple(None) is None
 
 
 def test_polygon_and_line_points() -> None:
@@ -165,7 +167,7 @@ def test_pixel_geometry_and_simplify() -> None:
     assert _rdp_simplify_pixels([(0, 0), (5, 0)], 1.0) == [(0, 0), (5, 0)]
     # collinear middle point is dropped
     assert _rdp_simplify_pixels([(0, 0), (1, 0), (2, 0)], 0.5) == [(0, 0), (2, 0)]
-    assert _simplify_path_pixels([(0, 0), (0, 0), (10, 0)], 1.0, 2.0)
+    assert simplify_path_pixels([(0, 0), (0, 0), (10, 0)], 1.0, 2.0)
 
 
 # ---------------------------------------------------------------------------
@@ -181,9 +183,9 @@ def test_map_extent() -> None:
 
 def test_coerce_float_non_convertible_and_ellipse_without_center() -> None:
     # neither a number nor a convertible string -> None (final fallthrough)
-    assert _coerce_float([1, 2]) is None
+    assert coerce_float([1, 2]) is None
     # a string that float() rejects -> None
-    assert _coerce_float("nan-ish!!") is None
+    assert coerce_float("nan-ish!!") is None
     # an ellipse with radii but no resolvable centre yields no polygon
     assert _ellipse_points({"radius_x": 1, "radius_y": 1}) == []
 
@@ -239,14 +241,14 @@ def test_formatting_helpers() -> None:
 
 
 def test_angle_helpers() -> None:
-    assert _coerce_angle_radians(None) is None
-    assert _coerce_angle_radians(2000, milli_radian=True) == 2.0
-    assert abs(_normalize_angle_radians(3 * math.pi) - math.pi) < 1e-6 or \
-        abs(_normalize_angle_radians(3 * math.pi) + math.pi) < 1e-6
+    assert coerce_angle_radians(None) is None
+    assert coerce_angle_radians(2000, milli_radian=True) == 2.0
+    assert abs(normalize_angle_radians(3 * math.pi) - math.pi) < 1e-6 or \
+        abs(normalize_angle_radians(3 * math.pi) + math.pi) < 1e-6
 
 
 def test_render_placeholder_is_png() -> None:
-    assert _render_placeholder("Hi").startswith(PNG_MAGIC)
+    assert render_placeholder("Hi").startswith(PNG_MAGIC)
 
 
 # ---------------------------------------------------------------------------

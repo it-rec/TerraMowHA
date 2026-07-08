@@ -9,23 +9,25 @@ from unittest.mock import AsyncMock, MagicMock
 sys.modules.setdefault("turbojpeg", MagicMock())
 
 from custom_components.terramow import TerraMowBasicData  # noqa: E402
-from custom_components.terramow.camera import (  # noqa: E402
+from custom_components.terramow.camera import TerraMowMapCamera  # noqa: E402
+from custom_components.terramow.hub import TerraMowHub  # noqa: E402
+from custom_components.terramow.map_render import (  # noqa: E402
     CoordinateTransformer,
-    TerraMowMapCamera,
-    _coerce_float,
-    _coerce_int,
+    _truncate,
+    render_placeholder,
+)
+from custom_components.terramow.map_scene import (  # noqa: E402
     _dedupe_points,
     _extract_map_extent,
     _extract_path_points,
     _path_map_id,
-    _point_tuple,
     _polygon_points,
-    _pose_tuple,
     _rdp_simplify_pixels,
-    _render_placeholder,
-    _truncate,
+    coerce_float,
+    coerce_int,
+    point_tuple,
+    pose_tuple,
 )
-from custom_components.terramow.hub import TerraMowHub  # noqa: E402
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
@@ -58,22 +60,22 @@ def test_coordinate_transformer_without_points_is_identity_plus_padding() -> Non
 
 
 def test_coercion_helpers() -> None:
-    assert _coerce_float("1.5") == 1.5
-    assert _coerce_float(None) is None
-    assert _coerce_float("abc") is None
-    assert _coerce_int("7") == 7
-    assert _coerce_int("x") is None
+    assert coerce_float("1.5") == 1.5
+    assert coerce_float(None) is None
+    assert coerce_float("abc") is None
+    assert coerce_int("7") == 7
+    assert coerce_int("x") is None
 
 
 def test_point_pose_and_polygon_extraction() -> None:
-    assert _point_tuple({"x": 1, "y": 2}) == (1.0, 2.0)
-    assert _point_tuple({"x": 1}) is None
-    assert _point_tuple("nope") is None
+    assert point_tuple({"x": 1, "y": 2}) == (1.0, 2.0)
+    assert point_tuple({"x": 1}) is None
+    assert point_tuple("nope") is None
 
-    pose = _pose_tuple({"x": 1, "y": 2, "theta": 0.5})
+    pose = pose_tuple({"x": 1, "y": 2, "theta": 0.5})
     assert pose == {"x": 1.0, "y": 2.0, "theta": 0.5}
     # yaw is accepted as a theta fallback
-    assert _pose_tuple({"x": 0, "y": 0, "yaw": 1.0})["theta"] == 1.0
+    assert pose_tuple({"x": 0, "y": 0, "yaw": 1.0})["theta"] == 1.0
 
     polygon = _polygon_points({"points": [{"x": 0, "y": 0}, {"x": 1, "y": 0}, "junk"]})
     assert polygon == [(0.0, 0.0), (1.0, 0.0)]
@@ -121,7 +123,7 @@ def test_truncate() -> None:
 
 
 def test_render_placeholder_returns_png() -> None:
-    assert _render_placeholder("Testing").startswith(PNG_MAGIC)
+    assert render_placeholder("Testing").startswith(PNG_MAGIC)
 
 
 # ---------------------------------------------------------------------------
@@ -210,7 +212,7 @@ def test_camera_renders_map_with_path_and_pose() -> None:
     image = _image(camera)
     assert image.startswith(PNG_MAGIC)
     # a real map render is substantially bigger than the placeholder
-    assert len(image) > len(_render_placeholder())
+    assert len(image) > len(render_placeholder())
 
     attrs = camera.extra_state_attributes
     assert attrs["combined_path_summary"]["point_count"] == 3
