@@ -115,6 +115,17 @@ def test_total_mowed_area_none_when_clean_area_missing() -> None:
     assert sensor.native_value is None
 
 
+def test_current_session_area_zero_and_missing() -> None:
+    hub = _hub()
+    sensor = CurrentSessionAreaSensor(hub.basic_data, hub.hass)
+    # a just-started session reports 0.0 m^2, not unknown
+    _feed(hub.on_current_work_data, {"clean_area": 0})
+    assert sensor.native_value == 0.0
+    # only a missing field is unknown
+    _feed(hub.on_current_work_data, {"total_area": 5})
+    assert sensor.native_value is None
+
+
 def test_current_session_area_attribute_skip_branches() -> None:
     hub = _hub()
     sensor = CurrentSessionAreaSensor(hub.basic_data, hub.hass)

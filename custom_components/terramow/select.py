@@ -169,6 +169,10 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
             sub_regions = region.get('sub_regions', [])  # Device protocol field name, keep unchanged
             for sub_zone in sub_regions:
                 sub_zone_id = sub_zone.get('id')
+                if sub_zone_id is None:
+                    # An option without an id could never be selected (the id
+                    # parse would fail), so don't offer it.
+                    continue
                 sub_zone_name = sub_zone.get('name', f'Sub-zone {sub_zone_id}')
 
                 if sub_zone_name and sub_zone_name.strip():

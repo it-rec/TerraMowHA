@@ -27,7 +27,12 @@ from custom_components.terramow.binary_sensor import (
     async_setup_entry as binary_setup,
 )
 from custom_components.terramow.switch import ThoroughCornerCuttingSwitch
-from custom_components.terramow.button import async_setup_entry as button_setup
+from custom_components.terramow.button import (
+    EdgeTrimButton,
+    ResetBaseStationTimerButton,
+    ResetBladeTimerButton,
+    async_setup_entry as button_setup,
+)
 from custom_components.terramow.diagnostics import (
     async_get_config_entry_diagnostics,
 )
@@ -37,10 +42,7 @@ from custom_components.terramow.lawn_mower import (
     TerraMowLawnMowerEntity,
     async_setup_entry as lawn_mower_setup,
 )
-from custom_components.terramow.map_sensor import (
-    TerraMowMapStatusSensor,
-    async_setup_entry as map_setup,
-)
+from custom_components.terramow.map_sensor import TerraMowMapStatusSensor
 from custom_components.terramow.switch import async_setup_entry as switch_setup
 from custom_components.terramow.update import (
     TerraMowFirmwareUpdate,
@@ -76,9 +78,18 @@ def _run_setup(setup, hub) -> list:
 def test_platform_setups_create_entities() -> None:
     assert len(_run_setup(binary_setup, _hub())) == 25
     assert len(_run_setup(button_setup, _hub())) == 3
+
+
+def test_buttons_guard_missing_lawn_mower() -> None:
+    hub = _hub()
+    mqtt = hub.mqtt_client
+    hub.basic_data.lawn_mower = None
+    for cls in (EdgeTrimButton, ResetBladeTimerButton, ResetBaseStationTimerButton):
+        button = cls(hub.basic_data, hub.hass)
+        asyncio.run(button.async_press())  # logs an error instead of raising
+    mqtt.publish.assert_not_called()
     assert len(_run_setup(switch_setup, _hub())) == 1
     assert len(_run_setup(update_setup, _hub())) == 1
-    assert len(_run_setup(map_setup, _hub())) == 3
     assert len(_run_setup(lawn_mower_setup, _hub())) == 1
 
 

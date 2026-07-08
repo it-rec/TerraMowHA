@@ -212,8 +212,11 @@ def test_map_area_sensor_value_and_zero() -> None:
     assert sensor.native_value is None  # no map_info yet
     asyncio.run(sensor._on_map_info({"total_area": 1234}))
     assert sensor.native_value == 123.4
-    # a zero total_area collapses back to None
+    # a zero total_area is a legitimate reading of 0.0 m^2, not unknown
     asyncio.run(sensor._on_map_info({"total_area": 0}))
+    assert sensor.native_value == 0.0
+    # only a missing field is unknown
+    asyncio.run(sensor._on_map_info({"id": 1}))
     assert sensor.native_value is None
 
 
