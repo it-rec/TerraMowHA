@@ -107,11 +107,6 @@ COLOR_DRAW_REGION_OUTLINE = (68, 117, 235, 220)
 COLOR_OBSTACLE_FILL = (98, 102, 109, 160)
 COLOR_OBSTACLE_OUTLINE = (65, 69, 77, 255)
 COLOR_EDGE_LINE = (176, 181, 190, 220)
-COLOR_PATH_OTHER = (132, 138, 146, 255)
-COLOR_PATH_CLEANING = (68, 117, 235, 255)
-COLOR_PATH_RETURN = (255, 162, 49, 255)
-COLOR_PATH_MAPPING = (255, 196, 0, 255)
-COLOR_PATH_MANUAL = (122, 136, 180, 255)
 COLOR_PATH_HISTORY = (48, 220, 187, 88)
 COLOR_PATH_HISTORY_GLOW = (48, 220, 187, 52)
 COLOR_PATH_CURRENT = (18, 191, 143, 132)
@@ -222,16 +217,6 @@ DARK_PALETTE = replace(
 )
 
 PALETTES = {"light": LIGHT_PALETTE, "dark": DARK_PALETTE}
-
-PATH_POINT_COLORS = {
-    "PATH_POINT_TYPE_CLEANING": COLOR_PATH_CLEANING,
-    "PATH_POINT_TYPE_RETURN": COLOR_PATH_RETURN,
-    "PATH_POINT_TYPE_RESUME": COLOR_PATH_CLEANING,
-    "PATH_POINT_TYPE_MOVE": COLOR_PATH_OTHER,
-    "PATH_POINT_TYPE_MAPPING": COLOR_PATH_MAPPING,
-    "PATH_POINT_TYPE_CROSS_BOUDARY": COLOR_CHANNEL,
-    "PATH_POINT_TYPE_SEMI_AUTO_MANUAL_MAPPING": COLOR_PATH_MANUAL,
-}
 
 HANDLED_MAP_FIELDS = {
     "id",
@@ -791,56 +776,6 @@ def _extract_map_extent(map_data: dict[str, Any]) -> list[tuple[float, float]]:
     ]
 
 
-def _extract_all_map_points(map_data: dict[str, Any]) -> list[tuple[float, float]]:
-    """Collect all known coordinate points in the map."""
-    points: list[tuple[float, float]] = []
-    points.extend(_extract_map_extent(map_data))
-
-    for region in map_data.get("regions", []):
-        points.extend(_feature_points(region))
-        for sub_region in region.get("sub_regions", []):
-            points.extend(_feature_points(sub_region))
-            for inner in sub_region.get("inner_boundarys", []):
-                points.extend(_polygon_points(inner))
-        for obstacle in region.get("obstacles", []):
-            points.extend(_feature_points(obstacle))
-
-    for key in (
-        "forbidden_zones",
-        "physical_forbidden_zones",
-        "required_zones",
-        "pass_through_zones",
-        "obstacles",
-    ):
-        for item in map_data.get(key, []):
-            points.extend(_feature_points(item))
-
-    for key in ("virtual_walls", "cross_boundary_tunnels", "virtual_cross_boundary_tunnels"):
-        for item in map_data.get(key, []):
-            points.extend(_feature_points(item))
-
-    for key in ("cross_boundary_markers", "trapped_points", "maintenance_points"):
-        points.extend(_extract_marker_points(map_data.get(key, [])))
-
-    station_pose = _pose_tuple(map_data.get("station_pose"))
-    if station_pose is not None:
-        points.append((station_pose["x"], station_pose["y"]))
-
-    clean_info = map_data.get("clean_info", {})
-    if isinstance(clean_info, dict):
-        draw_region = clean_info.get("draw_region", {})
-        if isinstance(draw_region, dict):
-            for polygon in draw_region.get("regions", []):
-                points.extend(_polygon_points(polygon))
-        move_info = clean_info.get("move_to_target_point", {})
-        if isinstance(move_info, dict):
-            target_point = _point_tuple(move_info.get("target_point"))
-            if target_point is not None:
-                points.append(target_point)
-
-    return _dedupe_points(points)
-
-
 def _enum_label(value: Any) -> str:
     """Convert an enum string into shorter, human-readable text."""
     if not isinstance(value, str) or not value:
@@ -931,6 +866,9 @@ def _normalize_angle_radians(value: float) -> float:
     return math.atan2(math.sin(value), math.cos(value))
 
 
+# Cached per (text, palette) — i.e. per UI language and theme — so repeated
+# waiting-for-data polls don't re-render and re-encode the same placeholder.
+@lru_cache(maxsize=8)
 def _render_placeholder(
     text: str = "Waiting for map data...",
     palette: MapPalette = LIGHT_PALETTE,
@@ -968,6 +906,32 @@ def _render_placeholder(
 class TerraMowMapCamera(TerraMowEntity, Camera):
     """Map camera entity."""
 
+    # Volatile (pose/battery-driven, changing every ~2 s) and bulky diagnostic
+    # attributes; keep them out of the recorder database. The attributes stay
+    # visible on the entity, they are just never written to history.
+    _unrecorded_attributes = frozenset(
+        {
+            "current_pose",
+            "display_pose",
+            "robot_pose_source",
+            "live_pose_valid",
+            "battery_connected",
+            "map_updated_at",
+            "calibration_points",
+            "present_top_level_fields",
+            "unrendered_fields",
+            "scene_counts",
+            "rendered_layers",
+            "clean_info_summary",
+            "mow_param_summary",
+            "backup_summary",
+            "path_summary",
+            "current_path_summary",
+            "history_path_summary",
+            "combined_path_summary",
+            "filtered_non_cleaning_point_count",
+        }
+    )
 
     def __init__(
         self,
@@ -1007,12 +971,10 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         self._history_path_data: dict[str, Any] = {}
         self._pose: dict[str, Any] = {}
 
-        self._static_image: Image.Image | None = None
-        self._robot_image: Image.Image | None = None
-        self._robot_image_mask: Image.Image | None = None
-        # Pixel length the cached robot icon was built for; icons are rebuilt
-        # when the map scale changes it.
-        self._robot_image_length_px: int | None = None
+        # Cached robot sprite as one atomic (icon, mask, length_px) triple so
+        # concurrent renders in executor threads never see a torn icon; it is
+        # rebuilt when the map scale changes the on-canvas length.
+        self._robot_icon: tuple[Image.Image, Image.Image, int] | None = None
         # Scale factor applied to line widths / marker sizes while the scene is
         # drawn onto the supersampled canvas (1 outside of scene drawing).
         self._scene_scale = 1
@@ -1022,16 +984,40 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         # this so it never pairs a static image with a mismatched transformer.
         self._render_snapshot: tuple[Image.Image, CoordinateTransformer | None] | None = None
         # Serialize rebuilds so overlapping map/path/history updates don't race
-        # on self._transformer / self._static_image (each runs in an executor).
+        # on self._transformer (each rebuild runs in an executor).
         self._rebuild_lock = asyncio.Lock()
+        # Rebuild coalescing: callbacks mark the scene dirty and share a single
+        # pending rebuild task, so a burst of map/path/history updates (e.g.
+        # after a reconnect) costs one extra render, not one per callback.
+        self._rebuild_dirty = False
+        self._rebuild_task: asyncio.Task[None] | None = None
         self._cached_png: bytes | None = None
+        # Bumped on every cache invalidation; a render only publishes its PNG
+        # if the generation it started with is still current, so a render that
+        # began before a pose update can't repopulate the cache with stale data.
+        self._render_generation = 0
+        # The map_data dict the last rebuild rendered; identity-compared so
+        # map/current/info pushes that leave map_data empty or unchanged
+        # (old-firmware pushes) don't trigger pointless full rebuilds.
+        self._last_rendered_map_data: dict[str, Any] | None = None
+        # Displayed robot source at the last battery evaluation; battery
+        # keepalives only invalidate the render when this actually changes.
+        self._last_robot_source: str | None = None
         self._last_pose_state_update = 0.0
         self._render_metadata: dict[str, Any] = {}
         self._map_data_logged = False
         self._path_data_logged = False
         self._history_path_data_logged = False
 
-        lawn_mower = basic_data.lawn_mower
+    async def async_added_to_hass(self) -> None:
+        """Register hub callbacks once the entity is actually added.
+
+        Registering here instead of in ``__init__`` means a registry-disabled
+        entity (the opt-in clean-mode camera) never receives map/path/pose
+        pushes and never pays the full supersampled render cost.
+        """
+        await super().async_added_to_hass()
+        lawn_mower = self.basic_data.lawn_mower
         if lawn_mower:
             lawn_mower.register_map_callback(self._on_map_info)
             lawn_mower.register_path_callback(self._on_path_data)
@@ -1109,13 +1095,40 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         width: int | None = None,
         height: int | None = None,
     ) -> bytes | None:
+        # Lazy initial render: if data arrived but no snapshot was built yet
+        # (e.g. the entity was just enabled), build it on the first request.
+        if self._render_snapshot is None and (
+            self._map_data or self._path_data or self._history_path_data
+        ):
+            await self._async_rebuild()
         return await self.hass.async_add_executor_job(self._render_final_image)
 
-    async def _async_rebuild(self) -> None:
-        """Rebuild the static layers, serialized against concurrent rebuilds."""
-        async with self._rebuild_lock:
-            await self.hass.async_add_executor_job(self._rebuild_static_image)
+    def _invalidate_png_cache(self) -> None:
+        """Drop the cached PNG and retire any in-flight render."""
+        self._render_generation += 1
         self._cached_png = None
+
+    async def _async_rebuild(self) -> None:
+        """Rebuild the static layers, coalescing concurrent requests.
+
+        Every caller marks the scene dirty and joins the single pending
+        rebuild task, which loops while the flag is set; a burst of callbacks
+        therefore shares one rebuild plus at most one catch-up pass.
+        """
+        self._rebuild_dirty = True
+        task = self._rebuild_task
+        if task is None or task.done():
+            task = asyncio.get_running_loop().create_task(self._async_rebuild_loop())
+            self._rebuild_task = task
+        await task
+
+    async def _async_rebuild_loop(self) -> None:
+        """Run rebuilds until the dirty flag stays clear."""
+        async with self._rebuild_lock:
+            while self._rebuild_dirty:
+                self._rebuild_dirty = False
+                await self.hass.async_add_executor_job(self._rebuild_static_image)
+        self._invalidate_png_cache()
         safe_write_ha_state(self)
 
     async def _on_map_info(self, map_info: dict[str, Any]) -> None:
@@ -1126,6 +1139,14 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         if not self._map_data_logged and self._map_data:
             _LOGGER.debug("ha_map_v1 top-level keys: %s", list(self._map_data.keys()))
             self._map_data_logged = True
+        # Old-firmware map/current/info pushes leave map_data empty, and
+        # repeated pushes carry the same dict; neither can change the rendered
+        # scene, so skip the full rebuild for them.
+        if self._map_data is self._last_rendered_map_data or (
+            not self._map_data and not self._last_rendered_map_data
+        ):
+            return
+        self._last_rendered_map_data = self._map_data
         await self._async_rebuild()
 
     async def _on_path_data(self, path_data: dict[str, Any]) -> None:
@@ -1153,15 +1174,24 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
     async def _on_pose(self, pose: dict[str, Any]) -> None:
         """Callback for pose updates."""
         self._pose = pose
-        self._cached_png = None
+        self._invalidate_png_cache()
         now = time.monotonic()
         if now - self._last_pose_state_update >= 2.0:
             self._last_pose_state_update = now
             safe_write_ha_state(self)
 
     async def _on_battery_status(self, _payload: str) -> None:
-        """Clear the robot layer cache after a battery status update."""
-        self._cached_png = None
+        """Clear the robot layer cache when a battery update changes the pose.
+
+        Battery status arrives as a periodic keepalive; only a change in the
+        displayed robot source (live pose vs. dock fallback vs. hidden) can
+        alter the rendered image, so unchanged updates keep the cache.
+        """
+        source = str(self._get_display_robot_state()["source"])
+        if source == self._last_robot_source:
+            return
+        self._last_robot_source = source
+        self._invalidate_png_cache()
         safe_write_ha_state(self)
 
     def _get_battery_connected(self) -> bool | None:
@@ -1605,7 +1635,6 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         self._render_metadata = self._build_render_metadata(scene)
 
         if not self._map_data and not self._path_data and not self._history_path_data:
-            self._static_image = None
             self._transformer = None
             self._render_snapshot = None
             return
@@ -1674,7 +1703,6 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
 
         if not self._clean_mode:
             self._draw_summary_panel(image, scene)
-        self._static_image = image
         # Publish the finished image together with the transformer it was drawn
         # with as a single atomic reference (see _render_final_image).
         self._render_snapshot = (image, self._transformer)
@@ -1691,13 +1719,14 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         """Draw the canvas background and cards."""
         pal = self._palette
         draw = ImageDraw.Draw(image, "RGBA")
-        draw.rounded_rectangle(MAP_RECT, radius=MAP_RADIUS, fill=pal.map_bg, outline=pal.card_border)
+        # Shadow first, then the card fill with its border on top, so the
+        # border is not overdrawn by a later fill.
         draw.rounded_rectangle(
             (MAP_RECT[0], MAP_RECT[1] + 10, MAP_RECT[2], MAP_RECT[3] + 10),
             radius=MAP_RADIUS,
             fill=pal.shadow,
         )
-        draw.rounded_rectangle(MAP_RECT, radius=MAP_RADIUS, fill=pal.map_bg)
+        draw.rounded_rectangle(MAP_RECT, radius=MAP_RADIUS, fill=pal.map_bg, outline=pal.card_border)
         draw.rounded_rectangle(
             (SUMMARY_RECT[0], SUMMARY_RECT[1] + 10, SUMMARY_RECT[2], SUMMARY_RECT[3] + 10),
             radius=CARD_RADIUS,
@@ -1869,16 +1898,51 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         if scene["station_pose"] is not None:
             self._draw_station(image, scene["station_pose"])
 
+    @staticmethod
+    def _overlay_bbox(
+        image: Image.Image,
+        points: list[tuple[int, int]],
+        pad: int,
+    ) -> tuple[int, int, int, int] | None:
+        """Padded bounding box of the points, clamped to the canvas.
+
+        Returns (left, top, right, bottom) with an exclusive right/bottom, or
+        None when the shape lies entirely outside the canvas.
+        """
+        left = max(0, min(point[0] for point in points) - pad)
+        top = max(0, min(point[1] for point in points) - pad)
+        right = min(image.width, max(point[0] for point in points) + pad + 1)
+        bottom = min(image.height, max(point[1] for point in points) + pad + 1)
+        if right <= left or bottom <= top:
+            return None
+        return left, top, right, bottom
+
     def _composite_draw(
         self,
         image: Image.Image,
+        points: list[tuple[int, int]],
         draw_fn: Any,
+        pad: int = 1,
     ) -> None:
-        """Draw on a transparent layer, then composite it onto the main image."""
-        overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
+        """Draw on a transparent layer, then composite it onto the main image.
+
+        The layer only spans the points' bounding box (padded by ``pad`` for
+        line widths and end caps) instead of the full supersampled canvas, so
+        translucent fills stay cheap per shape. ``draw_fn`` receives the
+        overlay draw context and the points translated into overlay
+        coordinates; the result composites back at the box offset, which is
+        pixel-identical to drawing on a full-canvas overlay.
+        """
+        if not points:
+            return
+        bbox = self._overlay_bbox(image, points, pad)
+        if bbox is None:
+            return
+        left, top, right, bottom = bbox
+        overlay = Image.new("RGBA", (right - left, bottom - top), (0, 0, 0, 0))
         overlay_draw = ImageDraw.Draw(overlay, "RGBA")
-        draw_fn(overlay_draw)
-        image.alpha_composite(overlay)
+        draw_fn(overlay_draw, [(x - left, y - top) for x, y in points])
+        image.alpha_composite(overlay, (left, top))
 
     def _composite_polygon_fill(
         self,
@@ -1887,7 +1951,11 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         fill: tuple[int, int, int, int],
     ) -> None:
         """Perform proper alpha compositing for the polygon fill."""
-        self._composite_draw(image, lambda overlay_draw: overlay_draw.polygon(polygon_pixels, fill=fill))
+        self._composite_draw(
+            image,
+            polygon_pixels,
+            lambda overlay_draw, shifted: overlay_draw.polygon(shifted, fill=fill),
+        )
 
     def _draw_polygon_pixels(
         self,
@@ -1981,11 +2049,20 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         """Overlay a diagonal hatch texture on a region."""
         if len(polygon_pixels) < 3:
             return
-        mask = Image.new("L", image.size, 0)
+        bbox = self._overlay_bbox(image, polygon_pixels, 1)
+        if bbox is None:
+            return
+        # The mask and hatch layers only span the polygon's bounding box; the
+        # hatch geometry stays in canvas coordinates shifted by the box offset,
+        # so the visible (masked) result is pixel-identical to a full-canvas
+        # overlay.
+        left, top, right, bottom = bbox
+        size = (right - left, bottom - top)
+        mask = Image.new("L", size, 0)
         mask_draw = ImageDraw.Draw(mask)
-        mask_draw.polygon(polygon_pixels, fill=255)
+        mask_draw.polygon([(x - left, y - top) for x, y in polygon_pixels], fill=255)
 
-        overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
+        overlay = Image.new("RGBA", size, (0, 0, 0, 0))
         overlay_draw = ImageDraw.Draw(overlay)
         min_x = min(point[0] for point in polygon_pixels)
         max_x = max(point[0] for point in polygon_pixels)
@@ -1996,12 +2073,18 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         end = max_x + (max_y - min_y) + spacing
         for offset in range(int(start), int(end), spacing):
             overlay_draw.line(
-                [(offset, max_y + spacing), (offset + (max_y - min_y) + spacing, min_y - spacing)],
+                [
+                    (offset - left, max_y + spacing - top),
+                    (offset + (max_y - min_y) + spacing - left, min_y - spacing - top),
+                ],
                 fill=color,
                 width=1,
             )
 
-        image.alpha_composite(Image.composite(overlay, Image.new("RGBA", overlay.size), mask))
+        image.alpha_composite(
+            Image.composite(overlay, Image.new("RGBA", overlay.size), mask),
+            (left, top),
+        )
 
     def _draw_tunnel(
         self,
@@ -2020,9 +2103,11 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             pixels = transformer.to_pixels(polyline)
             self._composite_draw(
                 image,
-                lambda overlay_draw, pixels=pixels: overlay_draw.line(
-                    pixels, fill=fill, width=s(10)
+                pixels,
+                lambda overlay_draw, shifted: overlay_draw.line(
+                    shifted, fill=fill, width=s(10)
                 ),
+                pad=s(10),
             )
             draw.line(pixels, fill=outline, width=s(5))
             for point in (pixels[0], pixels[-1]):
@@ -2166,14 +2251,16 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
 
         self._composite_draw(
             image,
-            lambda overlay_draw: self._draw_path_stroke(
+            pixels,
+            lambda overlay_draw, shifted: self._draw_path_stroke(
                 overlay_draw,
-                pixels,
+                shifted,
                 default_inner,
                 default_inner_width,
                 default_glow,
                 default_glow_width,
             ),
+            pad=default_glow_width,
         )
 
     def _draw_coverage(self, image: Image.Image, scene: dict[str, Any]) -> None:
@@ -2195,41 +2282,21 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         color = self._palette.coverage
         radius = max(1, swath_px // 2)
 
-        def draw_swath(overlay_draw: ImageDraw.ImageDraw) -> None:
-            overlay_draw.line(pixels, fill=color, width=swath_px, joint="curve")
-            for x, y in (pixels[0], pixels[-1]):
+        def draw_swath(
+            overlay_draw: ImageDraw.ImageDraw, shifted: list[tuple[int, int]]
+        ) -> None:
+            overlay_draw.line(shifted, fill=color, width=swath_px, joint="curve")
+            for x, y in (shifted[0], shifted[-1]):
                 overlay_draw.ellipse(
                     [x - radius, y - radius, x + radius, y + radius], fill=color
                 )
 
-        self._composite_draw(image, draw_swath)
+        self._composite_draw(image, pixels, draw_swath, pad=swath_px)
 
     def _draw_path(self, image: Image.Image, scene: dict[str, Any]) -> None:
         """Draw the history path and current path tracks separately."""
         self._draw_path_layer(image, scene.get("history_path_points", []), "history")
         self._draw_path_layer(image, scene.get("current_path_points", []), "current")
-
-    def _draw_path_segment(
-        self,
-        draw: ImageDraw.ImageDraw,
-        segment: list[dict[str, Any]],
-    ) -> None:
-        """Kept as a legacy interface for backward compatibility with existing references."""
-        transformer = self._transformer
-        if transformer is None or len(segment) < 2:
-            return
-        pixels = [transformer.to_pixel(point["x"], point["y"]) for point in segment]
-        pixels = _simplify_path_pixels(pixels, 0.9, 1.0)
-        if len(pixels) < 2:
-            return
-        self._draw_path_stroke(
-            draw,
-            pixels,
-            self._palette.path_current,
-            12,
-            self._palette.path_current_glow,
-            18,
-        )
 
     def _station_pixel_size(self, transformer: CoordinateTransformer) -> tuple[int, int]:
         """Station icon size in pixels on the active canvas, true to scale."""
@@ -2302,14 +2369,17 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         length_px = ROBOT_LENGTH_MM * transformer.scale
         return int(round(min(max(length_px, ROBOT_MIN_PX), ROBOT_MAX_PX)))
 
-    def _build_robot_icon(self, length_px: int) -> None:
+    def _build_robot_icon(self, length_px: int) -> tuple[Image.Image, Image.Image, int]:
         """Build (and cache) the robot icon for the given on-canvas length.
 
         The icon is drawn at 2x and downsampled by the caller after rotation,
-        which anti-aliases both the shape and the rotated edges.
+        which anti-aliases both the shape and the rotated edges. Icon, mask
+        and length are built into locals and published as a single tuple so a
+        concurrent render in another executor thread can't see a torn icon.
         """
-        if self._robot_image is not None and self._robot_image_length_px == length_px:
-            return
+        cached = self._robot_icon
+        if cached is not None and cached[2] == length_px:
+            return cached
 
         oversample = 2
         h = length_px * oversample
@@ -2319,8 +2389,8 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         hw = w / 2
         hh = h / 2
 
-        self._robot_image = Image.new('RGBA', (canvas, canvas), COLOR_TRANSPARENT)
-        draw = ImageDraw.Draw(self._robot_image, 'RGBA')
+        robot_image = Image.new('RGBA', (canvas, canvas), COLOR_TRANSPARENT)
+        draw = ImageDraw.Draw(robot_image, 'RGBA')
 
         body_box = [px - hw, py - hh, px + hw, py + hh]
         draw.ellipse(body_box, fill=self._palette.robot_body)
@@ -2333,10 +2403,12 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             fill=self._palette.robot_detail,
         )
 
-        self._robot_image_mask = self._robot_image.copy()
-        draw_mask = ImageDraw.Draw(self._robot_image_mask)
+        robot_mask = robot_image.copy()
+        draw_mask = ImageDraw.Draw(robot_mask)
         draw_mask.ellipse(body_box, fill=self._palette.robot_body)
-        self._robot_image_length_px = length_px
+        icon = (robot_image, robot_mask, length_px)
+        self._robot_icon = icon
+        return icon
 
     def _draw_robot(
         self, image: Image.Image, transformer: CoordinateTransformer | None
@@ -2352,7 +2424,9 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         x = display_pose["x"]
         y = display_pose["y"]
 
-        self._build_robot_icon(self._robot_pixel_length(transformer))
+        robot_image, robot_mask, _ = self._build_robot_icon(
+            self._robot_pixel_length(transformer)
+        )
 
         yaw = display_pose.get("yaw")
         if yaw is None:
@@ -2363,11 +2437,8 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         deg = yaw * 180 / math.pi
         deg = deg - 90
 
-        # _robot_image and its mask are always built together above.
-        assert self._robot_image is not None
-        assert self._robot_image_mask is not None
-        robot_rotated = self._robot_image.rotate(-deg, expand=True, fillcolor=COLOR_TRANSPARENT)
-        robot_mask_rotated = self._robot_image_mask.rotate(-deg, expand=True, fillcolor=COLOR_TRANSPARENT)
+        robot_rotated = robot_image.rotate(-deg, expand=True, fillcolor=COLOR_TRANSPARENT)
+        robot_mask_rotated = robot_mask.rotate(-deg, expand=True, fillcolor=COLOR_TRANSPARENT)
 
         # Downsample the 2x icon after rotation for anti-aliased edges.
         target = (
@@ -2536,9 +2607,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
     def _chip_width(self, text: str) -> int:
         """Compute the chip width."""
         font = _load_font(15, bold=True)
-        dummy = Image.new("RGBA", (1, 1))
-        draw = ImageDraw.Draw(dummy)
-        box = draw.textbbox((0, 0), text, font=font)
+        box = font.getbbox(text)
         return int(box[2] - box[0] + 24)
 
     def _draw_summary_panel(self, image: Image.Image, scene: dict[str, Any]) -> None:
@@ -2629,8 +2698,13 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
 
     def _render_final_image(self) -> bytes:
         """Render the final image."""
-        if self._cached_png is not None:
-            return self._cached_png
+        cached = self._cached_png
+        if cached is not None:
+            return cached
+        # Remember the generation this render is based on; an invalidation
+        # (pose/battery/rebuild) while we render bumps it, and the stale
+        # result must then not repopulate the cache.
+        generation = self._render_generation
 
         # Read the published (image, transformer) pair once so a rebuild
         # completing mid-render can't leave us drawing the robot with a
@@ -2655,7 +2729,8 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         else:
             image.convert("RGB").save(buffer, format="PNG")
         result = buffer.getvalue()
-        self._cached_png = result
+        if generation == self._render_generation:
+            self._cached_png = result
         return result
 
 
