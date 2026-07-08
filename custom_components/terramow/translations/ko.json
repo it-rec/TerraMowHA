@@ -47,10 +47,14 @@
       "init": {
         "title": "TerraMow 옵션",
         "data": {
-          "map_resolution": "지도 출력 해상도 (px)"
+          "map_resolution": "지도 출력 해상도 (px)",
+          "map_theme": "Map theme",
+          "map_show_coverage": "Show mowed coverage"
         },
         "data_description": {
-          "map_resolution": "지도 카메라 PNG의 출력 변 길이입니다. 값이 높을수록 대시보드에 삽입할 때 이미지가 더 선명해지지만, 렌더링할 때마다 대역폭과 CPU 사용량이 증가합니다."
+          "map_resolution": "지도 카메라 PNG의 출력 변 길이입니다. 값이 높을수록 대시보드에 삽입할 때 이미지가 더 선명해지지만, 렌더링할 때마다 대역폭과 CPU 사용량이 증가합니다.",
+          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
         }
       }
     }

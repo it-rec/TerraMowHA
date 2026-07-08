@@ -47,10 +47,14 @@
       "init": {
         "title": "TerraMow beállítások",
         "data": {
-          "map_resolution": "Térkép kimeneti felbontása (px)"
+          "map_resolution": "Térkép kimeneti felbontása (px)",
+          "map_theme": "Map theme",
+          "map_show_coverage": "Show mowed coverage"
         },
         "data_description": {
-          "map_resolution": "A térképkamera PNG kimenetének oldalhossza. A magasabb értékek élesebb képet adnak az irányítópultokba ágyazva, de minden megjelenítésnél növelik a sávszélesség- és CPU-használatot."
+          "map_resolution": "A térképkamera PNG kimenetének oldalhossza. A magasabb értékek élesebb képet adnak az irányítópultokba ágyazva, de minden megjelenítésnél növelik a sávszélesség- és CPU-használatot.",
+          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
         }
       }
     }

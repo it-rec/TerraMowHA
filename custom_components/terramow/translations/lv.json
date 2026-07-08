@@ -47,10 +47,14 @@
       "init": {
         "title": "TerraMow opcijas",
         "data": {
-          "map_resolution": "Kartes izvades izšķirtspēja (px)"
+          "map_resolution": "Kartes izvades izšķirtspēja (px)",
+          "map_theme": "Map theme",
+          "map_show_coverage": "Show mowed coverage"
         },
         "data_description": {
-          "map_resolution": "Kartes kameras PNG attēla malas garums. Lielākas vērtības nodrošina asāku attēlu, iegulstot to informācijas paneļos, bet palielina joslas platumu un CPU noslodzi katrā renderēšanas reizē."
+          "map_resolution": "Kartes kameras PNG attēla malas garums. Lielākas vērtības nodrošina asāku attēlu, iegulstot to informācijas paneļos, bet palielina joslas platumu un CPU noslodzi katrā renderēšanas reizē.",
+          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
         }
       }
     }

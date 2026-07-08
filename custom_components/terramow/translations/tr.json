@@ -47,10 +47,14 @@
       "init": {
         "title": "TerraMow seçenekleri",
         "data": {
-          "map_resolution": "Harita çıktı çözünürlüğü (px)"
+          "map_resolution": "Harita çıktı çözünürlüğü (px)",
+          "map_theme": "Map theme",
+          "map_show_coverage": "Show mowed coverage"
         },
         "data_description": {
-          "map_resolution": "Harita kamerası PNG çıktısının kenar uzunluğu. Daha yüksek değerler, panolara gömüldüğünde daha keskin bir görüntü sağlar ancak her işlemede bant genişliğini ve CPU kullanımını artırır."
+          "map_resolution": "Harita kamerası PNG çıktısının kenar uzunluğu. Daha yüksek değerler, panolara gömüldüğünde daha keskin bir görüntü sağlar ancak her işlemede bant genişliğini ve CPU kullanımını artırır.",
+          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
         }
       }
     }

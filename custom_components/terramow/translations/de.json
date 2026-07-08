@@ -47,10 +47,14 @@
       "init": {
         "title": "TerraMow Optionen",
         "data": {
-          "map_resolution": "Karten-Ausgabeauflösung (px)"
+          "map_resolution": "Karten-Ausgabeauflösung (px)",
+          "map_theme": "Karten-Farbschema",
+          "map_show_coverage": "Gemähte Fläche anzeigen"
         },
         "data_description": {
-          "map_resolution": "Seitenlänge des Karten-PNGs. Höhere Werte ergeben ein schärferes Bild beim Einbetten in Dashboards, erhöhen aber Bandbreite und CPU-Last pro Render-Zyklus."
+          "map_resolution": "Seitenlänge des Karten-PNGs. Höhere Werte ergeben ein schärferes Bild beim Einbetten in Dashboards, erhöhen aber Bandbreite und CPU-Last pro Render-Zyklus.",
+          "map_theme": "Farbschema des gerenderten Kartenbilds. „dark“ passt zu dunklen Dashboards.",
+          "map_show_coverage": "Hinterlegt die bereits gemähte Fläche in realer Schnittbreite unter der Pfadlinie."
         }
       }
     }

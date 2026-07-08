@@ -47,10 +47,14 @@
       "init": {
         "title": "Opzioni TerraMow",
         "data": {
-          "map_resolution": "Risoluzione di output della mappa (px)"
+          "map_resolution": "Risoluzione di output della mappa (px)",
+          "map_theme": "Map theme",
+          "map_show_coverage": "Show mowed coverage"
         },
         "data_description": {
-          "map_resolution": "Lunghezza del lato del PNG della fotocamera della mappa. Valori più alti danno un'immagine più nitida nei dashboard ma aumentano la larghezza di banda e il carico della CPU a ogni rendering."
+          "map_resolution": "Lunghezza del lato del PNG della fotocamera della mappa. Valori più alti danno un'immagine più nitida nei dashboard ma aumentano la larghezza di banda e il carico della CPU a ogni rendering.",
+          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
         }
       }
     }

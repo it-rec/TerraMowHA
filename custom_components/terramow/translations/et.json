@@ -47,10 +47,14 @@
       "init": {
         "title": "TerraMow valikud",
         "data": {
-          "map_resolution": "Kaardi väljundi eraldusvõime (px)"
+          "map_resolution": "Kaardi väljundi eraldusvõime (px)",
+          "map_theme": "Map theme",
+          "map_show_coverage": "Show mowed coverage"
         },
         "data_description": {
-          "map_resolution": "Kaardikaamera PNG väljundi külje pikkus. Suuremad väärtused annavad armatuurlaudadele manustamisel teravama pildi, kuid suurendavad ribalaiust ja CPU koormust igal renderdamisel."
+          "map_resolution": "Kaardikaamera PNG väljundi külje pikkus. Suuremad väärtused annavad armatuurlaudadele manustamisel teravama pildi, kuid suurendavad ribalaiust ja CPU koormust igal renderdamisel.",
+          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
         }
       }
     }

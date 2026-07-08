@@ -47,10 +47,14 @@
       "init": {
         "title": "TerraMow オプション",
         "data": {
-          "map_resolution": "マップ出力解像度 (px)"
+          "map_resolution": "マップ出力解像度 (px)",
+          "map_theme": "Map theme",
+          "map_show_coverage": "Show mowed coverage"
         },
         "data_description": {
-          "map_resolution": "マップカメラ PNG の出力辺の長さです。値を大きくするとダッシュボードに埋め込んだ際の画像が鮮明になりますが、レンダリングごとの帯域幅と CPU 負荷が増加します。"
+          "map_resolution": "マップカメラ PNG の出力辺の長さです。値を大きくするとダッシュボードに埋め込んだ際の画像が鮮明になりますが、レンダリングごとの帯域幅と CPU 負荷が増加します。",
+          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
         }
       }
     }

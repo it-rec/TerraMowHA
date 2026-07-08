@@ -47,10 +47,14 @@
       "init": {
         "title": "TerraMow-indstillinger",
         "data": {
-          "map_resolution": "Kortets outputopløsning (px)"
+          "map_resolution": "Kortets outputopløsning (px)",
+          "map_theme": "Map theme",
+          "map_show_coverage": "Show mowed coverage"
         },
         "data_description": {
-          "map_resolution": "Sidelængde på kortkameraets PNG. Højere værdier giver et skarpere billede i dashboards, men øger båndbredde og CPU-belastning ved hver gengivelse."
+          "map_resolution": "Sidelængde på kortkameraets PNG. Højere værdier giver et skarpere billede i dashboards, men øger båndbredde og CPU-belastning ved hver gengivelse.",
+          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
         }
       }
     }

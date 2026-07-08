@@ -47,10 +47,14 @@
       "init": {
         "title": "Možnosti TerraMow",
         "data": {
-          "map_resolution": "Výstupní rozlišení mapy (px)"
+          "map_resolution": "Výstupní rozlišení mapy (px)",
+          "map_theme": "Map theme",
+          "map_show_coverage": "Show mowed coverage"
         },
         "data_description": {
-          "map_resolution": "Délka strany PNG obrázku mapové kamery. Vyšší hodnoty poskytují ostřejší obraz v ovládacích panelech, ale zvyšují šířku pásma a zatížení procesoru při každém vykreslení."
+          "map_resolution": "Délka strany PNG obrázku mapové kamery. Vyšší hodnoty poskytují ostřejší obraz v ovládacích panelech, ale zvyšují šířku pásma a zatížení procesoru při každém vykreslení.",
+          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
         }
       }
     }
