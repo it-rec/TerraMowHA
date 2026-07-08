@@ -267,7 +267,7 @@ def test_formatting_helpers() -> None:
     assert _enum_label("") == "-"
     assert _truncate("abcdef", 4).endswith("…")
     assert _truncate("ab", 4) == "ab"
-    assert _format_area(2560) == "256.0㎡"
+    assert _format_area(2560) == "256.0 m²"
     assert _format_area(None) == "-"
     assert _format_file_size(512) == "512B"
     assert _format_file_size(2048).endswith("KB")

@@ -872,11 +872,16 @@ def _truncate(text: str, max_length: int) -> str:
 
 
 def _format_area(total_area_tenths: Any) -> str:
-    """Format an area value."""
+    """Format an area value.
+
+    Uses ``m²`` (ASCII m + superscript two) rather than the single CJK glyph
+    ``㎡`` (U+33A1), which many of the fonts we fall back to can't render and
+    would draw as a tofu box.
+    """
     area = _coerce_float(total_area_tenths)
     if area is None:
         return "-"
-    return f"{area / 10:.1f}㎡"
+    return f"{area / 10:.1f} m²"
 
 
 def _format_file_size(value: Any) -> str:
