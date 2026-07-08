@@ -26,6 +26,7 @@ from homeassistant.helpers import entity_registry as er
 
 from .config_flow import CannotConnect, InvalidAuth, validate_input
 from .const import (
+    CONF_SERIAL,
     CURRENT_HA_VERSION,
     MIN_REQUIRED_OVERALL_VERSION,
     MIN_SUPPORTED_HA_VERSION,
@@ -56,6 +57,9 @@ class TerraMowBasicData:
     host: str
     password: str
     lawn_mower: Any = None
+    # Stable device identity used for unique_ids and device identifiers: the
+    # serial once known (config entry data), the host until then.
+    device_uid: str | None = None
     compatibility_status: str = CompatibilityStatus.COMPATIBLE
     firmware_version: dict[str, Any] | None = None
     compatibility_reason: str = ""  # Store the specific reason for compatibility check failure
@@ -155,27 +159,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     host = entry.data[CONF_HOST]
     password = entry.data[CONF_PASSWORD]
 
-    # Automatic migration of the device identifier
+    device_uid = entry.data.get(CONF_SERIAL) or host
+
+    # Automatic migration of the device identifier. Legacy devices used the
+    # arbitrary "TerraMowLawnMower" identifier domain (and before that a
+    # misspelled variant) keyed on the host; the identifier is now
+    # (DOMAIN, serial-or-host) as Home Assistant expects.
     device_registry = dr.async_get(hass)
-    old_identifier = ('TerraMowLanwMower', host)
-    new_identifier = ('TerraMowLawnMower', host)
-
-    # Search for the device with the old identifier
-    old_device_entry = device_registry.async_get_device({old_identifier})
-
-    if old_device_entry:
+    new_identifier = (DOMAIN, device_uid)
+    legacy_identifiers = [
+        ('TerraMowLanwMower', host),  # original misspelled identifier
+        ('TerraMowLawnMower', host),  # pre-DOMAIN identifier
+        (DOMAIN, host),  # host-keyed identifier from before serial adoption
+    ]
+    for legacy_identifier in legacy_identifiers:
+        if legacy_identifier == new_identifier:
+            continue
+        old_device_entry = device_registry.async_get_device({legacy_identifier})
+        if old_device_entry is None:
+            continue
         _LOGGER.info(
-            "Migrating device identifier from '%s' to '%s'",
-            "TerraMowLanwMower", "TerraMowLawnMower" # Corrected typo in identifier
+            "Migrating device identifier from %s to %s",
+            legacy_identifier, new_identifier,
         )
         # Check if a device with the new identifier already exists to avoid conflicts
-        new_device_entry = device_registry.async_get_device({new_identifier})
-        if new_device_entry:
+        if device_registry.async_get_device({new_identifier}):
             _LOGGER.warning("Cannot migrate device, a device with the new identifier already exists. Please remove the old device manually.")
         else:
             device_registry.async_update_device(
                 old_device_entry.id, new_identifiers={new_identifier}
             )
+        break
     # End of Automatic migration
 
     _LOGGER.info("Setting up TerraMow with host %s", host)
@@ -193,7 +207,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
             f"Unable to connect to TerraMow at {host}"
         ) from err
 
-    basic_data = TerraMowBasicData(host=host, password=password, entry_id=entry.entry_id)
+    basic_data = TerraMowBasicData(
+        host=host, password=password, entry_id=entry.entry_id, device_uid=device_uid
+    )
 
     # Stash the live integration state on the config entry itself; Home
     # Assistant clears runtime_data automatically when the entry unloads.

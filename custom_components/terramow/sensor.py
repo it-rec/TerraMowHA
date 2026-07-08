@@ -652,7 +652,7 @@ class VersionCompatibilitySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         Keeps the historical ``version_compatibility.terramow@...`` format
         so existing entity registry entries stay attached.
         """
-        return f"version_compatibility.terramow@{self.basic_data.host}"
+        return f"version_compatibility.terramow@{self.device_uid}"
 
     @property
     def native_value(self) -> str | None:

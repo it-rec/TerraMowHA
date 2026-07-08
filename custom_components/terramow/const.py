@@ -112,6 +112,10 @@ MIN_MOW_SPEED_VERSION_FOR_AUTO = 3
 DEFAULT_BLADE_DISK_SPEED_TYPE = "BLADE_DISK_SPEED_TYPE_MEDIUM"
 
 # Map camera output resolution (side length, square canvas)
+# Config entry key for the mower's serial number (dp_102 "sn"), adopted on
+# first connect as the stable device identity.
+CONF_SERIAL = "serial"
+
 CONF_MAP_RESOLUTION = "map_resolution"
 DEFAULT_MAP_RESOLUTION = 1024
 MAP_RESOLUTION_OPTIONS = [1024, 1536, 2048, 3072, 4096]

@@ -8,6 +8,7 @@ from custom_components.terramow.entity import TerraMowEntity
 def _basic_data(host: str = "192.0.2.10", model: str | None = "TerraMow S1200"):
     basic_data = MagicMock()
     basic_data.host = host
+    basic_data.device_uid = None  # serial not adopted yet -> host identity
     if model is None:
         basic_data.lawn_mower = None
     else:
@@ -47,7 +48,7 @@ def test_unique_id_without_suffix_is_the_device_id() -> None:
 def test_device_info_is_shared_and_uses_device_model() -> None:
     entity = TerraMowEntity(_basic_data(model="TerraMow S800"))
     info = entity.device_info
-    assert info["identifiers"] == {("TerraMowLawnMower", "192.0.2.10")}
+    assert info["identifiers"] == {("terramow", "192.0.2.10")}
     assert info["name"] == "TerraMow"
     assert info["manufacturer"] == "TerraMow"
     assert info["model"] == "TerraMow S800"
@@ -103,3 +104,11 @@ def test_all_platform_entities_inherit_the_base() -> None:
             if issubclass(cls, Entity) and not issubclass(cls, TerraMowEntity):
                 missing.append(f"{platform}.{name}")
     assert not missing, f"Entities missing TerraMowEntity base: {missing}"
+
+
+def test_identity_follows_adopted_serial() -> None:
+    basic_data = _basic_data()
+    basic_data.device_uid = "MP511XYZ"
+    entity = TerraMowEntity(basic_data)
+    assert entity.unique_id == "lawn_mower.terramow@MP511XYZ"
+    assert entity.device_info["identifiers"] == {("terramow", "MP511XYZ")}

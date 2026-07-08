@@ -27,10 +27,12 @@ import paho.mqtt.client as mqtt_client
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
     COMPATIBILITY_INFO_DP,
+    CONF_SERIAL,
     DOMAIN,
     MAP_INFO_TOPIC,
     MAP_META_TOPIC,
@@ -567,8 +569,10 @@ class TerraMowHub:
         """Handle device/network info updates (dp_102).
 
         Carries the real firmware version the TerraMow app shows (``version``),
-        plus serial/network identifiers. Only the version is surfaced to Home
-        Assistant; the identifiers are kept private.
+        plus serial/network identifiers. The version is surfaced to Home
+        Assistant and the serial (``sn``) is adopted as the stable device
+        identity; everything else stays private (and the serial is redacted
+        from diagnostics exports).
         """
         try:
             data = json.loads(payload)
@@ -580,6 +584,9 @@ class TerraMowHub:
             version = data.get("version")
             if isinstance(version, str) and version:
                 self._dispatch(self._async_update_device_sw_version, version)
+            serial = data.get("sn")
+            if isinstance(serial, str) and serial:
+                self._dispatch(self._async_adopt_serial, serial)
 
     async def on_component_versions(self, payload: str) -> None:
         """Handle per-component firmware version updates (dp_129)."""
@@ -1538,12 +1545,74 @@ class TerraMowHub:
             return f"{overall}.{ha_version}"
         return str(overall)
 
+    def _device_identifiers(self) -> set[tuple[str, str]]:
+        """Return the device registry identifiers for this mower."""
+        return {(DOMAIN, self.basic_data.device_uid or self.basic_data.host)}
+
+    async def _async_adopt_serial(self, serial: str) -> None:
+        """Adopt the device serial (dp_102 ``sn``) as the stable identity.
+
+        Entries start keyed on the host/IP because the serial only becomes
+        known after the first MQTT connect. Once it arrives, re-key the
+        entity registry unique_ids, the device registry identifier and the
+        config entry itself; the entry-update listener then reloads the
+        entry so freshly created entities match the migrated registry.
+        A DHCP address change can no longer orphan the registry afterwards.
+        """
+        entry_id = self.basic_data.entry_id
+        if entry_id is None:
+            return
+        entry = self.hass.config_entries.async_get_entry(entry_id)
+        if entry is None:
+            return
+        stored = entry.data.get(CONF_SERIAL)
+        if stored == serial:
+            # Keep the runtime identity in sync for repeat dp_102 pushes.
+            self.basic_data.device_uid = serial
+            return
+        if stored is not None:
+            _LOGGER.warning(
+                "Device serial changed from %s to %s (different mower at the "
+                "same address?); keeping the existing registry identity",
+                stored, serial,
+            )
+            return
+
+        _LOGGER.info("Adopting device serial as the stable device identity")
+        old_uid = self.basic_data.device_uid or self.basic_data.host
+        old_fragment = f"terramow@{old_uid}"
+        new_fragment = f"terramow@{serial}"
+
+        entity_registry = er.async_get(self.hass)
+        for reg_entry in er.async_entries_for_config_entry(entity_registry, entry_id):
+            if old_fragment in reg_entry.unique_id:
+                entity_registry.async_update_entity(
+                    reg_entry.entity_id,
+                    new_unique_id=reg_entry.unique_id.replace(
+                        old_fragment, new_fragment
+                    ),
+                )
+
+        device_registry = dr.async_get(self.hass)
+        device_entry = device_registry.async_get_device({(DOMAIN, old_uid)})
+        if device_entry:
+            device_registry.async_update_device(
+                device_entry.id, new_identifiers={(DOMAIN, serial)}
+            )
+
+        # Updating the entry fires the registered update listener, which
+        # reloads the entry; the reloaded entities then generate the
+        # serial-based unique_ids that match the migrated registry entries.
+        self.hass.config_entries.async_update_entry(
+            entry, data={**entry.data, CONF_SERIAL: serial}, unique_id=serial
+        )
+
     async def _async_update_device_sw_version(self, sw_version: str) -> None:
         """Asynchronously update the firmware version info in the device registry."""
         try:
             device_registry = dr.async_get(self.hass)
             device_entry = device_registry.async_get_device(
-                {('TerraMowLawnMower', self.basic_data.host)}
+                self._device_identifiers()
             )
             if device_entry and device_entry.sw_version != sw_version:
                 device_registry.async_update_device(
@@ -1557,10 +1626,9 @@ class TerraMowHub:
         """Asynchronously update the model info in the device registry."""
         try:
             device_registry = dr.async_get(self.hass)
-            device_identifier = ('TerraMowLawnMower', self.basic_data.host)
 
             # Look up the device and update its model info
-            device_entry = device_registry.async_get_device({device_identifier})
+            device_entry = device_registry.async_get_device(self._device_identifiers())
             if device_entry:
                 device_registry.async_update_device(
                     device_entry.id,

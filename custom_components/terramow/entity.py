@@ -8,6 +8,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 
+from .const import DOMAIN
+
 if TYPE_CHECKING:
     from . import TerraMowBasicData
 
@@ -39,11 +41,16 @@ class TerraMowEntity(Entity):
             self.hass = hass
 
     @property
+    def device_uid(self) -> str:
+        """Return the stable device identity: serial once known, else host."""
+        return self.basic_data.device_uid or self.host
+
+    @property
     def device_info(self) -> DeviceInfo:
         """Return the shared device registry entry."""
         lawn_mower = self.basic_data.lawn_mower
         return DeviceInfo(
-            identifiers={("TerraMowLawnMower", self.basic_data.host)},
+            identifiers={(DOMAIN, self.device_uid)},
             name="TerraMow",
             manufacturer="TerraMow",
             model=lawn_mower.device_model if lawn_mower else None,
@@ -51,10 +58,15 @@ class TerraMowEntity(Entity):
 
     @property
     def unique_id(self) -> str:
-        """Return a unique ID for this entity."""
+        """Return a unique ID for this entity.
+
+        The ``lawn_mower.terramow@`` prefix is historical — every platform
+        shares it, so do not "fix" it: changing it would orphan the entity
+        registry entries of existing installs.
+        """
         if self._unique_id_suffix is None:
-            return f"lawn_mower.terramow@{self.host}"
-        return f"lawn_mower.terramow@{self.host}.{self._unique_id_suffix}"
+            return f"lawn_mower.terramow@{self.device_uid}"
+        return f"lawn_mower.terramow@{self.device_uid}.{self._unique_id_suffix}"
 
     @property
     def available(self) -> bool:
