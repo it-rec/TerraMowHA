@@ -15,9 +15,12 @@ from custom_components.terramow.lawn_mower import TerraMowLawnMowerEntity
 from custom_components.terramow.map_sensor import TerraMowMapAreaSensor
 from custom_components.terramow.select import TerraMowZoneSelect
 from custom_components.terramow.sensor import (
-    TerraMowMissionSensor,
+    SENSORS,
     TerraMowPoseSensor,
+    TerraMowSensor,
 )
+
+_MISSION_DESCRIPTION = next(d for d in SENSORS if d.key == "mission")
 
 
 def _hub() -> TerraMowHub:
@@ -116,7 +119,7 @@ def test_unsubscribed_pose_callback_no_longer_dispatched() -> None:
 
 def test_push_update_mixin_deregisters_on_entity_removal() -> None:
     hub = _hub()
-    sensor = TerraMowMissionSensor(hub.basic_data, hub.hass)
+    sensor = TerraMowSensor(hub.basic_data, hub.hass, _MISSION_DESCRIPTION)
     asyncio.run(sensor.async_added_to_hass())
     assert sensor._handle_push_update in hub.callbacks[107]
 

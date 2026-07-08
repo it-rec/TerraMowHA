@@ -16,22 +16,15 @@ from unittest.mock import MagicMock
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.hub import TerraMowHub
 from custom_components.terramow.sensor import (
-    BackToStationReasonSensor,
+    SENSORS,
     BatterySensor,
-    BatteryStateSensor,
-    BatteryTemperatureStateSensor,
-    CurrentSessionAreaSensor,
-    CurrentSessionProgressSensor,
-    MainDirectionStatusSensor,
-    NextScheduledStartSensor,
-    RemainingBaseStationTimeSensor,
-    RemainingBladeTimeSensor,
-    TerraMowMissionSensor,
     TerraMowMowSpeedSensor,
     TerraMowPoseSensor,
-    TotalMowedAreaSensor,
+    TerraMowSensor,
     VersionCompatibilitySensor,
 )
+
+_DESCRIPTIONS = {description.key: description for description in SENSORS}
 
 
 def _hub() -> TerraMowHub:
@@ -41,6 +34,10 @@ def _hub() -> TerraMowHub:
     hub.mqtt_client.is_connected.return_value = True
     hub.mqtt_client.publish.return_value.rc = 0
     return hub
+
+
+def _sensor(hub: TerraMowHub, key: str) -> TerraMowSensor:
+    return TerraMowSensor(hub.basic_data, hub.hass, _DESCRIPTIONS[key])
 
 
 def _feed(handler, payload: dict) -> None:
@@ -93,8 +90,8 @@ def test_battery_sensor_attributes_survive_null_tempreture() -> None:
 
 def test_battery_state_and_temperature_unknown_values_are_none() -> None:
     hub = _hub()
-    state = BatteryStateSensor(hub.basic_data, hub.hass)
-    temp = BatteryTemperatureStateSensor(hub.basic_data, hub.hass)
+    state = _sensor(hub, "battery_state")
+    temp = _sensor(hub, "battery_temperature_state")
     _feed(hub.on_battery_status, {
         "state": "BATTERY_STATE_ALIEN",
         "tempreture": "BATTERY_TEMPRETURE_ALIEN",
@@ -110,14 +107,14 @@ def test_battery_state_and_temperature_unknown_values_are_none() -> None:
 
 def test_total_mowed_area_none_when_clean_area_missing() -> None:
     hub = _hub()
-    sensor = TotalMowedAreaSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "total_mowed_area")
     _feed(hub.on_statistics_data, {"clean_area": None, "duration": 5})
     assert sensor.native_value is None
 
 
 def test_current_session_area_zero_and_missing() -> None:
     hub = _hub()
-    sensor = CurrentSessionAreaSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "current_session_area")
     # a just-started session reports 0.0 m^2, not unknown
     _feed(hub.on_current_work_data, {"clean_area": 0})
     assert sensor.native_value == 0.0
@@ -128,7 +125,7 @@ def test_current_session_area_zero_and_missing() -> None:
 
 def test_current_session_area_attribute_skip_branches() -> None:
     hub = _hub()
-    sensor = CurrentSessionAreaSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "current_session_area")
 
     # no dp_113 payload -> falsy current_work_data -> empty dict
     assert sensor.extra_state_attributes == {}
@@ -148,7 +145,7 @@ def test_current_session_area_attribute_skip_branches() -> None:
 
 def test_current_session_progress_hook_and_zero_area_guard() -> None:
     hub = _hub()
-    sensor = CurrentSessionProgressSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "current_session_progress")
 
     # registers the dp_113 callback without raising
     asyncio.run(sensor.async_added_to_hass())
@@ -163,7 +160,7 @@ def test_current_session_progress_hook_and_zero_area_guard() -> None:
 
     # without a lawn mower the registration is skipped
     hub.basic_data.lawn_mower = None
-    other = CurrentSessionProgressSensor(hub.basic_data, hub.hass)
+    other = _sensor(hub, "current_session_progress")
     asyncio.run(other.async_added_to_hass())
 
 
@@ -174,8 +171,8 @@ def test_current_session_progress_hook_and_zero_area_guard() -> None:
 
 def test_remaining_time_attributes_empty_without_data() -> None:
     hub = _hub()
-    blade = RemainingBladeTimeSensor(hub.basic_data, hub.hass)
-    base = RemainingBaseStationTimeSensor(hub.basic_data, hub.hass)
+    blade = _sensor(hub, "remaining_blade_time")
+    base = _sensor(hub, "remaining_base_station_time")
 
     # no dp payloads -> falsy time dicts -> empty attributes
     assert blade.extra_state_attributes == {}
@@ -233,7 +230,7 @@ def test_mow_speed_attributes_skip_and_empty_branches() -> None:
 
 def test_next_scheduled_start_incomplete_time_is_none() -> None:
     hub = _hub()
-    sensor = NextScheduledStartSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "next_scheduled_start")
     # exists but start_time is missing the minute -> None, and end_time missing
     # the minute is skipped from the attributes
     _feed(hub.on_schedule_data, {
@@ -251,7 +248,7 @@ def test_next_scheduled_start_incomplete_time_is_none() -> None:
 
 def test_next_scheduled_start_attributes_empty_without_data() -> None:
     hub = _hub()
-    sensor = NextScheduledStartSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "next_scheduled_start")
     # no dp_138 payload -> falsy schedule_data -> empty attributes
     assert sensor.extra_state_attributes == {}
     # lawn mower dropped -> empty attributes
@@ -298,7 +295,7 @@ def test_pose_sensor_without_lawn_mower_skips_registration() -> None:
 
 def test_main_direction_attributes_empty_without_data() -> None:
     hub = _hub()
-    sensor = MainDirectionStatusSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "main_direction_status")
     # no global params -> empty attributes
     assert sensor.extra_state_attributes == {}
     # lawn mower dropped -> empty attributes
@@ -308,7 +305,7 @@ def test_main_direction_attributes_empty_without_data() -> None:
 
 def test_main_direction_unknown_mode_uses_raw_name() -> None:
     hub = _hub()
-    sensor = MainDirectionStatusSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "main_direction_status")
     _feed(hub.on_global_params, {
         "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MYSTERY"},
     })
@@ -327,19 +324,19 @@ def test_main_direction_unknown_mode_uses_raw_name() -> None:
 
 def test_mission_enum_sensor_registers_dp107_callback() -> None:
     hub = _hub()
-    sensor = TerraMowMissionSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "mission")
     asyncio.run(sensor.async_added_to_hass())
     assert 107 in hub.callbacks
 
     # without a lawn mower the dp_107 registration is skipped
     hub.basic_data.lawn_mower = None
-    other = TerraMowMissionSensor(hub.basic_data, hub.hass)
+    other = _sensor(hub, "mission")
     asyncio.run(other.async_added_to_hass())
 
 
 def test_mission_sensor_unknown_value_is_none() -> None:
     hub = _hub()
-    sensor = TerraMowMissionSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "mission")
     # a raw mission member outside the enum options normalises to None
     hub.mission = "MISSION_UNKNOWN_XYZ"
     assert sensor.native_value is None
@@ -347,6 +344,6 @@ def test_mission_sensor_unknown_value_is_none() -> None:
 
 def test_back_to_station_reason_without_lawn_mower_is_none() -> None:
     hub = _hub()
-    sensor = BackToStationReasonSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "back_to_station_reason")
     hub.basic_data.lawn_mower = None
     assert sensor.native_value is None

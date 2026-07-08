@@ -11,8 +11,8 @@ from unittest.mock import MagicMock
 
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.binary_sensor import (
-    FirmwareUpgradingSensor,
-    NavigationLocatedSensor,
+    BINARY_SENSORS,
+    TerraMowBinarySensor,
 )
 from custom_components.terramow.hub import TerraMowHub
 from custom_components.terramow.map_sensor import (
@@ -28,13 +28,18 @@ from custom_components.terramow.select import (
     TerraMowZoneSelect,
 )
 from custom_components.terramow.sensor import (
-    BackToStationReasonSensor,
+    SENSORS,
     BatterySensor,
-    PowerModeSensor,
     TerraMowMowSpeedSensor,
     TerraMowPoseSensor,
+    TerraMowSensor,
 )
 from custom_components.terramow.update import TerraMowFirmwareUpdate
+
+_SENSOR_DESCRIPTIONS = {description.key: description for description in SENSORS}
+_BINARY_DESCRIPTIONS = {
+    description.key: description for description in BINARY_SENSORS
+}
 
 
 def _hub() -> TerraMowHub:
@@ -44,6 +49,14 @@ def _hub() -> TerraMowHub:
     hub.mqtt_client.is_connected.return_value = True
     hub.mqtt_client.publish.return_value.rc = 0
     return hub
+
+
+def _sensor(hub: TerraMowHub, key: str) -> TerraMowSensor:
+    return TerraMowSensor(hub.basic_data, hub.hass, _SENSOR_DESCRIPTIONS[key])
+
+
+def _binary(hub: TerraMowHub, key: str) -> TerraMowBinarySensor:
+    return TerraMowBinarySensor(hub.basic_data, hub.hass, _BINARY_DESCRIPTIONS[key])
 
 
 def _feed(handler, payload: dict) -> None:
@@ -302,14 +315,14 @@ def test_pose_sensor_reports_yaw_and_attributes() -> None:
 
 def test_power_mode_sensor_from_dp107() -> None:
     hub = _hub()
-    sensor = PowerModeSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "power_mode")
     _feed(hub.on_mission_status, {"power_mode": "POWER_MODE_STANDBY"})
     assert sensor.native_value == "power_mode_standby"
 
 
 def test_back_to_station_reason_sensor_from_dp107() -> None:
     hub = _hub()
-    sensor = BackToStationReasonSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "back_to_station_reason")
     _feed(hub.on_mission_status, {
         "back_to_station_reason": "BACK_TO_STATION_REASON_LOW_BATTERY",
     })
@@ -345,8 +358,8 @@ def test_battery_sensor_attributes_fix_temperature_typo() -> None:
 
 def test_navigation_and_upgrade_binary_sensors() -> None:
     hub = _hub()
-    located = NavigationLocatedSensor(hub.basic_data, hub.hass)
-    upgrading = FirmwareUpgradingSensor(hub.basic_data, hub.hass)
+    located = _binary(hub, "navigation_located")
+    upgrading = _binary(hub, "firmware_upgrading")
 
     _feed(hub.on_mission_status, {
         "is_robot_navi_located": True,

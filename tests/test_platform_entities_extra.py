@@ -20,20 +20,12 @@ from custom_components.terramow.number import (
     MultipleDirectionAngle2Number,
 )
 from custom_components.terramow.sensor import (
+    SENSORS,
     BatterySensor,
-    BatteryStateSensor,
-    BatteryTemperatureStateSensor,
-    CurrentJobTypeSensor,
-    CurrentSessionAreaSensor,
-    CurrentSessionProgressSensor,
-    CurrentSessionTimeSensor,
-    RemainingBaseStationTimeSensor,
-    RemainingBladeTimeSensor,
-    TerraMowMowHeightSensor,
-    TotalMowedAreaSensor,
-    TotalMowingJobsSensor,
-    TotalMowingTimeSensor,
+    TerraMowSensor,
 )
+
+_SENSOR_DESCRIPTIONS = {description.key: description for description in SENSORS}
 
 
 def _hub() -> TerraMowHub:
@@ -43,6 +35,10 @@ def _hub() -> TerraMowHub:
     hub.mqtt_client.is_connected.return_value = True
     hub.mqtt_client.publish.return_value.rc = 0
     return hub
+
+
+def _sensor(hub: TerraMowHub, key: str) -> TerraMowSensor:
+    return TerraMowSensor(hub.basic_data, hub.hass, _SENSOR_DESCRIPTIONS[key])
 
 
 def _feed(handler, payload: dict) -> None:
@@ -196,8 +192,8 @@ def test_battery_sensor_capacity_from_dp8() -> None:
 
 def test_battery_state_and_temperature_sensors_from_dp108() -> None:
     hub = _hub()
-    state = BatteryStateSensor(hub.basic_data, hub.hass)
-    temperature = BatteryTemperatureStateSensor(hub.basic_data, hub.hass)
+    state = _sensor(hub, "battery_state")
+    temperature = _sensor(hub, "battery_temperature_state")
     _feed(hub.on_battery_status, {
         "state": "BATTERY_STATE_CHARGING",
         "tempreture": "BATTERY_TEMPRETURE_OVERHEAT",
@@ -213,9 +209,9 @@ def test_battery_state_and_temperature_sensors_from_dp108() -> None:
 
 def test_lifetime_statistics_sensors_from_dp124() -> None:
     hub = _hub()
-    total_time = TotalMowingTimeSensor(hub.basic_data, hub.hass)
-    total_jobs = TotalMowingJobsSensor(hub.basic_data, hub.hass)
-    total_area = TotalMowedAreaSensor(hub.basic_data, hub.hass)
+    total_time = _sensor(hub, "total_mowing_time")
+    total_jobs = _sensor(hub, "total_mowing_jobs")
+    total_area = _sensor(hub, "total_mowed_area")
     assert total_time.native_value is None
 
     _feed(hub.on_statistics_data, {
@@ -235,10 +231,10 @@ def test_lifetime_statistics_sensors_from_dp124() -> None:
 
 def test_current_session_sensors_from_dp113() -> None:
     hub = _hub()
-    area = CurrentSessionAreaSensor(hub.basic_data, hub.hass)
-    progress = CurrentSessionProgressSensor(hub.basic_data, hub.hass)
-    session_time = CurrentSessionTimeSensor(hub.basic_data, hub.hass)
-    job_type = CurrentJobTypeSensor(hub.basic_data, hub.hass)
+    area = _sensor(hub, "current_session_area")
+    progress = _sensor(hub, "current_session_progress")
+    session_time = _sensor(hub, "current_session_time")
+    job_type = _sensor(hub, "current_job_type")
 
     _feed(hub.on_current_work_data, {
         "clean_area": 2500,   # -> 250.0 m^2
@@ -261,8 +257,8 @@ def test_current_session_sensors_from_dp113() -> None:
 
 def test_remaining_maintenance_time_sensors() -> None:
     hub = _hub()
-    blade = RemainingBladeTimeSensor(hub.basic_data, hub.hass)
-    base = RemainingBaseStationTimeSensor(hub.basic_data, hub.hass)
+    blade = _sensor(hub, "remaining_blade_time")
+    base = _sensor(hub, "remaining_base_station_time")
 
     _feed(hub.on_blade_time, {"int_value": 400})
     _feed(hub.on_base_station_time, {"int_value": 200})
@@ -273,7 +269,7 @@ def test_remaining_maintenance_time_sensors() -> None:
 
 def test_remaining_blade_time_never_negative() -> None:
     hub = _hub()
-    blade = RemainingBladeTimeSensor(hub.basic_data, hub.hass)
+    blade = _sensor(hub, "remaining_blade_time")
     _feed(hub.on_blade_time, {"int_value": 999999})
     assert blade.native_value == 0
 
@@ -285,7 +281,7 @@ def test_remaining_blade_time_never_negative() -> None:
 
 def test_mow_height_sensor_from_dp155() -> None:
     hub = _hub()
-    sensor = TerraMowMowHeightSensor(hub.basic_data, hub.hass)
+    sensor = _sensor(hub, "mow_height")
     assert sensor.native_value is None
     _feed(hub.on_global_params, {"mow_height": {"value": 35}})
     assert sensor.native_value == 35
