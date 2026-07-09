@@ -466,3 +466,72 @@ async def test_adopt_pending_serial_reparks_if_setup_never_finishes(
     hub._pending_serial = SERIAL
     await hub.async_adopt_pending_serial()
     assert hub._pending_serial is None
+
+
+async def test_retained_dp102_during_setup_creates_no_ghost_device(
+    hass: HomeAssistant,
+) -> None:
+    """True reproduction of the 1.13.0 ghost-device bug, as an invariant.
+
+    The broker delivers the retained dp_102 the instant the hub connects —
+    while the platforms are still adding entities. Simulate exactly that:
+    ``start`` installs the mock client and immediately feeds dp_102 through
+    the REAL ``on_mqtt_message`` dispatch, so the adoption coroutine fires at
+    the first event-loop yield, mid-platform-setup. Whatever the migration
+    internals do now or in the future, the observable invariant must hold:
+    one device, no host-keyed registry leftovers, serial adopted.
+    """
+    entry = _entry(hass)  # fresh install: no serial stored yet
+
+    def _start_with_retained_dp102(hub_self: TerraMowHub) -> None:
+        client = MagicMock()
+        client.is_connected.return_value = True
+        client.publish.return_value = MagicMock(rc=0)
+        hub_self.mqtt_client = client
+        hub_self.register_all_callbacks()
+        # the retained device-info message, delivered like the worker thread
+        hub_self.on_mqtt_message(
+            None,
+            None,
+            SimpleNamespace(
+                topic="data_point/102/robot",
+                payload=json.dumps(
+                    {"version": "9.9.210", "sn": SERIAL}
+                ).encode(),
+            ),
+        )
+
+    with (
+        patch(
+            "custom_components.terramow.validate_input",
+            return_value={"title": f"TerraMow ({HOST})"},
+        ),
+        patch.object(TerraMowHub, "start", _start_with_retained_dp102),
+    ):
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+        # the adoption reload settles in follow-up tasks
+        await asyncio.sleep(0)
+        await hass.async_block_till_done()
+
+    assert entry.state is config_entries.ConfigEntryState.LOADED
+    assert entry.data[CONF_SERIAL] == SERIAL
+    assert entry.unique_id == SERIAL
+
+    # THE invariant: exactly one device for this entry, keyed by the serial
+    device_registry = dr.async_get(hass)
+    devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+    assert len(devices) == 1
+    assert (DOMAIN, SERIAL) in devices[0].identifiers
+
+    # and no host-keyed entity registry leftovers anywhere
+    entity_registry = er.async_get(hass)
+    host_fragment = f"terramow@{HOST}"
+    stale = [
+        reg_entry.entity_id
+        for reg_entry in er.async_entries_for_config_entry(
+            entity_registry, entry.entry_id
+        )
+        if host_fragment in reg_entry.unique_id
+    ]
+    assert stale == []
