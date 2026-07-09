@@ -45,6 +45,7 @@ from .map_render import (
     MapRenderer,
 )
 from .map_scene import (
+    ScenePathCache,
     build_render_metadata,
     build_scene,
     coerce_angle_radians,
@@ -134,6 +135,9 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         self._path_data: dict[str, Any] = {}
         self._history_path_data: dict[str, Any] = {}
         self._pose: dict[str, Any] = {}
+        # Skips re-extracting path point lists whose source dict is unchanged
+        # across rebuilds (the history path survives every current-path push).
+        self._scene_cache = ScenePathCache()
 
         # The finished static layers paired with the transformer they were
         # drawn with, published as one atomic reference. The final render reads
@@ -334,9 +338,17 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         await self._async_rebuild()
 
     async def _on_pose(self, pose: dict[str, Any]) -> None:
-        """Callback for pose updates."""
+        """Callback for pose updates.
+
+        Pose arrives at ~2 Hz even while the mower sits docked; an unchanged
+        pose renders a byte-identical frame, so only a changed one may drop
+        the cached PNG (map/battery changes invalidate through their own
+        callbacks).
+        """
+        pose_changed = pose != self._pose
         self._pose = pose
-        self._invalidate_png_cache()
+        if pose_changed:
+            self._invalidate_png_cache()
         now = time.monotonic()
         if now - self._last_pose_state_update >= 2.0:
             self._last_pose_state_update = now
@@ -432,6 +444,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             self._path_data,
             self._history_path_data,
             self._show_coverage,
+            cache=self._scene_cache,
         )
 
     def _rebuild_static_image(self) -> None:

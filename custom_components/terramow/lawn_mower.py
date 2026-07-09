@@ -85,7 +85,13 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
 
     @activity.setter
     def activity(self, value: LawnMowerActivity) -> None:
-        """Set the current activity of the lawn mower."""
+        """Set the current activity of the lawn mower.
+
+        Deliberately does not schedule a state write: assignments come from
+        ``update_activity_from_state``, whose caller ``_on_hub_state``
+        schedules exactly one write per hub notification (the setter used to
+        add a redundant second and third schedule per dp_107).
+        """
         old_activity = self._activity
         self._activity = value
         if old_activity != value:
@@ -93,7 +99,6 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
             _LOGGER.info("Activity changed from %s to %s", old_activity, value)
         _LOGGER.debug("State change details: mission=%s, sub_mission=%s, mission_state=%s, has_error=%s",
                      self.hub.mission, self.hub.sub_mission, self.hub.mission_state, self.hub.has_error)
-        safe_schedule_update_ha_state(self)
 
     @property
     def available(self) -> bool:
@@ -112,8 +117,6 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
 
     def update_activity_from_state(self) -> None:
         """Update activity based on the hub's mission state."""
-        last_activity = self.activity
-
         # The mission-state mapping is shared with the event entity; only the
         # connection-error handling differs (a lost connection surfaces as
         # ERROR here, see compute_phase).
@@ -132,9 +135,6 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
                 self.activity = LawnMowerActivity.DOCKED
         else:
             self.activity = LawnMowerActivity.DOCKED
-
-        if last_activity != self.activity:
-            safe_schedule_update_ha_state(self)
 
     def start_mowing(self) -> None:
         """Start mowing implementation for lawn_mower entity."""

@@ -373,6 +373,35 @@ def _filter_cleaning_path_points(path_points: list[dict[str, Any]]) -> list[dict
     return [point for point in path_points if point.get("type") == "PATH_POINT_TYPE_CLEANING"]
 
 
+class ScenePathCache:
+    """Identity-keyed cache of extracted path points for one camera entity.
+
+    The hub replaces the ha_path_v1 dicts wholesale and never mutates them,
+    so ``source is cached_source`` proves the extraction inputs are
+    unchanged (the strong reference to the source rules out ``id()`` reuse).
+    The history path in particular survives many current-path pushes, whose
+    rebuilds would otherwise re-extract its O(N) point list every time.
+    """
+
+    def __init__(self) -> None:
+        self._entries: dict[
+            str,
+            tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]],
+        ] = {}
+
+    def extract(
+        self, key: str, path_data: dict[str, Any]
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """Return the (raw, cleaning-only) point lists for ``path_data``."""
+        entry = self._entries.get(key)
+        if entry is not None and entry[0] is path_data:
+            return entry[1], entry[2]
+        raw = _extract_path_points(path_data)
+        cleaning = _filter_cleaning_path_points(raw)
+        self._entries[key] = (path_data, raw, cleaning)
+        return raw, cleaning
+
+
 def _pixel_distance(point_a: tuple[int, int], point_b: tuple[int, int]) -> float:
     """Compute the distance between two pixel points."""
     return math.hypot(point_b[0] - point_a[0], point_b[1] - point_a[1])
@@ -498,18 +527,32 @@ def build_scene(
     path_data: dict[str, Any],
     history_path_data: dict[str, Any],
     show_coverage: bool,
+    cache: ScenePathCache | None = None,
 ) -> dict[str, Any]:
-    """Organize the raw protocol data into a drawable scene."""
+    """Organize the raw protocol data into a drawable scene.
+
+    Stays a pure function by default; a caller that rebuilds repeatedly
+    (the camera) may pass its ``ScenePathCache`` to skip re-extracting
+    path point lists whose source dict is unchanged.
+    """
     map_data = map_data if isinstance(map_data, dict) else {}
     path_data = path_data if isinstance(path_data, dict) else {}
     history_path_data = history_path_data if isinstance(history_path_data, dict) else {}
     clean_info = map_data.get("clean_info", {})
     mow_param = map_data.get("mow_param", {})
     current_map_id = coerce_int(map_data.get("id"))
-    raw_current_path_points = _extract_path_points(path_data)
-    raw_history_path_points = _extract_path_points(history_path_data)
-    current_path_points = _filter_cleaning_path_points(raw_current_path_points)
-    history_path_points = _filter_cleaning_path_points(raw_history_path_points)
+    if cache is None:
+        raw_current_path_points = _extract_path_points(path_data)
+        raw_history_path_points = _extract_path_points(history_path_data)
+        current_path_points = _filter_cleaning_path_points(raw_current_path_points)
+        history_path_points = _filter_cleaning_path_points(raw_history_path_points)
+    else:
+        raw_current_path_points, current_path_points = cache.extract(
+            "current", path_data
+        )
+        raw_history_path_points, history_path_points = cache.extract(
+            "history", history_path_data
+        )
     current_path_map_id = _path_map_id(path_data)
     history_path_map_id = _path_map_id(history_path_data)
     target_map_id = current_map_id

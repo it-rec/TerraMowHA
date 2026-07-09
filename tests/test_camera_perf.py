@@ -238,6 +238,30 @@ def test_battery_status_only_invalidates_on_source_change() -> None:
 
 
 # ---------------------------------------------------------------------------
+# pose gating: identical keepalive poses keep the cached PNG
+# ---------------------------------------------------------------------------
+
+
+def test_unchanged_pose_keeps_cached_png() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = SMALL_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+
+    asyncio.run(camera._on_pose({"x": 1.0, "y": 2.0, "yaw": 0.5}))
+    png = _render(camera)
+    assert camera._cached_png is png
+
+    # a docked mower pushes the same pose at ~2 Hz; the cache must survive
+    asyncio.run(camera._on_pose({"x": 1.0, "y": 2.0, "yaw": 0.5}))
+    assert camera._cached_png is png
+
+    # an actual movement invalidates
+    asyncio.run(camera._on_pose({"x": 1.1, "y": 2.0, "yaw": 0.5}))
+    assert camera._cached_png is None
+
+
+# ---------------------------------------------------------------------------
 # render generation counter
 # ---------------------------------------------------------------------------
 
@@ -260,6 +284,139 @@ def test_stale_render_does_not_repopulate_cache() -> None:
     # the next (current-generation) render caches again
     fresh = camera._render_final_image()
     assert camera._cached_png is fresh
+
+
+# ---------------------------------------------------------------------------
+# static scene checkpoint cache
+# ---------------------------------------------------------------------------
+
+
+def _path(points) -> dict:
+    return {
+        "id": 5,
+        "map_id": 1,
+        "type": "PATH_TYPE_CLEAN",
+        "points": [
+            {"position": {"x": x, "y": y}, "type": "PATH_POINT_TYPE_CLEANING"}
+            for x, y in points
+        ],
+    }
+
+
+def test_warm_checkpoint_render_matches_cold_render_bytes() -> None:
+    # The checkpoint replay must be pixel-identical to a full cold redraw.
+    path = _path([(0.2, 0.2), (1.5, 0.8), (2.5, 1.5)])
+    with patch("custom_components.terramow.camera.dt_util") as dt:
+        dt.now.return_value.strftime.return_value = "12:00"
+
+        # warm: map first (checkpoint stored), then a path push (replayed)
+        hub_a = _hub()
+        cam_a = _camera(hub_a)
+        hub_a._map_data = SMALL_MAP
+        asyncio.run(cam_a._on_map_info({"id": 1}))
+        asyncio.run(cam_a._on_path_data(path))
+        warm = _render(cam_a)
+
+        # cold: identical data rendered in one pass on a fresh camera
+        hub_b = _hub()
+        cam_b = _camera(hub_b)
+        cam_b._map_data = SMALL_MAP
+        cam_b._path_data = path
+        cold = _render(cam_b)
+
+    assert warm == cold
+
+
+def test_checkpoint_skips_static_redraw_until_fit_or_map_changes() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = SMALL_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    renderer = camera._renderer
+    assert renderer._static_checkpoint is not None
+
+    with patch.object(
+        renderer, "_draw_scene_static", wraps=renderer._draw_scene_static
+    ) as static:
+        # an in-bounds path push keeps the fit -> checkpoint replay
+        asyncio.run(camera._on_path_data(_path([(0.5, 0.5), (1.0, 1.0)])))
+        assert static.call_count == 0
+        # a point outside the map extent changes the fit -> full redraw
+        asyncio.run(camera._on_path_data(_path([(0.5, 0.5), (50.0, 50.0)])))
+        assert static.call_count == 1
+
+    # a new map dict (fresh HTTP fetch) misses on identity
+    hub._map_data = dict(SMALL_MAP)
+    with patch.object(
+        renderer, "_draw_scene_static", wraps=renderer._draw_scene_static
+    ) as static:
+        asyncio.run(camera._on_map_info({"id": 1}))
+        assert static.call_count == 1
+
+
+def test_checkpoint_cleared_when_scene_empties() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = SMALL_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    assert camera._renderer._static_checkpoint is not None
+    # all data gone -> reset() must release the supersampled canvas
+    camera._map_data = {}
+    camera._path_data = {}
+    camera._history_path_data = {}
+    camera._rebuild_static_image()
+    assert camera._renderer._static_checkpoint is None
+
+
+# ---------------------------------------------------------------------------
+# scene path cache
+# ---------------------------------------------------------------------------
+
+
+def test_scene_path_cache_hits_on_same_dict_and_reextracts_on_new() -> None:
+    from custom_components.terramow.map_scene import ScenePathCache, build_scene
+
+    history = _path([(0.1, 0.1), (0.2, 0.2)])
+    current = _path([(0.5, 0.5)])
+    cache = ScenePathCache()
+
+    first = build_scene(SMALL_MAP, current, history, False, cache=cache)
+    # a new current-path dict with the unchanged history dict: the history
+    # extraction is served from the cache (identical list objects)...
+    second = build_scene(SMALL_MAP, _path([(0.5, 0.5), (0.6, 0.6)]), history, False, cache=cache)
+    assert second["history_path_points"] is first["history_path_points"]
+    # ...while the current path was re-extracted
+    assert len(second["current_path_points"]) == 2
+
+    # a replaced history dict re-extracts
+    third = build_scene(SMALL_MAP, current, dict(history), False, cache=cache)
+    assert third["history_path_points"] is not first["history_path_points"]
+    assert third["history_path_points"] == first["history_path_points"]
+
+    # cached and uncached scenes are equal for identical inputs
+    uncached = build_scene(SMALL_MAP, current, history, False)
+    cached = build_scene(SMALL_MAP, current, history, False, cache=ScenePathCache())
+    assert cached == uncached
+
+
+def test_camera_rebuild_uses_scene_cache_across_path_pushes() -> None:
+    import custom_components.terramow.map_scene as map_scene_module
+
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = SMALL_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    asyncio.run(camera._on_history_path_data(_path([(0.1, 0.1), (0.9, 0.9)])))
+
+    with patch.object(
+        map_scene_module,
+        "_extract_path_points",
+        wraps=map_scene_module._extract_path_points,
+    ) as extract:
+        # a current-path push re-extracts only the changed source; the
+        # unchanged history dict is served from the camera's scene cache
+        asyncio.run(camera._on_path_data(_path([(0.5, 0.5)])))
+        assert extract.call_count == 1
 
 
 # ---------------------------------------------------------------------------

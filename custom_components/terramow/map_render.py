@@ -445,6 +445,14 @@ class MapRenderer:
         # drawn onto the supersampled canvas (1 outside of scene drawing).
         self._scene_scale = 1
         self._transformer: CoordinateTransformer | None = None
+        # Supersampled canvas checkpointed after the static prefix
+        # (_draw_scene_static), keyed on the exact map_data dict identity and
+        # the transformer fit. Path pushes then redraw only the overlay
+        # suffix. Trade-off: keeps one supersampled RGBA canvas (~16 MB at
+        # the default resolution) alive while map data is present.
+        self._static_checkpoint: (
+            tuple[dict[str, Any], float, float, float, Image.Image] | None
+        ) = None
 
     @property
     def language(self) -> str:
@@ -454,6 +462,7 @@ class MapRenderer:
     def reset(self) -> None:
         """Forget the transformer when there is no scene left to draw."""
         self._transformer = None
+        self._static_checkpoint = None
 
     def placeholder_png(self) -> bytes:
         """The waiting-for-data placeholder in this renderer's theme/language."""
@@ -487,9 +496,6 @@ class MapRenderer:
                 self._map_rect[2],
                 self._map_rect[3],
             )
-            scene_canvas = Image.new(
-                "RGBA", (IMAGE_WIDTH * ss, IMAGE_HEIGHT * ss), (0, 0, 0, 0)
-            )
             self._scene_scale = ss
             self._transformer = CoordinateTransformer(
                 scene["all_points"],
@@ -501,8 +507,36 @@ class MapRenderer:
                 ),
                 padding=padding * ss,
             )
+            # The static prefix depends only on map_data and the fit; new
+            # path points arrive far more often than either changes (a point
+            # outside the previous bounds changes the fit and misses). On a
+            # hit, replay the checkpointed canvas and redraw just the overlay
+            # suffix — pixel-identical to a full redraw because the same
+            # operations run in the same order on identical canvas state.
+            checkpoint = self._static_checkpoint
+            ss_transformer = self._transformer
             try:
-                self._draw_scene(scene_canvas, scene)
+                if (
+                    checkpoint is not None
+                    and checkpoint[0] is map_data
+                    and checkpoint[1] == ss_transformer._scale
+                    and checkpoint[2] == ss_transformer._offset_x
+                    and checkpoint[3] == ss_transformer._offset_y
+                ):
+                    scene_canvas = checkpoint[4].copy()
+                else:
+                    scene_canvas = Image.new(
+                        "RGBA", (IMAGE_WIDTH * ss, IMAGE_HEIGHT * ss), (0, 0, 0, 0)
+                    )
+                    self._draw_scene_static(scene_canvas, scene)
+                    self._static_checkpoint = (
+                        map_data,
+                        ss_transformer._scale,
+                        ss_transformer._offset_x,
+                        ss_transformer._offset_y,
+                        scene_canvas.copy(),
+                    )
+                self._draw_scene_overlay(scene_canvas, scene)
             finally:
                 self._scene_scale = 1
             image.alpha_composite(
@@ -525,6 +559,7 @@ class MapRenderer:
                 self._draw_legend(chip_draw, scene)
         else:
             self._transformer = None
+            self._static_checkpoint = None
             self._draw_empty_map_card(image, map_data)
 
         if not self._clean_mode:
@@ -609,6 +644,17 @@ class MapRenderer:
 
     def _draw_scene(self, image: Image.Image, scene: dict[str, Any]) -> None:
         """Draw the complete scene."""
+        self._draw_scene_static(image, scene)
+        self._draw_scene_overlay(image, scene)
+
+    def _draw_scene_static(self, image: Image.Image, scene: dict[str, Any]) -> None:
+        """Draw the scene prefix that depends on map_data alone.
+
+        Map extent and regions change only when a new ha_map_v1 dict arrives,
+        so ``render_static`` checkpoints the canvas after this prefix and
+        replays it for path-only updates (see ``_static_checkpoint``). Keep
+        anything derived from path data out of this method.
+        """
         pal = self._palette
         draw = ImageDraw.Draw(image, "RGBA")
         transformer = self._transformer
@@ -665,6 +711,19 @@ class MapRenderer:
                 draw.line(pixels + [pixels[0]], fill=pal.map_outline, width=self._s(2))
             for edge_line in region["edge_lines"]:
                 self._draw_polyline(draw, transformer, edge_line, pal.edge_line, self._s(2))
+
+    def _draw_scene_overlay(self, image: Image.Image, scene: dict[str, Any]) -> None:
+        """Draw the scene suffix atop the static prefix.
+
+        Runs on every rebuild (path pushes land here); the draw order within
+        the suffix — coverage/path first, zones and markers above them — is
+        part of the rendered output and must not change.
+        """
+        pal = self._palette
+        draw = ImageDraw.Draw(image, "RGBA")
+        transformer = self._transformer
+        if transformer is None:
+            return
 
         if self._show_coverage:
             self._draw_coverage(image, scene)

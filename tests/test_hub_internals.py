@@ -136,6 +136,7 @@ META = {"http_port": 8080, "http_path": "/map", "token": "tok"}
 
 def test_fetch_json_success(monkeypatch) -> None:
     hub = _hub()
+    hub.hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, arg: fn(arg))
     body = json.dumps({"id": 1}).encode()
     (data, etag, ok, not_modified), session = _fetch(
         hub, monkeypatch, _FakeResponse(200, body, {"ETag": "abc"}), META
@@ -330,6 +331,67 @@ def test_pose_topic_dispatches_to_pose_callbacks() -> None:
 
     assert hub.pose == {"x": 1.5, "yaw": 90}
     cb.assert_called_with({"x": 1.5, "yaw": 90})
+
+
+def test_dp_callbacks_batched_into_single_loop_hop() -> None:
+    # dp_107 fans out to ~a dozen entities; the fan-out must cost one
+    # call_soon_threadsafe per message, not one per callback.
+    hub = _hub()
+    hub.hass.loop.call_soon_threadsafe = MagicMock(side_effect=lambda fn, *a: fn(*a))
+    order: list[str] = []
+    hub.hass.async_create_task = MagicMock(
+        side_effect=lambda c: (order.append(f"task:{c.__qualname__}"), c.close())
+    )
+    hub.register_callback(150, lambda payload: order.append("sync1"))
+
+    async def async_cb(payload: str) -> None: ...
+
+    hub.register_callback(150, async_cb)
+    hub.register_callback(150, lambda payload: order.append("sync2"))
+
+    hub.on_mqtt_message(None, None, _msg("data_point/150/robot", b"{}"))
+
+    assert hub.hass.loop.call_soon_threadsafe.call_count == 1
+    # registration order preserved; the coroutine became a task in place
+    assert order == ["sync1", "task:test_dp_callbacks_batched_into_single_loop_hop.<locals>.async_cb", "sync2"]
+
+
+def test_batched_dispatch_isolates_callback_errors() -> None:
+    hub = _hub()
+    hub.hass.loop.call_soon_threadsafe = MagicMock(side_effect=lambda fn, *a: fn(*a))
+    second = MagicMock()
+
+    def _boom(payload: str) -> None:
+        raise RuntimeError("boom")
+
+    hub.register_callback(151, _boom)
+    hub.register_callback(151, second)
+
+    hub.on_mqtt_message(None, None, _msg("data_point/151/robot", b"{}"))
+
+    second.assert_called_once_with("{}")
+
+
+def test_pose_callbacks_batched_into_single_loop_hop() -> None:
+    hub = _hub()
+    hub.hass.loop.call_soon_threadsafe = MagicMock(side_effect=lambda fn, *a: fn(*a))
+    cb1, cb2 = MagicMock(), MagicMock()
+    hub.register_pose_callback(cb1)
+    hub.register_pose_callback(cb2)
+    hub.hass.loop.call_soon_threadsafe.reset_mock()
+
+    hub.on_mqtt_message(None, None, _msg("pose/current", b'{"x": 1.0}'))
+
+    assert hub.hass.loop.call_soon_threadsafe.call_count == 1
+    cb1.assert_called_with({"x": 1.0})
+    cb2.assert_called_with({"x": 1.0})
+
+
+def test_dispatch_batch_empty_is_noop() -> None:
+    hub = _hub()
+    hub.hass.loop.call_soon_threadsafe = MagicMock()
+    hub._dispatch_batch([])
+    hub.hass.loop.call_soon_threadsafe.assert_not_called()
 
 
 def test_model_topic_routes_to_model_handler() -> None:

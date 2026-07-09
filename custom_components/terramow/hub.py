@@ -69,6 +69,18 @@ TOPIC_PATTERN = re.compile(r"^data_point/(\d+)/robot$")
 UNKNOWN_DP_HISTORY_MAXLEN = 30
 
 
+def _decompress_and_parse(raw: bytes) -> Any:
+    """Decompress (if gzip) and JSON-parse a fetched map/path body.
+
+    Runs in the executor: ha_map_v1/ha_path_v1 bodies grow with session
+    length, and parsing them on the event loop stalls it for tens of
+    milliseconds on small hosts.
+    """
+    if raw[:2] == b"\x1f\x8b":
+        raw = gzip.decompress(raw)
+    return json.loads(raw.decode("utf-8"))
+
+
 def _make_unsubscriber[CallbackT](
     callbacks: list[CallbackT], callback: CallbackT
 ) -> Callable[[], None]:
@@ -401,6 +413,32 @@ class TerraMowHub:
                     target(*args)
             except Exception as err:
                 _LOGGER.error("Error dispatching %s: %s", target, err)
+
+        self.hass.loop.call_soon_threadsafe(_run_on_loop)
+
+    def _dispatch_batch(
+        self, targets: list[Callable[..., Any]], *args: Any
+    ) -> None:
+        """Schedule a snapshot of handlers onto the event loop in one hop.
+
+        A data point like dp_107 fans out to a dozen entity callbacks; one
+        ``call_soon_threadsafe`` per callback costs a loop wakeup each.
+        Batching keeps the exact per-callback semantics of ``_dispatch``
+        (registration order, coroutine handlers become tasks in that order,
+        one handler's error never stops the next) at a single hop.
+        """
+        if not targets:
+            return
+
+        def _run_on_loop() -> None:
+            for target in targets:
+                try:
+                    if asyncio.iscoroutinefunction(target):
+                        self.hass.async_create_task(target(*args))
+                    else:
+                        target(*args)
+                except Exception as err:
+                    _LOGGER.error("Error dispatching %s: %s", target, err)
 
         self.hass.loop.call_soon_threadsafe(_run_on_loop)
 
@@ -980,7 +1018,7 @@ class TerraMowHub:
 
             # Subscribe to the device model topic
             client.subscribe(MODEL_NAME_TOPIC)
-            _LOGGER.info("Subscribed to %s topic", MODEL_NAME_TOPIC)
+            _LOGGER.debug("Subscribed to %s topic", MODEL_NAME_TOPIC)
 
             # Proactively request version compatibility information
             self._request_compatibility_info()
@@ -1040,8 +1078,7 @@ class TerraMowHub:
                 self._pose = pose
                 # Snapshot: entities append callbacks from the event loop while
                 # this runs on the MQTT worker thread.
-                for callback in list(self.pose_callbacks):
-                    self._dispatch(callback, pose)
+                self._dispatch_batch(list(self.pose_callbacks), pose)
             except json.JSONDecodeError:
                 _LOGGER.error("Failed to parse pose JSON: %s", payload[:200])
             except Exception as e:
@@ -1056,7 +1093,7 @@ class TerraMowHub:
 
         # Handle the device model topic
         if topic == MODEL_NAME_TOPIC:
-            _LOGGER.info("Received device model message: %s", payload)
+            _LOGGER.debug("Received device model message: %s", payload)
             self._handle_model_name(payload)
             return
 
@@ -1077,8 +1114,7 @@ class TerraMowHub:
         callbacks = self.callbacks.get(dp_id)
         if callbacks:
             _LOGGER.debug("Calling %d callbacks for dp_id %d", len(callbacks), dp_id)
-            for callback in list(callbacks):
-                self._dispatch(callback, payload)
+            self._dispatch_batch(list(callbacks), payload)
         else:
             # Help discover undocumented data points (e.g. lift alarms, schedule
             # switches, error codes): each unknown dp_id is logged once at INFO,
@@ -1103,7 +1139,9 @@ class TerraMowHub:
                     "integration to record all payloads for this data point.",
                     dp_id, payload[:500],
                 )
-            else:
+            elif _LOGGER.isEnabledFor(logging.DEBUG):
+                # Guarded: the slice would otherwise run per message even
+                # with debug logging off.
                 _LOGGER.debug("Unhandled data point %d payload: %s", dp_id, payload[:2000])
 
     def register_callback(
@@ -1409,11 +1447,9 @@ class TerraMowHub:
                 return None, etag, False, False
             new_etag = resp.headers.get("ETag") or etag
             raw = await resp.read()
-            # Handle gzip compression manually: the protocol requires Content-Encoding: gzip
-            if raw[:2] == b'\x1f\x8b':
-                raw = await self.hass.async_add_executor_job(gzip.decompress, raw)
-            text = raw.decode("utf-8")
-            data = json.loads(text)
+            # Decompress (the protocol gzips large bodies) and parse in one
+            # executor job so neither step blocks the event loop.
+            data = await self.hass.async_add_executor_job(_decompress_and_parse, raw)
             return data, new_etag, True, False
 
     @staticmethod
@@ -1775,7 +1811,7 @@ class TerraMowHub:
         its own ``try/except`` so a raised error never kills the worker.
         """
         topic = f"data_point/{dp_id}/app"
-        _LOGGER.info("Publishing data to topic %s: %s", topic, data)
+        _LOGGER.debug("Publishing data to topic %s: %s", topic, data)
         payload = json.dumps(data)
         client = self.mqtt_client
         if client is None or not client.is_connected():
