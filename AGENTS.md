@@ -17,6 +17,7 @@ TerraMowHA is a [Home Assistant](https://www.home-assistant.io/) custom integrat
 - `__init__.py` — config entry setup/unload, `TerraMowBasicData` (runtime data), service registration (`terramow.start_select_region`).
 - `entity.py` — `TerraMowEntity`: common base class for all entities.
 - Platform modules — one file per platform: `lawn_mower.py`, `camera.py`, `sensor.py`, `binary_sensor.py`, `select.py`, `number.py`, `switch.py`, `button.py`, `update.py`. `map_sensor.py` renders the live map.
+- `map_card.py` + `frontend/terramow-map-card.js` — interactive map card: the backend serves the card JS and a `terramow/map/subscribe` WebSocket feed (scene geometry + robot pose); the card is a self-contained vanilla-JS canvas renderer. Bump `CARD_VERSION` in `map_card.py` whenever the JS changes (cache busting).
 - `config_flow.py` — config, options, reconfigure, reauth, and Zeroconf discovery flows.
 - `const.py`, `entity_utils.py` — constants and shared entity helpers.
 - `diagnostics.py` — diagnostics download support.

@@ -10,7 +10,7 @@ a DHCP address change from duplicating or orphaning anything afterwards.
 import asyncio
 import json
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant import config_entries
@@ -190,6 +190,9 @@ async def test_setup_uses_serial_as_device_uid(hass: HomeAssistant) -> None:
     with (
         patch("custom_components.terramow.validate_input", return_value={}),
         patch("custom_components.terramow.TerraMowHub", _FakeHub),
+        patch(
+            "custom_components.terramow.async_setup_map_card", AsyncMock()
+        ),
         patch.object(
             hass.config_entries,
             "async_forward_entry_setups",

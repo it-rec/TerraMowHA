@@ -15,6 +15,7 @@ Dette er en Home Assistant-integration til TerraMow robotplæneklippere.
 **Styring**
 - Plæneklipper-entitet: start, pause og dock
 - Zoneklipning: entitet til zonevalg og tjenesten `terramow.start_select_region`
+- **Interactive map card** — pan/zoom vector map for dashboards with the live robot position, mowing path and tap-to-mow zone selection (auto-registered, `custom:terramow-map-card`)
 - Knap til kantklipning
 - Indstillinger fra Home Assistant: klippehøjde, hastighed, baneafstand, knivhastighed, kantklipningsafstand, hovedretningstilstand og -vinkler, grundig hjørneklipning, kantklipningstilstand til højt græs
 - Vedligeholdelse: nulstillingsknapper til tællerne for knivskiven og basestationen
@@ -78,7 +79,7 @@ Enheder på det lokale netværk registreres automatisk via Zeroconf — accepté
 
 ### Krav
 
-- Home Assistant 2023.9.3 eller nyere (testet med 2025.1.1)
+- Home Assistant 2024.6.0 eller nyere (testet med 2025.1.1)
 - TerraMow firmwareversion 6.6.0 eller nyere
 - TerraMow APP version 1.6.0 eller nyere
 - Live-kort og klipperute kræver firmware med HA-modul version 3; på version 2 (f.eks. S800) fungerer alt andet, og sensoren for versionskompatibilitet rapporterer det
@@ -96,6 +97,17 @@ target:
 data:
   region_ids: [1, 2]
 ```
+
+### Interactive map card
+
+The integration ships its own Lovelace card — auto-registered, no manual resource or HACS frontend install needed:
+
+```yaml
+type: custom:terramow-map-card
+entity: lawn_mower.terramow
+```
+
+It renders the lawn as vectors (crisp at any zoom, follows your HA theme): zones, forbidden areas, virtual walls, the mowing path, the base station and the robot's live position. Drag to pan, scroll or pinch to zoom, double-tap to re-fit. **Tap one or more zones** and press the button that appears to mow exactly those zones (`terramow.start_select_region` under the hood). Options and details: see the [dashboard guide](en/dashboard.md#interactive-map-card). Live map data requires firmware HA module version 3 (same as the map camera).
 
 ### Diagnostik og fejlfinding
 

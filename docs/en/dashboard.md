@@ -7,6 +7,57 @@ Replace `terramow` in the entity ids below if your entities use a
 different prefix (check one of your TerraMow entities under Settings →
 Devices & Services → TerraMow).
 
+## Interactive map card
+
+The integration ships a custom Lovelace card and registers it
+automatically — no manual resource, no separate HACS frontend install.
+It appears in the card picker as **TerraMow Map Card** (with a UI
+editor), or add it in YAML:
+
+```yaml
+type: custom:terramow-map-card
+entity: lawn_mower.terramow
+```
+
+Unlike the PNG camera, the card renders the map as vectors over a live
+WebSocket feed: crisp at any zoom level, themed with your dashboard, and
+the robot marker moves without image reloads.
+
+**Interactions**
+
+- **Drag** to pan, **scroll / pinch** to zoom, **double-tap** (or the ⛶
+  button) to fit the whole lawn again.
+- **Tap a zone** to select it (tap again to deselect); an action bar
+  appears — press it to start mowing exactly the selected zones via
+  `terramow.start_select_region`. Zones the device itself reports as
+  selected for the running job are tinted in the accent color.
+
+**Options**
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `entity` | *required* | Any TerraMow entity; the lawn mower entity is the natural choice |
+| `zone_selection` | `true` | Tap zones to start a selective mow |
+| `show_current_path` | `true` | Draw the running job's mowing path |
+| `show_history_path` | `true` | Draw the previous job's path (faded) |
+| `show_hud` | `true` | Status chips (mower state, map name / area) |
+| `fit_height` | `420` | Card canvas height in pixels |
+
+**Notes**
+
+- Live map data requires firmware HA module version 3 (same requirement
+  as the map camera); on older firmware the card shows a placeholder.
+- The card follows the active Home Assistant theme (light and dark).
+- Headless / custom setups where the `frontend` integration is not
+  loaded can still use the card by adding
+  `/terramow-frontend/terramow-map-card.js` manually as a *JavaScript
+  module* dashboard resource.
+
+In the example view below you can swap the `picture-entity` camera card
+for the interactive card one-to-one.
+
+## Example view
+
 ```yaml
 type: sections
 max_columns: 2

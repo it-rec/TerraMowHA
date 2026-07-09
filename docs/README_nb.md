@@ -15,6 +15,7 @@ Dette er en Home Assistant-integrasjon for TerraMow robotgressklippere.
 **Styring**
 - Gressklipper-entitet: start, pause og dokking
 - Soneklipping: entitet for sonevalg og tjenesten `terramow.start_select_region`
+- **Interactive map card** — pan/zoom vector map for dashboards with the live robot position, mowing path and tap-to-mow zone selection (auto-registered, `custom:terramow-map-card`)
 - Knapp for kantklipping
 - Innstillinger fra Home Assistant: klippehøyde, hastighet, sporavstand, knivhastighet, kantklippingsavstand, hovedretningsmodus og -vinkler, grundig hjørneklipping, kantklippingsmodus for høyt gress
 - Vedlikehold: tilbakestillingsknapper for tellerne for knivskiven og basestasjonen
@@ -78,7 +79,7 @@ Enheter på det lokale nettverket oppdages automatisk via Zeroconf — godta den
 
 ### Krav
 
-- Home Assistant 2023.9.3 eller nyere (testet med 2025.1.1)
+- Home Assistant 2024.6.0 eller nyere (testet med 2025.1.1)
 - TerraMow fastvareversjon 6.6.0 eller nyere
 - TerraMow APP versjon 1.6.0 eller nyere
 - Live kart og klipperute krever fastvare med HA-modul versjon 3; på versjon 2 (f.eks. S800) fungerer alt annet, og sensoren for versjonskompatibilitet rapporterer det
@@ -96,6 +97,17 @@ target:
 data:
   region_ids: [1, 2]
 ```
+
+### Interactive map card
+
+The integration ships its own Lovelace card — auto-registered, no manual resource or HACS frontend install needed:
+
+```yaml
+type: custom:terramow-map-card
+entity: lawn_mower.terramow
+```
+
+It renders the lawn as vectors (crisp at any zoom, follows your HA theme): zones, forbidden areas, virtual walls, the mowing path, the base station and the robot's live position. Drag to pan, scroll or pinch to zoom, double-tap to re-fit. **Tap one or more zones** and press the button that appears to mow exactly those zones (`terramow.start_select_region` under the hood). Options and details: see the [dashboard guide](en/dashboard.md#interactive-map-card). Live map data requires firmware HA module version 3 (same as the map camera).
 
 ### Diagnostikk og feilsøking
 

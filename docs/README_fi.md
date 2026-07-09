@@ -15,6 +15,7 @@ Tämä on Home Assistant -integraatio TerraMow-robottiruohonleikkureille.
 **Ohjaus**
 - Ruohonleikkurientiteetti: käynnistys, tauko ja telakointi
 - Vyöhykeleikkuu: vyöhykkeen valintaentiteetti ja `terramow.start_select_region`-palvelu
+- **Interactive map card** — pan/zoom vector map for dashboards with the live robot position, mowing path and tap-to-mow zone selection (auto-registered, `custom:terramow-map-card`)
 - Reunaleikkuupainike
 - Asetukset Home Assistantista: leikkuukorkeus, nopeus, leikkuuväli, terän nopeus, reunaleikkuun etäisyys, pääsuuntatila ja -kulmat, perusteellinen kulmien leikkuu, korkean ruohon reunaleikkuutila
 - Huolto: nollauspainikkeet terälautasen ja tukiaseman laskureille
@@ -78,7 +79,7 @@ Paikallisverkon laitteet löydetään automaattisesti Zeroconfin kautta — hyv�
 
 ### Vaatimukset
 
-- Home Assistant 2023.9.3 tai uudempi (testattu versiolla 2025.1.1)
+- Home Assistant 2024.6.0 tai uudempi (testattu versiolla 2025.1.1)
 - TerraMow-laiteohjelmiston versio 6.6.0 tai uudempi
 - TerraMow APP -versio 1.6.0 tai uudempi
 - Reaaliaikainen kartta ja leikkuureitti vaativat laiteohjelmiston HA-moduulin version 3; versiolla 2 (esim. S800) kaikki muu toimii, ja versioyhteensopivuusanturi ilmoittaa asiasta
@@ -96,6 +97,17 @@ target:
 data:
   region_ids: [1, 2]
 ```
+
+### Interactive map card
+
+The integration ships its own Lovelace card — auto-registered, no manual resource or HACS frontend install needed:
+
+```yaml
+type: custom:terramow-map-card
+entity: lawn_mower.terramow
+```
+
+It renders the lawn as vectors (crisp at any zoom, follows your HA theme): zones, forbidden areas, virtual walls, the mowing path, the base station and the robot's live position. Drag to pan, scroll or pinch to zoom, double-tap to re-fit. **Tap one or more zones** and press the button that appears to mow exactly those zones (`terramow.start_select_region` under the hood). Options and details: see the [dashboard guide](en/dashboard.md#interactive-map-card). Live map data requires firmware HA module version 3 (same as the map camera).
 
 ### Diagnostiikka ja vianetsintä
 

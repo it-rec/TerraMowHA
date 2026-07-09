@@ -15,6 +15,7 @@ Esta é uma integração para o Home Assistant destinada aos corta-relvas robót
 **Controlo**
 - Entidade de corta-relva: iniciar, pausar e regressar à base
 - Corte por zonas: entidade de seleção de zona e serviço `terramow.start_select_region`
+- **Interactive map card** — pan/zoom vector map for dashboards with the live robot position, mowing path and tap-to-mow zone selection (auto-registered, `custom:terramow-map-card`)
 - Botão de corte das bordas
 - Definições a partir do Home Assistant: altura de corte, velocidade, espaçamento, velocidade das lâminas, distância de corte das bordas, modo e ângulos da direção principal, corte minucioso dos cantos, modo de corte das bordas em relva alta
 - Manutenção: botões de reposição dos contadores do disco de lâminas e da estação base
@@ -78,7 +79,7 @@ Os dispositivos na rede local são descobertos automaticamente através do Zeroc
 
 ### Requisitos
 
-- Home Assistant 2023.9.3 ou posterior (testado com 2025.1.1)
+- Home Assistant 2024.6.0 ou posterior (testado com 2025.1.1)
 - Firmware TerraMow versão 6.6.0 ou posterior
 - APP TerraMow versão 1.6.0 ou posterior
 - O mapa em tempo real e o trajeto de corte requerem firmware com o módulo HA na versão 3; na versão 2 (por exemplo, S800) tudo o resto funciona e o sensor de compatibilidade de versões assinala-o
@@ -96,6 +97,17 @@ target:
 data:
   region_ids: [1, 2]
 ```
+
+### Interactive map card
+
+The integration ships its own Lovelace card — auto-registered, no manual resource or HACS frontend install needed:
+
+```yaml
+type: custom:terramow-map-card
+entity: lawn_mower.terramow
+```
+
+It renders the lawn as vectors (crisp at any zoom, follows your HA theme): zones, forbidden areas, virtual walls, the mowing path, the base station and the robot's live position. Drag to pan, scroll or pinch to zoom, double-tap to re-fit. **Tap one or more zones** and press the button that appears to mow exactly those zones (`terramow.start_select_region` under the hood). Options and details: see the [dashboard guide](en/dashboard.md#interactive-map-card). Live map data requires firmware HA module version 3 (same as the map camera).
 
 ### Diagnósticos e resolução de problemas
 

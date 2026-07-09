@@ -28,6 +28,11 @@ All upstream commits after v0.3.0 are already covered by the fork:
 
 ## New user-facing capabilities
 
+- **Interactive map card** (`map_card.py` + `frontend/terramow-map-card.js`):
+  an auto-registered Lovelace card rendering the map as vectors over a
+  `terramow/map/subscribe` WebSocket feed — pan/zoom, live robot marker,
+  theme-aware, with tap-to-mow zone selection driving
+  `terramow.start_select_region`.
 - **Repair issues** (`issues.py`): actionable dashboard cards for
   incompatible/too-old firmware (from dp_127) and for due blade (240 h) /
   base-station (30 day) maintenance (from dp_126 / dp_125), which clear

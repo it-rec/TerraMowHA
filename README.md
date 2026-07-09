@@ -20,6 +20,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 **Control**
 - Lawn mower entity: start, pause and dock
 - Zone mowing: zone select entity and `terramow.start_select_region` service
+- **Interactive map card** — pan/zoom vector map for dashboards with the live robot position, mowing path and tap-to-mow zone selection (auto-registered, `custom:terramow-map-card`)
 - Edge trim mowing button
 - Settings from Home Assistant: mowing height, speed, spacing, blade speed, edge cutting distance, main direction mode and angles, thorough corner cutting, high-grass edge trim mode
 - Maintenance: reset buttons for the blade disk and base station counters
@@ -100,7 +101,7 @@ Devices on the local network are discovered automatically via Zeroconf — accep
 
 ### Requirements
 
-- Home Assistant 2023.9.3 or later (tested with 2025.1.1)
+- Home Assistant 2024.6.0 or later (tested with 2025.1.1)
 - TerraMow firmware version 6.6.0 or later
 - TerraMow APP version 1.6.0 or later
 - Live map and mowing path require firmware HA module version 3; on version 2 (e.g. S800) everything else works and the version compatibility sensor reports it
@@ -122,6 +123,17 @@ target:
 data:
   region_ids: [1, 2]
 ```
+
+### Interactive map card
+
+The integration ships its own Lovelace card — auto-registered, no manual resource or HACS frontend install needed:
+
+```yaml
+type: custom:terramow-map-card
+entity: lawn_mower.terramow
+```
+
+It renders the lawn as vectors (crisp at any zoom, follows your HA theme): zones, forbidden areas, virtual walls, the mowing path, the base station and the robot's live position. Drag to pan, scroll or pinch to zoom, double-tap to re-fit. **Tap one or more zones** and press the button that appears to mow exactly those zones (`terramow.start_select_region` under the hood). Options and details: see the [dashboard guide](docs/en/dashboard.md#interactive-map-card). Live map data requires firmware HA module version 3 (same as the map camera).
 
 ### Dashboard example
 

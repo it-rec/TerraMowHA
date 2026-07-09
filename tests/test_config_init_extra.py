@@ -69,6 +69,9 @@ async def test_setup_entry_success_starts_hub_and_forwards(hass: HomeAssistant) 
     with (
         patch("custom_components.terramow.validate_input", return_value={"title": "T"}),
         patch("custom_components.terramow.TerraMowHub") as hub_cls,
+        patch(
+            "custom_components.terramow.async_setup_map_card", AsyncMock()
+        ),
         patch.object(
             hass.config_entries, "async_forward_entry_setups", AsyncMock()
         ) as forward,

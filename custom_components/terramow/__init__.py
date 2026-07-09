@@ -35,6 +35,7 @@ from .const import (
 from .const import DOMAIN as DOMAIN
 from .hub import TerraMowHub
 from .issues import async_clear_compatibility_issue, async_clear_maintenance_issues
+from .map_card import async_setup_map_card
 
 SERVICE_START_SELECT_REGION = "start_select_region"
 ATTR_REGION_IDS = "region_ids"
@@ -244,6 +245,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     # Stash the live integration state on the config entry itself; Home
     # Assistant clears runtime_data automatically when the entry unloads.
     entry.runtime_data = basic_data
+
+    # Map card resources + WebSocket feed (idempotent across entries).
+    await async_setup_map_card(hass)
 
     # The hub owns the MQTT connection and all protocol state. Starting it
     # before the platforms are forwarded guarantees every entity can

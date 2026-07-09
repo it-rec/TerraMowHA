@@ -15,6 +15,7 @@
 **控制**
 - 割草机实体：启动、暂停和回充
 - 分区割草：分区选择实体和 `terramow.start_select_region` 服务
+- **Interactive map card** — pan/zoom vector map for dashboards with the live robot position, mowing path and tap-to-mow zone selection (auto-registered, `custom:terramow-map-card`)
 - 沿边修剪按钮
 - 在 Home Assistant 中直接设置：割草高度、速度、间距、刀盘转速、沿边距离、主方向模式与角度、彻底切角、高草沿边模式
 - 维护：刀盘和基站保养计时器重置按钮
@@ -79,7 +80,7 @@
 
 ### 系统要求
 
-- Home Assistant 2023.9.3或更高版本（已在2025.1.1版本上测试）
+- Home Assistant 2024.6.0或更高版本（已在2025.1.1版本上测试）
 - TerraMow固件版本6.6.0或更高
 - TerraMow APP版本1.6.0或更高
 - 实时地图和割草路径需要固件 HA 模块版本 3；版本 2（如 S800）下其余功能均可用，版本兼容性传感器会有相应提示
@@ -97,6 +98,17 @@ target:
 data:
   region_ids: [1, 2]
 ```
+
+### Interactive map card
+
+The integration ships its own Lovelace card — auto-registered, no manual resource or HACS frontend install needed:
+
+```yaml
+type: custom:terramow-map-card
+entity: lawn_mower.terramow
+```
+
+It renders the lawn as vectors (crisp at any zoom, follows your HA theme): zones, forbidden areas, virtual walls, the mowing path, the base station and the robot's live position. Drag to pan, scroll or pinch to zoom, double-tap to re-fit. **Tap one or more zones** and press the button that appears to mow exactly those zones (`terramow.start_select_region` under the hood). Options and details: see the [dashboard guide](en/dashboard.md#interactive-map-card). Live map data requires firmware HA module version 3 (same as the map camera).
 
 ### 诊断与故障排查
 

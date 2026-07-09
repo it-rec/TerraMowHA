@@ -15,6 +15,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 **Steuerung**
 - Rasenmäher-Entität: Starten, Pausieren und Andocken
 - Zonenmähen: Zonenauswahl-Entität und der Dienst `terramow.start_select_region`
+- **Interactive map card** — pan/zoom vector map for dashboards with the live robot position, mowing path and tap-to-mow zone selection (auto-registered, `custom:terramow-map-card`)
 - Taste für Kantenschnitt
 - Einstellungen aus Home Assistant: Mähhöhe, Geschwindigkeit, Bahnabstand, Messerdrehzahl, Kantenschnittabstand, Hauptrichtungsmodus und -winkel, gründliches Eckenmähen, Kantenschnittmodus für hohes Gras
 - Wartung: Reset-Tasten für die Zähler von Messerteller und Basisstation
@@ -78,7 +79,7 @@ Geräte im lokalen Netzwerk werden automatisch über Zeroconf erkannt — akzept
 
 ### Anforderungen
 
-- Home Assistant 2023.9.3 oder neuer (getestet mit 2025.1.1)
+- Home Assistant 2024.6.0 oder neuer (getestet mit 2025.1.1)
 - TerraMow-Firmware-Version 6.6.0 oder neuer
 - TerraMow-APP-Version 1.6.0 oder neuer
 - Live-Karte und Mähpfad erfordern die Firmware-HA-Modul-Version 3; auf Version 2 (z. B. S800) funktioniert alles andere, und der Sensor für die Versionskompatibilität meldet dies
@@ -96,6 +97,17 @@ target:
 data:
   region_ids: [1, 2]
 ```
+
+### Interactive map card
+
+The integration ships its own Lovelace card — auto-registered, no manual resource or HACS frontend install needed:
+
+```yaml
+type: custom:terramow-map-card
+entity: lawn_mower.terramow
+```
+
+It renders the lawn as vectors (crisp at any zoom, follows your HA theme): zones, forbidden areas, virtual walls, the mowing path, the base station and the robot's live position. Drag to pan, scroll or pinch to zoom, double-tap to re-fit. **Tap one or more zones** and press the button that appears to mow exactly those zones (`terramow.start_select_region` under the hood). Options and details: see the [dashboard guide](en/dashboard.md#interactive-map-card). Live map data requires firmware HA module version 3 (same as the map camera).
 
 ### Diagnose & Fehlerbehebung
 

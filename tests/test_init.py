@@ -66,6 +66,9 @@ async def test_setup_entry_stops_hub_when_platform_setup_fails(
     with (
         patch("custom_components.terramow.validate_input", return_value={}),
         patch("custom_components.terramow.TerraMowHub", return_value=hub),
+        patch(
+            "custom_components.terramow.async_setup_map_card", AsyncMock()
+        ),
         patch.object(
             hass.config_entries,
             "async_forward_entry_setups",
