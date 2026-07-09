@@ -287,6 +287,88 @@ def test_stale_render_does_not_repopulate_cache() -> None:
 
 
 # ---------------------------------------------------------------------------
+# static scene checkpoint cache
+# ---------------------------------------------------------------------------
+
+
+def _path(points) -> dict:
+    return {
+        "id": 5,
+        "map_id": 1,
+        "type": "PATH_TYPE_CLEAN",
+        "points": [
+            {"position": {"x": x, "y": y}, "type": "PATH_POINT_TYPE_CLEANING"}
+            for x, y in points
+        ],
+    }
+
+
+def test_warm_checkpoint_render_matches_cold_render_bytes() -> None:
+    # The checkpoint replay must be pixel-identical to a full cold redraw.
+    path = _path([(0.2, 0.2), (1.5, 0.8), (2.5, 1.5)])
+    with patch("custom_components.terramow.camera.dt_util") as dt:
+        dt.now.return_value.strftime.return_value = "12:00"
+
+        # warm: map first (checkpoint stored), then a path push (replayed)
+        hub_a = _hub()
+        cam_a = _camera(hub_a)
+        hub_a._map_data = SMALL_MAP
+        asyncio.run(cam_a._on_map_info({"id": 1}))
+        asyncio.run(cam_a._on_path_data(path))
+        warm = _render(cam_a)
+
+        # cold: identical data rendered in one pass on a fresh camera
+        hub_b = _hub()
+        cam_b = _camera(hub_b)
+        cam_b._map_data = SMALL_MAP
+        cam_b._path_data = path
+        cold = _render(cam_b)
+
+    assert warm == cold
+
+
+def test_checkpoint_skips_static_redraw_until_fit_or_map_changes() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = SMALL_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    renderer = camera._renderer
+    assert renderer._static_checkpoint is not None
+
+    with patch.object(
+        renderer, "_draw_scene_static", wraps=renderer._draw_scene_static
+    ) as static:
+        # an in-bounds path push keeps the fit -> checkpoint replay
+        asyncio.run(camera._on_path_data(_path([(0.5, 0.5), (1.0, 1.0)])))
+        assert static.call_count == 0
+        # a point outside the map extent changes the fit -> full redraw
+        asyncio.run(camera._on_path_data(_path([(0.5, 0.5), (50.0, 50.0)])))
+        assert static.call_count == 1
+
+    # a new map dict (fresh HTTP fetch) misses on identity
+    hub._map_data = dict(SMALL_MAP)
+    with patch.object(
+        renderer, "_draw_scene_static", wraps=renderer._draw_scene_static
+    ) as static:
+        asyncio.run(camera._on_map_info({"id": 1}))
+        assert static.call_count == 1
+
+
+def test_checkpoint_cleared_when_scene_empties() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = SMALL_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    assert camera._renderer._static_checkpoint is not None
+    # all data gone -> reset() must release the supersampled canvas
+    camera._map_data = {}
+    camera._path_data = {}
+    camera._history_path_data = {}
+    camera._rebuild_static_image()
+    assert camera._renderer._static_checkpoint is None
+
+
+# ---------------------------------------------------------------------------
 # cached placeholder
 # ---------------------------------------------------------------------------
 
