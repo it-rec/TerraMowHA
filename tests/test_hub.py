@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import logging
 import time
 from unittest.mock import MagicMock
 
@@ -175,6 +176,17 @@ def test_dp_callback_dispatch_and_unknown_dp_logging() -> None:
     unknown.payload = b"{}"
     hub.on_mqtt_message(None, None, unknown)
     assert 199 in hub._seen_unknown_dp_ids
+
+    # a repeat of a known-unknown dp logs the payload only at DEBUG (the
+    # slice is guarded by isEnabledFor, so exercise it with DEBUG enabled)
+    logger = logging.getLogger("custom_components.terramow.hub")
+    previous_level = logger.level
+    logger.setLevel(logging.DEBUG)
+    try:
+        hub.on_mqtt_message(None, None, unknown)
+    finally:
+        logger.setLevel(previous_level)
+    assert hub._unknown_dp_payloads[199] == "{}"
 
 
 class _Activity:
