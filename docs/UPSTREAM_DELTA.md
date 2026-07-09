@@ -5,8 +5,17 @@ upstream project [`TerraMow/TerraMowHA`](https://github.com/TerraMow/TerraMowHA)
 Keep it up to date when landing changes that diverge from upstream.
 
 At the time of writing, upstream's latest tag is **v0.3.0**; this fork is on the
-**v1.0.x** line. The fork is a strict superset — every upstream capability is
+**v1.x** line. The fork is a strict superset — every upstream capability is
 retained — plus the additions below.
+
+**Last synced with upstream:** commit `045d789` (2026-06-18, upstream `main`).
+All upstream commits after v0.3.0 are already covered by the fork:
+
+| Upstream commit | Where the fork has it |
+|---|---|
+| `b7af54a` Rotate the robot and base image | Rotated robot/station rendering in `map_render.py` (pose `theta`/`yaw`). |
+| `5b9daf8` Show mowing path live without reload (#55) | Generalized backward-seq session reset in `hub.py` `_async_handle_meta`, applied to all meta channels (path, history path, map). |
+| `045d789` Stop MQTT reconnect loop spam / thread leak | Same fix in `hub.py` / `const.py`: exponential backoff, throttled logging, interruptible wait, worker-thread join on unload. |
 
 ## New platforms & entities
 
