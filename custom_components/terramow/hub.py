@@ -992,7 +992,7 @@ class TerraMowHub:
 
             # Subscribe to the device model topic
             client.subscribe(MODEL_NAME_TOPIC)
-            _LOGGER.info("Subscribed to %s topic", MODEL_NAME_TOPIC)
+            _LOGGER.debug("Subscribed to %s topic", MODEL_NAME_TOPIC)
 
             # Proactively request version compatibility information
             self._request_compatibility_info()
@@ -1068,7 +1068,7 @@ class TerraMowHub:
 
         # Handle the device model topic
         if topic == MODEL_NAME_TOPIC:
-            _LOGGER.info("Received device model message: %s", payload)
+            _LOGGER.debug("Received device model message: %s", payload)
             self._handle_model_name(payload)
             return
 
@@ -1115,7 +1115,9 @@ class TerraMowHub:
                     "integration to record all payloads for this data point.",
                     dp_id, payload[:500],
                 )
-            else:
+            elif _LOGGER.isEnabledFor(logging.DEBUG):
+                # Guarded: the slice would otherwise run per message even
+                # with debug logging off.
                 _LOGGER.debug("Unhandled data point %d payload: %s", dp_id, payload[:2000])
 
     def register_callback(
@@ -1785,7 +1787,7 @@ class TerraMowHub:
         its own ``try/except`` so a raised error never kills the worker.
         """
         topic = f"data_point/{dp_id}/app"
-        _LOGGER.info("Publishing data to topic %s: %s", topic, data)
+        _LOGGER.debug("Publishing data to topic %s: %s", topic, data)
         payload = json.dumps(data)
         client = self.mqtt_client
         if client is None or not client.is_connected():

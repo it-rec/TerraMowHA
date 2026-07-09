@@ -6,6 +6,7 @@ command (dp_103/105/106) and are guarded by the command rate limiter.
 
 import asyncio
 import json
+import logging
 from unittest.mock import MagicMock
 
 import pytest
@@ -181,3 +182,11 @@ def test_publish_uses_qos_1_for_reliable_command_delivery() -> None:
     hub.dock()
     _, kwargs = hub.mqtt_client.publish.call_args
     assert kwargs.get("qos") == 1
+
+
+def test_publish_data_point_is_quiet_at_info(caplog: pytest.LogCaptureFixture) -> None:
+    # Repo convention: logs stay quiet at INFO; publishes are protocol chatter.
+    hub = _hub()
+    with caplog.at_level(logging.DEBUG, logger="custom_components.terramow.hub"):
+        hub.publish_data_point(103, {"cmd": 1})
+    assert not [r for r in caplog.records if r.levelno >= logging.INFO]
