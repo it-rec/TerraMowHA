@@ -238,6 +238,30 @@ def test_battery_status_only_invalidates_on_source_change() -> None:
 
 
 # ---------------------------------------------------------------------------
+# pose gating: identical keepalive poses keep the cached PNG
+# ---------------------------------------------------------------------------
+
+
+def test_unchanged_pose_keeps_cached_png() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = SMALL_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+
+    asyncio.run(camera._on_pose({"x": 1.0, "y": 2.0, "yaw": 0.5}))
+    png = _render(camera)
+    assert camera._cached_png is png
+
+    # a docked mower pushes the same pose at ~2 Hz; the cache must survive
+    asyncio.run(camera._on_pose({"x": 1.0, "y": 2.0, "yaw": 0.5}))
+    assert camera._cached_png is png
+
+    # an actual movement invalidates
+    asyncio.run(camera._on_pose({"x": 1.1, "y": 2.0, "yaw": 0.5}))
+    assert camera._cached_png is None
+
+
+# ---------------------------------------------------------------------------
 # render generation counter
 # ---------------------------------------------------------------------------
 
