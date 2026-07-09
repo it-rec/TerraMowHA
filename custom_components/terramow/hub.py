@@ -416,6 +416,32 @@ class TerraMowHub:
 
         self.hass.loop.call_soon_threadsafe(_run_on_loop)
 
+    def _dispatch_batch(
+        self, targets: list[Callable[..., Any]], *args: Any
+    ) -> None:
+        """Schedule a snapshot of handlers onto the event loop in one hop.
+
+        A data point like dp_107 fans out to a dozen entity callbacks; one
+        ``call_soon_threadsafe`` per callback costs a loop wakeup each.
+        Batching keeps the exact per-callback semantics of ``_dispatch``
+        (registration order, coroutine handlers become tasks in that order,
+        one handler's error never stops the next) at a single hop.
+        """
+        if not targets:
+            return
+
+        def _run_on_loop() -> None:
+            for target in targets:
+                try:
+                    if asyncio.iscoroutinefunction(target):
+                        self.hass.async_create_task(target(*args))
+                    else:
+                        target(*args)
+                except Exception as err:
+                    _LOGGER.error("Error dispatching %s: %s", target, err)
+
+        self.hass.loop.call_soon_threadsafe(_run_on_loop)
+
     def _can_accept_command(self) -> bool:
         """Check if control commands can be accepted"""
         now = time.monotonic()
@@ -1052,8 +1078,7 @@ class TerraMowHub:
                 self._pose = pose
                 # Snapshot: entities append callbacks from the event loop while
                 # this runs on the MQTT worker thread.
-                for callback in list(self.pose_callbacks):
-                    self._dispatch(callback, pose)
+                self._dispatch_batch(list(self.pose_callbacks), pose)
             except json.JSONDecodeError:
                 _LOGGER.error("Failed to parse pose JSON: %s", payload[:200])
             except Exception as e:
@@ -1089,8 +1114,7 @@ class TerraMowHub:
         callbacks = self.callbacks.get(dp_id)
         if callbacks:
             _LOGGER.debug("Calling %d callbacks for dp_id %d", len(callbacks), dp_id)
-            for callback in list(callbacks):
-                self._dispatch(callback, payload)
+            self._dispatch_batch(list(callbacks), payload)
         else:
             # Help discover undocumented data points (e.g. lift alarms, schedule
             # switches, error codes): each unknown dp_id is logged once at INFO,
