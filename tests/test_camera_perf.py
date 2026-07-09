@@ -369,6 +369,57 @@ def test_checkpoint_cleared_when_scene_empties() -> None:
 
 
 # ---------------------------------------------------------------------------
+# scene path cache
+# ---------------------------------------------------------------------------
+
+
+def test_scene_path_cache_hits_on_same_dict_and_reextracts_on_new() -> None:
+    from custom_components.terramow.map_scene import ScenePathCache, build_scene
+
+    history = _path([(0.1, 0.1), (0.2, 0.2)])
+    current = _path([(0.5, 0.5)])
+    cache = ScenePathCache()
+
+    first = build_scene(SMALL_MAP, current, history, False, cache=cache)
+    # a new current-path dict with the unchanged history dict: the history
+    # extraction is served from the cache (identical list objects)...
+    second = build_scene(SMALL_MAP, _path([(0.5, 0.5), (0.6, 0.6)]), history, False, cache=cache)
+    assert second["history_path_points"] is first["history_path_points"]
+    # ...while the current path was re-extracted
+    assert len(second["current_path_points"]) == 2
+
+    # a replaced history dict re-extracts
+    third = build_scene(SMALL_MAP, current, dict(history), False, cache=cache)
+    assert third["history_path_points"] is not first["history_path_points"]
+    assert third["history_path_points"] == first["history_path_points"]
+
+    # cached and uncached scenes are equal for identical inputs
+    uncached = build_scene(SMALL_MAP, current, history, False)
+    cached = build_scene(SMALL_MAP, current, history, False, cache=ScenePathCache())
+    assert cached == uncached
+
+
+def test_camera_rebuild_uses_scene_cache_across_path_pushes() -> None:
+    import custom_components.terramow.map_scene as map_scene_module
+
+    hub = _hub()
+    camera = _camera(hub)
+    hub._map_data = SMALL_MAP
+    asyncio.run(camera._on_map_info({"id": 1}))
+    asyncio.run(camera._on_history_path_data(_path([(0.1, 0.1), (0.9, 0.9)])))
+
+    with patch.object(
+        map_scene_module,
+        "_extract_path_points",
+        wraps=map_scene_module._extract_path_points,
+    ) as extract:
+        # a current-path push re-extracts only the changed source; the
+        # unchanged history dict is served from the camera's scene cache
+        asyncio.run(camera._on_path_data(_path([(0.5, 0.5)])))
+        assert extract.call_count == 1
+
+
+# ---------------------------------------------------------------------------
 # cached placeholder
 # ---------------------------------------------------------------------------
 

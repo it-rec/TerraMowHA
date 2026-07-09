@@ -45,6 +45,7 @@ from .map_render import (
     MapRenderer,
 )
 from .map_scene import (
+    ScenePathCache,
     build_render_metadata,
     build_scene,
     coerce_angle_radians,
@@ -134,6 +135,9 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         self._path_data: dict[str, Any] = {}
         self._history_path_data: dict[str, Any] = {}
         self._pose: dict[str, Any] = {}
+        # Skips re-extracting path point lists whose source dict is unchanged
+        # across rebuilds (the history path survives every current-path push).
+        self._scene_cache = ScenePathCache()
 
         # The finished static layers paired with the transformer they were
         # drawn with, published as one atomic reference. The final render reads
@@ -440,6 +444,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             self._path_data,
             self._history_path_data,
             self._show_coverage,
+            cache=self._scene_cache,
         )
 
     def _rebuild_static_image(self) -> None:
