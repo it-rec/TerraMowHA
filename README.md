@@ -34,6 +34,14 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - Firmware update entity, firmware version on the device page, and version compatibility sensor
 - All entities update instantly on device pushes — no polling delay
 
+**Advanced diagnostics** (reverse-engineered data points — mostly in the *Diagnostic* entity category, many disabled by default; see [unofficial data-point notes](docs/en/developers/data_point_unofficial.md))
+- Errors & events: active-error count (with the raw error list as an attribute) and last-event code
+- Cellular / 4G: modem enabled, signal strength (RSRP / RSRQ), connection type, and a *force cellular network* readout
+- Environment: device-reported sunrise / sunset, daylight state, defogger heating, illumination light, and an extreme-weather warning (with an optional info URL)
+- Safety & advanced settings: cliff-detection and slope-detection state, rain-sensor threshold, after-rain auto-resume and resume-delay, and a *force single base station* readout
+- Operating modes: movement / map / mowing mode strings
+- Mapping & progress: manual-mapping guidance flags (relocation / takeover needed, boundary closed) and a map-save progress percentage
+
 **Events & automation**
 - **Mower event entity** — fires a discrete event on every notable transition (`mowing_started`, `paused`, `returning`, `docked`, `mowing_completed`, `error`), each carrying the raw mission fields, so automations react to *happenings* without polling activity state
 - One-click automation blueprints (see below)
@@ -52,8 +60,8 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 | --- | --- |
 | Lawn mower | Start / pause / dock control with live activity |
 | Camera | Map with path, robot and base station; clean map-only variant |
-| Sensor | Battery level, battery state, battery temperature state, map status, map area, mow height, mow speed, operation mode, pose, total mowing time / jobs / mowed area, current session area / progress / duration / job type, remaining blade & base station time, next scheduled start, version compatibility, main direction status, power mode, back-to-station reason, mission, sub-mission, mission state |
-| Binary sensor | Charging, navigation located, firmware upgrading, power switch, problem, rain detected, map detected / buildable / backing up, saving data, data conversion in progress |
+| Sensor | Battery level, battery state, battery temperature state, map status, map area, mow height, mow speed, operation mode, pose, total mowing time / jobs / mowed area, current session area / progress / duration / job type, remaining blade & base station time, next scheduled start, version compatibility, main direction status, power mode, back-to-station reason, mission, sub-mission, mission state. *Diagnostic:* active errors, last event, cellular RSRP / RSRQ / type, sunrise, sunset, movement / map / mowing mode, rain-sensor threshold, after-rain resume delay, map save progress |
+| Binary sensor | Charging, navigation located, firmware upgrading, power switch, problem, rain detected, map detected / buildable / backing up, saving data, data conversion in progress. *Diagnostic:* cellular enabled, defogger heating, illumination, daylight, extreme weather, cliff / slope detection, after-rain auto-resume, force single base station, force cellular network, manual-mapping relocation / takeover / boundary-closed |
 | Select | Zone select, mow speed, blade speed, main direction mode, high-grass edge trim mode |
 | Number | Mowing height, edge cutting distance, mowing spacing, single direction angle, auto-rotate angle interval, first / second direction angle |
 | Switch | Thorough corner cutting |
@@ -169,6 +177,7 @@ TerraMow is a **local push** integration. The mower runs an on-device MQTT broke
 - **Firmware-gated features** — the live map and mowing-path view require firmware HA module version 3; on version 2 (e.g. the S800) everything else works and the compatibility sensor / repair issue reports the limitation.
 - **Firmware updates** are performed through the TerraMow app, not from Home Assistant; the firmware `update` entity is informational only.
 - **The pose sensor and the clean-mode map camera are disabled by default** (the pose sensor updates at ~2 Hz); enable them from the entity settings if you need them.
+- **Many advanced-diagnostic entities are disabled by default** and grouped under the *Diagnostic* category (cellular, sunrise/sunset, operating modes, manual-mapping flags, etc.); they come from reverse-engineered data points, so enable only the ones you need. See the [unofficial data-point notes](docs/en/developers/data_point_unofficial.md).
 - Some device data points are undocumented; unknown ones are logged once to help discover missing features.
 
 ### Use cases
