@@ -84,6 +84,26 @@ def test_lawn_mower_on_hub_state_updates_activity() -> None:
     assert entity.activity == LawnMowerActivity.PAUSED
 
 
+def test_lawn_mower_schedules_exactly_one_write_per_hub_state() -> None:
+    # dp_107 used to trigger up to three schedule_update_ha_state calls per
+    # notification (activity setter + change guard + _on_hub_state); only the
+    # one in _on_hub_state must remain.
+    hub = _hub()
+    entity = TerraMowLawnMowerEntity(hub.basic_data, hub.hass)
+    entity.entity_id = "lawn_mower.terramow"
+    _feed(hub.on_mission_status, {
+        "mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_RUNNING",
+    })
+    with patch.object(entity, "schedule_update_ha_state") as sched:
+        entity._on_hub_state()  # activity changes: DOCKED -> MOWING
+    assert entity.activity == LawnMowerActivity.MOWING
+    sched.assert_called_once()
+
+    with patch.object(entity, "schedule_update_ha_state") as sched:
+        entity._on_hub_state()  # unchanged activity still reports once
+    sched.assert_called_once()
+
+
 def test_lawn_mower_supported_features() -> None:
     hub = _hub()
     entity = TerraMowLawnMowerEntity(hub.basic_data, hub.hass)
