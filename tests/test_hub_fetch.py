@@ -11,6 +11,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.const import DOMAIN
+import custom_components.terramow.hub as hub_module
 from custom_components.terramow.hub import TerraMowHub
 
 
@@ -110,6 +111,18 @@ async def test_fetch_json_gzip_body_is_decompressed() -> None:
     # no ETag header -> keep the previous one
     assert etag == "prev"
     assert ok is True
+
+
+async def test_fetch_json_parses_in_executor() -> None:
+    # Both gzip and plain bodies must decode+parse in the executor, never on
+    # the event loop: large ha_map_v1/ha_path_v1 payloads stall it otherwise.
+    hub = _hub()
+    resp = _FakeResp(status=200, body=b'{"id": 3}')
+    data, *_ = await _fetch(hub, resp=resp)
+    assert data == {"id": 3}
+    (fn, arg), _kwargs = hub.hass.async_add_executor_job.call_args
+    assert fn is hub_module._decompress_and_parse
+    assert arg == b'{"id": 3}'
 
 
 # ---------------------------------------------------------------------------

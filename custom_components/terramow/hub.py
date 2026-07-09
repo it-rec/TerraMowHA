@@ -69,6 +69,18 @@ TOPIC_PATTERN = re.compile(r"^data_point/(\d+)/robot$")
 UNKNOWN_DP_HISTORY_MAXLEN = 30
 
 
+def _decompress_and_parse(raw: bytes) -> Any:
+    """Decompress (if gzip) and JSON-parse a fetched map/path body.
+
+    Runs in the executor: ha_map_v1/ha_path_v1 bodies grow with session
+    length, and parsing them on the event loop stalls it for tens of
+    milliseconds on small hosts.
+    """
+    if raw[:2] == b"\x1f\x8b":
+        raw = gzip.decompress(raw)
+    return json.loads(raw.decode("utf-8"))
+
+
 def _make_unsubscriber[CallbackT](
     callbacks: list[CallbackT], callback: CallbackT
 ) -> Callable[[], None]:
@@ -1409,11 +1421,9 @@ class TerraMowHub:
                 return None, etag, False, False
             new_etag = resp.headers.get("ETag") or etag
             raw = await resp.read()
-            # Handle gzip compression manually: the protocol requires Content-Encoding: gzip
-            if raw[:2] == b'\x1f\x8b':
-                raw = await self.hass.async_add_executor_job(gzip.decompress, raw)
-            text = raw.decode("utf-8")
-            data = json.loads(text)
+            # Decompress (the protocol gzips large bodies) and parse in one
+            # executor job so neither step blocks the event loop.
+            data = await self.hass.async_add_executor_job(_decompress_and_parse, raw)
             return data, new_etag, True, False
 
     @staticmethod

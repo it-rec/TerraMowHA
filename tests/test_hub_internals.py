@@ -136,6 +136,7 @@ META = {"http_port": 8080, "http_path": "/map", "token": "tok"}
 
 def test_fetch_json_success(monkeypatch) -> None:
     hub = _hub()
+    hub.hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, arg: fn(arg))
     body = json.dumps({"id": 1}).encode()
     (data, etag, ok, not_modified), session = _fetch(
         hub, monkeypatch, _FakeResponse(200, body, {"ETag": "abc"}), META
