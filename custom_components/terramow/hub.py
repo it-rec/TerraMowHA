@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING, Any
 
 import aiohttp
 import paho.mqtt.client as mqtt_client
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
@@ -249,6 +250,7 @@ class TerraMowHub:
         self.history_path_callbacks: list[Callable[..., Any]] = []  # Stores history path data callback functions
         self._state_listeners: list[Callable[[], None]] = []  # State change listeners (connection state, dp_107, model)
         self.connection_error = False  # Whether the MQTT connection is in an error state
+        self._pending_serial: str | None = None  # dp_102 serial parked during entry setup
         self._map_info: dict[str, Any] = {}  # Stores the current map info
         self._map_data: dict[str, Any] = {}  # Stores map data fetched over HTTP
         self._path_data: dict[str, Any] = {}  # Stores path data fetched over HTTP
@@ -1445,6 +1447,14 @@ class TerraMowHub:
         entry = self.hass.config_entries.async_get_entry(entry_id)
         if entry is None:
             return
+        if entry.state is ConfigEntryState.SETUP_IN_PROGRESS:
+            # A retained dp_102 typically arrives while the platforms are
+            # still being set up (the hub starts before they are forwarded).
+            # Migrating mid-setup re-keys the registry under the feet of the
+            # entities still being added, which splits the device in two.
+            # Park the serial; async_setup_entry consumes it once loaded.
+            self._pending_serial = serial
+            return
         stored = entry.data.get(CONF_SERIAL)
         if stored == serial:
             # Keep the runtime identity in sync for repeat dp_102 pushes.
@@ -1486,6 +1496,28 @@ class TerraMowHub:
         self.hass.config_entries.async_update_entry(
             entry, data={**entry.data, CONF_SERIAL: serial}, unique_id=serial
         )
+
+    async def async_adopt_pending_serial(self) -> None:
+        """Run a serial adoption that arrived during entry setup."""
+        serial = self._pending_serial
+        self._pending_serial = None
+        if not serial:
+            return
+        entry_id = self.basic_data.entry_id
+        if entry_id is not None:
+            # Scheduled at the end of async_setup_entry; eager task start
+            # would otherwise run this while setup is still finishing and
+            # the adoption would just park the serial again. Yield until
+            # the entry has actually left SETUP_IN_PROGRESS.
+            for _ in range(10):
+                entry = self.hass.config_entries.async_get_entry(entry_id)
+                if (
+                    entry is None
+                    or entry.state is not ConfigEntryState.SETUP_IN_PROGRESS
+                ):
+                    break
+                await asyncio.sleep(0)
+        await self._async_adopt_serial(serial)
 
     async def _async_update_device_sw_version(self, sw_version: str) -> None:
         """Asynchronously update the firmware version info in the device registry."""

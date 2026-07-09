@@ -184,6 +184,9 @@ async def test_setup_uses_serial_as_device_uid(hass: HomeAssistant) -> None:
         async def async_stop(self) -> None:
             pass
 
+        async def async_adopt_pending_serial(self) -> None:
+            pass
+
     with (
         patch("custom_components.terramow.validate_input", return_value={}),
         patch("custom_components.terramow.TerraMowHub", _FakeHub),
@@ -296,3 +299,170 @@ async def test_reconfigure_keeps_serial_identity(hass: HomeAssistant) -> None:
     assert entry.unique_id == SERIAL
     assert entry.data[CONF_SERIAL] == SERIAL
     assert entry.data[CONF_HOST] == "192.0.2.99"
+
+
+# ---------------------------------------------------------------------------
+# adoption vs. initial platform setup (ghost-device regression)
+# ---------------------------------------------------------------------------
+
+
+async def test_adoption_is_parked_while_setup_in_progress(
+    hass: HomeAssistant,
+) -> None:
+    # Regression: a retained dp_102 arrives while the platforms are still
+    # being set up. Migrating at that moment re-keys the registry under the
+    # entities still being added and splits the device in two ("ghost"
+    # device). The adoption must park itself instead.
+    entry = _entry(hass)
+    hub = _hub_for(hass, entry)
+    entry.mock_state(hass, config_entries.ConfigEntryState.SETUP_IN_PROGRESS)
+
+    await hub._async_adopt_serial(SERIAL)
+
+    assert hub._pending_serial == SERIAL
+    assert CONF_SERIAL not in entry.data
+    assert entry.unique_id == HOST
+
+    # once the entry has loaded, the parked serial is consumed and the
+    # migration runs for real
+    entry.mock_state(hass, config_entries.ConfigEntryState.LOADED)
+    await hub.async_adopt_pending_serial()
+    await hass.async_block_till_done()
+    assert entry.data[CONF_SERIAL] == SERIAL
+    assert entry.unique_id == SERIAL
+    assert hub._pending_serial is None
+
+    # consuming with nothing parked is a no-op
+    await hub.async_adopt_pending_serial()
+
+
+async def test_setup_removes_ghost_device_and_stale_entities(
+    hass: HomeAssistant,
+) -> None:
+    # Repair for installs hit by the pre-1.13.1 race: the serial-keyed
+    # device is the live one; a host-keyed duplicate device plus host-keyed
+    # entity registry entries are dead ghosts and must be removed.
+    entry = _entry(hass, **{CONF_SERIAL: SERIAL})
+    device_registry = dr.async_get(hass)
+    real = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, SERIAL)},
+    )
+    ghost = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, HOST)},
+    )
+    entity_registry = er.async_get(hass)
+    entity_registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"lawn_mower.terramow@{SERIAL}.battery",
+        config_entry=entry,
+        device_id=real.id,
+    )
+    entity_registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"lawn_mower.terramow@{HOST}.battery",
+        config_entry=entry,
+        device_id=ghost.id,
+    )
+    from homeassistant.exceptions import ConfigEntryNotReady
+
+    with (
+        patch("custom_components.terramow.validate_input", side_effect=CannotConnect),
+        pytest.raises(ConfigEntryNotReady),
+    ):
+        await async_setup_entry(hass, entry)
+
+    # the ghost device and its host-keyed duplicate entity are gone
+    assert device_registry.async_get_device({(DOMAIN, HOST)}) is None
+    assert entity_registry.async_get_entity_id(
+        "sensor", DOMAIN, f"lawn_mower.terramow@{HOST}.battery"
+    ) is None
+    # the live serial-keyed device and entity survive untouched
+    assert device_registry.async_get_device({(DOMAIN, SERIAL)})
+    assert entity_registry.async_get_entity_id(
+        "sensor", DOMAIN, f"lawn_mower.terramow@{SERIAL}.battery"
+    )
+
+
+async def test_setup_consumes_parked_serial_after_load(hass: HomeAssistant) -> None:
+    # Full-stack: the entry loads with a hub whose start() immediately parks
+    # a serial (as a retained dp_102 would); the post-setup task must adopt
+    # it and re-key the entry.
+    entry = _entry(hass)
+
+    def _start(hub_self) -> None:
+        hub_self._pending_serial = SERIAL
+
+    with (
+        patch("custom_components.terramow.validate_input", return_value={}),
+        patch.object(TerraMowHub, "start", _start),
+    ):
+        # the adoption triggers a reload mid-flight, so the initial
+        # async_setup return value is not meaningful; assert the settled
+        # state instead
+        await hass.config_entries.async_setup(entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert entry.data[CONF_SERIAL] == SERIAL
+    assert entry.unique_id == SERIAL
+    assert entry.state is config_entries.ConfigEntryState.LOADED
+
+
+async def test_setup_sweeps_stale_host_entity_without_ghost_device(
+    hass: HomeAssistant,
+) -> None:
+    # Stale host-keyed entity attached to the LIVE device (no ghost device
+    # to cascade from): the explicit sweep must remove it.
+    entry = _entry(hass, **{CONF_SERIAL: SERIAL})
+    device_registry = dr.async_get(hass)
+    real = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, SERIAL)},
+    )
+    entity_registry = er.async_get(hass)
+    entity_registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"lawn_mower.terramow@{HOST}.battery",
+        config_entry=entry,
+        device_id=real.id,
+    )
+    from homeassistant.exceptions import ConfigEntryNotReady
+
+    with (
+        patch("custom_components.terramow.validate_input", side_effect=CannotConnect),
+        pytest.raises(ConfigEntryNotReady),
+    ):
+        await async_setup_entry(hass, entry)
+
+    assert entity_registry.async_get_entity_id(
+        "sensor", DOMAIN, f"lawn_mower.terramow@{HOST}.battery"
+    ) is None
+
+
+async def test_adopt_pending_serial_reparks_if_setup_never_finishes(
+    hass: HomeAssistant,
+) -> None:
+    entry = _entry(hass)
+    hub = _hub_for(hass, entry)
+    entry.mock_state(hass, config_entries.ConfigEntryState.SETUP_IN_PROGRESS)
+    hub._pending_serial = SERIAL
+    # the consumer gives up yielding after a bounded number of iterations;
+    # the adoption gate then re-parks the serial for the next dp_102 push
+    await hub.async_adopt_pending_serial()
+    assert hub._pending_serial == SERIAL
+
+    # a vanished entry stops the wait immediately and adoption is a no-op
+    hub.basic_data.entry_id = "missing-entry"
+    hub._pending_serial = SERIAL
+    await hub.async_adopt_pending_serial()
+    assert hub._pending_serial is None
+
+    # without an entry_id there is nothing to wait for either
+    hub.basic_data.entry_id = None
+    hub._pending_serial = SERIAL
+    await hub.async_adopt_pending_serial()
+    assert hub._pending_serial is None

@@ -180,18 +180,46 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
         old_device_entry = device_registry.async_get_device({legacy_identifier})
         if old_device_entry is None:
             continue
-        _LOGGER.info(
-            "Migrating device identifier from %s to %s",
-            legacy_identifier, new_identifier,
-        )
         # Check if a device with the new identifier already exists to avoid conflicts
         if device_registry.async_get_device({new_identifier}):
-            _LOGGER.warning("Cannot migrate device, a device with the new identifier already exists. Please remove the old device manually.")
+            if (
+                entry.data.get(CONF_SERIAL)
+                and entry.entry_id in old_device_entry.config_entries
+            ):
+                # Ghost left behind by a serial adoption that raced the
+                # initial platform setup (<= 1.13.0): the host-keyed
+                # duplicate can never be served again, the serial-keyed
+                # device is the live one. Remove the ghost.
+                _LOGGER.info(
+                    "Removing stale duplicate device %s", legacy_identifier
+                )
+                device_registry.async_remove_device(old_device_entry.id)
+            else:
+                _LOGGER.warning("Cannot migrate device, a device with the new identifier already exists. Please remove the old device manually.")
         else:
+            _LOGGER.info(
+                "Migrating device identifier from %s to %s",
+                legacy_identifier, new_identifier,
+            )
             device_registry.async_update_device(
                 old_device_entry.id, new_identifiers={new_identifier}
             )
         break
+
+    if entry.data.get(CONF_SERIAL):
+        # Same race cleanup on the entity side: once the serial is adopted,
+        # entities only ever generate serial-based unique_ids, so host-keyed
+        # registry entries are dead duplicates from the pre-1.13.1 race.
+        host_fragment = f"terramow@{host}"
+        entity_registry = er.async_get(hass)
+        for reg_entry in er.async_entries_for_config_entry(
+            entity_registry, entry.entry_id
+        ):
+            if host_fragment in reg_entry.unique_id:
+                _LOGGER.info(
+                    "Removing stale duplicate entity %s", reg_entry.entity_id
+                )
+                entity_registry.async_remove(reg_entry.entity_id)
     # End of Automatic migration
 
     _LOGGER.info("Setting up TerraMow with host %s", host)
@@ -235,6 +263,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
 
     _async_register_services(hass)
+
+    # A retained dp_102 usually arrives while the platforms are still being
+    # set up, so the serial adoption parks itself in the hub. Consume it now
+    # that the update listener is registered; the task runs after the entry
+    # reaches LOADED, so the adoption's reload reconciles cleanly.
+    entry.async_create_task(hass, hub.async_adopt_pending_serial())
 
     return True
 
