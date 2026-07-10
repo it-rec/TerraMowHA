@@ -2,7 +2,8 @@
   "domain": "terramow",
   "name": "TerraMow",
   "after_dependencies": [
-    "frontend"
+    "frontend",
+    "lovelace"
   ],
   "codeowners": [
     "@TerraMow",

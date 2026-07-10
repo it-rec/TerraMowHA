@@ -341,9 +341,11 @@ async def test_subscribe_any_terramow_entity(
 
 
 async def test_unsubscribe_cancels_pending_scene_push(
-    hass: HomeAssistant, hass_ws_client: Any
+    hass: HomeAssistant, hass_ws_client: Any, monkeypatch: Any
 ) -> None:
     """Unsubscribing with a debounced push in flight cancels the timer."""
+    # Large debounce: the timer is guaranteed to still be pending at stop()
+    monkeypatch.setattr(map_card, "SCENE_PUSH_DEBOUNCE", 30)
     entry = await setup_terramow(hass)
     hub = entry.runtime_data.lawn_mower
     assert hub is not None
@@ -372,7 +374,6 @@ async def test_unsubscribe_cancels_pending_scene_push(
         if result.get("id") == 2:
             break
     assert result["success"]
-    await asyncio.sleep(0.25)  # past the debounce: no push may fire
 
 
 async def test_empty_scene_payload(hass: HomeAssistant) -> None:
@@ -387,3 +388,93 @@ async def test_empty_scene_payload(hass: HomeAssistant) -> None:
     assert payload["regions"] == []
     assert payload["station"] is None
     assert payload["current_path"] == []
+
+
+class _FakeResources:
+    """Storage-mode Lovelace resource collection double."""
+
+    def __init__(self, items: list[dict[str, Any]], loaded: bool = True) -> None:
+        self.items = items
+        self.loaded = loaded
+        self.created: list[dict[str, Any]] = []
+        self.updated: list[tuple[str, dict[str, Any]]] = []
+
+    async def async_load(self) -> None:
+        self.load_called = True
+
+    def async_items(self) -> list[dict[str, Any]]:
+        return self.items
+
+    async def async_create_item(self, data: dict[str, Any]) -> None:
+        self.created.append(data)
+
+    async def async_update_item(self, item_id: str, data: dict[str, Any]) -> None:
+        self.updated.append((item_id, data))
+
+
+_CARD_URL = f"{map_card.CARD_URL_PATH}?v={map_card.CARD_VERSION}"
+
+
+async def test_lovelace_resource_created(hass: HomeAssistant) -> None:
+    """Storage mode: the card is registered as a module resource."""
+    resources = _FakeResources([], loaded=False)
+    hass.data["lovelace"] = SimpleNamespace(resources=resources)
+
+    await setup_terramow(hass)
+
+    assert resources.load_called
+    assert resources.loaded is True
+    assert resources.created == [{"res_type": "module", "url": _CARD_URL}]
+
+
+async def test_lovelace_resource_updated_on_new_version(
+    hass: HomeAssistant,
+) -> None:
+    """A stale cache-buster from an older version is updated in place."""
+    resources = _FakeResources(
+        [
+            {"id": "other", "url": "/hacsfiles/some-card.js"},
+            {"id": "ours", "url": f"{map_card.CARD_URL_PATH}?v=0.9.9"},
+        ]
+    )
+    # pre-2024.8 dict layout
+    hass.data["lovelace"] = {"resources": resources}
+
+    await setup_terramow(hass)
+
+    assert resources.created == []
+    assert resources.updated == [("ours", {"url": _CARD_URL})]
+
+
+async def test_lovelace_resource_already_current(hass: HomeAssistant) -> None:
+    """A current resource entry is left untouched."""
+    resources = _FakeResources([{"id": "ours", "url": _CARD_URL}])
+    hass.data["lovelace"] = SimpleNamespace(resources=resources)
+
+    await setup_terramow(hass)
+
+    assert resources.created == []
+    assert resources.updated == []
+
+
+async def test_lovelace_yaml_mode_skipped(hass: HomeAssistant) -> None:
+    """YAML resource mode has no writable collection and is skipped."""
+    hass.data["lovelace"] = SimpleNamespace(resources=object())
+    entry = await setup_terramow(hass)
+    assert entry.runtime_data.lawn_mower is not None
+
+
+async def test_lovelace_resource_error_does_not_break_setup(
+    hass: HomeAssistant, caplog: Any
+) -> None:
+    """A Lovelace API hiccup is logged but never fails entry setup."""
+
+    class _Broken(_FakeResources):
+        def async_items(self) -> list[dict[str, Any]]:
+            raise RuntimeError("lovelace internals changed")
+
+    hass.data["lovelace"] = SimpleNamespace(resources=_Broken([]))
+    entry = await setup_terramow(hass)
+
+    assert entry.runtime_data.lawn_mower is not None
+    assert "Could not register the map card Lovelace resource" in caplog.text

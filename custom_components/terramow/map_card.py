@@ -41,7 +41,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL.
-CARD_VERSION = "1.0.0"
+CARD_VERSION = "1.0.1"
 
 CARD_URL_PATH = "/terramow-frontend/terramow-map-card.js"
 
@@ -69,8 +69,45 @@ async def async_setup_map_card(hass: HomeAssistant) -> None:
     # still be added manually as a Lovelace resource.
     if "frontend" in hass.config.components:
         add_extra_js_url(hass, f"{CARD_URL_PATH}?v={CARD_VERSION}")
+    try:
+        await _async_register_lovelace_resource(hass)
+    except Exception as err:  # never let a Lovelace API change break setup
+        _LOGGER.warning("Could not register the map card Lovelace resource: %s", err)
 
     websocket_api.async_register_command(hass, ws_subscribe_map)
+
+
+async def _async_register_lovelace_resource(hass: HomeAssistant) -> None:
+    """Ensure the card is registered as a Lovelace resource (storage mode).
+
+    The extra-module list only reaches the browser through the app shell,
+    which Home Assistant's service worker caches aggressively — right after
+    installing the integration the card would stay unknown until a hard
+    refresh. Lovelace resources are imported dynamically when a dashboard
+    loads, so registering one (the same mechanism HACS uses for frontend
+    plugins) makes the card available reliably. Duck-typed via ``hass.data``
+    on purpose: no import of lovelace internals, and YAML resource mode
+    (read-only collection) is skipped silently.
+    """
+    lovelace = hass.data.get("lovelace")
+    resources = getattr(lovelace, "resources", None)
+    if resources is None and isinstance(lovelace, dict):  # pre-2024.8 layout
+        resources = lovelace.get("resources")
+    if resources is None or not hasattr(resources, "async_create_item"):
+        return
+    if not getattr(resources, "loaded", True):
+        await resources.async_load()
+        resources.loaded = True
+
+    url = f"{CARD_URL_PATH}?v={CARD_VERSION}"
+    for item in resources.async_items():
+        item_url = str(item.get("url", ""))
+        if item_url.partition("?")[0] != CARD_URL_PATH:
+            continue
+        if item_url != url:  # stale cache-buster from an older version
+            await resources.async_update_item(item["id"], {"url": url})
+        return
+    await resources.async_create_item({"res_type": "module", "url": url})
 
 
 def _pt(point: tuple[float, float]) -> list[int]:

@@ -117,6 +117,11 @@ jobs:
       - name: Run ruff
         run: ruff check custom_components/terramow
 
+      - name: Check frontend card loads as an ES module
+        # HA loads the card as an ES module; a strict/module-goal error would
+        # silently leave the custom element undefined in the browser.
+        run: node tests/frontend/eval_card_module.mjs
+
   mypy:
     name: Type Check
     runs-on: ubuntu-latest
