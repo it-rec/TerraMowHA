@@ -58,11 +58,42 @@ jobs:
           cd custom_components/terramow
           zip -r "${{ github.workspace }}/terramow.zip" .
 
+      # GitHub's auto-generated notes only list merged PULL REQUESTS between
+      # the tags; commits pushed directly to main produce an empty body. Build
+      # the notes from the commit messages instead (subject as heading, body
+      # as detail), and keep generate_release_notes for the compare link.
+      - name: Build release notes from commits
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            END="${TAG}"
+          else
+            END="HEAD"
+          fi
+          PREV=$(git tag --merged "${END}" --sort=-v:refname \
+            | grep -vx "${TAG}" | head -n 1 || true)
+          if [ -n "${PREV}" ]; then
+            RANGE="${PREV}..${END}"
+          else
+            RANGE="${END}"
+          fi
+          {
+            echo "## What's Changed"
+            echo
+            git log --no-merges --reverse \
+              --pretty=format:'### %s%n%n%b' "${RANGE}" \
+              | sed -E '/^Co-Authored-By:/d; /^Claude-Session:/d'
+            echo
+          } > release_notes.md
+          cat release_notes.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
           name: ${{ steps.meta.outputs.tag }}
+          body_path: release_notes.md
           generate_release_notes: true
           files: |
             terramow.zip
