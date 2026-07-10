@@ -15,6 +15,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 **Steuerung**
 - Rasenmäher-Entität: Starten, Pausieren und Andocken
 - Zonenmähen: Zonenauswahl-Entität und der Dienst `terramow.start_select_region`
+- **Schedule editing** — `terramow.add_schedule` / `terramow.delete_schedule` services write weekly mowing slots to the mower, confirmed against the device (acknowledgement + read-back); the calendar reflects changes immediately
 - **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position (activity-tinted, with follow mode), on-card start / pause / dock controls, battery & job-progress chips, optional mowed-coverage shading, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
 - Taste für Kantenschnitt
 - Einstellungen aus Home Assistant: Mähhöhe, Geschwindigkeit, Bahnabstand, Messerdrehzahl, Kantenschnittabstand, Hauptrichtungsmodus und -winkel, gründliches Eckenmähen, Kantenschnittmodus für hohes Gras

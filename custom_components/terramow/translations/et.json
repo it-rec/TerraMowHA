@@ -512,20 +512,26 @@
     }
   },
   "exceptions": {
+    "command_not_delivered": {
+      "message": "Käsku ei õnnestunud muruniidukile saata — see on võrguühenduseta või MQTT kaudu kättesaamatu. Veenduge, et niiduk on sisse lülitatud ja võrku ühendatud, ning proovige uuesti."
+    },
+    "command_rate_limited": {
+      "message": "Muruniidukile saadeti just teine käsk. Oodake hetk ja proovige uuesti."
+    },
+    "command_rejected": {
+      "message": "Niiduk lükkas käsu tagasi (veakood {code})."
+    },
     "entity_not_registered": {
       "message": "{entity_id} ei ole registreeritud TerraMow olem."
     },
     "lawn_mower_not_ready": {
       "message": "{entity_id} TerraMow muruniiduk ei ole veel valmis."
     },
-    "command_not_delivered": {
-      "message": "Käsku ei õnnestunud muruniidukile saata — see on võrguühenduseta või MQTT kaudu kättesaamatu. Veenduge, et niiduk on sisse lülitatud ja võrku ühendatud, ning proovige uuesti."
+    "schedule_item_not_found": {
+      "message": "No schedule slot with item id {item_id} exists on the mower."
     },
-    "command_rejected": {
-      "message": "Niiduk lükkas käsu tagasi (veakood {code})."
-    },
-    "command_rate_limited": {
-      "message": "Muruniidukile saadeti just teine käsk. Oodake hetk ja proovige uuesti."
+    "schedule_write_failed": {
+      "message": "The mower did not accept the schedule change (attempts: {attempts}). Please open a GitHub issue with your diagnostics download so the write format can be adjusted for your firmware."
     }
   }
 }

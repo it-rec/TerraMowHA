@@ -93,6 +93,20 @@ COMMAND_ACK_DP = 119
 # command, so a missing ack is not treated as a failure.
 COMMAND_ACK_TIMEOUT = 5.0
 
+# dp_122: full weekly schedule channel (GET/ADD/DELETE commands).
+SCHEDULE_DP = 122
+
+# Service weekday tokens -> device protocol enum values (dp_122 week_days).
+WEEKDAY_TO_DEVICE = {
+    "monday": "WEEK_DAY_MONDAY",
+    "tuesday": "WEEK_DAY_TUESDAY",
+    "wednesday": "WEEK_DAY_WEDNESDAY",
+    "thursday": "WEEK_DAY_THURSDAY",
+    "friday": "WEEK_DAY_FRIDAY",
+    "saturday": "WEEK_DAY_SATURDAY",
+    "sunday": "WEEK_DAY_SUNDAY",
+}
+
 # App-direction data-point topics. The vendor app writes commands here
 # (schedule changes, settings, ...); the hub captures this traffic so
 # undocumented write formats — e.g. the dp_122 schedule ADD/DELETE — can be

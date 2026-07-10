@@ -512,20 +512,26 @@
     }
   },
   "exceptions": {
+    "command_not_delivered": {
+      "message": "Ukaza ni bilo mogoče poslati kosilnici — ni povezana ali ni dosegljiva prek MQTT. Preverite, ali je kosilnica vklopljena in povezana z omrežjem, ter poskusite znova."
+    },
+    "command_rate_limited": {
+      "message": "Kosilnici je bil pravkar poslan drug ukaz. Počakajte trenutek in poskusite znova."
+    },
+    "command_rejected": {
+      "message": "Kosilnica je zavrnila ukaz (koda napake {code})."
+    },
     "entity_not_registered": {
       "message": "{entity_id} ni registrirana entiteta TerraMow."
     },
     "lawn_mower_not_ready": {
       "message": "Kosilnica TerraMow za {entity_id} še ni pripravljena."
     },
-    "command_not_delivered": {
-      "message": "Ukaza ni bilo mogoče poslati kosilnici — ni povezana ali ni dosegljiva prek MQTT. Preverite, ali je kosilnica vklopljena in povezana z omrežjem, ter poskusite znova."
+    "schedule_item_not_found": {
+      "message": "No schedule slot with item id {item_id} exists on the mower."
     },
-    "command_rejected": {
-      "message": "Kosilnica je zavrnila ukaz (koda napake {code})."
-    },
-    "command_rate_limited": {
-      "message": "Kosilnici je bil pravkar poslan drug ukaz. Počakajte trenutek in poskusite znova."
+    "schedule_write_failed": {
+      "message": "The mower did not accept the schedule change (attempts: {attempts}). Please open a GitHub issue with your diagnostics download so the write format can be adjusted for your firmware."
     }
   }
 }

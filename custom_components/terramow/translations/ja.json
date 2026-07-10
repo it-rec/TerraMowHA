@@ -512,20 +512,26 @@
     }
   },
   "exceptions": {
+    "command_not_delivered": {
+      "message": "コマンドを芝刈り機に送信できませんでした。オフラインか、MQTT 経由で到達できません。芝刈り機の電源が入りネットワークに接続されていることを確認して、もう一度お試しください。"
+    },
+    "command_rate_limited": {
+      "message": "芝刈り機に別のコマンドを送信したばかりです。しばらく待ってからもう一度お試しください。"
+    },
+    "command_rejected": {
+      "message": "芝刈り機がコマンドを拒否しました（エラーコード {code}）。"
+    },
     "entity_not_registered": {
       "message": "{entity_id} は登録された TerraMow エンティティではありません。"
     },
     "lawn_mower_not_ready": {
       "message": "{entity_id} の TerraMow 芝刈り機はまだ準備ができていません。"
     },
-    "command_not_delivered": {
-      "message": "コマンドを芝刈り機に送信できませんでした。オフラインか、MQTT 経由で到達できません。芝刈り機の電源が入りネットワークに接続されていることを確認して、もう一度お試しください。"
+    "schedule_item_not_found": {
+      "message": "No schedule slot with item id {item_id} exists on the mower."
     },
-    "command_rejected": {
-      "message": "芝刈り機がコマンドを拒否しました（エラーコード {code}）。"
-    },
-    "command_rate_limited": {
-      "message": "芝刈り機に別のコマンドを送信したばかりです。しばらく待ってからもう一度お試しください。"
+    "schedule_write_failed": {
+      "message": "The mower did not accept the schedule change (attempts: {attempts}). Please open a GitHub issue with your diagnostics download so the write format can be adjusted for your firmware."
     }
   }
 }

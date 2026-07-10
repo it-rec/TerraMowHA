@@ -512,20 +512,26 @@
     }
   },
   "exceptions": {
+    "command_not_delivered": {
+      "message": "无法向割草机发送命令——它已离线或无法通过 MQTT 访问。请确认割草机已开机并连接到网络，然后重试。"
+    },
+    "command_rate_limited": {
+      "message": "刚刚已向割草机发送了另一条命令。请稍候片刻再试。"
+    },
+    "command_rejected": {
+      "message": "The mower rejected the command (error code {code})."
+    },
     "entity_not_registered": {
       "message": "{entity_id} 不是已注册的 TerraMow 实体。"
     },
     "lawn_mower_not_ready": {
       "message": "{entity_id} 对应的 TerraMow 割草机尚未就绪。"
     },
-    "command_not_delivered": {
-      "message": "无法向割草机发送命令——它已离线或无法通过 MQTT 访问。请确认割草机已开机并连接到网络，然后重试。"
+    "schedule_item_not_found": {
+      "message": "No schedule slot with item id {item_id} exists on the mower."
     },
-    "command_rejected": {
-      "message": "The mower rejected the command (error code {code})."
-    },
-    "command_rate_limited": {
-      "message": "刚刚已向割草机发送了另一条命令。请稍候片刻再试。"
+    "schedule_write_failed": {
+      "message": "The mower did not accept the schedule change (attempts: {attempts}). Please open a GitHub issue with your diagnostics download so the write format can be adjusted for your firmware."
     }
   }
 }

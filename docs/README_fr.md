@@ -15,6 +15,7 @@ Ceci est une intégration Home Assistant pour les robots tondeuses TerraMow.
 **Contrôle**
 - Entité tondeuse : démarrer, mettre en pause et retourner à la station
 - Tonte par zones : entité de sélection de zone et service `terramow.start_select_region`
+- **Schedule editing** — `terramow.add_schedule` / `terramow.delete_schedule` services write weekly mowing slots to the mower, confirmed against the device (acknowledgement + read-back); the calendar reflects changes immediately
 - **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position (activity-tinted, with follow mode), on-card start / pause / dock controls, battery & job-progress chips, optional mowed-coverage shading, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
 - Bouton de tonte des bordures
 - Réglages depuis Home Assistant : hauteur de tonte, vitesse, espacement, vitesse des lames, distance de coupe des bordures, mode et angles de direction principale, coupe minutieuse des coins, mode de tonte des bordures en herbe haute

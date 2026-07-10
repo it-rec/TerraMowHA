@@ -13,3 +13,77 @@ start_select_region:
       example: "[1, 2]"
       selector:
         object:
+
+add_schedule:
+  name: Add Schedule Slot
+  description: >-
+    Add a weekly mowing schedule slot on the mower. The write is confirmed
+    against the device (acknowledgement plus schedule read-back).
+  target:
+    entity:
+      integration: terramow
+      domain: lawn_mower
+  fields:
+    week_days:
+      name: Weekdays
+      description: Days of the week the slot applies to.
+      required: true
+      example: "[tuesday, thursday]"
+      selector:
+        select:
+          multiple: true
+          options:
+            - monday
+            - tuesday
+            - wednesday
+            - thursday
+            - friday
+            - saturday
+            - sunday
+    start_time:
+      name: Start time
+      description: When the mowing window opens.
+      required: true
+      example: "07:45:00"
+      selector:
+        time:
+    end_time:
+      name: End time
+      description: When the mowing window closes.
+      required: true
+      example: "09:15:00"
+      selector:
+        time:
+    disabled:
+      name: Disabled
+      description: Create the slot in a disabled state.
+      default: false
+      selector:
+        boolean:
+    run_once:
+      name: Run once
+      description: Execute the slot a single time instead of weekly.
+      default: false
+      selector:
+        boolean:
+
+delete_schedule:
+  name: Delete Schedule Slot
+  description: >-
+    Delete a weekly mowing schedule slot by its item id (shown as the
+    calendar event's uid and returned when a slot is added).
+  target:
+    entity:
+      integration: terramow
+      domain: lawn_mower
+  fields:
+    item_id:
+      name: Item ID
+      description: The schedule item id to delete.
+      required: true
+      example: "3"
+      selector:
+        number:
+          min: 0
+          max: 10000
+          mode: box

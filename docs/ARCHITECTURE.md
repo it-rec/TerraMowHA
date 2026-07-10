@@ -80,9 +80,9 @@ state is carried in `entry.runtime_data`, not `hass.data`.
    listener (`_async_options_updated` reloads the entry on options change) and
    the shared service.
 
-`_async_register_services` — registers the domain-level `start_select_region`
-service **idempotently** (`has_service` guard), so it is registered once even
-with multiple entries. The handler resolves target entities via the entity
+`_async_register_services` — registers the domain-level `start_select_region`,
+`add_schedule` and `delete_schedule` services **idempotently** (`has_service`
+guard), so they are registered once even with multiple entries. The handler resolves target entities via the entity
 registry, validates each resolves to a loaded `runtime_data` with a ready
 `lawn_mower`, then awaits
 `basic_data.lawn_mower.async_start_select_region_clean()` — the confirmed
@@ -219,7 +219,7 @@ properties (mostly through `PushUpdateMixin._push_dp_ids`).
 | 117 | in | `on_map_status` | `map_status` | `map_status` sensor, map-detected/buildable/backing-up binary sensors | Map status flags |
 | 118 | in | `on_map_save_progress` | `map_save_progress` | Map-save-progress sensor (diagnostic, disabled by default) | *Unofficial* — map-save/upload progress 0–100 %; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 119 | in | `on_command_ack` | `last_command_ack` | confirmed commands (`async_publish_with_ack`); rejection warnings | *Unofficial* — per-command ack channel (`seq` + `code`); the `start_select_region` service awaits it; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
-| 122 | in / **out** | `on_full_schedule` | `full_schedule` | schedule calendar (full weekly view) | *Unofficial* — full weekly schedule list; requested on connect via `SCHEDULE_CMD_TYPE_GET`, only sent in response; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
+| 122 | in / **out** | `on_full_schedule` | `full_schedule` | schedule calendar (full weekly view); `add_schedule`/`delete_schedule` services (`async_add_schedule`/`async_delete_schedule`, ack+GET-verified candidate negotiation) | *Unofficial* — full weekly schedule list; `GET` on connect, writes negotiated; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 123 | in | `on_event_data` | `event_list` | Last-event sensor | *Unofficial* — device event log; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 124 | in | `on_statistics_data` | `statistics_data` | total mowing time/jobs/area sensors | Lifetime statistics |
 | 125 | in / **out** | `on_base_station_time` | `base_station_time` | remaining base-station-time sensor, reset button (writes `int_value:0`) | Base-station usage minutes; syncs maintenance repair issue |

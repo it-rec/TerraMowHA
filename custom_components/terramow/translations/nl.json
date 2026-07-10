@@ -512,20 +512,26 @@
     }
   },
   "exceptions": {
+    "command_not_delivered": {
+      "message": "Kan de opdracht niet naar de maaier sturen — deze is offline of niet bereikbaar via MQTT. Controleer of de maaier is ingeschakeld en met het netwerk is verbonden en probeer het opnieuw."
+    },
+    "command_rate_limited": {
+      "message": "Er is zojuist een andere opdracht naar de maaier gestuurd. Wacht even en probeer het opnieuw."
+    },
+    "command_rejected": {
+      "message": "De maaier heeft de opdracht geweigerd (foutcode {code})."
+    },
     "entity_not_registered": {
       "message": "{entity_id} is geen geregistreerde TerraMow-entiteit."
     },
     "lawn_mower_not_ready": {
       "message": "De TerraMow-maaier voor {entity_id} is nog niet gereed."
     },
-    "command_not_delivered": {
-      "message": "Kan de opdracht niet naar de maaier sturen — deze is offline of niet bereikbaar via MQTT. Controleer of de maaier is ingeschakeld en met het netwerk is verbonden en probeer het opnieuw."
+    "schedule_item_not_found": {
+      "message": "No schedule slot with item id {item_id} exists on the mower."
     },
-    "command_rejected": {
-      "message": "De maaier heeft de opdracht geweigerd (foutcode {code})."
-    },
-    "command_rate_limited": {
-      "message": "Er is zojuist een andere opdracht naar de maaier gestuurd. Wacht even en probeer het opnieuw."
+    "schedule_write_failed": {
+      "message": "The mower did not accept the schedule change (attempts: {attempts}). Please open a GitHub issue with your diagnostics download so the write format can be adjusted for your firmware."
     }
   }
 }

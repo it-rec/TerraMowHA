@@ -512,20 +512,26 @@
     }
   },
   "exceptions": {
+    "command_not_delivered": {
+      "message": "Kommandoen kunne ikke sendes til plæneklipperen — den er offline eller ikke tilgængelig via MQTT. Kontrollér, at plæneklipperen er tændt og forbundet til netværket, og prøv igen."
+    },
+    "command_rate_limited": {
+      "message": "Der blev lige sendt en anden kommando til plæneklipperen. Vent et øjeblik, og prøv igen."
+    },
+    "command_rejected": {
+      "message": "Plæneklipperen afviste kommandoen (fejlkode {code})."
+    },
     "entity_not_registered": {
       "message": "{entity_id} er ikke en registreret TerraMow-enhed."
     },
     "lawn_mower_not_ready": {
       "message": "TerraMow-plæneklipperen for {entity_id} er ikke klar endnu."
     },
-    "command_not_delivered": {
-      "message": "Kommandoen kunne ikke sendes til plæneklipperen — den er offline eller ikke tilgængelig via MQTT. Kontrollér, at plæneklipperen er tændt og forbundet til netværket, og prøv igen."
+    "schedule_item_not_found": {
+      "message": "No schedule slot with item id {item_id} exists on the mower."
     },
-    "command_rejected": {
-      "message": "Plæneklipperen afviste kommandoen (fejlkode {code})."
-    },
-    "command_rate_limited": {
-      "message": "Der blev lige sendt en anden kommando til plæneklipperen. Vent et øjeblik, og prøv igen."
+    "schedule_write_failed": {
+      "message": "The mower did not accept the schedule change (attempts: {attempts}). Please open a GitHub issue with your diagnostics download so the write format can be adjusted for your firmware."
     }
   }
 }

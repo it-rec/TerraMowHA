@@ -42,6 +42,9 @@ All upstream commits after v0.3.0 are already covered by the fork:
   **confirmed write**: it waits for the device's dp_119 command
   acknowledgement and raises on rejection (rejected fire-and-forget commands
   are logged; the last ack ships in diagnostics).
+- **Writable mowing schedule**: `terramow.add_schedule` / `terramow.delete_schedule`
+  services (dp_122 `ADD`/`DELETE`) with per-firmware payload negotiation —
+  every write is judged by its dp_119 ack and verified against a fresh `GET`.
 - **Reauthentication** and **reconfigure** flows, **Zeroconf/mDNS discovery**
   (`_mqtt._tcp.local.`, `terramow*`), and an **options flow** (map resolution).
 - **Firmware update entity** and version-compatibility sensor.

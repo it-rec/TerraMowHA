@@ -512,20 +512,26 @@
     }
   },
   "exceptions": {
+    "command_not_delivered": {
+      "message": "Der Befehl konnte nicht an den Mäher gesendet werden – er ist offline oder über MQTT nicht erreichbar. Stelle sicher, dass der Mäher eingeschaltet und mit dem Netzwerk verbunden ist, und versuche es erneut."
+    },
+    "command_rate_limited": {
+      "message": "Es wurde gerade ein anderer Befehl an den Mäher gesendet. Bitte warte einen Moment und versuche es erneut."
+    },
+    "command_rejected": {
+      "message": "Der Mäher hat den Befehl abgelehnt (Fehlercode {code})."
+    },
     "entity_not_registered": {
       "message": "{entity_id} ist keine registrierte TerraMow-Entität."
     },
     "lawn_mower_not_ready": {
       "message": "Der TerraMow-Rasenmäher für {entity_id} ist noch nicht bereit."
     },
-    "command_not_delivered": {
-      "message": "Der Befehl konnte nicht an den Mäher gesendet werden – er ist offline oder über MQTT nicht erreichbar. Stelle sicher, dass der Mäher eingeschaltet und mit dem Netzwerk verbunden ist, und versuche es erneut."
+    "schedule_item_not_found": {
+      "message": "Auf dem Mäher existiert kein Zeitplan-Eintrag mit der Item-ID {item_id}."
     },
-    "command_rejected": {
-      "message": "Der Mäher hat den Befehl abgelehnt (Fehlercode {code})."
-    },
-    "command_rate_limited": {
-      "message": "Es wurde gerade ein anderer Befehl an den Mäher gesendet. Bitte warte einen Moment und versuche es erneut."
+    "schedule_write_failed": {
+      "message": "Der Mäher hat die Zeitplanänderung nicht übernommen (Versuche: {attempts}). Bitte öffne ein GitHub-Issue mit deinem Diagnose-Download, damit das Schreibformat für deine Firmware angepasst werden kann."
     }
   }
 }

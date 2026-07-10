@@ -512,20 +512,26 @@
     }
   },
   "exceptions": {
+    "command_not_delivered": {
+      "message": "Não foi possível enviar o comando ao robô cortador de grama — ele está offline ou inacessível por MQTT. Verifique se está ligado e conectado à rede e tente novamente."
+    },
+    "command_rate_limited": {
+      "message": "Acabou de ser enviado outro comando ao robô cortador de grama. Aguarde um momento e tente novamente."
+    },
+    "command_rejected": {
+      "message": "O cortador rejeitou o comando (código de erro {code})."
+    },
     "entity_not_registered": {
       "message": "{entity_id} não é uma entidade TerraMow registrada."
     },
     "lawn_mower_not_ready": {
       "message": "O cortador de grama TerraMow para {entity_id} ainda não está pronto."
     },
-    "command_not_delivered": {
-      "message": "Não foi possível enviar o comando ao robô cortador de grama — ele está offline ou inacessível por MQTT. Verifique se está ligado e conectado à rede e tente novamente."
+    "schedule_item_not_found": {
+      "message": "No schedule slot with item id {item_id} exists on the mower."
     },
-    "command_rejected": {
-      "message": "O cortador rejeitou o comando (código de erro {code})."
-    },
-    "command_rate_limited": {
-      "message": "Acabou de ser enviado outro comando ao robô cortador de grama. Aguarde um momento e tente novamente."
+    "schedule_write_failed": {
+      "message": "The mower did not accept the schedule change (attempts: {attempts}). Please open a GitHub issue with your diagnostics download so the write format can be adjusted for your firmware."
     }
   }
 }

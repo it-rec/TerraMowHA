@@ -512,20 +512,26 @@
     }
   },
   "exceptions": {
+    "command_not_delivered": {
+      "message": "Kommandoen kunne ikke sendes til gressklipperen — den er frakoblet eller utilgjengelig via MQTT. Kontroller at gressklipperen er slått på og koblet til nettverket, og prøv igjen."
+    },
+    "command_rate_limited": {
+      "message": "Det ble nettopp sendt en annen kommando til gressklipperen. Vent et øyeblikk og prøv igjen."
+    },
+    "command_rejected": {
+      "message": "Gressklipperen avviste kommandoen (feilkode {code})."
+    },
     "entity_not_registered": {
       "message": "{entity_id} er ikke en registrert TerraMow-enhet."
     },
     "lawn_mower_not_ready": {
       "message": "TerraMow-gressklipperen for {entity_id} er ikke klar ennå."
     },
-    "command_not_delivered": {
-      "message": "Kommandoen kunne ikke sendes til gressklipperen — den er frakoblet eller utilgjengelig via MQTT. Kontroller at gressklipperen er slått på og koblet til nettverket, og prøv igjen."
+    "schedule_item_not_found": {
+      "message": "No schedule slot with item id {item_id} exists on the mower."
     },
-    "command_rejected": {
-      "message": "Gressklipperen avviste kommandoen (feilkode {code})."
-    },
-    "command_rate_limited": {
-      "message": "Det ble nettopp sendt en annen kommando til gressklipperen. Vent et øyeblikk og prøv igjen."
+    "schedule_write_failed": {
+      "message": "The mower did not accept the schedule change (attempts: {attempts}). Please open a GitHub issue with your diagnostics download so the write format can be adjusted for your firmware."
     }
   }
 }

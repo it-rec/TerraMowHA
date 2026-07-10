@@ -512,20 +512,26 @@
     }
   },
   "exceptions": {
+    "command_not_delivered": {
+      "message": "Komut çim biçme makinesine gönderilemedi — çevrimdışı veya MQTT üzerinden erişilemiyor. Makinenin açık ve ağa bağlı olduğundan emin olun, ardından tekrar deneyin."
+    },
+    "command_rate_limited": {
+      "message": "Çim biçme makinesine az önce başka bir komut gönderildi. Lütfen bir an bekleyip tekrar deneyin."
+    },
+    "command_rejected": {
+      "message": "Çim biçme makinesi komutu reddetti (hata kodu {code})."
+    },
     "entity_not_registered": {
       "message": "{entity_id} kayıtlı bir TerraMow varlığı değil."
     },
     "lawn_mower_not_ready": {
       "message": "{entity_id} için TerraMow çim biçme makinesi henüz hazır değil."
     },
-    "command_not_delivered": {
-      "message": "Komut çim biçme makinesine gönderilemedi — çevrimdışı veya MQTT üzerinden erişilemiyor. Makinenin açık ve ağa bağlı olduğundan emin olun, ardından tekrar deneyin."
+    "schedule_item_not_found": {
+      "message": "No schedule slot with item id {item_id} exists on the mower."
     },
-    "command_rejected": {
-      "message": "Çim biçme makinesi komutu reddetti (hata kodu {code})."
-    },
-    "command_rate_limited": {
-      "message": "Çim biçme makinesine az önce başka bir komut gönderildi. Lütfen bir an bekleyip tekrar deneyin."
+    "schedule_write_failed": {
+      "message": "The mower did not accept the schedule change (attempts: {attempts}). Please open a GitHub issue with your diagnostics download so the write format can be adjusted for your firmware."
     }
   }
 }

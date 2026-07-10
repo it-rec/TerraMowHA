@@ -30,6 +30,7 @@ from .const import (
     CURRENT_HA_VERSION,
     MIN_REQUIRED_OVERALL_VERSION,
     MIN_SUPPORTED_HA_VERSION,
+    WEEKDAY_TO_DEVICE,
     CompatibilityStatus,
 )
 from .const import DOMAIN as DOMAIN
@@ -38,7 +39,15 @@ from .issues import async_clear_compatibility_issue, async_clear_maintenance_iss
 from .map_card import async_setup_map_card
 
 SERVICE_START_SELECT_REGION = "start_select_region"
+SERVICE_ADD_SCHEDULE = "add_schedule"
+SERVICE_DELETE_SCHEDULE = "delete_schedule"
 ATTR_REGION_IDS = "region_ids"
+ATTR_WEEK_DAYS = "week_days"
+ATTR_START_TIME = "start_time"
+ATTR_END_TIME = "end_time"
+ATTR_DISABLED = "disabled"
+ATTR_RUN_ONCE = "run_once"
+ATTR_ITEM_ID = "item_id"
 
 START_SELECT_REGION_SCHEMA = vol.Schema(
     {
@@ -46,6 +55,26 @@ START_SELECT_REGION_SCHEMA = vol.Schema(
         vol.Required(ATTR_REGION_IDS): vol.All(
             cv.ensure_list, [vol.Coerce(int)], vol.Length(min=1)
         ),
+    }
+)
+
+ADD_SCHEDULE_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ENTITY_ID): cv.entity_ids,
+        vol.Required(ATTR_WEEK_DAYS): vol.All(
+            cv.ensure_list, [vol.In(WEEKDAY_TO_DEVICE)], vol.Length(min=1)
+        ),
+        vol.Required(ATTR_START_TIME): cv.time,
+        vol.Required(ATTR_END_TIME): cv.time,
+        vol.Optional(ATTR_DISABLED, default=False): cv.boolean,
+        vol.Optional(ATTR_RUN_ONCE, default=False): cv.boolean,
+    }
+)
+
+DELETE_SCHEDULE_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ENTITY_ID): cv.entity_ids,
+        vol.Required(ATTR_ITEM_ID): vol.Coerce(int),
     }
 )
 
@@ -287,12 +316,8 @@ def _async_register_services(hass: HomeAssistant) -> None:
     if hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION):
         return
 
-    async def handle_start_select_region(call: ServiceCall) -> None:
-        entity_ids: list[str] = call.data[ATTR_ENTITY_ID]
-        region_ids: list[int] = call.data[ATTR_REGION_IDS]
-
+    def _resolve_hubs(entity_ids: list[str]) -> list[TerraMowHub]:
         registry = er.async_get(hass)
-
         targets: list[TerraMowHub] = []
         for entity_id in entity_ids:
             entry = registry.async_get(entity_id)
@@ -311,18 +336,54 @@ def _async_register_services(hass: HomeAssistant) -> None:
                     translation_placeholders={"entity_id": entity_id},
                 )
             targets.append(basic_data.lawn_mower)
+        return targets
 
-        for hub in targets:
+    async def handle_start_select_region(call: ServiceCall) -> None:
+        region_ids: list[int] = call.data[ATTR_REGION_IDS]
+        for hub in _resolve_hubs(call.data[ATTR_ENTITY_ID]):
             # Confirmed write: waits for the device's dp_119 ack and raises
             # on rejection, so callers (and the map card's toast) see real
             # failures instead of optimistic success.
             await hub.async_start_select_region_clean(region_ids)
+
+    async def handle_add_schedule(call: ServiceCall) -> None:
+        start = call.data[ATTR_START_TIME]
+        end = call.data[ATTR_END_TIME]
+        item = TerraMowHub.build_schedule_item(
+            week_days=[WEEKDAY_TO_DEVICE[day] for day in call.data[ATTR_WEEK_DAYS]],
+            start_hour=start.hour,
+            start_minute=start.minute,
+            end_hour=end.hour,
+            end_minute=end.minute,
+            disabled=call.data[ATTR_DISABLED],
+            run_once=call.data[ATTR_RUN_ONCE],
+        )
+        for hub in _resolve_hubs(call.data[ATTR_ENTITY_ID]):
+            item_id = await hub.async_add_schedule(item)
+            _LOGGER.info("Added schedule slot (item id %s)", item_id)
+
+    async def handle_delete_schedule(call: ServiceCall) -> None:
+        item_id: int = call.data[ATTR_ITEM_ID]
+        for hub in _resolve_hubs(call.data[ATTR_ENTITY_ID]):
+            await hub.async_delete_schedule(item_id)
 
     hass.services.async_register(
         DOMAIN,
         SERVICE_START_SELECT_REGION,
         handle_start_select_region,
         schema=START_SELECT_REGION_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_ADD_SCHEDULE,
+        handle_add_schedule,
+        schema=ADD_SCHEDULE_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_DELETE_SCHEDULE,
+        handle_delete_schedule,
+        schema=DELETE_SCHEDULE_SCHEMA,
     )
 
 
@@ -343,7 +404,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) ->
             for other in hass.config_entries.async_loaded_entries(DOMAIN)
             if other.entry_id != entry.entry_id
         ]
-        if not remaining and hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION):
-            hass.services.async_remove(DOMAIN, SERVICE_START_SELECT_REGION)
+        if not remaining:
+            for service in (
+                SERVICE_START_SELECT_REGION,
+                SERVICE_ADD_SCHEDULE,
+                SERVICE_DELETE_SCHEDULE,
+            ):
+                if hass.services.has_service(DOMAIN, service):
+                    hass.services.async_remove(DOMAIN, service)
 
     return unload_ok

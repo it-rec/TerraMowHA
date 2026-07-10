@@ -15,6 +15,7 @@ Esta é uma integração para o Home Assistant destinada aos corta-relvas robót
 **Controlo**
 - Entidade de corta-relva: iniciar, pausar e regressar à base
 - Corte por zonas: entidade de seleção de zona e serviço `terramow.start_select_region`
+- **Schedule editing** — `terramow.add_schedule` / `terramow.delete_schedule` services write weekly mowing slots to the mower, confirmed against the device (acknowledgement + read-back); the calendar reflects changes immediately
 - **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position (activity-tinted, with follow mode), on-card start / pause / dock controls, battery & job-progress chips, optional mowed-coverage shading, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
 - Botão de corte das bordas
 - Definições a partir do Home Assistant: altura de corte, velocidade, espaçamento, velocidade das lâminas, distância de corte das bordas, modo e ângulos da direção principal, corte minucioso dos cantos, modo de corte das bordas em relva alta

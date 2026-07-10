@@ -512,20 +512,26 @@
     }
   },
   "exceptions": {
+    "command_not_delivered": {
+      "message": "Командата не можа да бъде изпратена до косачката — тя е офлайн или недостъпна през MQTT. Уверете се, че косачката е включена и свързана с мрежата, след което опитайте отново."
+    },
+    "command_rate_limited": {
+      "message": "Току-що беше изпратена друга команда към косачката. Изчакайте малко и опитайте отново."
+    },
+    "command_rejected": {
+      "message": "Косачката отхвърли командата (код на грешка {code})."
+    },
     "entity_not_registered": {
       "message": "{entity_id} не е регистрирана единица на TerraMow."
     },
     "lawn_mower_not_ready": {
       "message": "Косачката TerraMow за {entity_id} все още не е готова."
     },
-    "command_not_delivered": {
-      "message": "Командата не можа да бъде изпратена до косачката — тя е офлайн или недостъпна през MQTT. Уверете се, че косачката е включена и свързана с мрежата, след което опитайте отново."
+    "schedule_item_not_found": {
+      "message": "No schedule slot with item id {item_id} exists on the mower."
     },
-    "command_rejected": {
-      "message": "Косачката отхвърли командата (код на грешка {code})."
-    },
-    "command_rate_limited": {
-      "message": "Току-що беше изпратена друга команда към косачката. Изчакайте малко и опитайте отново."
+    "schedule_write_failed": {
+      "message": "The mower did not accept the schedule change (attempts: {attempts}). Please open a GitHub issue with your diagnostics download so the write format can be adjusted for your firmware."
     }
   }
 }

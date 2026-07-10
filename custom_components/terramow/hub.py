@@ -49,6 +49,7 @@ from .const import (
     PATH_HISTORY_META_TOPIC,
     PATH_META_TOPIC,
     POSE_TOPIC,
+    SCHEDULE_DP,
     CompatibilityStatus,
 )
 from .issues import (
@@ -340,6 +341,9 @@ class TerraMowHub:
         # Captured app-direction writes (epoch, topic, payload) — source
         # material for documenting undocumented write formats (schedule etc.).
         self._app_dp_captures: deque[tuple[float, str, str]] = deque(maxlen=50)
+        # The dp_122 write payload shape proven to work on this device, once
+        # a schedule write has succeeded (see async_add_schedule).
+        self._schedule_write_field: str | None = None
 
         self.cmd_seq = random.randint(0, 0xFFFFFFFF)  # Generate a random command sequence number
         # get_cmd_seq is reachable from the paho network thread (compatibility
@@ -794,6 +798,210 @@ class TerraMowHub:
             if isinstance(schedule_list, dict):
                 self._full_schedule = schedule_list
 
+    # ------------------------------------------------------------------
+    # Writable schedule (dp_122 ADD/DELETE)
+    #
+    # The GET/response format is documented from real traffic; the write
+    # format is not. Instead of guessing blindly, writes negotiate: each
+    # plausible payload shape is sent in turn, judged by its dp_119 ack and
+    # verified against a fresh GET. A wrong shape is harmless (the device
+    # rejects it with a non-zero code); the first shape that demonstrably
+    # lands is cached for subsequent writes. Every attempt is logged so a
+    # fully-rejecting firmware still produces the evidence needed to fix
+    # the candidates.
+    # ------------------------------------------------------------------
+
+    async def async_refresh_full_schedule(
+        self, timeout: float = COMMAND_ACK_TIMEOUT
+    ) -> dict[str, Any]:
+        """Send a dp_122 GET and wait for the fresh schedule list."""
+        future: asyncio.Future[dict[str, Any]] = self.hass.loop.create_future()
+
+        async def _on_schedule(payload: str) -> None:
+            if future.done():
+                return
+            try:
+                data = json.loads(payload)
+            except json.JSONDecodeError:
+                return
+            schedule_list = data.get("schedule_list") if isinstance(data, dict) else None
+            if isinstance(schedule_list, dict):
+                future.set_result(schedule_list)
+
+        unsub = self.register_callback(SCHEDULE_DP, _on_schedule)
+        try:
+            self.publish_data_point(
+                SCHEDULE_DP,
+                {"cmd_type": "SCHEDULE_CMD_TYPE_GET", "seq": self.get_cmd_seq()},
+            )
+            return await asyncio.wait_for(future, timeout)
+        except TimeoutError:
+            _LOGGER.debug("dp_122 GET got no response; using the cached schedule")
+            return self._full_schedule
+        finally:
+            unsub()
+
+    @staticmethod
+    def build_schedule_item(
+        week_days: list[str],
+        start_hour: int,
+        start_minute: int,
+        end_hour: int,
+        end_minute: int,
+        disabled: bool = False,
+        run_once: bool = False,
+    ) -> dict[str, Any]:
+        """Build a dp_122 schedule item (documented GET-response shape)."""
+        return {
+            "schedule_type": "SCHEDULE_TYPE_GLOBAL_V2",
+            "global_schedule_v2": {
+                "basic_config": {
+                    "week_days": list(week_days),
+                    "start_time": {"hour": start_hour, "minute": start_minute},
+                    "end_time": {"hour": end_hour, "minute": end_minute},
+                    "disabled": disabled,
+                    "run_once": run_once,
+                }
+            },
+        }
+
+    @staticmethod
+    def _schedule_config(item: Any) -> dict[str, Any] | None:
+        """Extract the basic_config of a schedule item, if any."""
+        if not isinstance(item, dict):
+            return None
+        config = item.get("global_schedule_v2", {}).get("basic_config")
+        return config if isinstance(config, dict) else None
+
+    @classmethod
+    def _schedule_items_match(cls, item_a: Any, item_b: Any) -> bool:
+        """Whether two schedule items describe the same slot."""
+        config_a = cls._schedule_config(item_a)
+        config_b = cls._schedule_config(item_b)
+        if config_a is None or config_b is None:
+            return False
+        def _norm(config: dict[str, Any]) -> tuple[Any, ...]:
+            start = config.get("start_time") or {}
+            end = config.get("end_time") or {}
+            return (
+                frozenset(config.get("week_days") or []),
+                start.get("hour", 0), start.get("minute", 0),
+                end.get("hour", 0), end.get("minute", 0),
+                bool(config.get("run_once")),
+            )
+        return _norm(config_a) == _norm(config_b)
+
+    def _find_schedule_item(
+        self, schedule_list: dict[str, Any], item: dict[str, Any]
+    ) -> int | None:
+        """Find a matching slot in a schedule list; return its id."""
+        for existing in schedule_list.get("items") or []:
+            if self._schedule_items_match(existing, item):
+                item_id = existing.get("id")
+                return int(item_id) if item_id is not None else -1
+        return None
+
+    def _ordered_candidates(
+        self, candidates: list[tuple[str, dict[str, Any]]]
+    ) -> list[tuple[str, dict[str, Any]]]:
+        """Move a previously-proven payload shape to the front."""
+        preferred = self._schedule_write_field
+        if preferred is None:
+            return candidates
+        return sorted(candidates, key=lambda c: c[0] != preferred)
+
+    async def async_add_schedule(self, item: dict[str, Any]) -> int:
+        """Add a weekly schedule slot; returns the device-assigned item id.
+
+        Negotiates the undocumented ADD payload shape (see the section
+        comment above). Raises a translated error when every candidate is
+        rejected or none demonstrably lands in a follow-up GET.
+        """
+        self._ensure_command_allowed()
+        candidates = self._ordered_candidates(
+            [
+                ("item", {"item": item}),
+                ("schedule_item", {"schedule_item": item}),
+                ("schedule", {"schedule": item}),
+                ("schedule_list", {"schedule_list": {"items": [item]}}),
+            ]
+        )
+        codes: list[str] = []
+        for field, fragment in candidates:
+            command = {
+                "cmd_type": "SCHEDULE_CMD_TYPE_ADD",
+                "seq": self.get_cmd_seq(),
+                **fragment,
+            }
+            code = await self._async_wait_ack(SCHEDULE_DP, command)
+            _LOGGER.info("Schedule ADD attempt (field %r): ack=%s", field, code)
+            codes.append(f"{field}={code}")
+            if code is not None and code != 0:
+                continue  # clean rejection — try the next shape
+            schedule_list = await self.async_refresh_full_schedule()
+            item_id = self._find_schedule_item(schedule_list, item)
+            if item_id is not None:
+                _LOGGER.info(
+                    "Schedule ADD succeeded with field %r (item id %s)",
+                    field,
+                    item_id,
+                )
+                self._schedule_write_field = field
+                return item_id
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="schedule_write_failed",
+            translation_placeholders={"attempts": ", ".join(codes)},
+        )
+
+    async def async_delete_schedule(self, item_id: int) -> None:
+        """Delete a schedule slot by its id (same negotiation as ADD)."""
+        self._ensure_command_allowed()
+        schedule_list = await self.async_refresh_full_schedule()
+        known_ids = {
+            entry.get("id")
+            for entry in schedule_list.get("items") or []
+            if isinstance(entry, dict)
+        }
+        if item_id not in known_ids:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="schedule_item_not_found",
+                translation_placeholders={"item_id": str(item_id)},
+            )
+        candidates: list[tuple[str, dict[str, Any]]] = [
+            ("id", {"id": item_id}),
+            ("item_id", {"item_id": item_id}),
+            ("ids", {"ids": [item_id]}),
+            ("item", {"item": {"id": item_id}}),
+        ]
+        codes: list[str] = []
+        for field, fragment in candidates:
+            command = {
+                "cmd_type": "SCHEDULE_CMD_TYPE_DELETE",
+                "seq": self.get_cmd_seq(),
+                **fragment,
+            }
+            code = await self._async_wait_ack(SCHEDULE_DP, command)
+            _LOGGER.info("Schedule DELETE attempt (field %r): ack=%s", field, code)
+            codes.append(f"{field}={code}")
+            if code is not None and code != 0:
+                continue
+            schedule_list = await self.async_refresh_full_schedule()
+            remaining = {
+                entry.get("id")
+                for entry in schedule_list.get("items") or []
+                if isinstance(entry, dict)
+            }
+            if item_id not in remaining:
+                _LOGGER.info("Schedule DELETE succeeded with field %r", field)
+                return
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="schedule_write_failed",
+            translation_placeholders={"attempts": ", ".join(codes)},
+        )
+
     async def on_state_flag_134(self, payload: str) -> None:
         """Handle the undecoded binary flag (dp_134, undocumented).
 
@@ -953,6 +1161,33 @@ class TerraMowHub:
         """Get the last dp_119 command acknowledgement (for diagnostics)."""
         return self._last_command_ack
 
+    async def _async_wait_ack(
+        self, dp_id: int, data: dict[str, Any], timeout: float = COMMAND_ACK_TIMEOUT
+    ) -> int | None:
+        """Publish a command and return its dp_119 ack code.
+
+        Returns the code (0 = OK, non-zero = rejected) or ``None`` when no
+        ack arrived within the timeout. Never raises on rejection — callers
+        that probe candidate formats need the raw code.
+
+        Must be called from the event loop; ``data`` must carry a ``seq``.
+        """
+        seq = int(data["seq"])
+        future: asyncio.Future[int] = self.hass.loop.create_future()
+        self._pending_acks[seq] = future
+        try:
+            self.publish_data_point(dp_id, data)
+            return await asyncio.wait_for(future, timeout)
+        except TimeoutError:
+            _LOGGER.debug(
+                "No dp_119 ack for command seq=%s within %.1fs; assuming ok",
+                seq,
+                timeout,
+            )
+            return None
+        finally:
+            self._pending_acks.pop(seq, None)
+
     async def async_publish_with_ack(
         self, dp_id: int, data: dict[str, Any], timeout: float = COMMAND_ACK_TIMEOUT
     ) -> int | None:
@@ -963,29 +1198,13 @@ class TerraMowHub:
         ack keeps the optimistic fire-and-forget semantics. A non-zero code
         raises a translated ``HomeAssistantError`` so service calls report
         the device's rejection instead of silently "succeeding".
-
-        Must be called from the event loop; ``data`` must carry a ``seq``.
         """
-        seq = int(data["seq"])
-        future: asyncio.Future[int] = self.hass.loop.create_future()
-        self._pending_acks[seq] = future
-        try:
-            self.publish_data_point(dp_id, data)
-            code = await asyncio.wait_for(future, timeout)
-        except TimeoutError:
-            _LOGGER.debug(
-                "No dp_119 ack for command seq=%s within %.1fs; assuming ok",
-                seq,
-                timeout,
-            )
-            return None
-        finally:
-            self._pending_acks.pop(seq, None)
-        if code != 0:
+        code = await self._async_wait_ack(dp_id, data, timeout)
+        if code is not None and code != 0:
             _LOGGER.warning(
                 "Device rejected command dp_%s seq=%s with code=%s",
                 dp_id,
-                seq,
+                data["seq"],
                 code,
             )
             raise HomeAssistantError(

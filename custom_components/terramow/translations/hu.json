@@ -512,20 +512,26 @@
     }
   },
   "exceptions": {
+    "command_not_delivered": {
+      "message": "A parancsot nem sikerült elküldeni a fűnyírónak — offline vagy nem érhető el MQTT-n keresztül. Ellenőrizze, hogy a fűnyíró be van kapcsolva és csatlakozik a hálózathoz, majd próbálja újra."
+    },
+    "command_rate_limited": {
+      "message": "Az imént egy másik parancsot küldtek a fűnyírónak. Várjon egy pillanatot, és próbálja újra."
+    },
+    "command_rejected": {
+      "message": "A fűnyíró elutasította a parancsot (hibakód: {code})."
+    },
     "entity_not_registered": {
       "message": "A(z) {entity_id} nem regisztrált TerraMow entitás."
     },
     "lawn_mower_not_ready": {
       "message": "A(z) {entity_id} TerraMow fűnyírója még nem áll készen."
     },
-    "command_not_delivered": {
-      "message": "A parancsot nem sikerült elküldeni a fűnyírónak — offline vagy nem érhető el MQTT-n keresztül. Ellenőrizze, hogy a fűnyíró be van kapcsolva és csatlakozik a hálózathoz, majd próbálja újra."
+    "schedule_item_not_found": {
+      "message": "No schedule slot with item id {item_id} exists on the mower."
     },
-    "command_rejected": {
-      "message": "A fűnyíró elutasította a parancsot (hibakód: {code})."
-    },
-    "command_rate_limited": {
-      "message": "Az imént egy másik parancsot küldtek a fűnyírónak. Várjon egy pillanatot, és próbálja újra."
+    "schedule_write_failed": {
+      "message": "The mower did not accept the schedule change (attempts: {attempts}). Please open a GitHub issue with your diagnostics download so the write format can be adjusted for your firmware."
     }
   }
 }

@@ -512,20 +512,26 @@
     }
   },
   "exceptions": {
+    "command_not_delivered": {
+      "message": "Couldn't send the command to the mower — it is offline or unreachable over MQTT. Check that the mower is powered on and connected to the network, then try again."
+    },
+    "command_rate_limited": {
+      "message": "Another command was just sent to the mower. Please wait a moment and try again."
+    },
+    "command_rejected": {
+      "message": "The mower rejected the command (error code {code})."
+    },
     "entity_not_registered": {
       "message": "{entity_id} is not a registered TerraMow entity."
     },
     "lawn_mower_not_ready": {
       "message": "The TerraMow lawn mower for {entity_id} is not ready yet."
     },
-    "command_not_delivered": {
-      "message": "Couldn't send the command to the mower — it is offline or unreachable over MQTT. Check that the mower is powered on and connected to the network, then try again."
+    "schedule_item_not_found": {
+      "message": "No schedule slot with item id {item_id} exists on the mower."
     },
-    "command_rejected": {
-      "message": "The mower rejected the command (error code {code})."
-    },
-    "command_rate_limited": {
-      "message": "Another command was just sent to the mower. Please wait a moment and try again."
+    "schedule_write_failed": {
+      "message": "The mower did not accept the schedule change (attempts: {attempts}). Please open a GitHub issue with your diagnostics download so the write format can be adjusted for your firmware."
     }
   }
 }

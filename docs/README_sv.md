@@ -15,6 +15,7 @@ Detta är en Home Assistant-integration för TerraMow robotgräsklippare.
 **Styrning**
 - Gräsklipparentitet: starta, pausa och docka
 - Zonklippning: entitet för zonval och tjänsten `terramow.start_select_region`
+- **Schedule editing** — `terramow.add_schedule` / `terramow.delete_schedule` services write weekly mowing slots to the mower, confirmed against the device (acknowledgement + read-back); the calendar reflects changes immediately
 - **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position (activity-tinted, with follow mode), on-card start / pause / dock controls, battery & job-progress chips, optional mowed-coverage shading, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
 - Knapp för kantklippning
 - Inställningar från Home Assistant: klipphöjd, hastighet, spåravstånd, knivhastighet, kantklippningsavstånd, huvudriktningsläge och -vinklar, noggrann hörnklippning, kantklippningsläge för högt gräs
