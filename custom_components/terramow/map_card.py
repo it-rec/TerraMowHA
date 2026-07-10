@@ -42,7 +42,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL.
-CARD_VERSION = "1.0.1"
+CARD_VERSION = "1.0.2"
 
 CARD_URL_PATH = "/terramow-frontend/terramow-map-card.js"
 
@@ -120,16 +120,24 @@ async def _async_register_lovelace_resource(hass: HomeAssistant) -> None:
         await resources.async_load()
         resources.loaded = True
 
+    # res_type "js" on purpose: a module resource is deferred and executes
+    # only after the dashboard has rendered, so the element is not defined
+    # when the card is built ("Configuration error"); a classic script runs
+    # before the render. The card file is written to work in both goals.
     url = f"{CARD_URL_PATH}?v={CARD_VERSION}"
     for item in resources.async_items():
         item_url = str(item.get("url", ""))
         if item_url.partition("?")[0] != CARD_URL_PATH:
             continue
-        if item_url != url:  # stale cache-buster from an older version
-            await resources.async_update_item(item["id"], {"url": url})
+        if item_url != url or item.get("type") != "js":
+            # Stale cache-buster from an older version, or a broken deferred
+            # "module" entry from <= 1.0.1 — self-heal in place.
+            await resources.async_update_item(
+                item["id"], {"res_type": "js", "url": url}
+            )
             _LOGGER.info("Updated the map card Lovelace resource to %s", url)
         return
-    await resources.async_create_item({"res_type": "module", "url": url})
+    await resources.async_create_item({"res_type": "js", "url": url})
     _LOGGER.info("Registered the map card Lovelace resource %s", url)
 
 

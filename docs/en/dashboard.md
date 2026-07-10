@@ -48,10 +48,11 @@ the robot marker moves without image reloads.
 - Live map data requires firmware HA module version 3 (same requirement
   as the map camera); on older firmware the card shows a placeholder.
 - The card follows the active Home Assistant theme (light and dark).
-- Headless / custom setups where the `frontend` integration is not
-  loaded can still use the card by adding
-  `/terramow-frontend/terramow-map-card.js` manually as a *JavaScript
-  module* dashboard resource.
+- Headless / custom setups (or YAML resource mode, which the integration
+  cannot write to) can still use the card by adding
+  `/terramow-frontend/terramow-map-card.js` manually as a dashboard
+  resource of type *JavaScript* (`js`, not `module` — a module resource
+  is deferred and would execute only after the dashboard has rendered).
 
 In the example view below you can swap the `picture-entity` camera card
 for the interactive card one-to-one.

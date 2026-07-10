@@ -416,7 +416,7 @@ _CARD_URL = f"{map_card.CARD_URL_PATH}?v={map_card.CARD_VERSION}"
 
 
 async def test_lovelace_resource_created(hass: HomeAssistant) -> None:
-    """Storage mode: the card is registered as a module resource."""
+    """Storage mode: the card is registered as a classic-js resource."""
     resources = _FakeResources([], loaded=False)
     hass.data["lovelace"] = SimpleNamespace(resources=resources)
 
@@ -424,7 +424,7 @@ async def test_lovelace_resource_created(hass: HomeAssistant) -> None:
 
     assert resources.load_called
     assert resources.loaded is True
-    assert resources.created == [{"res_type": "module", "url": _CARD_URL}]
+    assert resources.created == [{"res_type": "js", "url": _CARD_URL}]
 
 
 async def test_lovelace_resource_updated_on_new_version(
@@ -434,7 +434,7 @@ async def test_lovelace_resource_updated_on_new_version(
     resources = _FakeResources(
         [
             {"id": "other", "url": "/hacsfiles/some-card.js"},
-            {"id": "ours", "url": f"{map_card.CARD_URL_PATH}?v=0.9.9"},
+            {"id": "ours", "url": f"{map_card.CARD_URL_PATH}?v=0.9.9", "type": "js"},
         ]
     )
     # pre-2024.8 dict layout
@@ -443,12 +443,23 @@ async def test_lovelace_resource_updated_on_new_version(
     await setup_terramow(hass)
 
     assert resources.created == []
-    assert resources.updated == [("ours", {"url": _CARD_URL})]
+    assert resources.updated == [("ours", {"res_type": "js", "url": _CARD_URL})]
+
+
+async def test_lovelace_resource_heals_module_type(hass: HomeAssistant) -> None:
+    """A deferred "module" entry from <= 1.0.1 is flipped to classic js."""
+    resources = _FakeResources([{"id": "ours", "url": _CARD_URL, "type": "module"}])
+    hass.data["lovelace"] = SimpleNamespace(resources=resources)
+
+    await setup_terramow(hass)
+
+    assert resources.created == []
+    assert resources.updated == [("ours", {"res_type": "js", "url": _CARD_URL})]
 
 
 async def test_lovelace_resource_already_current(hass: HomeAssistant) -> None:
     """A current resource entry is left untouched."""
-    resources = _FakeResources([{"id": "ours", "url": _CARD_URL}])
+    resources = _FakeResources([{"id": "ours", "url": _CARD_URL, "type": "js"}])
     hass.data["lovelace"] = SimpleNamespace(resources=resources)
 
     await setup_terramow(hass)
@@ -495,4 +506,4 @@ async def test_lovelace_resource_retries_after_start(hass: HomeAssistant) -> Non
     hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
     await hass.async_block_till_done()
 
-    assert resources.created == [{"res_type": "module", "url": _CARD_URL}]
+    assert resources.created == [{"res_type": "js", "url": _CARD_URL}]
