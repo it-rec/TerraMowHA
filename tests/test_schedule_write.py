@@ -45,6 +45,10 @@ def _attempt_label(data: dict[str, Any]) -> str:
     """Mirror the hub's candidate labels from a write payload."""
     cmd = data["cmd_type"]
     extras = [k for k in data if k not in ("cmd_type", "seq")]
+    if isinstance(cmd, int):
+        return f"cmd{cmd}_schedule_list"
+    if cmd == "SCHEDULE_CMD_TYPE_GET" and "schedule_list" in data:
+        return "get_with_list"
     if cmd == "SCHEDULE_CMD_TYPE_SET":
         return "set_schedule_list"
     if cmd == "SCHEDULE_CMD_TYPE_UPDATE":
@@ -139,7 +143,7 @@ class FakeDevice:
         if topic == "data_point/122/app":
             data = json.loads(payload)
             cmd = data.get("cmd_type")
-            if cmd == "SCHEDULE_CMD_TYPE_GET":
+            if cmd == "SCHEDULE_CMD_TYPE_GET" and "schedule_list" not in data:
                 self._reply(
                     122,
                     {
@@ -152,7 +156,10 @@ class FakeDevice:
                 label = _attempt_label(data)
                 code = self.ack_codes.get(label, 0)
                 if code == 0 and label in self.accept_fields:
-                    if label == "set_schedule_list":
+                    if label.startswith("cmd") or label in (
+                        "set_schedule_list",
+                        "get_with_list",
+                    ):
                         # full-replace semantics; re-id new entries (id 0)
                         items = data["schedule_list"]["items"]
                         next_id = max(
@@ -414,6 +421,48 @@ async def test_unload_keeps_services_while_other_entry_loaded(
 
     assert await hass.config_entries.async_unload(entry_one.entry_id)
     assert hass.services.has_service(DOMAIN, SERVICE_ADD_SCHEDULE)
+
+
+async def test_numeric_verb_probe_on_empty_schedule(
+    hass: HomeAssistant,
+) -> None:
+    """With an empty schedule, numeric verbs are probed; cmd3 wins here."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    device = FakeDevice(hub, accept_fields={"cmd3_schedule_list"})
+
+    item_id = await hub.async_add_schedule(dict(ITEM))
+    assert item_id == 1
+    assert hub._schedule_write_field == "cmd3_schedule_list"
+    labels = [_attempt_label(a) for a in device.write_attempts]
+    assert "cmd1_schedule_list" in labels and "cmd3_schedule_list" in labels
+
+    # Deleting reuses the proven numeric verb with replace semantics
+    hub._last_control_time -= 10
+    await hub.async_delete_schedule(1)
+    assert device.items == []
+    assert _attempt_label(device.write_attempts[-1]) == "cmd3_schedule_list"
+
+
+async def test_numeric_verbs_gated_off_with_existing_slots(
+    hass: HomeAssistant,
+) -> None:
+    """Numeric probing must never run against a non-empty schedule."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    device = FakeDevice(hub, items=[_device_item(0)], accept_fields=set())
+
+    other = TerraMowHub.build_schedule_item(
+        week_days=["WEEK_DAY_MONDAY"],
+        start_hour=10,
+        start_minute=0,
+        end_hour=11,
+        end_minute=0,
+    )
+    with pytest.raises(HomeAssistantError):
+        await hub.async_add_schedule(other)
+    labels = [_attempt_label(a) for a in device.write_attempts]
+    assert not any(label.startswith("cmd") and label[3].isdigit() for label in labels)
 
 
 async def test_schedule_items_match_edge_cases() -> None:

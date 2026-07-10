@@ -906,8 +906,8 @@ class TerraMowHub:
         return None
 
     def _ordered_candidates(
-        self, candidates: list[tuple[str, str, dict[str, Any]]]
-    ) -> list[tuple[str, str, dict[str, Any]]]:
+        self, candidates: list[tuple[str, str | int, dict[str, Any]]]
+    ) -> list[tuple[str, str | int, dict[str, Any]]]:
         """Move a previously-proven payload shape to the front."""
         preferred = self._schedule_write_field
         if preferred is None:
@@ -962,11 +962,32 @@ class TerraMowHub:
                     {"schedule_item": item},
                 ),
                 ("add_schedule", "SCHEDULE_CMD_TYPE_ADD", {"schedule": item}),
+                # GET doubling as SET when a list is present — worst case it
+                # behaves as a plain read, so this shape is always safe.
+                (
+                    "get_with_list",
+                    "SCHEDULE_CMD_TYPE_GET",
+                    {"schedule_list": {"items": full_items}},
+                ),
+                # Numeric verb probing: protobuf-JSON accepts enum NUMBERS,
+                # so unknown enum NAMES (silently dropped) can be bypassed by
+                # probing the values around GET. Gated on an EMPTY schedule —
+                # an unknown verb given a list could have delete semantics,
+                # which must never run against real slots.
+                *(
+                    (
+                        f"cmd{verb}_schedule_list",
+                        verb,
+                        {"schedule_list": {"items": [{"id": 0, **item}]}},
+                    )
+                    for verb in (1, 2, 3, 4, 5, 6)
+                    if not existing_items
+                ),
             ]
         )
         codes: list[str] = []
         for label, cmd_type, fragment in candidates:
-            command = {
+            command: dict[str, Any] = {
                 "cmd_type": cmd_type,
                 "seq": self.get_cmd_seq(),
                 **fragment,
@@ -1010,7 +1031,7 @@ class TerraMowHub:
             for entry in schedule_list.get("items") or []
             if isinstance(entry, dict) and entry.get("id") != item_id
         ]
-        candidates: list[tuple[str, str, dict[str, Any]]] = [
+        candidates: list[tuple[str, str | int, dict[str, Any]]] = [
             ("delete_id", "SCHEDULE_CMD_TYPE_DELETE", {"id": item_id}),
             ("delete_item_id", "SCHEDULE_CMD_TYPE_DELETE", {"item_id": item_id}),
             ("delete_ids", "SCHEDULE_CMD_TYPE_DELETE", {"ids": [item_id]}),
@@ -1021,6 +1042,15 @@ class TerraMowHub:
                 {"schedule_list": {"items": remaining_items}},
             ),
         ]
+        # A numeric verb proven by a successful ADD very likely has
+        # replace-list semantics — reuse it with the target removed.
+        proven = self._schedule_write_field
+        if proven and proven.startswith("cmd") and "_schedule_list" in proven:
+            verb = int(proven.removeprefix("cmd").split("_")[0])
+            candidates.insert(
+                0,
+                (proven, verb, {"schedule_list": {"items": remaining_items}}),
+            )
         codes: list[str] = []
         for label, cmd_type, fragment in candidates:
             command = {
