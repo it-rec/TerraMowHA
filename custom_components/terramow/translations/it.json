@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Impossibile inviare il comando al robot tosaerba — è offline o non raggiungibile tramite MQTT. Verifica che sia acceso e connesso alla rete, quindi riprova."
     },
+    "command_rejected": {
+      "message": "Il rasaerba ha rifiutato il comando (codice errore {code})."
+    },
     "command_rate_limited": {
       "message": "È appena stato inviato un altro comando al robot tosaerba. Attendi un momento e riprova."
     }

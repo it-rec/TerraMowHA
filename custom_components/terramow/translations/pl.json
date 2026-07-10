@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Nie udało się wysłać polecenia do kosiarki — jest offline lub nieosiągalna przez MQTT. Sprawdź, czy kosiarka jest włączona i połączona z siecią, a następnie spróbuj ponownie."
     },
+    "command_rejected": {
+      "message": "Kosiarka odrzuciła polecenie (kod błędu {code})."
+    },
     "command_rate_limited": {
       "message": "Do kosiarki właśnie wysłano inne polecenie. Poczekaj chwilę i spróbuj ponownie."
     }

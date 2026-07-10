@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "无法向割草机发送命令——它已离线或无法通过 MQTT 访问。请确认割草机已开机并连接到网络，然后重试。"
     },
+    "command_rejected": {
+      "message": "The mower rejected the command (error code {code})."
+    },
     "command_rate_limited": {
       "message": "刚刚已向割草机发送了另一条命令。请稍候片刻再试。"
     }

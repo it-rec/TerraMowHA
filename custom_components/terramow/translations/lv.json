@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Komandu neizdevās nosūtīt zāles pļāvējam — tas ir bezsaistē vai nav sasniedzams caur MQTT. Pārliecinieties, ka pļāvējs ir ieslēgts un pievienots tīklam, un mēģiniet vēlreiz."
     },
+    "command_rejected": {
+      "message": "Pļāvējs noraidīja komandu (kļūdas kods {code})."
+    },
     "command_rate_limited": {
       "message": "Zāles pļāvējam tikko tika nosūtīta cita komanda. Uzgaidiet mirkli un mēģiniet vēlreiz."
     }

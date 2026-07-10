@@ -84,6 +84,20 @@ class CompatibilityStatus:
 # Data point ID used to obtain version compatibility information
 COMPATIBILITY_INFO_DP = 127
 
+# dp_119: generic per-command acknowledgement channel. The device echoes a
+# command's seq with code 0 (OK) or a non-zero error code.
+COMMAND_ACK_DP = 119
+
+# How long a confirmed command waits for its dp_119 ack before falling back
+# to optimistic (fire-and-forget) semantics. Older firmware may not ack every
+# command, so a missing ack is not treated as a failure.
+COMMAND_ACK_TIMEOUT = 5.0
+
+# App-direction topic of the dp_122 schedule channel. The vendor app writes
+# schedule changes (ADD/DELETE) here; the hub captures them at DEBUG level so
+# the exact write payload can be documented from real traffic.
+SCHEDULE_APP_TOPIC = "data_point/122/app"
+
 # Maintenance cycle constants (unit: minutes)
 # Recommended blade cleaning cycle: 240 hours = 240 * 60 = 14400 minutes
 BLADE_MAINTENANCE_CYCLE_MINUTES = 14400

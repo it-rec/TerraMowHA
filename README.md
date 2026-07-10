@@ -53,6 +53,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - **Repair issues** — actionable dashboard cards for incompatible firmware and for due blade / base-station maintenance
 - Diagnostics download for easy bug reports
 - Translated into 33 languages (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
+- **Confirmed commands** — zone mowing waits for the device's dp_119 acknowledgement and reports rejections instead of silently "succeeding"
 - MQTT based local push communication — no cloud required
 
 ### Supported entities

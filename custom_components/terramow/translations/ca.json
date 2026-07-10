@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "No s'ha pogut enviar l'ordre a la gespadora — està fora de línia o no és accessible per MQTT. Comproveu que estigui engegada i connectada a la xarxa i torneu-ho a provar."
     },
+    "command_rejected": {
+      "message": "El tallagespa ha rebutjat l'ordre (codi d'error {code})."
+    },
     "command_rate_limited": {
       "message": "Acabeu d'enviar una altra ordre a la gespadora. Espereu un moment i torneu-ho a provar."
     }

@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "A parancsot nem sikerült elküldeni a fűnyírónak — offline vagy nem érhető el MQTT-n keresztül. Ellenőrizze, hogy a fűnyíró be van kapcsolva és csatlakozik a hálózathoz, majd próbálja újra."
     },
+    "command_rejected": {
+      "message": "A fűnyíró elutasította a parancsot (hibakód: {code})."
+    },
     "command_rate_limited": {
       "message": "Az imént egy másik parancsot küldtek a fűnyírónak. Várjon egy pillanatot, és próbálja újra."
     }

@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Não foi possível enviar o comando ao robô corta-relva — está offline ou inacessível por MQTT. Verifique se está ligado e conectado à rede e tente novamente."
     },
+    "command_rejected": {
+      "message": "O corta-relva rejeitou o comando (código de erro {code})."
+    },
     "command_rate_limited": {
       "message": "Acabou de ser enviado outro comando ao robô corta-relva. Aguarde um momento e tente novamente."
     }

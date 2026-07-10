@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Der Befehl konnte nicht an den Mäher gesendet werden – er ist offline oder über MQTT nicht erreichbar. Stelle sicher, dass der Mäher eingeschaltet und mit dem Netzwerk verbunden ist, und versuche es erneut."
     },
+    "command_rejected": {
+      "message": "Der Mäher hat den Befehl abgelehnt (Fehlercode {code})."
+    },
     "command_rate_limited": {
       "message": "Es wurde gerade ein anderer Befehl an den Mäher gesendet. Bitte warte einen Moment und versuche es erneut."
     }

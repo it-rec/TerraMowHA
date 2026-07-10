@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Käsku ei õnnestunud muruniidukile saata — see on võrguühenduseta või MQTT kaudu kättesaamatu. Veenduge, et niiduk on sisse lülitatud ja võrku ühendatud, ning proovige uuesti."
     },
+    "command_rejected": {
+      "message": "Niiduk lükkas käsu tagasi (veakood {code})."
+    },
     "command_rate_limited": {
       "message": "Muruniidukile saadeti just teine käsk. Oodake hetk ja proovige uuesti."
     }

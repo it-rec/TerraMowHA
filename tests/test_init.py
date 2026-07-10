@@ -142,6 +142,7 @@ async def test_start_select_region_service_dispatches_to_hub(
 
     entry = _entry(hass)
     hub = MagicMock()
+    hub.async_start_select_region_clean = AsyncMock()
     basic_data = TerraMowBasicData(
         host="192.0.2.10", password="secret", entry_id=entry.entry_id
     )
@@ -163,7 +164,7 @@ async def test_start_select_region_service_dispatches_to_hub(
         {"entity_id": entity_id, "region_ids": [1, 2]},
         blocking=True,
     )
-    hub.start_select_region_clean.assert_called_once_with([1, 2])
+    hub.async_start_select_region_clean.assert_awaited_once_with([1, 2])
 
 
 async def test_start_select_region_service_rejects_unknown_entity(

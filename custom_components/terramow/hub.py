@@ -32,6 +32,8 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
+    COMMAND_ACK_DP,
+    COMMAND_ACK_TIMEOUT,
     COMPATIBILITY_INFO_DP,
     CONF_SERIAL,
     DOMAIN,
@@ -46,6 +48,7 @@ from .const import (
     PATH_HISTORY_META_TOPIC,
     PATH_META_TOPIC,
     POSE_TOPIC,
+    SCHEDULE_APP_TOPIC,
     CompatibilityStatus,
 )
 from .issues import (
@@ -328,6 +331,15 @@ class TerraMowHub:
         self._is_upgrading: bool | None = None
         self._power_mode: str | None = None
 
+        # dp_119 command acknowledgements: confirmed commands park a future
+        # here keyed by their seq; on_command_ack resolves it with the code.
+        # Only touched from the event loop.
+        self._pending_acks: dict[int, asyncio.Future[int]] = {}
+        self._last_command_ack: dict[str, Any] = {}  # Last dp_119 ack (diagnostics)
+        # Captured app-direction dp_122 schedule writes (epoch, payload) —
+        # source material for documenting the ADD/DELETE format.
+        self._schedule_app_captures: deque[tuple[float, str]] = deque(maxlen=20)
+
         self.cmd_seq = random.randint(0, 0xFFFFFFFF)  # Generate a random command sequence number
         # get_cmd_seq is reachable from the paho network thread (compatibility
         # request on connect) and from executor threads (sync command senders),
@@ -365,6 +377,8 @@ class TerraMowHub:
                 dp_id: list(history)
                 for dp_id, history in list(self._unknown_dp_history.items())
             },
+            "last_command_ack": dict(self._last_command_ack),
+            "schedule_app_captures": list(self._schedule_app_captures),
         }
 
     def register_state_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
@@ -535,6 +549,7 @@ class TerraMowHub:
         self.register_callback(134, self.on_state_flag_134)
         self.register_callback(118, self.on_map_save_progress)
         self.register_callback(150, self.on_advanced_settings)
+        self.register_callback(COMMAND_ACK_DP, self.on_command_ack)
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
 
     async def on_global_params(self, payload: str) -> None:
@@ -906,6 +921,79 @@ class TerraMowHub:
 
         self._notify_state_listeners()
 
+    async def on_command_ack(self, payload: str) -> None:
+        """Handle a dp_119 command acknowledgement.
+
+        The device echoes a command's ``seq`` with ``code`` 0 (OK) or an
+        error code. Confirmed commands (``async_publish_with_ack``) wait on
+        a parked future; anything else is bookkeeping — rejected
+        fire-and-forget commands are surfaced as a warning so failures are
+        at least visible in the log.
+        """
+        try:
+            data = json.loads(payload)
+            seq = int(data.get("seq", -1))
+            code = int(data.get("code", 0))
+        except (json.JSONDecodeError, TypeError, ValueError):
+            _LOGGER.warning("Invalid dp_119 command ack payload: %s", payload[:200])
+            return
+        self._last_command_ack = {"seq": seq, "code": code}
+        future = self._pending_acks.pop(seq, None)
+        if future is not None:
+            if not future.done():
+                future.set_result(code)
+        elif code != 0:
+            _LOGGER.warning(
+                "Device rejected command seq=%s with code=%s", seq, code
+            )
+
+    @property
+    def last_command_ack(self) -> dict[str, Any]:
+        """Get the last dp_119 command acknowledgement (for diagnostics)."""
+        return self._last_command_ack
+
+    async def async_publish_with_ack(
+        self, dp_id: int, data: dict[str, Any], timeout: float = COMMAND_ACK_TIMEOUT
+    ) -> int | None:
+        """Publish a command and wait for its dp_119 acknowledgement.
+
+        Returns the ack code (0 = OK) or ``None`` when no ack arrived within
+        the timeout — older firmware doesn't ack every command, so a missing
+        ack keeps the optimistic fire-and-forget semantics. A non-zero code
+        raises a translated ``HomeAssistantError`` so service calls report
+        the device's rejection instead of silently "succeeding".
+
+        Must be called from the event loop; ``data`` must carry a ``seq``.
+        """
+        seq = int(data["seq"])
+        future: asyncio.Future[int] = self.hass.loop.create_future()
+        self._pending_acks[seq] = future
+        try:
+            self.publish_data_point(dp_id, data)
+            code = await asyncio.wait_for(future, timeout)
+        except TimeoutError:
+            _LOGGER.debug(
+                "No dp_119 ack for command seq=%s within %.1fs; assuming ok",
+                seq,
+                timeout,
+            )
+            return None
+        finally:
+            self._pending_acks.pop(seq, None)
+        if code != 0:
+            _LOGGER.warning(
+                "Device rejected command dp_%s seq=%s with code=%s",
+                dp_id,
+                seq,
+                code,
+            )
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="command_rejected",
+                translation_placeholders={"code": str(code)},
+            )
+        return code
+
     async def on_compatibility_info(self, payload: str) -> None:
         """Handle compatibility info updates (dp_127)."""
         _LOGGER.debug("Raw compatibility info payload: %s", payload)
@@ -999,6 +1087,11 @@ class TerraMowHub:
             # above the historical 0-200 range; the regex dispatcher in
             # on_mqtt_message already handles arbitrary ids.
             client.subscribe("data_point/+/robot")
+            # Capture app-direction schedule writes: the vendor app's dp_122
+            # ADD/DELETE payloads are undocumented, and logging them (DEBUG)
+            # is how the write format gets reverse-engineered from real
+            # traffic for a future editable schedule.
+            client.subscribe(SCHEDULE_APP_TOPIC)
             # Subscribe to the map info topic (for older firmware compatibility)
             client.subscribe(MAP_INFO_TOPIC)
             _LOGGER.debug("Subscribed to %s topic", MAP_INFO_TOPIC)
@@ -1083,6 +1176,14 @@ class TerraMowHub:
                 _LOGGER.error("Failed to parse pose JSON: %s", payload[:200])
             except Exception as e:
                 _LOGGER.error("Error handling pose: %s", e)
+            return
+
+        # App-direction schedule traffic (vendor app / our own GET). Logged
+        # so the undocumented ADD/DELETE write format can be captured; also
+        # kept (bounded) for the diagnostics export.
+        if topic == SCHEDULE_APP_TOPIC:
+            _LOGGER.debug("Observed dp_122 app-direction message: %s", payload)
+            self._schedule_app_captures.append((time.time(), payload))
             return
 
         # Handle the map info topic
@@ -1895,19 +1996,39 @@ class TerraMowHub:
         }
         self.publish_data_point(103, command)
 
-    def start_select_region_clean(self, region_ids: list[int]) -> None:
-        """Start mowing for the specified sub-region IDs."""
-        if not region_ids:
-            _LOGGER.warning("start_select_region_clean called with empty region_ids")
-            return
-        self._ensure_command_allowed()
-        command = {
+    def _build_select_region_command(self, region_ids: list[int]) -> dict[str, Any]:
+        """Build the dp_103 selective-mow command payload."""
+        return {
             'seq': self.get_cmd_seq(),
             'mode': 'START_MODE_SELECT_REGION_CLEAN',
             'select_region': {'region_id': list(region_ids)}
         }
+
+    def start_select_region_clean(self, region_ids: list[int]) -> None:
+        """Start mowing for the specified sub-region IDs (fire-and-forget)."""
+        if not region_ids:
+            _LOGGER.warning("start_select_region_clean called with empty region_ids")
+            return
+        self._ensure_command_allowed()
         _LOGGER.info("START SELECT REGION CLEAN: regions=%s", region_ids)
-        self.publish_data_point(103, command)
+        self.publish_data_point(103, self._build_select_region_command(region_ids))
+
+    async def async_start_select_region_clean(self, region_ids: list[int]) -> None:
+        """Start a selective mow and wait for the device's dp_119 ack.
+
+        The confirmed variant of :meth:`start_select_region_clean`, used by
+        the ``terramow.start_select_region`` service (and through it the map
+        card's tap-to-mow flow) so a rejection reaches the caller instead of
+        silently succeeding.
+        """
+        if not region_ids:
+            _LOGGER.warning("start_select_region_clean called with empty region_ids")
+            return
+        self._ensure_command_allowed()
+        _LOGGER.info("START SELECT REGION CLEAN (confirmed): regions=%s", region_ids)
+        await self.async_publish_with_ack(
+            103, self._build_select_region_command(region_ids)
+        )
 
     def _start_edge_trim(self) -> None:
         """Start edge-trim mowing"""

@@ -313,7 +313,10 @@ def _async_register_services(hass: HomeAssistant) -> None:
             targets.append(basic_data.lawn_mower)
 
         for hub in targets:
-            hub.start_select_region_clean(region_ids)
+            # Confirmed write: waits for the device's dp_119 ack and raises
+            # on rejection, so callers (and the map card's toast) see real
+            # failures instead of optimistic success.
+            await hub.async_start_select_region_clean(region_ids)
 
     hass.services.async_register(
         DOMAIN,

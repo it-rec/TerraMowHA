@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Komut çim biçme makinesine gönderilemedi — çevrimdışı veya MQTT üzerinden erişilemiyor. Makinenin açık ve ağa bağlı olduğundan emin olun, ardından tekrar deneyin."
     },
+    "command_rejected": {
+      "message": "Çim biçme makinesi komutu reddetti (hata kodu {code})."
+    },
     "command_rate_limited": {
       "message": "Çim biçme makinesine az önce başka bir komut gönderildi. Lütfen bir an bekleyip tekrar deneyin."
     }

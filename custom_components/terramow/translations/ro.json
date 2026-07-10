@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Comanda nu a putut fi trimisă către mașina de tuns iarba — este offline sau inaccesibilă prin MQTT. Verificați dacă este pornită și conectată la rețea, apoi încercați din nou."
     },
+    "command_rejected": {
+      "message": "Mașina de tuns a respins comanda (cod de eroare {code})."
+    },
     "command_rate_limited": {
       "message": "Tocmai a fost trimisă o altă comandă către mașina de tuns iarba. Așteptați un moment și încercați din nou."
     }

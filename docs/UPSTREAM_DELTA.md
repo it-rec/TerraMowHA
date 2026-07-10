@@ -38,7 +38,10 @@ All upstream commits after v0.3.0 are already covered by the fork:
   base-station (30 day) maintenance (from dp_126 / dp_125), which clear
   themselves once resolved.
 - **Diagnostics** (`diagnostics.py`): a redacted JSON snapshot for bug reports.
-- **`terramow.start_select_region` service** with translated exceptions.
+- **`terramow.start_select_region` service** with translated exceptions — a
+  **confirmed write**: it waits for the device's dp_119 command
+  acknowledgement and raises on rejection (rejected fire-and-forget commands
+  are logged; the last ack ships in diagnostics).
 - **Reauthentication** and **reconfigure** flows, **Zeroconf/mDNS discovery**
   (`_mqtt._tcp.local.`, `terramow*`), and an **options flow** (map resolution).
 - **Firmware update entity** and version-compatibility sensor.

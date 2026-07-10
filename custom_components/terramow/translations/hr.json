@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Naredbu nije bilo moguće poslati kosilici — nije povezana ili nedostupna putem MQTT-a. Provjerite je li kosilica uključena i spojena na mrežu te pokušajte ponovno."
     },
+    "command_rejected": {
+      "message": "Kosilica je odbila naredbu (kôd pogreške {code})."
+    },
     "command_rate_limited": {
       "message": "Kosilici je upravo poslana druga naredba. Pričekajte trenutak i pokušajte ponovno."
     }

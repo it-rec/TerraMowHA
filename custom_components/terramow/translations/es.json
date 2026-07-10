@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "No se pudo enviar el comando al robot cortacésped — está desconectado o no es accesible por MQTT. Comprueba que esté encendido y conectado a la red e inténtalo de nuevo."
     },
+    "command_rejected": {
+      "message": "El cortacésped rechazó el comando (código de error {code})."
+    },
     "command_rate_limited": {
       "message": "Se acaba de enviar otro comando al robot cortacésped. Espera un momento e inténtalo de nuevo."
     }

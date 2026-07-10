@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Příkaz se nepodařilo odeslat do sekačky — je offline nebo nedostupná přes MQTT. Zkontrolujte, že je sekačka zapnutá a připojená k síti, a zkuste to znovu."
     },
+    "command_rejected": {
+      "message": "Sekačka příkaz odmítla (kód chyby {code})."
+    },
     "command_rate_limited": {
       "message": "Do sekačky byl právě odeslán jiný příkaz. Chvíli počkejte a zkuste to znovu."
     }

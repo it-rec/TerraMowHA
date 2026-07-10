@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Det gick inte att skicka kommandot till gräsklipparen — den är offline eller inte nåbar via MQTT. Kontrollera att gräsklipparen är påslagen och ansluten till nätverket och försök igen."
     },
+    "command_rejected": {
+      "message": "Gräsklipparen avvisade kommandot (felkod {code})."
+    },
     "command_rate_limited": {
       "message": "Ett annat kommando skickades just till gräsklipparen. Vänta en stund och försök igen."
     }

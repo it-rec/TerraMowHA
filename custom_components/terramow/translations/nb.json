@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Kommandoen kunne ikke sendes til gressklipperen — den er frakoblet eller utilgjengelig via MQTT. Kontroller at gressklipperen er slått på og koblet til nettverket, og prøv igjen."
     },
+    "command_rejected": {
+      "message": "Gressklipperen avviste kommandoen (feilkode {code})."
+    },
     "command_rate_limited": {
       "message": "Det ble nettopp sendt en annen kommando til gressklipperen. Vent et øyeblikk og prøv igjen."
     }

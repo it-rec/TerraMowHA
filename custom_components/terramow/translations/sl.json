@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Ukaza ni bilo mogoče poslati kosilnici — ni povezana ali ni dosegljiva prek MQTT. Preverite, ali je kosilnica vklopljena in povezana z omrežjem, ter poskusite znova."
     },
+    "command_rejected": {
+      "message": "Kosilnica je zavrnila ukaz (koda napake {code})."
+    },
     "command_rate_limited": {
       "message": "Kosilnici je bil pravkar poslan drug ukaz. Počakajte trenutek in poskusite znova."
     }

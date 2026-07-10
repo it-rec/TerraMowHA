@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Kan de opdracht niet naar de maaier sturen — deze is offline of niet bereikbaar via MQTT. Controleer of de maaier is ingeschakeld en met het netwerk is verbonden en probeer het opnieuw."
     },
+    "command_rejected": {
+      "message": "De maaier heeft de opdracht geweigerd (foutcode {code})."
+    },
     "command_rate_limited": {
       "message": "Er is zojuist een andere opdracht naar de maaier gestuurd. Wacht even en probeer het opnieuw."
     }

@@ -521,6 +521,9 @@
     "command_not_delivered": {
       "message": "Couldn't send the command to the mower — it is offline or unreachable over MQTT. Check that the mower is powered on and connected to the network, then try again."
     },
+    "command_rejected": {
+      "message": "The mower rejected the command (error code {code})."
+    },
     "command_rate_limited": {
       "message": "Another command was just sent to the mower. Please wait a moment and try again."
     }
