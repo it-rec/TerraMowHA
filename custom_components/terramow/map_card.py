@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import math
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -36,13 +37,14 @@ from homeassistant.helpers import entity_registry as er
 
 from .const import DOMAIN
 from .hub import TerraMowHub
+from .map_render import CUTTING_WIDTH_MM
 from .map_scene import build_scene, coerce_angle_radians, normalize_angle_radians
 
 _LOGGER = logging.getLogger(__name__)
 
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL.
-CARD_VERSION = "1.0.2"
+CARD_VERSION = "1.1.0"
 
 CARD_URL_PATH = "/terramow-frontend/terramow-map-card.js"
 
@@ -206,25 +208,13 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
                 }
             )
 
-    bounds: list[int] | None = None
-    all_points = scene["all_points"]
-    if all_points:
-        xs = [point[0] for point in all_points]
-        ys = [point[1] for point in all_points]
-        bounds = [
-            int(math.floor(min(xs))),
-            int(math.floor(min(ys))),
-            int(math.ceil(max(xs))),
-            int(math.ceil(max(ys))),
-        ]
-
-    return {
+    payload: dict[str, Any] = {
         "map_id": map_data.get("id"),
         "map_name": map_data.get("name"),
         "map_state": map_data.get("map_state"),
         "total_area": map_data.get("total_area"),
+        "cutting_width": CUTTING_WIDTH_MM,
         "map_extent": _poly(scene["map_extent"]),
-        "bounds": bounds,
         "station": station,
         "regions": regions,
         "forbidden_zones": _polys(scene["forbidden_zones"]),
@@ -246,6 +236,59 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
         "current_path": _path_pts(scene["current_path_points"]),
         "history_path": _path_pts(scene["history_path_points"]),
     }
+    # Bounds over the static geometry only — NOT the paths. A growing path
+    # would otherwise shift the bounds on every mowing tick, defeating both
+    # the paths_append delta and a stable fit-to-view on the card.
+    payload["bounds"] = _geometry_bounds(payload)
+    return payload
+
+
+def _geometry_bounds(payload: dict[str, Any]) -> list[int] | None:
+    """Bounding box [minx, miny, maxx, maxy] of the payload's geometry."""
+    points = list(_iter_geometry_points(payload))
+    if not points:
+        return None
+    xs = [point[0] for point in points]
+    ys = [point[1] for point in points]
+    return [min(xs), min(ys), max(xs), max(ys)]
+
+
+def _iter_geometry_points(payload: dict[str, Any]) -> Iterator[list[int]]:
+    """Yield every static-geometry point of a scene payload."""
+    yield from payload["map_extent"]
+    for region in payload["regions"]:
+        yield from region["boundary"]
+        for line in region["edge_lines"]:
+            yield from line
+        for sub in region["sub_regions"]:
+            yield from sub["boundary"]
+            if sub["center"]:
+                yield sub["center"]
+            for hole in sub["inner_boundaries"]:
+                yield from hole
+    for key in (
+        "forbidden_zones",
+        "physical_forbidden_zones",
+        "pass_through_zones",
+        "required_zones",
+        "obstacles",
+        "draw_regions",
+    ):
+        for polygon in payload[key]:
+            yield from polygon
+    for line in payload["virtual_walls"]:
+        yield from line
+    for tunnel in payload["tunnels"]:
+        for polygon in tunnel["polygons"]:
+            yield from polygon
+        for line in tunnel["polylines"]:
+            yield from line
+    for marker_points in payload["markers"].values():
+        yield from marker_points
+    if payload["move_target"]:
+        yield payload["move_target"]
+    if payload["station"]:
+        yield [payload["station"]["x"], payload["station"]["y"]]
 
 
 def build_robot_payload(hub: TerraMowHub) -> dict[str, Any] | None:
@@ -295,6 +338,31 @@ def build_robot_payload(hub: TerraMowHub) -> dict[str, Any] | None:
     return None
 
 
+def build_status_payload(hub: TerraMowHub) -> dict[str, Any]:
+    """Battery and current-job status for the card's HUD chips."""
+    battery: dict[str, Any] = {}
+    if hub.battery_level is not None:
+        battery["level"] = hub.battery_level
+    battery_status = hub.battery_status
+    if isinstance(battery_status, dict) and "charger_connected" in battery_status:
+        battery["charging"] = bool(battery_status.get("charger_connected"))
+
+    work: dict[str, Any] = {}
+    work_data = hub.current_work_data
+    if isinstance(work_data, dict) and work_data:
+        total_area = work_data.get("total_area") or 0
+        clean_area = work_data.get("clean_area") or 0
+        if total_area > 0:
+            work["progress"] = round(min(100.0 * clean_area / total_area, 100.0), 1)
+        if clean_area:
+            # clean_area is in units of 0.1 m²
+            work["area_m2"] = round(float(clean_area) / 10, 1)
+        if work_data.get("work_duration") is not None:
+            work["duration_s"] = work_data.get("work_duration")
+
+    return {"battery": battery or None, "work": work or None}
+
+
 def _resolve_hub(hass: HomeAssistant, entity_id: str) -> TerraMowHub | None:
     """Find the hub owning ``entity_id`` (any TerraMow entity works)."""
     registry = er.async_get(hass)
@@ -329,6 +397,10 @@ class _MapFeed:
         self.hub = hub
         self._unsubs: list[Any] = []
         self._scene_timer: Any | None = None
+        # Last pushed scene, split for delta detection: everything except the
+        # two path lists, and the path lists themselves.
+        self._last_geometry: dict[str, Any] | None = None
+        self._last_paths: dict[str, list[list[int]]] = {}
 
     @callback
     def start(self) -> None:
@@ -338,8 +410,11 @@ class _MapFeed:
             self.hub.register_path_callback(self._on_scene_source),
             self.hub.register_history_path_callback(self._on_scene_source),
             self.hub.register_pose_callback(self._on_pose),
-            # dp_108 charger state feeds the docked fallback pose
+            # dp_108 charger state feeds the docked fallback pose and the
+            # battery chip; dp_8 the battery level; dp_113 the job progress
             self.hub.register_callback(108, self._on_pose),
+            self.hub.register_callback(8, self._on_pose),
+            self.hub.register_callback(113, self._on_pose),
         ]
         self._push_scene()
         self._push_robot()
@@ -374,17 +449,56 @@ class _MapFeed:
         except Exception:  # pragma: no cover - defensive
             _LOGGER.exception("Failed to build map card scene")
             return
+
+        # Delta detection: during mowing the only thing that usually changes
+        # is the path growing at the tail. Sending just the appended points
+        # keeps the per-update payload tiny on large lawns.
+        paths = {
+            "current_path": payload["current_path"],
+            "history_path": payload["history_path"],
+        }
+        geometry = {
+            key: value for key, value in payload.items() if key not in paths
+        }
+        if self._last_geometry == geometry:
+            appends: dict[str, list[list[int]]] = {}
+            is_delta = True
+            for key, new_points in paths.items():
+                old_points = self._last_paths.get(key, [])
+                if (
+                    len(new_points) >= len(old_points)
+                    and new_points[: len(old_points)] == old_points
+                ):
+                    appends[f"{key}_append"] = new_points[len(old_points) :]
+                else:  # path reset/rewritten — fall back to a full scene
+                    is_delta = False
+                    break
+            if is_delta:
+                self._last_paths = paths
+                if any(appends.values()):
+                    self.connection.send_message(
+                        event_message(
+                            self.msg_id, {"type": "paths_append", **appends}
+                        )
+                    )
+                return  # nothing changed at all — push nothing
+
+        self._last_geometry = geometry
+        self._last_paths = paths
         self.connection.send_message(
-            event_message(
-                self.msg_id, {"type": "scene", "scene": payload}
-            )
+            event_message(self.msg_id, {"type": "scene", "scene": payload})
         )
 
     @callback
     def _push_robot(self) -> None:
         self.connection.send_message(
             event_message(
-                self.msg_id, {"type": "robot", "robot": build_robot_payload(self.hub)}
+                self.msg_id,
+                {
+                    "type": "robot",
+                    "robot": build_robot_payload(self.hub),
+                    **build_status_payload(self.hub),
+                },
             )
         )
 

@@ -15,6 +15,7 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import pytest
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
@@ -28,6 +29,7 @@ from custom_components.terramow.map_card import (
     WS_SUBSCRIBE_MAP,
     build_robot_payload,
     build_scene_payload,
+    build_status_payload,
 )
 
 HOST = "192.0.2.10"
@@ -56,6 +58,9 @@ MAP_DATA: dict[str, Any] = {
                     {"x": 0, "y": 8000},
                 ]
             },
+            "edge_segments": [
+                {"points": [{"x": 0, "y": 0}, {"x": 10000, "y": 0}]}
+            ],
             "sub_regions": [
                 {
                     "id": 7,
@@ -68,6 +73,15 @@ MAP_DATA: dict[str, Any] = {
                             {"x": 0, "y": 8000},
                         ]
                     },
+                    "inner_boundarys": [
+                        {
+                            "points": [
+                                {"x": 1000, "y": 1000},
+                                {"x": 1500, "y": 1000},
+                                {"x": 1500, "y": 1500},
+                            ]
+                        }
+                    ],
                     "center": {"x": 2500, "y": 4000},
                     "is_selected_for_mow": True,
                 },
@@ -96,7 +110,17 @@ MAP_DATA: dict[str, Any] = {
             }
         }
     ],
+    "virtual_walls": [
+        {"line": {"points": [{"x": 9000, "y": 500}, {"x": 9500, "y": 500}]}}
+    ],
+    "clean_info": {
+        "move_to_target_point": {"target_point": {"x": 4000, "y": 4200}}
+    },
 }
+
+# A degenerate sub-region (no boundary → no center) rides along in the map
+# to exercise the payload's optional-geometry branches.
+MAP_DATA["regions"][0]["sub_regions"].append({"id": 8, "boundary": {}})
 
 PATH_DATA: dict[str, Any] = {
     "id": 101,
@@ -218,6 +242,9 @@ async def test_subscribe_snapshot_and_updates(
     assert sub["center"] == [2500, 4000]
     assert len(scene["forbidden_zones"]) == 1
     assert len(scene["tunnels"]) == 1
+    assert len(scene["virtual_walls"]) == 1
+    assert scene["move_target"] == [4000, 4200]
+    assert scene["cutting_width"] == 320
     # Only the CLEANING points survive into the card path
     assert scene["current_path"] == [[100, 200], [300, 400]]
     assert scene["bounds"] is not None
@@ -338,6 +365,115 @@ async def test_subscribe_any_terramow_entity(
         if result.get("id") == 2:
             break
     assert result["success"]
+
+
+async def test_status_payload(hass: HomeAssistant) -> None:
+    """Battery and job status serialize for the HUD chips."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    assert build_status_payload(hub) == {"battery": None, "work": None}
+
+    hub._battery_level = 87
+    hub._battery_status = {"charger_connected": True}
+    hub._current_work_data = {
+        "total_area": 1000,
+        "clean_area": 250,
+        "work_duration": 600,
+    }
+    payload = build_status_payload(hub)
+    assert payload["battery"] == {"level": 87, "charging": True}
+    assert payload["work"] == {"progress": 25.0, "area_m2": 25.0, "duration_s": 600}
+
+    # Work data without any numeric fields yields no work chip payload
+    hub._current_work_data = {"type": "WORK_TYPE_NORMAL"}
+    assert build_status_payload(hub)["work"] is None
+
+
+async def test_paths_append_delta(
+    hass: HomeAssistant, hass_ws_client: Any, monkeypatch: Any
+) -> None:
+    """Growing paths stream as appends; rewrites fall back to a full scene."""
+    monkeypatch.setattr(map_card, "SCENE_PUSH_DEBOUNCE", 0)
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    hub._apply_map_data(MAP_DATA)
+    hub._apply_path_data(PATH_DATA)
+    await hass.async_block_till_done()
+
+    client = await hass_ws_client(hass)
+    await client.send_json(
+        {
+            "id": 1,
+            "type": WS_SUBSCRIBE_MAP,
+            "entity_id": _lawn_mower_entity_id(hass),
+        }
+    )
+    result = await client.receive_json()
+    assert result["success"]
+    await _drain(client)
+
+    # Path grows at the tail → only the new points travel
+    extended = {
+        **PATH_DATA,
+        "points": [
+            *PATH_DATA["points"],
+            {"position": {"x": 500, "y": 600}, "type": "PATH_POINT_TYPE_CLEANING"},
+        ],
+    }
+    hub._apply_path_data(extended)
+    await hass.async_block_till_done()
+    event = await client.receive_json()
+    assert event["event"]["type"] == "paths_append"
+    assert event["event"]["current_path_append"] == [[500, 600]]
+    assert event["event"]["history_path_append"] == []
+
+    # Unchanged data → no push at all
+    hub._apply_path_data(extended)
+    await hass.async_block_till_done()
+    with pytest.raises(TimeoutError):
+        async with asyncio.timeout(0.3):
+            await client.receive_json()
+
+    # Path rewritten from scratch → full scene again
+    rewritten = {
+        **PATH_DATA,
+        "points": [
+            {"position": {"x": 7, "y": 8}, "type": "PATH_POINT_TYPE_CLEANING"}
+        ],
+    }
+    hub._apply_path_data(rewritten)
+    await hass.async_block_till_done()
+    event = await client.receive_json()
+    assert event["event"]["type"] == "scene"
+    assert event["event"]["scene"]["current_path"] == [[7, 8]]
+
+
+async def test_bounds_stable_while_path_grows(hass: HomeAssistant) -> None:
+    """Bounds cover static geometry only, so a growing path can't move them."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    hub._apply_map_data(MAP_DATA)
+    hub._apply_path_data(PATH_DATA)
+    bounds_before = build_scene_payload(hub)["bounds"]
+
+    outside = {
+        **PATH_DATA,
+        "points": [
+            *PATH_DATA["points"],
+            {
+                "position": {"x": 99999, "y": 99999},
+                "type": "PATH_POINT_TYPE_CLEANING",
+            },
+        ],
+    }
+    hub._apply_path_data(outside)
+    assert build_scene_payload(hub)["bounds"] == bounds_before
 
 
 async def test_unsubscribe_cancels_pending_scene_push(

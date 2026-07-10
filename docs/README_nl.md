@@ -15,7 +15,7 @@ Dit is een Home Assistant-integratie voor TerraMow-robotmaaiers.
 **Bediening**
 - Grasmaaier-entiteit: starten, pauzeren en naar het dockingstation sturen
 - Zonemaaien: zoneselectie-entiteit en de service `terramow.start_select_region`
-- **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
+- **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position (activity-tinted, with follow mode), on-card start / pause / dock controls, battery & job-progress chips, optional mowed-coverage shading, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
 - Knop voor het maaien van randen
 - Instellingen vanuit Home Assistant: maaihoogte, snelheid, baanafstand, messnelheid, randmaaiafstand, hoofdrichtingsmodus en -hoeken, grondig hoekmaaien, randmaaimodus voor hoog gras
 - Onderhoud: resetknoppen voor de tellers van de messchijf en het basisstation

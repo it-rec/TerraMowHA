@@ -15,7 +15,7 @@ Dette er en Home Assistant-integration til TerraMow robotplæneklippere.
 **Styring**
 - Plæneklipper-entitet: start, pause og dock
 - Zoneklipning: entitet til zonevalg og tjenesten `terramow.start_select_region`
-- **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
+- **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position (activity-tinted, with follow mode), on-card start / pause / dock controls, battery & job-progress chips, optional mowed-coverage shading, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
 - Knap til kantklipning
 - Indstillinger fra Home Assistant: klippehøjde, hastighed, baneafstand, knivhastighed, kantklipningsafstand, hovedretningstilstand og -vinkler, grundig hjørneklipning, kantklipningstilstand til højt græs
 - Vedligeholdelse: nulstillingsknapper til tællerne for knivskiven og basestationen

@@ -28,20 +28,36 @@ the robot marker moves without image reloads.
 - **Drag** to pan, **scroll / pinch** to zoom, **double-tap** (or the ⛶
   button) to fit the whole lawn again.
 - **Tap a zone** to select it (tap again to deselect); an action bar
-  appears — press it to start mowing exactly the selected zones via
-  `terramow.start_select_region`. Zones the device itself reports as
-  selected for the running job are tinted in the accent color.
+  appears with the zone names and total area — press it to start mowing
+  exactly the selected zones via `terramow.start_select_region`. Zones
+  the device itself reports as selected for the running job are tinted
+  in the accent color.
+- **Tap the robot marker** to open the mower's more-info dialog.
+- **Contextual controls** (bottom right) offer exactly the actions that
+  make sense for the current state: start when docked or paused, pause
+  while mowing or returning, dock while working.
+- The **follow button** (crosshair, top right) keeps the view centered
+  on the mower while it works; panning or zooming releases it. The
+  marker is tinted by activity (mowing green, returning blue, paused
+  orange, error red) and pulses gently while mowing.
 
 **Options**
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `entity` | *required* | Any TerraMow entity; the lawn mower entity is the natural choice |
+| `show_controls` | `true` | Contextual start / pause / dock buttons on the card |
 | `zone_selection` | `true` | Tap zones to start a selective mow |
+| `show_coverage` | `false` | Shade the mowed swath at the true cutting width |
 | `show_current_path` | `true` | Draw the running job's mowing path |
 | `show_history_path` | `true` | Draw the previous job's path (faded) |
-| `show_hud` | `true` | Status chips (mower state, map name / area) |
+| `show_hud` | `true` | Status chips (state, battery, job progress, map) |
+| `rotation` | `0` | Rotate the map view (degrees) |
 | `fit_height` | `420` | Card canvas height in pixels |
+
+The card is wall-tablet friendly: static geometry is cached between
+frames, path updates stream as point deltas, and the live feed pauses
+automatically while the tab is hidden.
 
 **Notes**
 
