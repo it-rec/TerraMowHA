@@ -89,9 +89,12 @@ COMPATIBILITY_INFO_DP = 127
 COMMAND_ACK_DP = 119
 
 # How long a confirmed command waits for its dp_119 ack before falling back
-# to optimistic (fire-and-forget) semantics. Older firmware may not ack every
-# command, so a missing ack is not treated as a failure.
-COMMAND_ACK_TIMEOUT = 5.0
+# to optimistic (fire-and-forget) semantics. Field finding (V1000 fw28): the
+# device does NOT ack commands sent by this integration at all — dp_119 acks
+# observed there carry epoch-like seqs belonging to the mower's internal
+# (BLE/cloud) commander. The wait is therefore short; a missing ack is never
+# treated as a failure.
+COMMAND_ACK_TIMEOUT = 2.0
 
 # dp_122: full weekly schedule channel (GET/ADD/DELETE commands).
 SCHEDULE_DP = 122

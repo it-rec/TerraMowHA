@@ -93,6 +93,17 @@ async def async_get_config_entry_diagnostics(
             }
             for ts, topic, payload in unknown["app_dp_captures"]
         ],
+        # Messages on topics outside the documented namespace (via the "#"
+        # discovery subscription) — the hunt for the internal commander's
+        # channel. Times are UTC ISO-8601.
+        "unknown_topic_captures": [
+            {
+                "time": datetime.fromtimestamp(ts, tz=UTC).isoformat(),
+                "topic": topic,
+                "payload": payload,
+            }
+            for ts, topic, payload in unknown["unknown_topic_captures"]
+        ],
     }
     diagnostics["state"] = {
         "task_status": lawn_mower.task_status,

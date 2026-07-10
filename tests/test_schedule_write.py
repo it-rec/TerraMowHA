@@ -41,6 +41,33 @@ ITEM = TerraMowHub.build_schedule_item(
 )
 
 
+def _attempt_label(data: dict[str, Any]) -> str:
+    """Mirror the hub's candidate labels from a write payload."""
+    cmd = data["cmd_type"]
+    extras = [k for k in data if k not in ("cmd_type", "seq")]
+    if cmd == "SCHEDULE_CMD_TYPE_SET":
+        return "set_schedule_list"
+    if cmd == "SCHEDULE_CMD_TYPE_UPDATE":
+        return "update_schedule_list"
+    if cmd == "SCHEDULE_CMD_TYPE_SAVE":
+        return "save_schedule_list"
+    if cmd == "SCHEDULE_CMD_TYPE_DELETE":
+        return {
+            "id": "delete_id",
+            "item_id": "delete_item_id",
+            "ids": "delete_ids",
+            "item": "delete_item",
+        }[extras[0]]
+    if "schedule_type" in data:
+        return "add_inline"
+    return {
+        "schedule_list": "add_schedule_list",
+        "item": "add_item",
+        "schedule_item": "add_schedule_item",
+        "schedule": "add_schedule",
+    }[extras[0]]
+
+
 def _device_item(item_id: int) -> dict[str, Any]:
     """The slot as the device would report it in a GET response."""
     return {"id": item_id, **json.loads(json.dumps(ITEM))}
@@ -93,7 +120,11 @@ class FakeDevice:
         self.hub = hub
         self.items = items or []
         self.ack_codes = ack_codes or {}
-        self.accept_fields = accept_fields if accept_fields is not None else {"item", "id"}
+        self.accept_fields = (
+            accept_fields
+            if accept_fields is not None
+            else {"add_inline", "delete_id"}
+        )
         self.write_attempts: list[dict[str, Any]] = []
         hub.mqtt_client.publish.side_effect = self._on_publish
 
@@ -116,25 +147,39 @@ class FakeDevice:
                         "schedule_list": {"items": list(self.items)},
                     },
                 )
-            elif cmd in ("SCHEDULE_CMD_TYPE_ADD", "SCHEDULE_CMD_TYPE_DELETE"):
+            else:
                 self.write_attempts.append(data)
-                field = next(
-                    key for key in data if key not in ("cmd_type", "seq")
-                )
-                code = self.ack_codes.get(field, 0)
-                if code == 0 and field in self.accept_fields:
-                    if cmd == "SCHEDULE_CMD_TYPE_ADD":
-                        submitted = data[field]
-                        if field == "schedule_list":
-                            submitted = submitted["items"][0]
+                label = _attempt_label(data)
+                code = self.ack_codes.get(label, 0)
+                if code == 0 and label in self.accept_fields:
+                    if label == "set_schedule_list":
+                        # full-replace semantics; re-id new entries (id 0)
+                        items = data["schedule_list"]["items"]
+                        next_id = max(
+                            [e.get("id", 0) for e in items] + [0]
+                        ) + 1
+                        self.items = [
+                            e if e.get("id") else {**e, "id": next_id}
+                            for e in items
+                        ]
+                    elif cmd == "SCHEDULE_CMD_TYPE_ADD":
+                        submitted = dict(data)
+                        submitted.pop("cmd_type"), submitted.pop("seq")
+                        if label == "add_schedule_list":
+                            submitted = data["schedule_list"]["items"][0]
+                        elif label != "add_inline":
+                            (submitted,) = [
+                                v for k, v in submitted.items()
+                            ]
+                        submitted = {k: v for k, v in submitted.items() if k != "id"}
                         self.items.append(
                             {"id": len(self.items) + 1, **submitted}
                         )
-                    else:
+                    else:  # DELETE variants
                         target = data.get("id", data.get("item_id"))
-                        if field == "ids":
+                        if "ids" in data:
                             target = data["ids"][0]
-                        if field == "item":
+                        if "item" in data:
                             target = data["item"]["id"]
                         self.items = [
                             entry for entry in self.items if entry["id"] != target
@@ -153,9 +198,9 @@ async def test_add_schedule_first_candidate(hass: HomeAssistant) -> None:
 
     item_id = await hub.async_add_schedule(dict(ITEM))
     assert item_id == 1
-    assert hub._schedule_write_field == "item"
+    assert hub._schedule_write_field == "add_inline"
     assert len(device.write_attempts) == 1
-    assert "item" in device.write_attempts[0]
+    assert "schedule_type" in device.write_attempts[0]  # inline item fields
 
 
 async def test_add_schedule_falls_back_on_rejection(hass: HomeAssistant) -> None:
@@ -164,18 +209,15 @@ async def test_add_schedule_falls_back_on_rejection(hass: HomeAssistant) -> None
     hub = entry.runtime_data.lawn_mower
     device = FakeDevice(
         hub,
-        ack_codes={"item": 5},
-        accept_fields={"schedule_item"},
+        ack_codes={"add_inline": 5},
+        accept_fields={"add_schedule_list"},
     )
 
     item_id = await hub.async_add_schedule(dict(ITEM))
     assert item_id == 1
-    assert hub._schedule_write_field == "schedule_item"
-    fields = [
-        next(k for k in attempt if k not in ("cmd_type", "seq"))
-        for attempt in device.write_attempts
-    ]
-    assert fields == ["item", "schedule_item"]
+    assert hub._schedule_write_field == "add_schedule_list"
+    labels = [_attempt_label(a) for a in device.write_attempts]
+    assert labels == ["add_inline", "add_schedule_list"]
 
     # The proven shape is tried first on the next write
     hub._last_control_time -= 10  # step past the command rate limiter
@@ -188,14 +230,7 @@ async def test_add_schedule_falls_back_on_rejection(hass: HomeAssistant) -> None
             end_minute=0,
         )
     )
-    assert (
-        next(
-            k
-            for k in device.write_attempts[-1]
-            if k not in ("cmd_type", "seq")
-        )
-        == "schedule_item"
-    )
+    assert _attempt_label(device.write_attempts[-1]) == "add_schedule_list"
 
 
 async def test_add_schedule_acked_but_ignored_moves_on(
@@ -204,23 +239,26 @@ async def test_add_schedule_acked_but_ignored_moves_on(
     """An ack-0 shape whose slot never appears is not trusted."""
     entry = await setup_terramow(hass)
     hub = entry.runtime_data.lawn_mower
-    # everything acks 0, but only "schedule" actually mutates the schedule
-    device = FakeDevice(hub, accept_fields={"schedule"})
+    # everything acks 0, but only "set_schedule_list" actually mutates it
+    device = FakeDevice(hub, accept_fields={"set_schedule_list"})
 
     item_id = await hub.async_add_schedule(dict(ITEM))
     assert item_id == 1
-    assert hub._schedule_write_field == "schedule"
-    assert len(device.write_attempts) == 3  # item, schedule_item, schedule
+    assert hub._schedule_write_field == "set_schedule_list"
+    labels = [_attempt_label(a) for a in device.write_attempts]
+    assert labels == ["add_inline", "add_schedule_list", "set_schedule_list"]
 
 
 async def test_add_schedule_all_rejected(hass: HomeAssistant) -> None:
     """Total rejection raises with the attempted codes in the message."""
     entry = await setup_terramow(hass)
     hub = entry.runtime_data.lawn_mower
-    FakeDevice(
-        hub,
-        ack_codes={"item": 3, "schedule_item": 3, "schedule": 3, "schedule_list": 3},
-    )
+    labels = [
+        "add_inline", "add_schedule_list", "set_schedule_list",
+        "update_schedule_list", "save_schedule_list", "add_item",
+        "add_schedule_item", "add_schedule",
+    ]
+    FakeDevice(hub, ack_codes=dict.fromkeys(labels, 3))
 
     with pytest.raises(HomeAssistantError):
         await hub.async_add_schedule(dict(ITEM))
@@ -277,8 +315,7 @@ async def test_services_dispatch(hass: HomeAssistant) -> None:
         blocking=True,
     )
     assert len(device.items) == 1
-    added = device.write_attempts[0]["item"]
-    config = added["global_schedule_v2"]["basic_config"]
+    config = device.write_attempts[0]["global_schedule_v2"]["basic_config"]
     assert config["week_days"] == ["WEEK_DAY_TUESDAY", "WEEK_DAY_THURSDAY"]
     assert config["start_time"] == {"hour": 7, "minute": 45}
     assert config["end_time"] == {"hour": 9, "minute": 15}
@@ -302,10 +339,14 @@ async def test_delete_schedule_all_candidates_fail(hass: HomeAssistant) -> None:
     hub = entry.runtime_data.lawn_mower
 
     # all delete shapes rejected outright
+    delete_labels = [
+        "delete_id", "delete_item_id", "delete_ids", "delete_item",
+        "set_schedule_list",
+    ]
     FakeDevice(
         hub,
         items=[_device_item(3)],
-        ack_codes={"id": 4, "item_id": 4, "ids": 4, "item": 4},
+        ack_codes=dict.fromkeys(delete_labels, 4),
     )
     with pytest.raises(HomeAssistantError):
         await hub.async_delete_schedule(3)

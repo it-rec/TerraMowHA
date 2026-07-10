@@ -245,7 +245,8 @@ def test_on_mqtt_connect_subscribes_and_clears_error() -> None:
     subscribed = [c.args[0] for c in client.subscribe.call_args_list]
     assert "data_point/+/robot" in subscribed
     assert "data_point/+/app" in subscribed
-    assert client.subscribe.call_count == 8
+    assert "#" in subscribed
+    assert client.subscribe.call_count == 9
     assert hub.connection_error is False
     # a compatibility-info request was published
     assert hub.mqtt_client.publish.called

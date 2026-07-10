@@ -344,6 +344,9 @@ class TerraMowHub:
         # The dp_122 write payload shape proven to work on this device, once
         # a schedule write has succeeded (see async_add_schedule).
         self._schedule_write_field: str | None = None
+        # Messages seen on topics outside the documented namespace (via the
+        # "#" discovery subscription): (epoch, topic, payload) — bounded.
+        self._unknown_topic_captures: deque[tuple[float, str, str]] = deque(maxlen=50)
 
         self.cmd_seq = random.randint(0, 0xFFFFFFFF)  # Generate a random command sequence number
         # get_cmd_seq is reachable from the paho network thread (compatibility
@@ -384,6 +387,7 @@ class TerraMowHub:
             },
             "last_command_ack": dict(self._last_command_ack),
             "app_dp_captures": list(self._app_dp_captures),
+            "unknown_topic_captures": list(self._unknown_topic_captures),
         }
 
     def register_state_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
@@ -902,8 +906,8 @@ class TerraMowHub:
         return None
 
     def _ordered_candidates(
-        self, candidates: list[tuple[str, dict[str, Any]]]
-    ) -> list[tuple[str, dict[str, Any]]]:
+        self, candidates: list[tuple[str, str, dict[str, Any]]]
+    ) -> list[tuple[str, str, dict[str, Any]]]:
         """Move a previously-proven payload shape to the front."""
         preferred = self._schedule_write_field
         if preferred is None:
@@ -914,39 +918,71 @@ class TerraMowHub:
         """Add a weekly schedule slot; returns the device-assigned item id.
 
         Negotiates the undocumented ADD payload shape (see the section
-        comment above). Raises a translated error when every candidate is
-        rejected or none demonstrably lands in a follow-up GET.
+        comment above). Field evidence (V1000 fw28): the device never acks
+        this integration's commands on dp_119 and silently drops payloads it
+        cannot parse, so an unknown wrapper field and an unknown cmd enum
+        both look like "no ack" — the GET verification is the only reliable
+        judge. The candidates therefore include inline item fields (one
+        shared proto message), full-list replacement shapes (existing slots
+        preserved) and alternative command verbs.
         """
         self._ensure_command_allowed()
+        current = await self.async_refresh_full_schedule()
+        existing_items = [
+            entry for entry in current.get("items") or [] if isinstance(entry, dict)
+        ]
+        full_items = [*existing_items, {"id": 0, **item}]
         candidates = self._ordered_candidates(
             [
-                ("item", {"item": item}),
-                ("schedule_item", {"schedule_item": item}),
-                ("schedule", {"schedule": item}),
-                ("schedule_list", {"schedule_list": {"items": [item]}}),
+                ("add_inline", "SCHEDULE_CMD_TYPE_ADD", dict(item)),
+                (
+                    "add_schedule_list",
+                    "SCHEDULE_CMD_TYPE_ADD",
+                    {"schedule_list": {"items": [{"id": 0, **item}]}},
+                ),
+                (
+                    "set_schedule_list",
+                    "SCHEDULE_CMD_TYPE_SET",
+                    {"schedule_list": {"items": full_items}},
+                ),
+                (
+                    "update_schedule_list",
+                    "SCHEDULE_CMD_TYPE_UPDATE",
+                    {"schedule_list": {"items": full_items}},
+                ),
+                (
+                    "save_schedule_list",
+                    "SCHEDULE_CMD_TYPE_SAVE",
+                    {"schedule_list": {"items": full_items}},
+                ),
+                ("add_item", "SCHEDULE_CMD_TYPE_ADD", {"item": item}),
+                (
+                    "add_schedule_item",
+                    "SCHEDULE_CMD_TYPE_ADD",
+                    {"schedule_item": item},
+                ),
+                ("add_schedule", "SCHEDULE_CMD_TYPE_ADD", {"schedule": item}),
             ]
         )
         codes: list[str] = []
-        for field, fragment in candidates:
+        for label, cmd_type, fragment in candidates:
             command = {
-                "cmd_type": "SCHEDULE_CMD_TYPE_ADD",
+                "cmd_type": cmd_type,
                 "seq": self.get_cmd_seq(),
                 **fragment,
             }
             code = await self._async_wait_ack(SCHEDULE_DP, command)
-            _LOGGER.info("Schedule ADD attempt (field %r): ack=%s", field, code)
-            codes.append(f"{field}={code}")
+            _LOGGER.info("Schedule ADD attempt (%s): ack=%s", label, code)
+            codes.append(f"{label}={code}")
             if code is not None and code != 0:
                 continue  # clean rejection — try the next shape
             schedule_list = await self.async_refresh_full_schedule()
             item_id = self._find_schedule_item(schedule_list, item)
             if item_id is not None:
                 _LOGGER.info(
-                    "Schedule ADD succeeded with field %r (item id %s)",
-                    field,
-                    item_id,
+                    "Schedule ADD succeeded with %s (item id %s)", label, item_id
                 )
-                self._schedule_write_field = field
+                self._schedule_write_field = label
                 return item_id
         raise HomeAssistantError(
             translation_domain=DOMAIN,
@@ -969,22 +1005,32 @@ class TerraMowHub:
                 translation_key="schedule_item_not_found",
                 translation_placeholders={"item_id": str(item_id)},
             )
-        candidates: list[tuple[str, dict[str, Any]]] = [
-            ("id", {"id": item_id}),
-            ("item_id", {"item_id": item_id}),
-            ("ids", {"ids": [item_id]}),
-            ("item", {"item": {"id": item_id}}),
+        remaining_items = [
+            entry
+            for entry in schedule_list.get("items") or []
+            if isinstance(entry, dict) and entry.get("id") != item_id
+        ]
+        candidates: list[tuple[str, str, dict[str, Any]]] = [
+            ("delete_id", "SCHEDULE_CMD_TYPE_DELETE", {"id": item_id}),
+            ("delete_item_id", "SCHEDULE_CMD_TYPE_DELETE", {"item_id": item_id}),
+            ("delete_ids", "SCHEDULE_CMD_TYPE_DELETE", {"ids": [item_id]}),
+            ("delete_item", "SCHEDULE_CMD_TYPE_DELETE", {"item": {"id": item_id}}),
+            (
+                "set_schedule_list",
+                "SCHEDULE_CMD_TYPE_SET",
+                {"schedule_list": {"items": remaining_items}},
+            ),
         ]
         codes: list[str] = []
-        for field, fragment in candidates:
+        for label, cmd_type, fragment in candidates:
             command = {
-                "cmd_type": "SCHEDULE_CMD_TYPE_DELETE",
+                "cmd_type": cmd_type,
                 "seq": self.get_cmd_seq(),
                 **fragment,
             }
             code = await self._async_wait_ack(SCHEDULE_DP, command)
-            _LOGGER.info("Schedule DELETE attempt (field %r): ack=%s", field, code)
-            codes.append(f"{field}={code}")
+            _LOGGER.info("Schedule DELETE attempt (%s): ack=%s", label, code)
+            codes.append(f"{label}={code}")
             if code is not None and code != 0:
                 continue
             schedule_list = await self.async_refresh_full_schedule()
@@ -994,7 +1040,7 @@ class TerraMowHub:
                 if isinstance(entry, dict)
             }
             if item_id not in remaining:
-                _LOGGER.info("Schedule DELETE succeeded with field %r", field)
+                _LOGGER.info("Schedule DELETE succeeded with %s", label)
                 return
         raise HomeAssistantError(
             translation_domain=DOMAIN,
@@ -1313,6 +1359,13 @@ class TerraMowHub:
             # gets reverse-engineered from real app usage. Includes echoes of
             # our own commands — those are useful reference samples.
             client.subscribe(APP_DP_TOPIC_FILTER)
+            # Full-broker discovery: field evidence shows the mower's internal
+            # (BLE/cloud) commander gets dp_119 acks for commands that never
+            # transit the topics above — subscribe everything and record any
+            # message on a topic we do not already handle. Additional to the
+            # specific subscriptions on purpose: if the broker denies "#",
+            # nothing breaks; duplicate deliveries of known topics are benign.
+            client.subscribe("#")
             # Subscribe to the map info topic (for older firmware compatibility)
             client.subscribe(MAP_INFO_TOPIC)
             _LOGGER.debug("Subscribed to %s topic", MAP_INFO_TOPIC)
@@ -1422,7 +1475,11 @@ class TerraMowHub:
         # Parse the data_point topic using a regular expression
         match = TOPIC_PATTERN.fullmatch(topic)
         if not match:
-            _LOGGER.warning("Invalid topic format: %s", topic)
+            # Reached via the "#" discovery subscription: a topic outside the
+            # documented namespace. Recorded (bounded) for the diagnostics
+            # export — this is how the internal commander's channel gets found.
+            _LOGGER.debug("Observed unhandled topic %s: %s", topic, payload[:500])
+            self._unknown_topic_captures.append((time.time(), topic, payload[:500]))
             return
 
         try:
