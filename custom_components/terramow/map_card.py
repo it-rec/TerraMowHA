@@ -29,7 +29,8 @@ from homeassistant.components.websocket_api.connection import ActiveConnection
 from homeassistant.components.websocket_api.const import ERR_NOT_FOUND
 from homeassistant.components.websocket_api.decorators import websocket_command
 from homeassistant.components.websocket_api.messages import event_message
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 
@@ -69,12 +70,17 @@ async def async_setup_map_card(hass: HomeAssistant) -> None:
     # still be added manually as a Lovelace resource.
     if "frontend" in hass.config.components:
         add_extra_js_url(hass, f"{CARD_URL_PATH}?v={CARD_VERSION}")
+    await _async_try_register_lovelace_resource(hass)
+
+    websocket_api.async_register_command(hass, ws_subscribe_map)
+
+
+async def _async_try_register_lovelace_resource(hass: HomeAssistant) -> None:
+    """Register the Lovelace resource, logging instead of raising."""
     try:
         await _async_register_lovelace_resource(hass)
     except Exception as err:  # never let a Lovelace API change break setup
         _LOGGER.warning("Could not register the map card Lovelace resource: %s", err)
-
-    websocket_api.async_register_command(hass, ws_subscribe_map)
 
 
 async def _async_register_lovelace_resource(hass: HomeAssistant) -> None:
@@ -90,10 +96,25 @@ async def _async_register_lovelace_resource(hass: HomeAssistant) -> None:
     (read-only collection) is skipped silently.
     """
     lovelace = hass.data.get("lovelace")
+    if lovelace is None and not hass.is_running:
+        # Config-entry setup can beat lovelace during a cold boot; retry once
+        # everything is up instead of silently never registering.
+        async def _register_when_started(_event: Event) -> None:
+            await _async_try_register_lovelace_resource(hass)
+
+        hass.bus.async_listen_once(
+            EVENT_HOMEASSISTANT_STARTED, _register_when_started
+        )
+        return
     resources = getattr(lovelace, "resources", None)
     if resources is None and isinstance(lovelace, dict):  # pre-2024.8 layout
         resources = lovelace.get("resources")
     if resources is None or not hasattr(resources, "async_create_item"):
+        _LOGGER.debug(
+            "Lovelace storage-mode resources unavailable (yaml mode or no "
+            "lovelace); the card stays available via the extra-module list "
+            "or a manual resource"
+        )
         return
     if not getattr(resources, "loaded", True):
         await resources.async_load()
@@ -106,8 +127,10 @@ async def _async_register_lovelace_resource(hass: HomeAssistant) -> None:
             continue
         if item_url != url:  # stale cache-buster from an older version
             await resources.async_update_item(item["id"], {"url": url})
+            _LOGGER.info("Updated the map card Lovelace resource to %s", url)
         return
     await resources.async_create_item({"res_type": "module", "url": url})
+    _LOGGER.info("Registered the map card Lovelace resource %s", url)
 
 
 def _pt(point: tuple[float, float]) -> list[int]:

@@ -478,3 +478,21 @@ async def test_lovelace_resource_error_does_not_break_setup(
 
     assert entry.runtime_data.lawn_mower is not None
     assert "Could not register the map card Lovelace resource" in caplog.text
+
+
+async def test_lovelace_resource_retries_after_start(hass: HomeAssistant) -> None:
+    """When lovelace is not up yet during boot, registration retries on start."""
+    from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+    from homeassistant.core import CoreState
+
+    hass.set_state(CoreState.not_running)
+    await setup_terramow(hass)
+
+    # lovelace comes up before HA finishes starting
+    resources = _FakeResources([])
+    hass.data["lovelace"] = SimpleNamespace(resources=resources)
+    hass.set_state(CoreState.running)
+    hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
+    await hass.async_block_till_done()
+
+    assert resources.created == [{"res_type": "module", "url": _CARD_URL}]
