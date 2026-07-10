@@ -15,7 +15,7 @@ Ceci est une intégration Home Assistant pour les robots tondeuses TerraMow.
 **Contrôle**
 - Entité tondeuse : démarrer, mettre en pause et retourner à la station
 - Tonte par zones : entité de sélection de zone et service `terramow.start_select_region`
-- **Interactive map card** — pan/zoom vector map for dashboards with the live robot position, mowing path and tap-to-mow zone selection (auto-registered, `custom:terramow-map-card`)
+- **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
 - Bouton de tonte des bordures
 - Réglages depuis Home Assistant : hauteur de tonte, vitesse, espacement, vitesse des lames, distance de coupe des bordures, mode et angles de direction principale, coupe minutieuse des coins, mode de tonte des bordures en herbe haute
 - Entretien : boutons de réinitialisation des compteurs du disque de lames et de la station de base
@@ -107,7 +107,7 @@ type: custom:terramow-map-card
 entity: lawn_mower.terramow
 ```
 
-It renders the lawn as vectors (crisp at any zoom, follows your HA theme): zones, forbidden areas, virtual walls, the mowing path, the base station and the robot's live position. Drag to pan, scroll or pinch to zoom, double-tap to re-fit. **Tap one or more zones** and press the button that appears to mow exactly those zones (`terramow.start_select_region` under the hood). Options and details: see the [dashboard guide](en/dashboard.md#interactive-map-card). Live map data requires firmware HA module version 3 (same as the map camera).
+It renders the lawn as vectors (crisp at any zoom, follows your HA theme): zones, forbidden areas, virtual walls, the mowing path, the base station and the robot's live position. Drag to pan, scroll or pinch to zoom, double-tap to re-fit. **Tap one or more zones** and press the button that appears to mow exactly those zones (`terramow.start_select_region` under the hood). Options and details: see the [dashboard guide](en/dashboard.md#interactive-map-card). Live map data requires firmware HA module version 3 (same as the map camera). The card is also available in the dashboard card picker as **TerraMow Map Card**, with a full UI editor — no YAML needed.
 
 ### Diagnostics et dépannage
 
