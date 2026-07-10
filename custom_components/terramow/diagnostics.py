@@ -79,6 +79,18 @@ async def async_get_config_entry_diagnostics(
             ]
             for dp_id, entries in sorted(unknown["unknown_dp_history"].items())
         },
+        # Last dp_119 command acknowledgement (seq + code).
+        "last_command_ack": unknown["last_command_ack"],
+        # App-direction dp_122 schedule writes captured since the last restart
+        # — the source material for documenting the undocumented ADD/DELETE
+        # write format. Times are UTC ISO-8601.
+        "schedule_app_captures": [
+            {
+                "time": datetime.fromtimestamp(ts, tz=UTC).isoformat(),
+                "payload": payload,
+            }
+            for ts, payload in unknown["schedule_app_captures"]
+        ],
     }
     diagnostics["state"] = {
         "task_status": lawn_mower.task_status,
