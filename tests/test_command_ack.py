@@ -24,7 +24,6 @@ from custom_components.terramow import SERVICE_START_SELECT_REGION
 from custom_components.terramow.const import (
     CONF_SERIAL,
     DOMAIN,
-    SCHEDULE_APP_TOPIC,
 )
 from custom_components.terramow.hub import TerraMowHub
 
@@ -246,16 +245,22 @@ async def test_confirmed_select_region_ignores_empty_ids(
     hub.mqtt_client.publish.assert_not_called()
 
 
-async def test_schedule_app_capture(hass: HomeAssistant) -> None:
-    """App-direction dp_122 traffic is captured for the diagnostics export."""
+async def test_app_direction_capture(hass: HomeAssistant) -> None:
+    """App-direction traffic on ANY data point is captured with its topic."""
     entry = await setup_terramow(hass)
     hub = entry.runtime_data.lawn_mower
     assert hub is not None
 
     payload = json.dumps({"cmd_type": "SCHEDULE_CMD_TYPE_ADD", "seq": 1})
-    msg = SimpleNamespace(topic=SCHEDULE_APP_TOPIC, payload=payload.encode())
+    msg = SimpleNamespace(topic="data_point/122/app", payload=payload.encode())
     hub.on_mqtt_message(None, None, msg)
+    # The schedule channel is not confirmed to be dp_122 — other app-direction
+    # data points must land in the same capture.
+    msg2 = SimpleNamespace(topic="data_point/121/app", payload=b'{"x": 1}')
+    hub.on_mqtt_message(None, None, msg2)
 
-    captures = hub.diagnostics_snapshot()["schedule_app_captures"]
-    assert len(captures) == 1
-    assert captures[0][1] == payload
+    captures = hub.diagnostics_snapshot()["app_dp_captures"]
+    assert [(topic, pl) for _, topic, pl in captures] == [
+        ("data_point/122/app", payload),
+        ("data_point/121/app", '{"x": 1}'),
+    ]

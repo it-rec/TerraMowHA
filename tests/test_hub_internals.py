@@ -489,7 +489,7 @@ def test_diagnostics_redacts_secrets_and_exports_hub_state() -> None:
     # command-ack + schedule-write capture surfaces must reach the EXPORT,
     # not just the hub snapshot (regression: they were once snapshot-only)
     assert diagnostics["device"]["last_command_ack"] == {}
-    assert diagnostics["device"]["schedule_app_captures"] == []
+    assert diagnostics["device"]["app_dp_captures"] == []
     hub.on_mqtt_message(
         None, None, _msg("data_point/119/robot", b'{"seq": 5, "code": 0}')
     )
@@ -497,8 +497,10 @@ def test_diagnostics_redacts_secrets_and_exports_hub_state() -> None:
         None, None, _msg("data_point/122/app", b'{"cmd_type": "SCHEDULE_CMD_TYPE_ADD"}')
     )
     diagnostics = asyncio.run(async_get_config_entry_diagnostics(hass, entry))
-    captures = diagnostics["device"]["schedule_app_captures"]
-    assert [c["payload"] for c in captures] == ['{"cmd_type": "SCHEDULE_CMD_TYPE_ADD"}']
+    captures = diagnostics["device"]["app_dp_captures"]
+    assert [(c["topic"], c["payload"]) for c in captures] == [
+        ("data_point/122/app", '{"cmd_type": "SCHEDULE_CMD_TYPE_ADD"}')
+    ]
     assert captures[0]["time"].endswith("+00:00")
 
 

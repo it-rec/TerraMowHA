@@ -93,10 +93,12 @@ COMMAND_ACK_DP = 119
 # command, so a missing ack is not treated as a failure.
 COMMAND_ACK_TIMEOUT = 5.0
 
-# App-direction topic of the dp_122 schedule channel. The vendor app writes
-# schedule changes (ADD/DELETE) here; the hub captures them at DEBUG level so
-# the exact write payload can be documented from real traffic.
-SCHEDULE_APP_TOPIC = "data_point/122/app"
+# App-direction data-point topics. The vendor app writes commands here
+# (schedule changes, settings, ...); the hub captures this traffic so
+# undocumented write formats — e.g. the dp_122 schedule ADD/DELETE — can be
+# documented from real app usage. Wildcard on purpose: the schedule write
+# channel is not confirmed to be dp_122, and the app may use others.
+APP_DP_TOPIC_FILTER = "data_point/+/app"
 
 # Maintenance cycle constants (unit: minutes)
 # Recommended blade cleaning cycle: 240 hours = 240 * 60 = 14400 minutes

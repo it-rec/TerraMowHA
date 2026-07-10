@@ -81,15 +81,17 @@ async def async_get_config_entry_diagnostics(
         },
         # Last dp_119 command acknowledgement (seq + code).
         "last_command_ack": unknown["last_command_ack"],
-        # App-direction dp_122 schedule writes captured since the last restart
-        # — the source material for documenting the undocumented ADD/DELETE
-        # write format. Times are UTC ISO-8601.
-        "schedule_app_captures": [
+        # App-direction data-point writes captured since the last restart —
+        # the source material for documenting undocumented write formats
+        # (e.g. the dp_122 schedule ADD/DELETE). Includes echoes of our own
+        # commands. Times are UTC ISO-8601.
+        "app_dp_captures": [
             {
                 "time": datetime.fromtimestamp(ts, tz=UTC).isoformat(),
+                "topic": topic,
                 "payload": payload,
             }
-            for ts, payload in unknown["schedule_app_captures"]
+            for ts, topic, payload in unknown["app_dp_captures"]
         ],
     }
     diagnostics["state"] = {

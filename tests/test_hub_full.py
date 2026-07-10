@@ -244,7 +244,7 @@ def test_on_mqtt_connect_subscribes_and_clears_error() -> None:
     # wildcard data-point topic + info/meta/pose/model subscriptions
     subscribed = [c.args[0] for c in client.subscribe.call_args_list]
     assert "data_point/+/robot" in subscribed
-    assert "data_point/122/app" in subscribed
+    assert "data_point/+/app" in subscribed
     assert client.subscribe.call_count == 8
     assert hub.connection_error is False
     # a compatibility-info request was published

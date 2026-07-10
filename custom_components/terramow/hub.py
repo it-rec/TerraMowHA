@@ -32,6 +32,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
+    APP_DP_TOPIC_FILTER,
     COMMAND_ACK_DP,
     COMMAND_ACK_TIMEOUT,
     COMPATIBILITY_INFO_DP,
@@ -48,7 +49,6 @@ from .const import (
     PATH_HISTORY_META_TOPIC,
     PATH_META_TOPIC,
     POSE_TOPIC,
-    SCHEDULE_APP_TOPIC,
     CompatibilityStatus,
 )
 from .issues import (
@@ -65,6 +65,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # Define the regular expression pattern
 TOPIC_PATTERN = re.compile(r"^data_point/(\d+)/robot$")
+APP_TOPIC_PATTERN = re.compile(r"^data_point/(\d+)/app$")
 
 # How many *changes* to remember per undocumented data point. Bounded so the
 # diagnostics export stays small; only value changes are recorded (see
@@ -336,9 +337,9 @@ class TerraMowHub:
         # Only touched from the event loop.
         self._pending_acks: dict[int, asyncio.Future[int]] = {}
         self._last_command_ack: dict[str, Any] = {}  # Last dp_119 ack (diagnostics)
-        # Captured app-direction dp_122 schedule writes (epoch, payload) —
-        # source material for documenting the ADD/DELETE format.
-        self._schedule_app_captures: deque[tuple[float, str]] = deque(maxlen=20)
+        # Captured app-direction writes (epoch, topic, payload) — source
+        # material for documenting undocumented write formats (schedule etc.).
+        self._app_dp_captures: deque[tuple[float, str, str]] = deque(maxlen=50)
 
         self.cmd_seq = random.randint(0, 0xFFFFFFFF)  # Generate a random command sequence number
         # get_cmd_seq is reachable from the paho network thread (compatibility
@@ -378,7 +379,7 @@ class TerraMowHub:
                 for dp_id, history in list(self._unknown_dp_history.items())
             },
             "last_command_ack": dict(self._last_command_ack),
-            "schedule_app_captures": list(self._schedule_app_captures),
+            "app_dp_captures": list(self._app_dp_captures),
         }
 
     def register_state_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
@@ -1087,11 +1088,12 @@ class TerraMowHub:
             # above the historical 0-200 range; the regex dispatcher in
             # on_mqtt_message already handles arbitrary ids.
             client.subscribe("data_point/+/robot")
-            # Capture app-direction schedule writes: the vendor app's dp_122
-            # ADD/DELETE payloads are undocumented, and logging them (DEBUG)
-            # is how the write format gets reverse-engineered from real
-            # traffic for a future editable schedule.
-            client.subscribe(SCHEDULE_APP_TOPIC)
+            # Capture app-direction writes: the vendor app's schedule
+            # ADD/DELETE payloads (and their carrier data point) are
+            # undocumented; recording this traffic is how the write format
+            # gets reverse-engineered from real app usage. Includes echoes of
+            # our own commands — those are useful reference samples.
+            client.subscribe(APP_DP_TOPIC_FILTER)
             # Subscribe to the map info topic (for older firmware compatibility)
             client.subscribe(MAP_INFO_TOPIC)
             _LOGGER.debug("Subscribed to %s topic", MAP_INFO_TOPIC)
@@ -1178,12 +1180,12 @@ class TerraMowHub:
                 _LOGGER.error("Error handling pose: %s", e)
             return
 
-        # App-direction schedule traffic (vendor app / our own GET). Logged
-        # so the undocumented ADD/DELETE write format can be captured; also
-        # kept (bounded) for the diagnostics export.
-        if topic == SCHEDULE_APP_TOPIC:
-            _LOGGER.debug("Observed dp_122 app-direction message: %s", payload)
-            self._schedule_app_captures.append((time.time(), payload))
+        # App-direction data-point traffic (vendor app commands, plus echoes
+        # of our own). Logged and kept (bounded) for the diagnostics export so
+        # undocumented write formats can be captured from real app usage.
+        if APP_TOPIC_PATTERN.fullmatch(topic):
+            _LOGGER.debug("Observed app-direction message %s: %s", topic, payload)
+            self._app_dp_captures.append((time.time(), topic, payload))
             return
 
         # Handle the map info topic
