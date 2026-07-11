@@ -43,8 +43,24 @@ from .map_scene import build_scene, coerce_angle_radians, normalize_angle_radian
 _LOGGER = logging.getLogger(__name__)
 
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
-# the ?v= query on the auto-registered resource URL.
-CARD_VERSION = "1.1.0"
+# the ?v= query on the auto-registered resource URL (and re-fires the
+# resource-update path on existing installs).
+CARD_VERSION = "1.1.1"
+
+# The Lovelace resource type the card is registered with. History, because
+# this has been misdiagnosed repeatedly:
+# - "module" resources are loaded/awaited by the dashboard at panel init;
+#   on HA 2026.6 a runtime-registered module raced the first render in one
+#   field setup, which is why "js" was used for a while.
+# - "js" (classic script) is DEPRECATED: on HA 2026.7+ the frontend flags it
+#   and no longer executes it in a way that defines the element at all
+#   (issue #140 — hard refresh and restarts do not help).
+# "module" is the only type with a future. The card file is strict/module
+# safe (no import/export, guarded defines), registration happens at entry
+# setup (plus the extra-module app-shell fallback), and modern dashboards
+# re-render a card once its element gets defined — so worst case after the
+# very first install is one hard refresh, not a broken card.
+CARD_RESOURCE_TYPE = "module"
 
 CARD_URL_PATH = "/terramow-frontend/terramow-map-card.js"
 
@@ -122,24 +138,24 @@ async def _async_register_lovelace_resource(hass: HomeAssistant) -> None:
         await resources.async_load()
         resources.loaded = True
 
-    # res_type "js" on purpose: a module resource is deferred and executes
-    # only after the dashboard has rendered, so the element is not defined
-    # when the card is built ("Configuration error"); a classic script runs
-    # before the render. The card file is written to work in both goals.
+    # See CARD_RESOURCE_TYPE for why "module" (and the "js" history).
     url = f"{CARD_URL_PATH}?v={CARD_VERSION}"
     for item in resources.async_items():
         item_url = str(item.get("url", ""))
         if item_url.partition("?")[0] != CARD_URL_PATH:
             continue
-        if item_url != url or item.get("type") != "js":
-            # Stale cache-buster from an older version, or a broken deferred
-            # "module" entry from <= 1.0.1 — self-heal in place.
+        if item_url != url or item.get("type") != CARD_RESOURCE_TYPE:
+            # Stale cache-buster from an older version, or a deprecated "js"
+            # entry from <= 1.19.0 (broken on HA 2026.7+, issue #140) —
+            # self-heal in place.
             await resources.async_update_item(
-                item["id"], {"res_type": "js", "url": url}
+                item["id"], {"res_type": CARD_RESOURCE_TYPE, "url": url}
             )
             _LOGGER.info("Updated the map card Lovelace resource to %s", url)
         return
-    await resources.async_create_item({"res_type": "js", "url": url})
+    await resources.async_create_item(
+        {"res_type": CARD_RESOURCE_TYPE, "url": url}
+    )
     _LOGGER.info("Registered the map card Lovelace resource %s", url)
 
 

@@ -67,8 +67,10 @@ automatically while the tab is hidden.
 - Headless / custom setups (or YAML resource mode, which the integration
   cannot write to) can still use the card by adding
   `/terramow-frontend/terramow-map-card.js` manually as a dashboard
-  resource of type *JavaScript* (`js`, not `module` — a module resource
-  is deferred and would execute only after the dashboard has rendered).
+  resource of type *JavaScript Module* (`module` — the `js` type is
+  deprecated and no longer executes on HA 2026.7+).
+- Right after the very first install, one hard refresh (Ctrl+Shift+R)
+  may be needed so the browser picks up the freshly registered resource.
 
 In the example view below you can swap the `picture-entity` camera card
 for the interactive card one-to-one.

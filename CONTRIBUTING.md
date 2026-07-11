@@ -127,3 +127,12 @@ strict typing, etc.).
 | Add a repair issue | `issues.py` + hub hook + `strings.json`/translations |
 | Config/discovery changes | `config_flow.py` |
 | Tune the CI gate | `.github/workflows/validate.yml` |
+
+## Map card resource registration
+
+The interactive map card's Lovelace resource type is version-sensitive on
+the Home Assistant side (classic `js` is deprecated and broken on
+HA 2026.7+; see issue #140). When touching `map_card.py` resource
+registration or the card's loading behaviour, verify on the **latest**
+HA Core release that the card renders on a normal page load with only the
+auto-registered resource — no manual import, at most one hard refresh.
