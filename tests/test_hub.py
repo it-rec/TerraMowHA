@@ -12,6 +12,7 @@ from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.hub import (
+    MAP_SAVE_DISPLAY_TIMEOUT,
     Mission,
     MissionState,
     SubMission,
@@ -27,6 +28,10 @@ def _make_hub() -> TerraMowHub:
 
 def _feed_dp107(hub: TerraMowHub, **fields) -> None:
     asyncio.run(hub.on_mission_status(json.dumps(fields)))
+
+
+def _feed_dp118(hub: TerraMowHub, int_value: int) -> None:
+    asyncio.run(hub.on_map_save_progress(json.dumps({"int_value": int_value})))
 
 
 def _allow_command(hub: TerraMowHub) -> None:
@@ -68,6 +73,94 @@ def test_mission_status_invalid_enum_keeps_previous_value() -> None:
     # state instead of clobbering it with None
     assert hub.mission is Mission.MISSION_GLOBAL_CLEAN
     assert hub.mission_state is MissionState.MISSION_STATE_RUNNING
+
+
+def test_display_mission_mirrors_raw_when_not_saving_map() -> None:
+    hub = _make_hub()
+    _feed_dp107(
+        hub,
+        mission="MISSION_GLOBAL_CLEAN",
+        sub_mission="SUB_MISSION_IDLE",
+        state="MISSION_STATE_RUNNING",
+    )
+    # Outside a map save the display values are exactly the raw ones.
+    assert hub.display_sub_mission is SubMission.SUB_MISSION_IDLE
+    assert hub.display_mission_state is MissionState.MISSION_STATE_RUNNING
+
+
+def test_saving_map_shown_while_upload_incomplete() -> None:
+    hub = _make_hub()
+    _feed_dp107(
+        hub,
+        mission="MISSION_BUILD_MAP",
+        sub_mission="SUB_MISSION_SAVING_MAP",
+        state="MISSION_STATE_RUNNING",
+    )
+    _feed_dp118(hub, 40)
+    # The save is genuinely in progress, so it must still be shown.
+    assert hub.display_sub_mission is SubMission.SUB_MISSION_SAVING_MAP
+    assert hub.display_mission_state is MissionState.MISSION_STATE_RUNNING
+
+
+def test_saving_map_decays_to_idle_on_upload_complete() -> None:
+    hub = _make_hub()
+    _feed_dp107(
+        hub,
+        mission="MISSION_BUILD_MAP",
+        sub_mission="SUB_MISSION_SAVING_MAP",
+        state="MISSION_STATE_RUNNING",
+    )
+    _feed_dp118(hub, 100)
+    # Issue #142: once the upload finishes the stale busy state decays to idle.
+    assert hub.display_sub_mission is SubMission.SUB_MISSION_IDLE
+    assert hub.display_mission_state is MissionState.MISSION_STATE_IDLE
+    # The raw values (and the diagnostics payload) are preserved untouched.
+    assert hub.sub_mission is SubMission.SUB_MISSION_SAVING_MAP
+    assert hub.mission_state is MissionState.MISSION_STATE_RUNNING
+    assert hub.task_status["sub_mission"] == "SUB_MISSION_SAVING_MAP"
+
+
+def test_saving_map_decays_to_idle_after_timeout() -> None:
+    hub = _make_hub()
+    _feed_dp107(
+        hub,
+        mission="MISSION_BUILD_MAP",
+        sub_mission="SUB_MISSION_SAVING_MAP",
+        state="MISSION_STATE_RUNNING",
+    )
+    # No progress signal ever arrives; the timeout fallback still retires it.
+    assert hub.display_sub_mission is SubMission.SUB_MISSION_SAVING_MAP
+    hub._map_save_started_at = time.monotonic() - (MAP_SAVE_DISPLAY_TIMEOUT + 1)
+    assert hub.display_sub_mission is SubMission.SUB_MISSION_IDLE
+    assert hub.display_mission_state is MissionState.MISSION_STATE_IDLE
+
+
+def test_new_saving_map_episode_ignores_previous_completion() -> None:
+    hub = _make_hub()
+    _feed_dp107(
+        hub,
+        mission="MISSION_BUILD_MAP",
+        sub_mission="SUB_MISSION_SAVING_MAP",
+        state="MISSION_STATE_RUNNING",
+    )
+    _feed_dp118(hub, 100)
+    assert hub.display_sub_mission is SubMission.SUB_MISSION_IDLE
+    # Leave the save, then start a brand-new one: the stale 100 % from the first
+    # episode must not make the second save look already finished.
+    _feed_dp107(
+        hub,
+        mission="MISSION_GLOBAL_CLEAN",
+        sub_mission="SUB_MISSION_IDLE",
+        state="MISSION_STATE_RUNNING",
+    )
+    _feed_dp107(
+        hub,
+        mission="MISSION_GLOBAL_CLEAN",
+        sub_mission="SUB_MISSION_SAVING_MAP",
+        state="MISSION_STATE_RUNNING",
+    )
+    assert hub.display_sub_mission is SubMission.SUB_MISSION_SAVING_MAP
+    assert hub.display_mission_state is MissionState.MISSION_STATE_RUNNING
 
 
 def test_mission_status_notifies_state_listeners() -> None:

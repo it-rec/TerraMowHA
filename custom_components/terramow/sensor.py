@@ -705,8 +705,10 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.ENUM,
         options=[to_ha_enum_state(member.value) for member in SubMission],
         entity_category=EntityCategory.DIAGNOSTIC,
-        push_dp_ids=(107,),
-        value_fn=_mission_enum("sub_mission"),
+        # dp_118 (map-save progress) can retire a stale SAVING_MAP; refresh on
+        # it too so the decay to idle shows without waiting for a poll (#142).
+        push_dp_ids=(107, 118),
+        value_fn=_mission_enum("display_sub_mission"),
     ),
     # Mission lifecycle state: idle / running / paused / abort / complete.
     TerraMowSensorEntityDescription(
@@ -715,8 +717,8 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.ENUM,
         options=[to_ha_enum_state(member.value) for member in MissionState],
         entity_category=EntityCategory.DIAGNOSTIC,
-        push_dp_ids=(107,),
-        value_fn=_mission_enum("mission_state"),
+        push_dp_ids=(107, 118),
+        value_fn=_mission_enum("display_mission_state"),
     ),
     # Unofficial / reverse-engineered diagnostics; see
     # docs/en/developers/data_point_unofficial.md.
