@@ -73,6 +73,14 @@ APP_TOPIC_PATTERN = re.compile(r"^data_point/(\d+)/app$")
 # ``on_mqtt_message``), so this is a window of transitions, not raw messages.
 UNKNOWN_DP_HISTORY_MAXLEN = 30
 
+# The firmware keeps reporting ``state=RUNNING`` / ``sub_mission=SAVING_MAP``
+# after it has docked and finished uploading the map, and never clears it on
+# its own — the stale state sticks until the next mow (issue #142). Once the
+# save has been running this long without the upload reaching 100 %, the
+# displayed sub-mission / state decay back to idle anyway, so a missed or
+# stalled progress signal can't leave the mower looking busy for hours.
+MAP_SAVE_DISPLAY_TIMEOUT = 30 * 60  # seconds
+
 
 def _decompress_and_parse(raw: bytes) -> Any:
     """Decompress (if gzip) and JSON-parse a fetched map/path body.
@@ -312,6 +320,11 @@ class TerraMowHub:
         self._full_schedule: dict[str, Any] = {}  # Store dp_122 full weekly schedule list
         self._state_flag_134: dict[str, Any] = {}  # Store dp_134 undecoded binary flag
         self._map_save_progress: dict[str, Any] = {}  # Store dp_118 map-save progress %
+        # Monotonic timestamp when the current SAVING_MAP episode began, used to
+        # decay the displayed sub_mission / mission_state back to idle once the
+        # save finishes (issue #142). None whenever the raw sub_mission is not
+        # SAVING_MAP.
+        self._map_save_started_at: float | None = None
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
         # Bounded per-dp change history (epoch, payload) for undocumented dps, so
@@ -1199,6 +1212,17 @@ class TerraMowHub:
         self.mission = data.get("mission", self.mission)
         self.sub_mission = data.get("sub_mission", self.sub_mission)
         self.mission_state = data.get("state", self.mission_state)
+
+        # Track the map-save episode so the display can decay back to idle once
+        # the save finishes (issue #142). Stamp the start when SAVING_MAP is
+        # first entered and drop any stale progress from a previous save so it
+        # can't be mistaken for this one's completion; clear it on the way out.
+        if self.sub_mission == SubMission.SUB_MISSION_SAVING_MAP:
+            if old_sub_mission != SubMission.SUB_MISSION_SAVING_MAP:
+                self._map_save_started_at = time.monotonic()
+                self._map_save_progress = {}
+        else:
+            self._map_save_started_at = None
 
         _LOGGER.debug("Mission state updated: mission=%s->%s, sub_mission=%s->%s, state=%s->%s, has_error=%s, back_to_station_reason=%s",
                      old_mission, self.mission, old_sub_mission, self.sub_mission,
@@ -2141,6 +2165,49 @@ class TerraMowHub:
     def map_save_progress(self) -> dict[str, Any]:
         """Get the map-save / upload progress payload (dp_118, undocumented)."""
         return self._map_save_progress
+
+    def _map_save_finished(self) -> bool:
+        """Whether the current SAVING_MAP episode should read as completed.
+
+        The firmware leaves ``sub_mission=SAVING_MAP`` / ``state=RUNNING`` set
+        after it has docked and finished uploading the map, never clearing it
+        until the next mow (issue #142). Treat the save as done once the upload
+        progress reaches 100 %, or after ``MAP_SAVE_DISPLAY_TIMEOUT`` as a
+        fallback when the progress signal is missing or stalls, so the display
+        returns to idle on its own instead of looking busy for hours.
+        """
+        if self.sub_mission != SubMission.SUB_MISSION_SAVING_MAP:
+            return False
+        progress = self._map_save_progress.get("int_value")
+        if isinstance(progress, int) and not isinstance(progress, bool) and progress >= 100:
+            return True
+        started = self._map_save_started_at
+        return (
+            started is not None
+            and time.monotonic() - started >= MAP_SAVE_DISPLAY_TIMEOUT
+        )
+
+    @property
+    def display_sub_mission(self) -> SubMission:
+        """Sub-mission for display, decayed to idle after a finished map save.
+
+        Mirrors the raw ``sub_mission`` except while the firmware is holding a
+        stale SAVING_MAP after the save has actually completed (issue #142).
+        """
+        if self._map_save_finished():
+            return SubMission.SUB_MISSION_IDLE
+        return self.sub_mission
+
+    @property
+    def display_mission_state(self) -> MissionState:
+        """Mission state for display, decayed to idle after a finished map save.
+
+        Mirrors the raw ``mission_state`` except while the firmware is holding a
+        stale RUNNING after the map save has completed (issue #142).
+        """
+        if self._map_save_finished():
+            return MissionState.MISSION_STATE_IDLE
+        return self.mission_state
 
     @property
     def advanced_settings(self) -> dict[str, Any]:
