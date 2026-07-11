@@ -98,7 +98,7 @@ Devices on the local network are discovered automatically via Zeroconf — accep
 
 **Changing settings later**
 - *Reconfigure* (Settings → Devices & Services → TerraMow → Reconfigure): change the host/IP or password in place, e.g. after the mower received a new DHCP address — no need to remove and re-add the integration.
-- *Options* (Configure): set the map camera output resolution. Higher values give a sharper dashboard image at the cost of bandwidth and CPU per render.
+- *Options* (Configure): tune the map camera — output resolution (higher is sharper but costs more bandwidth and CPU per render), map theme (`light`/`dark`) and whether to shade the already-mowed coverage.
 - If the device password changes, Home Assistant automatically starts a *reauthentication* flow.
 
 ### Requirements
@@ -125,6 +125,28 @@ target:
 data:
   region_ids: [1, 2]
 ```
+
+#### `terramow.add_schedule` / `terramow.delete_schedule`
+
+Write or remove a weekly mowing slot on the mower. Each write is confirmed
+against the device (dp_119 acknowledgement plus a schedule read-back).
+
+```yaml
+service: terramow.add_schedule
+target:
+  entity_id: lawn_mower.terramow
+data:
+  week_days: [tuesday, thursday]
+  start_time: "07:45:00"
+  end_time: "09:15:00"
+```
+
+`delete_schedule` takes the `item_id` of the slot (shown as the calendar
+event's uid and returned when a slot is added).
+
+> **Note:** current retail firmware does not yet accept schedule writes over
+> local MQTT (the vendor app uses Bluetooth/cloud). Until firmware adds it, use
+> the **weather-adaptive mowing blueprint** for HA-side scheduling.
 
 ### Interactive map card
 
