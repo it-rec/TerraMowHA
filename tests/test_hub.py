@@ -135,6 +135,27 @@ def test_saving_map_decays_to_idle_after_timeout() -> None:
     assert hub.display_mission_state is MissionState.MISSION_STATE_IDLE
 
 
+def test_repeated_saving_map_heartbeat_keeps_original_start() -> None:
+    hub = _make_hub()
+    _feed_dp107(
+        hub,
+        mission="MISSION_BUILD_MAP",
+        sub_mission="SUB_MISSION_SAVING_MAP",
+        state="MISSION_STATE_RUNNING",
+    )
+    started = hub._map_save_started_at
+    assert started is not None
+    # A second SAVING_MAP heartbeat must not restart the clock, or a chatty
+    # firmware could keep pushing the timeout out forever.
+    _feed_dp107(
+        hub,
+        mission="MISSION_BUILD_MAP",
+        sub_mission="SUB_MISSION_SAVING_MAP",
+        state="MISSION_STATE_RUNNING",
+    )
+    assert hub._map_save_started_at == started
+
+
 def test_new_saving_map_episode_ignores_previous_completion() -> None:
     hub = _make_hub()
     _feed_dp107(
