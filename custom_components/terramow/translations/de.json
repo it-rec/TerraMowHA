@@ -531,7 +531,7 @@
       "message": "Auf dem Mäher existiert kein Zeitplan-Eintrag mit der Item-ID {item_id}."
     },
     "schedule_write_failed": {
-      "message": "Der Mäher hat die Zeitplanänderung nicht übernommen (Versuche: {attempts}). Bitte öffne ein GitHub-Issue mit deinem Diagnose-Download, damit das Schreibformat für deine Firmware angepasst werden kann."
+      "message": "Der Mäher hat die Zeitplanänderung nicht übernommen (Versuche: {attempts}). Die aktuelle TerraMow-Firmware akzeptiert keine Zeitplan-Schreibzugriffe über das lokale Netzwerk - die Hersteller-App nutzt stattdessen Bluetooth/Cloud. Verwende das Blueprint \"Weather-adaptive mowing\" für Zeitpläne aus Home Assistant; diese Dienste funktionieren, sobald die Firmware lokales Schreiben unterstützt."
     }
   }
 }

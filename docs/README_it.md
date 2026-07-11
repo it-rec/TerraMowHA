@@ -15,7 +15,7 @@ Questa è un'integrazione di Home Assistant per i robot tagliaerba TerraMow.
 **Controllo**
 - Entità tagliaerba: avvio, pausa e rientro alla base
 - Taglio a zone: entità di selezione zona e servizio `terramow.start_select_region`
-- **Schedule editing** — `terramow.add_schedule` / `terramow.delete_schedule` services write weekly mowing slots to the mower, confirmed against the device (acknowledgement + read-back); the calendar reflects changes immediately
+- **Schedule editing** — `terramow.add_schedule` / `terramow.delete_schedule` services write weekly mowing slots to the mower with read-back verification. *Note:* current retail firmware does not yet accept schedule writes over local MQTT (the vendor app uses Bluetooth/cloud) — until firmware adds it, use the **weather-adaptive mowing blueprint** for HA-side scheduling
 - **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position (activity-tinted, with follow mode), on-card start / pause / dock controls, battery & job-progress chips, optional mowed-coverage shading, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
 - Pulsante per il taglio dei bordi
 - Impostazioni da Home Assistant: altezza di taglio, velocità, spaziatura, velocità delle lame, distanza di taglio dei bordi, modalità e angoli della direzione principale, taglio accurato degli angoli, modalità taglio bordi con erba alta

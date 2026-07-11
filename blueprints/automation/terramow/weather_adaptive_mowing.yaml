@@ -1,0 +1,163 @@
+blueprint:
+  name: TerraMow – Weather-adaptive mowing schedule
+  description: >
+    Start mowing on a schedule you control from Home Assistant — but only
+    when the weather cooperates. At the chosen time on the chosen weekdays
+    the mower starts (the whole lawn or specific zones), unless it is
+    currently raining, rain is likely within the configured look-ahead, or
+    the mower's own rain sensor is wet. Because the schedule lives in Home
+    Assistant instead of the mower, it can be as smart as your weather data.
+  domain: automation
+  source_url: https://github.com/it-rec/TerraMowHA/blob/main/blueprints/automation/terramow/weather_adaptive_mowing.yaml
+  input:
+    mower:
+      name: Mower
+      description: The TerraMow lawn mower entity.
+      selector:
+        entity:
+          filter:
+            - integration: terramow
+              domain: lawn_mower
+    start_time:
+      name: Start time
+      description: When to start mowing.
+      selector:
+        time: {}
+    weekdays:
+      name: Weekdays
+      description: Days of the week to mow.
+      default:
+        - mon
+        - wed
+        - fri
+      selector:
+        select:
+          multiple: true
+          options:
+            - label: Monday
+              value: mon
+            - label: Tuesday
+              value: tue
+            - label: Wednesday
+              value: wed
+            - label: Thursday
+              value: thu
+            - label: Friday
+              value: fri
+            - label: Saturday
+              value: sat
+            - label: Sunday
+              value: sun
+    weather_entity:
+      name: Weather forecast (optional)
+      description: >
+        A weather entity used to skip mowing in bad weather. Leave empty to
+        skip the forecast checks.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: weather
+    precipitation_probability:
+      name: Maximum rain probability (%)
+      description: >
+        Skip mowing when the forecast rain probability within the look-ahead
+        window is above this value (only used with a weather entity).
+      default: 40
+      selector:
+        number:
+          min: 0
+          max: 100
+          unit_of_measurement: "%"
+    lookahead_hours:
+      name: Forecast look-ahead (hours)
+      description: How many forecast hours to check for rain.
+      default: 3
+      selector:
+        number:
+          min: 1
+          max: 12
+          unit_of_measurement: h
+    rain_sensor:
+      name: Rain detected sensor (optional)
+      description: >
+        The TerraMow "Rain detected" binary sensor — mowing is skipped while
+        it is wet. Leave empty to skip this check.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - integration: terramow
+              domain: binary_sensor
+    region_ids:
+      name: Zone IDs (optional)
+      description: >
+        Mow only these zone IDs (as shown by the map card / zone select)
+        instead of the whole lawn. Leave empty for a full mow.
+      default: []
+      selector:
+        object: {}
+
+mode: single
+max_exceeded: silent
+
+variables:
+  weather_entity: !input weather_entity
+  rain_sensor: !input rain_sensor
+  region_ids: !input region_ids
+  precipitation_probability: !input precipitation_probability
+  lookahead_hours: !input lookahead_hours
+  mower: !input mower
+
+trigger:
+  - platform: time
+    at: !input start_time
+
+condition:
+  - condition: time
+    weekday: !input weekdays
+  # Mower rain sensor dry (when configured)
+  - condition: template
+    value_template: >
+      {{ rain_sensor == '' or is_state(rain_sensor, 'off') }}
+  # No rain right now (when a weather entity is configured)
+  - condition: template
+    value_template: >
+      {{ weather_entity == '' or states(weather_entity) not in
+         ['rainy', 'pouring', 'lightning', 'lightning-rainy',
+          'snowy', 'snowy-rainy', 'hail'] }}
+
+action:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ weather_entity != '' }}"
+        sequence:
+          - service: weather.get_forecasts
+            target:
+              entity_id: !input weather_entity
+            data:
+              type: hourly
+            response_variable: forecast
+          - condition: template
+            value_template: >
+              {% set hours = forecast[weather_entity]['forecast']
+                 | default([]) %}
+              {% set window = hours[:lookahead_hours | int] %}
+              {% set worst = window
+                 | map(attribute='precipitation_probability', default=0)
+                 | max | default(0) %}
+              {{ worst <= precipitation_probability | float }}
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ region_ids | count > 0 }}"
+        sequence:
+          - service: terramow.start_select_region
+            data:
+              entity_id: "{{ mower }}"
+              region_ids: "{{ region_ids }}"
+    default:
+      - service: lawn_mower.start_mowing
+        target:
+          entity_id: !input mower

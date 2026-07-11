@@ -20,7 +20,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 **Control**
 - Lawn mower entity: start, pause and dock
 - Zone mowing: zone select entity and `terramow.start_select_region` service
-- **Schedule editing** — `terramow.add_schedule` / `terramow.delete_schedule` services write weekly mowing slots to the mower, confirmed against the device (acknowledgement + read-back); the calendar reflects changes immediately
+- **Schedule editing** — `terramow.add_schedule` / `terramow.delete_schedule` services write weekly mowing slots to the mower with read-back verification. *Note:* current retail firmware does not yet accept schedule writes over local MQTT (the vendor app uses Bluetooth/cloud) — until firmware adds it, use the **weather-adaptive mowing blueprint** for HA-side scheduling
 - **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position (activity-tinted, with follow mode), on-card start / pause / dock controls, battery & job-progress chips, optional mowed-coverage shading, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
 - Edge trim mowing button
 - Settings from Home Assistant: mowing height, speed, spacing, blade speed, edge cutting distance, main direction mode and angles, thorough corner cutting, high-grass edge trim mode
@@ -145,6 +145,8 @@ A ready-made Lovelace view (live map, controls, progress gauge, status glance) p
 
 One-click importable blueprints for the most common notifications — each just asks for the relevant TerraMow entity and a notification action:
 
+- **Weather-adaptive mowing** — start mowing on your schedule, skipped automatically when rain is detected or forecast
+  [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fit-rec%2FTerraMowHA%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fterramow%2Fweather_adaptive_mowing.yaml)
 - **Problem notification** — when the mower reports a fault
   [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fit-rec%2FTerraMowHA%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fterramow%2Fproblem_notification.yaml)
 - **Returned because of rain** — when the mower docks due to rain
