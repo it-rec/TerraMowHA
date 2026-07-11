@@ -560,7 +560,7 @@ async def test_lovelace_resource_created(hass: HomeAssistant) -> None:
 
     assert resources.load_called
     assert resources.loaded is True
-    assert resources.created == [{"res_type": "js", "url": _CARD_URL}]
+    assert resources.created == [{"res_type": "module", "url": _CARD_URL}]
 
 
 async def test_lovelace_resource_updated_on_new_version(
@@ -570,7 +570,11 @@ async def test_lovelace_resource_updated_on_new_version(
     resources = _FakeResources(
         [
             {"id": "other", "url": "/hacsfiles/some-card.js"},
-            {"id": "ours", "url": f"{map_card.CARD_URL_PATH}?v=0.9.9", "type": "js"},
+            {
+                "id": "ours",
+                "url": f"{map_card.CARD_URL_PATH}?v=0.9.9",
+                "type": "module",
+            },
         ]
     )
     # pre-2024.8 dict layout
@@ -579,23 +583,32 @@ async def test_lovelace_resource_updated_on_new_version(
     await setup_terramow(hass)
 
     assert resources.created == []
-    assert resources.updated == [("ours", {"res_type": "js", "url": _CARD_URL})]
+    assert resources.updated == [("ours", {"res_type": "module", "url": _CARD_URL})]
 
 
-async def test_lovelace_resource_heals_module_type(hass: HomeAssistant) -> None:
-    """A deferred "module" entry from <= 1.0.1 is flipped to classic js."""
-    resources = _FakeResources([{"id": "ours", "url": _CARD_URL, "type": "module"}])
+async def test_lovelace_resource_heals_deprecated_js_type(
+    hass: HomeAssistant,
+) -> None:
+    """A deprecated "js" entry from <= 1.19.0 is flipped to module (#140)."""
+    resources = _FakeResources([{"id": "ours", "url": _CARD_URL, "type": "js"}])
     hass.data["lovelace"] = SimpleNamespace(resources=resources)
 
     await setup_terramow(hass)
 
     assert resources.created == []
-    assert resources.updated == [("ours", {"res_type": "js", "url": _CARD_URL})]
+    assert resources.updated == [
+        ("ours", {"res_type": "module", "url": _CARD_URL})
+    ]
+    # Regression guard: "module" is the only non-deprecated resource type
+    # on current HA (classic "js" no longer executes on 2026.7+).
+    assert map_card.CARD_RESOURCE_TYPE == "module"
 
 
 async def test_lovelace_resource_already_current(hass: HomeAssistant) -> None:
     """A current resource entry is left untouched."""
-    resources = _FakeResources([{"id": "ours", "url": _CARD_URL, "type": "js"}])
+    resources = _FakeResources(
+        [{"id": "ours", "url": _CARD_URL, "type": "module"}]
+    )
     hass.data["lovelace"] = SimpleNamespace(resources=resources)
 
     await setup_terramow(hass)
@@ -642,4 +655,4 @@ async def test_lovelace_resource_retries_after_start(hass: HomeAssistant) -> Non
     hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
     await hass.async_block_till_done()
 
-    assert resources.created == [{"res_type": "js", "url": _CARD_URL}]
+    assert resources.created == [{"res_type": "module", "url": _CARD_URL}]
