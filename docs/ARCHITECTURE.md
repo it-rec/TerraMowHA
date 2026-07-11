@@ -37,7 +37,7 @@ The 11 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
 | `hub.py` | `TerraMowHub` — owns the MQTT client + worker thread, all dp caches, map/path HTTP fetching, command helpers, enums (`Mission`, `SubMission`, `MissionState`, …) |
 | `entity.py` | `TerraMowEntity` base — shared `device_info`, `unique_id` scheme, default `available` |
 | `entity_utils.py` | Thread-safe state helpers (`safe_write_ha_state`, `safe_schedule_update_ha_state`) and `PushUpdateMixin` |
-| `config_flow.py` | User/zeroconf/reauth/reconfigure flows, options (map resolution), `validate_input`, `CannotConnect`/`InvalidAuth` |
+| `config_flow.py` | User/zeroconf/reauth/reconfigure flows, options (map resolution, theme, coverage), `validate_input`, `CannotConnect`/`InvalidAuth` |
 | `const.py` | `DOMAIN`, MQTT constants, topic names, version thresholds, enum-token helpers (`to_ha_enum_state`/`to_device_enum`), map-resolution options |
 | `diagnostics.py` | Redacted config-entry diagnostics dump (compatibility, device, cached state) |
 | `issues.py` | Repair issues: firmware compatibility + blade/base-station maintenance |
@@ -338,9 +338,11 @@ All three are cleared on unload by `async_clear_compatibility_issue` /
 - **Reconfigure** (`async_step_reconfigure`) — lets the user change host/password
   (e.g. after a DHCP IP change), aborting if the new host collides with another
   entry, then reloads.
-- **Options** (`TerraMowOptionsFlow`) — a single `map_resolution` choice from
-  `MAP_RESOLUTION_OPTIONS` (1024–4096), default 1024. Changing it fires
-  `_async_options_updated`, which reloads the entry.
+- **Options** (`TerraMowOptionsFlow`) — three map-camera choices:
+  `map_resolution` from `MAP_RESOLUTION_OPTIONS` (1024–4096, default 1024),
+  `map_theme` (`light`/`dark`, default `light`) and `map_show_coverage`
+  (boolean, default off). Changing any of them fires `_async_options_updated`,
+  which reloads the entry.
 
 `validate_input` proves connectivity by attempting an MQTT connect in an
 executor: rc 4/5 → `InvalidAuth`, any other failure → `CannotConnect`.

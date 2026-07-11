@@ -22,7 +22,7 @@ All upstream commits after v0.3.0 are already covered by the fork:
 | Platform | What it adds |
 |---|---|
 | **Event** (`event.py`) | A mower event entity firing `mowing_started`, `paused`, `returning`, `docked`, `mowing_completed`, `error`, each with the raw mission fields as attributes. Lets automations react to transitions without polling. |
-| **Calendar** (`calendar.py`) | A read-only mowing-schedule calendar built from dp_138 (next scheduled mow), with active/upcoming/next-day and past-midnight handling. |
+| **Calendar** (`calendar.py`) | A read-only mowing-schedule calendar: the full weekly schedule when dp_122 is available, otherwise the dp_138 next scheduled mow, with active/upcoming/next-day and past-midnight handling. |
 | Camera | A second, default-disabled *clean* map-only camera for dashboards, plus a configurable output resolution. |
 | Sensor | A default-disabled pose sensor. |
 
@@ -46,7 +46,8 @@ All upstream commits after v0.3.0 are already covered by the fork:
   services (dp_122 `ADD`/`DELETE`) with per-firmware payload negotiation —
   every write is judged by its dp_119 ack and verified against a fresh `GET`.
 - **Reauthentication** and **reconfigure** flows, **Zeroconf/mDNS discovery**
-  (`_mqtt._tcp.local.`, `terramow*`), and an **options flow** (map resolution).
+  (`_mqtt._tcp.local.`, `terramow*`), and an **options flow** (map resolution,
+  theme, mowed-coverage shading).
 - **Firmware update entity** and version-compatibility sensor.
 - **Automation blueprints** and a **dashboard guide**.
 - **Full localization** across 33 languages.
