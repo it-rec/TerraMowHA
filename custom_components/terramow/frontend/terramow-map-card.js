@@ -23,9 +23,11 @@
  *   rotation: 0                # rotate the map view (degrees)
  *   fit_height: 420            # card canvas height in px
  *
- * NOTE: loaded as a classic script (Lovelace resource type "js") — keep
- * this file strict-safe and free of import/export (CI enforces both goals
- * via tests/frontend/eval_card_module.mjs).
+ * NOTE: served as an ES module (Lovelace resource type "module") and
+ * evaluated under the strict module goal. It ships unbundled from a bare
+ * URL, so keep it free of import/export (any specifier would 404) and
+ * strict-safe throughout; both element definitions must run at top-level
+ * evaluation. CI enforces all of this via tests/frontend/eval_card_module.mjs.
  */
 
 "use strict";
