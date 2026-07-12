@@ -79,6 +79,28 @@ function localize(hass, key) {
   return table[key] || STRINGS.en[key] || key;
 }
 
+/**
+ * Localized noun for a count, choosing between the singular and plural
+ * strings by the language's CLDR plural category rather than `n === 1`.
+ * The table carries only two forms per language, so every non-"one"
+ * category folds onto the plural — but this still fixes cases the naive
+ * check gets wrong (e.g. Russian "21 зона" is the "one" form, Slavic and
+ * Baltic zero is plural). Falls back to `n === 1` where Intl.PluralRules
+ * is unavailable.
+ */
+function pluralWord(hass, count, oneKey, otherKey) {
+  const lang = (hass && hass.language) || "en";
+  let category = count === 1 ? "one" : "other";
+  if (typeof Intl !== "undefined" && Intl.PluralRules) {
+    try {
+      category = new Intl.PluralRules(lang).select(count);
+    } catch (_err) {
+      /* keep the n === 1 fallback */
+    }
+  }
+  return localize(hass, category === "one" ? oneKey : otherKey);
+}
+
 /* ---------------------------------------------------------------- icons */
 
 const ICONS = {
@@ -730,7 +752,7 @@ class TerramowMapCard extends HTMLElement {
       text += ` · ${Math.round(areaM2)} m²`;
     }
     this._actionNames.textContent = text;
-    const unit = localize(this._hass, count === 1 ? "zone" : "zones");
+    const unit = pluralWord(this._hass, count, "zone", "zones");
     this._goBtn.textContent = `${localize(this._hass, "start")} ${count} ${unit}`;
     this._clearBtn.textContent = localize(this._hass, "clear");
     this._actionBar.classList.add("visible");
