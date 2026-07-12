@@ -155,6 +155,28 @@ function zoneAreaM2(sub) {
 /** Nice scale-bar lengths in mm (0.1 m … 50 m). */
 const SCALE_BAR_STEPS = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000];
 
+/**
+ * Upper bound on the points held for a single mow path. A long job streams
+ * point deltas indefinitely; without a cap the arrays grow without limit and
+ * every append re-strokes the whole polyline into the cached path layer.
+ */
+const MAX_PATH_POINTS = 6000;
+
+/**
+ * Halve a polyline's vertex density in place until it fits `cap`, keeping
+ * every other point. At whole-lawn scale the coarser line is visually
+ * indistinguishable, but memory and per-append redraw cost stay bounded.
+ */
+function decimatePath(points, cap) {
+  while (points.length > cap) {
+    let write = 0;
+    for (let read = 0; read < points.length; read += 2) {
+      points[write++] = points[read];
+    }
+    points.length = write;
+  }
+}
+
 /** Activities and their marker/chip colors (light, dark). */
 const ACTIVITY_COLORS = {
   mowing: ["#2e7d32", "#81c784"],
@@ -324,6 +346,12 @@ class TerramowMapCard extends HTMLElement {
     if (msg.type === "scene") {
       const hadScene = this._hasGeometry();
       this._scene = msg.scene;
+      if (Array.isArray(this._scene.current_path)) {
+        decimatePath(this._scene.current_path, MAX_PATH_POINTS);
+      }
+      if (Array.isArray(this._scene.history_path)) {
+        decimatePath(this._scene.history_path, MAX_PATH_POINTS);
+      }
       this._sceneRev += 1;
       this._pathRev += 1;
       this._pruneStaleSelection();
@@ -338,9 +366,11 @@ class TerramowMapCard extends HTMLElement {
       }
       if (Array.isArray(msg.current_path_append)) {
         this._scene.current_path.push(...msg.current_path_append);
+        decimatePath(this._scene.current_path, MAX_PATH_POINTS);
       }
       if (Array.isArray(msg.history_path_append)) {
         this._scene.history_path.push(...msg.history_path_append);
+        decimatePath(this._scene.history_path, MAX_PATH_POINTS);
       }
       this._pathRev += 1;
       this._requestDraw();
