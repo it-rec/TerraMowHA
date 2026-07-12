@@ -192,6 +192,8 @@ class TerramowMapCard extends HTMLElement {
     this._lastEntityState = null;
     this._staticCache = null; // {canvas, sig}
     this._pathCache = null; // {canvas, sig}
+    this._colorCache = null; // resolved theme colors; invalidated on theme change
+    this._themeSig = null;
     this._onVisibility = () => {
       if (document.visibilityState === "hidden") {
         this._teardownSubscription();
@@ -232,6 +234,13 @@ class TerramowMapCard extends HTMLElement {
     if (!this._unsub) {
       this._resubscribe();
     }
+    const themeSig = this._themeSignature(hass);
+    if (themeSig !== this._themeSig) {
+      this._themeSig = themeSig;
+      this._colorCache = null; // re-resolve theme colors on the next draw
+      this._updateHud();
+      this._requestDraw();
+    }
     const state = hass && hass.states[this._config?.entity];
     const stateStr = state ? `${state.state}` : null;
     if (stateStr !== this._lastEntityState) {
@@ -259,6 +268,7 @@ class TerramowMapCard extends HTMLElement {
 
   connectedCallback() {
     document.addEventListener("visibilitychange", this._onVisibility);
+    this._colorCache = null; // CSS custom props only resolve while connected
     this._resubscribe();
   }
 
@@ -1035,7 +1045,25 @@ class TerramowMapCard extends HTMLElement {
     return pair[colors.dark ? 1 : 0];
   }
 
+  /** Lightweight theme fingerprint from hass, no layout read. */
+  _themeSignature(hass) {
+    const themes = hass && hass.themes;
+    if (!themes) {
+      return "";
+    }
+    const selected = hass.selectedTheme ? JSON.stringify(hass.selectedTheme) : "";
+    return `${themes.darkMode}|${themes.theme || ""}|${selected}`;
+  }
+
+  /** Resolved theme colors, cached until the theme fingerprint changes. */
   _colors() {
+    if (!this._colorCache) {
+      this._colorCache = this._computeColors();
+    }
+    return this._colorCache;
+  }
+
+  _computeColors() {
     const styles = getComputedStyle(this);
     const pick = (name, fallback) =>
       styles.getPropertyValue(name).trim() || fallback;
