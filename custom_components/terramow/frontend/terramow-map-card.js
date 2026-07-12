@@ -23,9 +23,14 @@
  *   rotation: 0                # rotate the map view (degrees)
  *   fit_height: 420            # card canvas height in px
  *
- * NOTE: loaded as a classic script (Lovelace resource type "js") — keep
- * this file strict-safe and free of import/export (CI enforces both goals
- * via tests/frontend/eval_card_module.mjs).
+ * NOTE: registered as a classic "js" Lovelace resource, not an ES "module".
+ * A "module" served from the browser cache is not re-executed, so the custom
+ * element could stay undefined and the card showed a permanent "Configuration
+ * error" (issue #140); see CARD_RESOURCE_TYPE in map_card.py. Even so, the
+ * file is kept module-safe: it ships unbundled from a bare URL, so keep it
+ * free of import/export (any specifier would 404) and strict-safe throughout,
+ * and both element definitions must run at top-level evaluation. CI evaluates
+ * it under the strict module goal via tests/frontend/eval_card_module.mjs.
  */
 
 "use strict";
@@ -75,6 +80,28 @@ function localize(hass, key) {
   const lang = (hass && hass.language) || "en";
   const table = STRINGS[lang] || STRINGS[lang.split("-")[0]] || STRINGS.en;
   return table[key] || STRINGS.en[key] || key;
+}
+
+/**
+ * Localized noun for a count, choosing between the singular and plural
+ * strings by the language's CLDR plural category rather than `n === 1`.
+ * The table carries only two forms per language, so every non-"one"
+ * category folds onto the plural — but this still fixes cases the naive
+ * check gets wrong (e.g. Russian "21 зона" is the "one" form, Slavic and
+ * Baltic zero is plural). Falls back to `n === 1` where Intl.PluralRules
+ * is unavailable.
+ */
+function pluralWord(hass, count, oneKey, otherKey) {
+  const lang = (hass && hass.language) || "en";
+  let category = count === 1 ? "one" : "other";
+  if (typeof Intl !== "undefined" && Intl.PluralRules) {
+    try {
+      category = new Intl.PluralRules(lang).select(count);
+    } catch (_err) {
+      /* keep the n === 1 fallback */
+    }
+  }
+  return localize(hass, category === "one" ? oneKey : otherKey);
 }
 
 /* ---------------------------------------------------------------- icons */
@@ -131,6 +158,28 @@ function zoneAreaM2(sub) {
 /** Nice scale-bar lengths in mm (0.1 m … 50 m). */
 const SCALE_BAR_STEPS = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000];
 
+/**
+ * Upper bound on the points held for a single mow path. A long job streams
+ * point deltas indefinitely; without a cap the arrays grow without limit and
+ * every append re-strokes the whole polyline into the cached path layer.
+ */
+const MAX_PATH_POINTS = 6000;
+
+/**
+ * Halve a polyline's vertex density in place until it fits `cap`, keeping
+ * every other point. At whole-lawn scale the coarser line is visually
+ * indistinguishable, but memory and per-append redraw cost stay bounded.
+ */
+function decimatePath(points, cap) {
+  while (points.length > cap) {
+    let write = 0;
+    for (let read = 0; read < points.length; read += 2) {
+      points[write++] = points[read];
+    }
+    points.length = write;
+  }
+}
+
 /** Activities and their marker/chip colors (light, dark). */
 const ACTIVITY_COLORS = {
   mowing: ["#2e7d32", "#81c784"],
@@ -168,6 +217,8 @@ class TerramowMapCard extends HTMLElement {
     this._lastEntityState = null;
     this._staticCache = null; // {canvas, sig}
     this._pathCache = null; // {canvas, sig}
+    this._colorCache = null; // resolved theme colors; invalidated on theme change
+    this._themeSig = null;
     this._onVisibility = () => {
       if (document.visibilityState === "hidden") {
         this._teardownSubscription();
@@ -208,6 +259,13 @@ class TerramowMapCard extends HTMLElement {
     if (!this._unsub) {
       this._resubscribe();
     }
+    const themeSig = this._themeSignature(hass);
+    if (themeSig !== this._themeSig) {
+      this._themeSig = themeSig;
+      this._colorCache = null; // re-resolve theme colors on the next draw
+      this._updateHud();
+      this._requestDraw();
+    }
     const state = hass && hass.states[this._config?.entity];
     const stateStr = state ? `${state.state}` : null;
     if (stateStr !== this._lastEntityState) {
@@ -235,6 +293,7 @@ class TerramowMapCard extends HTMLElement {
 
   connectedCallback() {
     document.addEventListener("visibilitychange", this._onVisibility);
+    this._colorCache = null; // CSS custom props only resolve while connected
     this._resubscribe();
   }
 
@@ -290,6 +349,12 @@ class TerramowMapCard extends HTMLElement {
     if (msg.type === "scene") {
       const hadScene = this._hasGeometry();
       this._scene = msg.scene;
+      if (Array.isArray(this._scene.current_path)) {
+        decimatePath(this._scene.current_path, MAX_PATH_POINTS);
+      }
+      if (Array.isArray(this._scene.history_path)) {
+        decimatePath(this._scene.history_path, MAX_PATH_POINTS);
+      }
       this._sceneRev += 1;
       this._pathRev += 1;
       this._pruneStaleSelection();
@@ -304,9 +369,11 @@ class TerramowMapCard extends HTMLElement {
       }
       if (Array.isArray(msg.current_path_append)) {
         this._scene.current_path.push(...msg.current_path_append);
+        decimatePath(this._scene.current_path, MAX_PATH_POINTS);
       }
       if (Array.isArray(msg.history_path_append)) {
         this._scene.history_path.push(...msg.history_path_append);
+        decimatePath(this._scene.history_path, MAX_PATH_POINTS);
       }
       this._pathRev += 1;
       this._requestDraw();
@@ -409,6 +476,10 @@ class TerramowMapCard extends HTMLElement {
       }
       .rbtn svg { width: 18px; height: 18px; }
       .rbtn:hover { opacity: 1; }
+      .rbtn:focus-visible, .actions button:focus-visible {
+        outline: 2px solid var(--primary-color, #03a9f4);
+        outline-offset: 2px;
+      }
       .rbtn.active {
         background: var(--primary-color, #03a9f4);
         border-color: var(--primary-color, #03a9f4);
@@ -466,6 +537,9 @@ class TerramowMapCard extends HTMLElement {
 
     this._canvas = document.createElement("canvas");
     this._canvas.className = "main";
+    // The canvas is a status surface for assistive tech; the actionable
+    // controls live in the labelled button rows beside it.
+    this._canvas.setAttribute("role", "img");
     wrap.appendChild(this._canvas);
 
     this._hud = document.createElement("div");
@@ -546,7 +620,10 @@ class TerramowMapCard extends HTMLElement {
   _setFollow(on) {
     this._follow = Boolean(on) && Boolean(this._robot);
     this._followBtn.classList.toggle("active", this._follow);
-    this._followBtn.title = localize(this._hass, "follow");
+    const followLabel = localize(this._hass, "follow");
+    this._followBtn.title = followLabel;
+    this._followBtn.setAttribute("aria-label", followLabel);
+    this._followBtn.setAttribute("aria-pressed", String(this._follow));
     if (this._follow) {
       this._centerOnRobot();
       this._requestDraw();
@@ -566,6 +643,7 @@ class TerramowMapCard extends HTMLElement {
     if (!this._hud) {
       return;
     }
+    this._updateCanvasLabel();
     if (!this._config.show_hud) {
       this._hud.replaceChildren();
       return;
@@ -631,6 +709,30 @@ class TerramowMapCard extends HTMLElement {
     this._updateButtons();
   }
 
+  /** Keep the canvas's assistive-tech label in sync with visible status. */
+  _updateCanvasLabel() {
+    if (!this._canvas) {
+      return;
+    }
+    const parts = [];
+    const state = this._hass && this._hass.states[this._config.entity];
+    if (state) {
+      parts.push(
+        this._hass.formatEntityState
+          ? this._hass.formatEntityState(state)
+          : state.state
+      );
+    }
+    const level = this._battery && this._battery.level;
+    if (typeof level === "number") {
+      parts.push(`${Math.round(level)}%`);
+    }
+    if (this._scene && this._scene.map_name) {
+      parts.push(this._scene.map_name);
+    }
+    this._canvas.setAttribute("aria-label", parts.join(", ") || "TerraMow map");
+  }
+
   _updateButtons() {
     if (!this._controls) {
       return;
@@ -641,8 +743,12 @@ class TerramowMapCard extends HTMLElement {
     }
     // Show the follow toggle only when there is a robot pose to follow
     this._followBtn.style.display = this._robot ? "" : "none";
-    this._followBtn.title = localize(this._hass, "follow");
-    this._fitBtn.title = localize(this._hass, "reset_view");
+    const followLabel = localize(this._hass, "follow");
+    this._followBtn.title = followLabel;
+    this._followBtn.setAttribute("aria-label", followLabel);
+    const fitLabel = localize(this._hass, "reset_view");
+    this._fitBtn.title = fitLabel;
+    this._fitBtn.setAttribute("aria-label", fitLabel);
 
     const activity = this._activity();
     const wanted = [];
@@ -728,7 +834,7 @@ class TerramowMapCard extends HTMLElement {
       text += ` · ${Math.round(areaM2)} m²`;
     }
     this._actionNames.textContent = text;
-    const unit = localize(this._hass, count === 1 ? "zone" : "zones");
+    const unit = pluralWord(this._hass, count, "zone", "zones");
     this._goBtn.textContent = `${localize(this._hass, "start")} ${count} ${unit}`;
     this._clearBtn.textContent = localize(this._hass, "clear");
     this._actionBar.classList.add("visible");
@@ -1011,16 +1117,39 @@ class TerramowMapCard extends HTMLElement {
     return pair[colors.dark ? 1 : 0];
   }
 
+  /** Lightweight theme fingerprint from hass, no layout read. */
+  _themeSignature(hass) {
+    const themes = hass && hass.themes;
+    if (!themes) {
+      return "";
+    }
+    const selected = hass.selectedTheme ? JSON.stringify(hass.selectedTheme) : "";
+    return `${themes.darkMode}|${themes.theme || ""}|${selected}`;
+  }
+
+  /** Resolved theme colors, cached until the theme fingerprint changes. */
   _colors() {
+    if (!this._colorCache) {
+      this._colorCache = this._computeColors();
+    }
+    return this._colorCache;
+  }
+
+  _computeColors() {
     const styles = getComputedStyle(this);
     const pick = (name, fallback) =>
       styles.getPropertyValue(name).trim() || fallback;
     const primaryText = pick("--primary-text-color", "#212121");
+    // Prefer Home Assistant's own light/dark signal; the text-color sniff
+    // below is only a fallback for stubs or themes that omit darkMode.
+    const themeDark = this._hass && this._hass.themes && this._hass.themes.darkMode;
     const dark =
-      primaryText.startsWith("#e") ||
-      primaryText.startsWith("#f") ||
-      primaryText.toLowerCase() === "white" ||
-      primaryText.startsWith("rgb(2");
+      typeof themeDark === "boolean"
+        ? themeDark
+        : primaryText.startsWith("#e") ||
+          primaryText.startsWith("#f") ||
+          primaryText.toLowerCase() === "white" ||
+          primaryText.startsWith("rgb(2");
     return {
       dark,
       accent: pick("--primary-color", "#03a9f4"),
