@@ -23,11 +23,14 @@
  *   rotation: 0                # rotate the map view (degrees)
  *   fit_height: 420            # card canvas height in px
  *
- * NOTE: served as an ES module (Lovelace resource type "module") and
- * evaluated under the strict module goal. It ships unbundled from a bare
- * URL, so keep it free of import/export (any specifier would 404) and
- * strict-safe throughout; both element definitions must run at top-level
- * evaluation. CI enforces all of this via tests/frontend/eval_card_module.mjs.
+ * NOTE: registered as a classic "js" Lovelace resource, not an ES "module".
+ * A "module" served from the browser cache is not re-executed, so the custom
+ * element could stay undefined and the card showed a permanent "Configuration
+ * error" (issue #140); see CARD_RESOURCE_TYPE in map_card.py. Even so, the
+ * file is kept module-safe: it ships unbundled from a bare URL, so keep it
+ * free of import/export (any specifier would 404) and strict-safe throughout,
+ * and both element definitions must run at top-level evaluation. CI evaluates
+ * it under the strict module goal via tests/frontend/eval_card_module.mjs.
  */
 
 "use strict";
