@@ -1040,11 +1040,16 @@ class TerramowMapCard extends HTMLElement {
     const pick = (name, fallback) =>
       styles.getPropertyValue(name).trim() || fallback;
     const primaryText = pick("--primary-text-color", "#212121");
+    // Prefer Home Assistant's own light/dark signal; the text-color sniff
+    // below is only a fallback for stubs or themes that omit darkMode.
+    const themeDark = this._hass && this._hass.themes && this._hass.themes.darkMode;
     const dark =
-      primaryText.startsWith("#e") ||
-      primaryText.startsWith("#f") ||
-      primaryText.toLowerCase() === "white" ||
-      primaryText.startsWith("rgb(2");
+      typeof themeDark === "boolean"
+        ? themeDark
+        : primaryText.startsWith("#e") ||
+          primaryText.startsWith("#f") ||
+          primaryText.toLowerCase() === "white" ||
+          primaryText.startsWith("rgb(2");
     return {
       dark,
       accent: pick("--primary-color", "#03a9f4"),
