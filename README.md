@@ -243,7 +243,7 @@ Open an issue on [GitHub](https://github.com/it-rec/TerraMowHA/issues) for suppo
 For developers interested in understanding or extending this integration:
 
 - [Contributing guide](CONTRIBUTING.md) — setup, quality gates (100% coverage, `mypy --strict`, translations), PR and release process
-- [Architecture](docs/ARCHITECTURE.md) — integration internals: hub lifecycle, threading model, data-point catalog, map/path pipeline
+- [Architecture](docs/ARCHITECTURE.md) — integration internals: hub lifecycle, execution model, data-point catalog, map/path pipeline
 - [Developer guide](docs/en/developers.md) — the on-the-wire MQTT/HTTP device protocol
 - [What this fork adds over upstream](docs/UPSTREAM_DELTA.md)
 

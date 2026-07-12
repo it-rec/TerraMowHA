@@ -6,10 +6,13 @@ topics) and the model-name / map-info handlers.
 """
 
 import asyncio
+import contextlib
 import json
+import logging
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiomqtt
 import pytest
 
 from custom_components.terramow import TerraMowBasicData
@@ -21,7 +24,7 @@ from custom_components.terramow.const import (
     PATH_META_TOPIC,
     POSE_TOPIC,
 )
-from custom_components.terramow.hub import TerraMowHub
+from custom_components.terramow.hub import TerraMowHub, _HubMqttClient
 
 
 def _hub() -> TerraMowHub:
@@ -232,38 +235,42 @@ def test_register_map_pose_path_callbacks_fire_when_data_present() -> None:
 
 
 # ---------------------------------------------------------------------------
-# connect / disconnect callbacks
+# connection setup (per-connect subscriptions and session priming)
 # ---------------------------------------------------------------------------
 
 
-def test_on_mqtt_connect_subscribes_and_clears_error() -> None:
+def test_on_connected_subscribes_and_clears_error() -> None:
     hub = _hub()
     hub.connection_error = True
     client = MagicMock()
-    hub.on_mqtt_connect(client, None, None, 0)
+    client.subscribe = AsyncMock()
+    asyncio.run(hub._async_on_connected(client))
     # wildcard data-point topic + info/meta/pose/model subscriptions
-    subscribed = [c.args[0] for c in client.subscribe.call_args_list]
+    subscribed = [c.args[0] for c in client.subscribe.await_args_list]
     assert "data_point/+/robot" in subscribed
     assert "data_point/+/app" in subscribed
     assert "#" in subscribed
-    assert client.subscribe.call_count == 9
+    assert client.subscribe.await_count == 9
     assert hub.connection_error is False
     # a compatibility-info request was published
     assert hub.mqtt_client.publish.called
 
 
-def test_on_mqtt_connect_failure_sets_error() -> None:
+def test_on_connected_survives_denied_discovery_subscription() -> None:
     hub = _hub()
-    hub.on_mqtt_connect(MagicMock(), None, None, 5)
-    assert hub.connection_error is True
 
+    async def subscribe(topic, *args, **kwargs):
+        # the broker refusing the "#" discovery subscription must not break
+        # the documented subscriptions around it
+        if topic == "#":
+            raise aiomqtt.MqttError("subscription denied")
 
-def test_on_mqtt_disconnect_unexpected_sets_error() -> None:
-    hub = _hub()
-    hub.on_mqtt_disconnect(None, None, 0)  # clean disconnect -> no error
+    client = MagicMock()
+    client.subscribe = AsyncMock(side_effect=subscribe)
+    asyncio.run(hub._async_on_connected(client))
+    subscribed = [c.args[0] for c in client.subscribe.await_args_list]
+    assert subscribed[-1] == "model/name"
     assert hub.connection_error is False
-    hub.on_mqtt_disconnect(None, None, 1)  # unexpected -> error
-    assert hub.connection_error is True
 
 
 # ---------------------------------------------------------------------------
@@ -399,22 +406,142 @@ def test_get_cmd_seq_increments() -> None:
     assert hub.get_cmd_seq() == first + 1
 
 
-def test_mqtt_loop_success_and_failure_iterations() -> None:
-    # success iteration: connect + loop_forever, then stop
-    hub = _hub()
-    hub._stop_event = MagicMock()
-    hub._stop_event.is_set.side_effect = [False, True]
-    hub.mqtt_client.is_connected.return_value = False
-    hub.mqtt_loop()
-    hub.mqtt_client.connect.assert_called_once()
-    hub.mqtt_client.loop_forever.assert_called_once()
+class _FakeAiomqttClient:
+    """aiomqtt.Client stand-in: async context manager + scripted messages."""
 
-    # failure iteration: connect raises -> error state + backoff wait
-    hub2 = _hub()
-    hub2._stop_event = MagicMock()
-    hub2._stop_event.is_set.side_effect = [False, True]
-    hub2.mqtt_client.is_connected.return_value = False
-    hub2.mqtt_client.connect.side_effect = OSError("unreachable")
-    hub2.mqtt_loop()
-    assert hub2.connection_error is True
-    hub2._stop_event.wait.assert_called()
+    def __init__(self, messages=(), stream_error=None):
+        self._messages = list(messages)
+        self._stream_error = stream_error
+        self.subscribe = AsyncMock()
+        self.publish = AsyncMock()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *exc) -> bool:
+        return False
+
+    @property
+    def messages(self):
+        async def _iterate():
+            for message in self._messages:
+                yield message
+            if self._stream_error is not None:
+                raise self._stream_error
+
+        return _iterate()
+
+
+async def _run_runner_until(hub, condition, rounds: int = 200) -> None:
+    """Run the connection task until ``condition()`` holds, then cancel it."""
+    task = asyncio.get_running_loop().create_task(hub._async_mqtt_runner())
+    for _ in range(rounds):
+        await asyncio.sleep(0)
+        if condition():
+            break
+    task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await task
+
+
+def test_mqtt_runner_dispatches_messages_then_backs_off() -> None:
+    # one connected session delivering a message, then a dropped connection
+    hub = _hub()
+    hub.on_mqtt_message = MagicMock()
+    fake = _FakeAiomqttClient(
+        messages=[SimpleNamespace(topic="robot/pose", payload=b"{}")],
+        stream_error=aiomqtt.MqttError("connection lost"),
+    )
+
+    async def main() -> None:
+        with patch(
+            "custom_components.terramow.hub.aiomqtt.Client", return_value=fake
+        ):
+            await _run_runner_until(hub, lambda: hub.connection_error)
+
+    asyncio.run(main())
+    # the aiomqtt message was normalized to the paho-like topic/payload shape
+    msg = hub.on_mqtt_message.call_args.args[2]
+    assert msg.topic == "robot/pose"
+    assert msg.payload == b"{}"
+    # the per-connect setup ran, and the drop flagged the connection error
+    assert fake.subscribe.await_count == 9
+    assert hub.connection_error is True
+    assert hub._aiomqtt_client is None
+
+
+# ---------------------------------------------------------------------------
+# the sync mqtt-client facade
+# ---------------------------------------------------------------------------
+
+
+def test_facade_reports_disconnected_and_rejects_publish() -> None:
+    hub = _hub()
+    facade = _HubMqttClient(hub)
+    assert facade.is_connected() is False
+    assert facade.publish("t", "p").rc != 0
+
+
+def test_facade_publishes_from_loop_and_executor_threads() -> None:
+    hub = _hub()
+    client = MagicMock()
+    client.publish = AsyncMock()
+    hub._aiomqtt_client = client
+    facade = _HubMqttClient(hub)
+    assert facade.is_connected() is True
+
+    async def main() -> None:
+        loop = asyncio.get_running_loop()
+        hub.hass.loop = loop
+        hub.hass.async_create_task = MagicMock(side_effect=loop.create_task)
+
+        # from the event loop: handed off via async_create_task
+        assert facade.publish("t1", "p1", qos=1).rc == 0
+        await asyncio.sleep(0)
+        client.publish.assert_awaited_once_with("t1", "p1", qos=1)
+
+        # from an executor thread: handed off via run_coroutine_threadsafe
+        result = await loop.run_in_executor(None, facade.publish, "t2", "p2")
+        assert result.rc == 0
+        for _ in range(100):
+            if client.publish.await_count == 2:
+                break
+            await asyncio.sleep(0.01)
+        client.publish.assert_awaited_with("t2", "p2", qos=0)
+
+    asyncio.run(main())
+
+
+def test_facade_logs_async_publish_failure(caplog) -> None:
+    hub = _hub()
+    client = MagicMock()
+    client.publish = AsyncMock(side_effect=aiomqtt.MqttError("gone"))
+    hub._aiomqtt_client = client
+    facade = _HubMqttClient(hub)
+
+    async def main() -> None:
+        loop = asyncio.get_running_loop()
+        hub.hass.loop = loop
+        hub.hass.async_create_task = MagicMock(side_effect=loop.create_task)
+        assert facade.publish("t", "p").rc == 0  # accepted at handoff...
+        await asyncio.sleep(0)
+
+    with caplog.at_level(logging.ERROR):
+        asyncio.run(main())
+    # ...but the delivery failure surfaces in the log
+    assert "publish to t failed" in caplog.text
+
+
+def test_mqtt_runner_clean_stream_end_counts_as_failure() -> None:
+    # a message stream that ends without an error must still back off
+    hub = _hub()
+    fake = _FakeAiomqttClient(messages=[])
+
+    async def main() -> None:
+        with patch(
+            "custom_components.terramow.hub.aiomqtt.Client", return_value=fake
+        ):
+            await _run_runner_until(hub, lambda: hub.connection_error)
+
+    asyncio.run(main())
+    assert hub.connection_error is True

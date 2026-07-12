@@ -49,10 +49,6 @@ MQTT_USERNAME = "terramow"
 MQTT_RECONNECT_BASE_DELAY = 5
 MQTT_RECONNECT_MAX_DELAY = 60
 
-# Maximum time (seconds) to wait for the MQTT worker thread to exit when the entity
-# is removed, avoiding a lingering zombie thread that keeps reconnecting.
-MQTT_THREAD_JOIN_TIMEOUT = 10
-
 # MQTT topics
 MAP_INFO_TOPIC = "map/current/info"
 MAP_META_TOPIC = "map/current/meta"

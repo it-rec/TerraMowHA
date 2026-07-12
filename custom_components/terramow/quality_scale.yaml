@@ -79,7 +79,7 @@ rules:
 
   # Platinum
   async-dependency:
-    status: exempt
-    comment: The paho-mqtt client runs in its own thread; work is offloaded via async_add_executor_job.
+    status: done
+    comment: MQTT runs on aiomqtt as an event-loop task; map/path bodies are parsed in the executor.
   inject-websession: done
   strict-typing: done

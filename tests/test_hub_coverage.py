@@ -9,20 +9,22 @@ the device-registry firmware/model updates.
 
 import asyncio
 import json
+import logging
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import aiomqtt
 
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.const import (
     MAP_INFO_TOPIC,
     MAP_META_TOPIC,
     MODEL_NAME_TOPIC,
-    MQTT_PORT,
     PATH_HISTORY_META_TOPIC,
     PATH_META_TOPIC,
     POSE_TOPIC,
 )
-from custom_components.terramow.hub import TerraMowHub
+from custom_components.terramow.hub import TerraMowHub, _HubMqttClient
 
 
 def _hub() -> TerraMowHub:
@@ -134,25 +136,49 @@ def test_on_mqtt_message_data_point_and_invalid_topic() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_start_launches_thread_and_registers_callbacks() -> None:
+def test_start_creates_runner_task_and_registers_callbacks() -> None:
     hub = _hub()
-    with (
-        patch("custom_components.terramow.hub.mqtt_client.Client") as client_cls,
-        patch("custom_components.terramow.hub.threading.Thread") as thread_cls,
-    ):
-        hub.start()
-    client_cls.assert_called_once()
-    thread_cls.return_value.start.assert_called_once()
+    hub.hass.async_create_background_task = MagicMock(
+        side_effect=lambda coro, name: (coro.close(), MagicMock())[1]
+    )
+    hub.start()
+    hub.hass.async_create_background_task.assert_called_once()
+    assert isinstance(hub.mqtt_client, _HubMqttClient)
     assert 107 in hub.callbacks
 
 
-def test_async_stop_joins_alive_thread_and_warns() -> None:
+def test_async_stop_cancels_runner_task() -> None:
     hub = _hub()
-    thread = MagicMock()
-    thread.is_alive.return_value = True  # never dies -> join + warning
-    hub.mqtt_thread = thread
-    asyncio.run(hub.async_stop())
-    thread.join.assert_called_once()
+
+    async def main() -> None:
+        async def forever() -> None:
+            await asyncio.Event().wait()
+
+        task = asyncio.get_running_loop().create_task(forever())
+        hub._mqtt_task = task
+        await hub.async_stop()
+        assert task.cancelled()
+        assert hub._mqtt_task is None
+
+    asyncio.run(main())
+    assert hub._stop_event.is_set()
+
+
+def test_async_stop_logs_unexpected_task_death(caplog) -> None:
+    hub = _hub()
+
+    async def main() -> None:
+        async def boom() -> None:
+            raise RuntimeError("runner died")
+
+        task = asyncio.get_running_loop().create_task(boom())
+        await asyncio.sleep(0)  # let the task die before stopping
+        hub._mqtt_task = task
+        await hub.async_stop()  # the crash is logged, never re-raised
+
+    with caplog.at_level(logging.ERROR):
+        asyncio.run(main())
+    assert "died unexpectedly" in caplog.text
 
 
 # ---------------------------------------------------------------------------
@@ -484,61 +510,52 @@ def test_async_retry_history_path_cancelled_returns_cleanly() -> None:
 
 
 # ---------------------------------------------------------------------------
-# mqtt_loop auto-reconnect
+# connection task auto-reconnect
 # ---------------------------------------------------------------------------
 
 
-def test_mqtt_loop_connects_then_runs_forever() -> None:
+def test_mqtt_runner_backs_off_with_throttled_logging(caplog) -> None:
     hub = _hub()
-    client = hub.mqtt_client
-    client.is_connected.return_value = False
+    attempts = {"n": 0}
 
-    def stop(*_a):
-        # loop_forever returning ends one iteration; stop the loop after it
-        hub._stop_event.set()
+    def failing_client(**kwargs):
+        attempts["n"] += 1
+        raise aiomqtt.MqttError("no route to host")
 
-    client.loop_forever.side_effect = stop
-    hub.mqtt_loop()
+    async def main() -> None:
+        with (
+            patch(
+                "custom_components.terramow.hub.aiomqtt.Client",
+                side_effect=failing_client,
+            ),
+            # collapse the exponential backoff so two attempts happen fast
+            patch("custom_components.terramow.hub.MQTT_RECONNECT_BASE_DELAY", 0),
+        ):
+            task = asyncio.get_running_loop().create_task(hub._async_mqtt_runner())
+            for _ in range(200):
+                await asyncio.sleep(0)
+                if attempts["n"] >= 2:
+                    break
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
-    client.connect.assert_called_once_with(hub.host, MQTT_PORT, 60)
-    client.loop_forever.assert_called_once()
+    with caplog.at_level(logging.DEBUG):
+        asyncio.run(main())
 
-
-def test_mqtt_loop_first_failure_warns_and_backs_off() -> None:
-    hub = _hub()
-    client = hub.mqtt_client
-    client.is_connected.return_value = False
-    client.connect.side_effect = OSError("no route to host")
-
-    def stop_wait(_delay):
-        hub._stop_event.set()
-
-    with patch.object(hub._stop_event, "wait", side_effect=stop_wait) as wait:
-        hub.mqtt_loop()
-
-    client.connect.assert_called_once()
-    wait.assert_called_once()
+    assert attempts["n"] >= 2
     assert hub.connection_error is True
-
-
-def test_mqtt_loop_second_failure_drops_to_debug() -> None:
-    hub = _hub()
-    client = hub.mqtt_client
-    client.is_connected.return_value = False
-    client.connect.side_effect = OSError("still down")
-    waits = {"n": 0}
-
-    def stop_after_two(_delay):
-        waits["n"] += 1
-        if waits["n"] >= 2:
-            hub._stop_event.set()
-
-    with patch.object(hub._stop_event, "wait", side_effect=stop_after_two):
-        hub.mqtt_loop()
-
-    # two failed attempts: the first warns, the second logs at debug
-    assert waits["n"] == 2
-    assert client.connect.call_count == 2
+    # the first failure warns, later ones drop to DEBUG to avoid log flooding
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
+    assert "will keep retrying" in warnings[0].getMessage()
+    assert any(
+        "still failing" in r.getMessage()
+        for r in caplog.records
+        if r.levelno == logging.DEBUG
+    )
 
 
 # ---------------------------------------------------------------------------

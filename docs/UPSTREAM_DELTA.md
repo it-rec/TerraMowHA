@@ -15,7 +15,7 @@ All upstream commits after v0.3.0 are already covered by the fork:
 |---|---|
 | `b7af54a` Rotate the robot and base image | Rotated robot/station rendering in `map_render.py` (pose `theta`/`yaw`). |
 | `5b9daf8` Show mowing path live without reload (#55) | Generalized backward-seq session reset in `hub.py` `_async_handle_meta`, applied to all meta channels (path, history path, map). |
-| `045d789` Stop MQTT reconnect loop spam / thread leak | Same fix in `hub.py` / `const.py`: exponential backoff, throttled logging, interruptible wait, worker-thread join on unload. |
+| `045d789` Stop MQTT reconnect loop spam / thread leak | Superseded by the async MQTT stack in `hub.py` / `const.py`: exponential backoff, throttled logging, connection task cancelled and awaited on unload. |
 
 ## New platforms & entities
 
@@ -66,8 +66,9 @@ All upstream commits after v0.3.0 are already covered by the fork:
   (`--cov-fail-under=100`), starting from no test suite upstream.
 - **Hardened hub**: MQTT auto-reconnect with exponential backoff and throttled
   logging; map/path HTTP fetch over Home Assistant's shared aiohttp session with
-  ETag caching, sequence guards, retry/backoff and pending-meta requeue; a clean
-  worker-thread join on unload.
+  ETag caching, sequence guards, retry/backoff and pending-meta requeue; the
+  MQTT connection runs as an asyncio task (aiomqtt) that is cancelled and
+  awaited cleanly on unload.
 - **Device-identifier migration** (`TerraMowLanwMower` → `TerraMowLawnMower`) and
   **S800 support** (older firmware HA-module version 2 works without nagging).
 - **CI/CD**: `validate.yml` (tests+coverage, mypy strict, ruff, hassfest, HACS)

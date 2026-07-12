@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
-import threading
 from typing import TYPE_CHECKING, Any
 
+import aiomqtt
 import voluptuous as vol
 from homeassistant.config_entries import (
     ConfigEntry,
@@ -38,7 +39,6 @@ from .const import (
     MQTT_PORT,
     MQTT_USERNAME,
 )
-from .mqtt_compat import create_mqtt_client
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -62,54 +62,44 @@ STEP_REAUTH_DATA_SCHEMA = vol.Schema(
 )
 
 
+def _is_auth_failure(err: aiomqtt.MqttCodeError) -> bool:
+    """Return True when a CONNACK refusal means bad credentials.
+
+    MQTT 3.1.1 CONNACK codes 4 (bad username/password) and 5 (not
+    authorized); paho 2.x may normalize these to the MQTT 5 reason codes
+    134/135, delivered as ``ReasonCode`` objects carrying a ``value``.
+    """
+    code = getattr(err.rc, "value", err.rc)
+    return code in (4, 5, 134, 135)
+
+
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Validate the user input and test the MQTT connection.
 
     Raises InvalidAuth on authentication failure (broker rejects credentials)
-    and CannotConnect for any other failure mode.
+    and CannotConnect for any other failure mode. ``hass`` is unused but kept:
+    the signature is the config-flow validate convention and tests patch it.
     """
-
-    def mqtt_connect() -> tuple[bool, bool]:
-        """Return (connected, auth_failed) by attempting an MQTT connection."""
-        connected = False
-        auth_failed = False
-        event = threading.Event()
-
-        def on_connect(client: Any, userdata: Any, flags: Any, rc: int) -> None:
-            nonlocal connected, auth_failed
-            # rc 4 = bad username/password, rc 5 = not authorized
-            if rc == 0:
-                connected = True
-            elif rc in (4, 5):
-                auth_failed = True
-            event.set()
-
-        client = create_mqtt_client()
-        client.username_pw_set(MQTT_USERNAME, data[CONF_PASSWORD])
-        client.on_connect = on_connect
-        try:
-            client.connect(data[CONF_HOST], MQTT_PORT, 5)
-        except Exception as err:  # noqa: BLE001
-            _LOGGER.error("Connection failed: %s", err)
-            return False, False
-
-        client.loop_start()
-        try:
-            event.wait(timeout=5)
-        finally:
-            client.loop_stop()
-            try:
-                client.disconnect()
-            except Exception:  # noqa: BLE001
-                pass
-        return connected, auth_failed
-
-    connected, auth_failed = await hass.async_add_executor_job(mqtt_connect)
-
-    if auth_failed:
-        raise InvalidAuth
-    if not connected:
-        raise CannotConnect
+    try:
+        # Belt and braces around aiomqtt's own operation timeout, so a
+        # half-open TCP connect can never hang the flow.
+        async with asyncio.timeout(10):
+            async with aiomqtt.Client(
+                hostname=data[CONF_HOST],
+                port=MQTT_PORT,
+                username=MQTT_USERNAME,
+                password=data[CONF_PASSWORD],
+                timeout=5,
+            ):
+                pass  # a successful CONNACK is all the validation needed
+    except aiomqtt.MqttCodeError as err:
+        if _is_auth_failure(err):
+            raise InvalidAuth from err
+        _LOGGER.error("Connection failed: %s", err)
+        raise CannotConnect from err
+    except (aiomqtt.MqttError, OSError, TimeoutError) as err:
+        _LOGGER.error("Connection failed: %s", err)
+        raise CannotConnect from err
 
     return {"title": f"TerraMow ({data[CONF_HOST]})"}
 

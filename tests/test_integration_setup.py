@@ -8,7 +8,7 @@ unit tests cannot — e.g. a select publishing lowercase state tokens while a
 number entity compares them against UPPERCASE device enums.
 
 The hub is real; only its MQTT layer is neutralized: ``TerraMowHub.start`` is
-replaced by a stub that installs a mock (connected) paho client and registers
+replaced by a stub that installs a mock (connected) MQTT client and registers
 the hub's own data-point callbacks, without spawning the network thread.
 Device pushes are simulated by feeding ``hub.on_mqtt_message`` real MQTT-shaped
 messages, exercising the full dispatch path into the entities.
@@ -471,16 +471,15 @@ async def test_unload_entry_stops_hub_and_removes_service(
 ) -> None:
     entry = await setup_terramow(hass)
     hub = entry.runtime_data.lawn_mower
-    client = hub.mqtt_client
     mower = resolve_entity_id(hass, "lawn_mower")
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
 
     assert entry.state is ConfigEntryState.NOT_LOADED
-    # The hub was stopped: worker signalled and the MQTT client disconnected.
+    # The hub was stopped: shutdown signalled, no connection task left behind.
     assert hub._stop_event.is_set()
-    client.disconnect.assert_called_once()
+    assert hub._mqtt_task is None
     # The shared service is dropped with the last loaded entry.
     assert not hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION)
     # The entity is torn down; only a restored unavailable state remains.

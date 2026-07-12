@@ -34,7 +34,7 @@ The 11 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
 | Module | Purpose |
 | --- | --- |
 | `__init__.py` | Config-entry setup/unload, `TerraMowBasicData`/`TerraMowConfigEntry`, device-id migration, version-compatibility logic, shared `start_select_region` service |
-| `hub.py` | `TerraMowHub` — owns the MQTT client + worker thread, all dp caches, map/path HTTP fetching, command helpers, enums (`Mission`, `SubMission`, `MissionState`, …) |
+| `hub.py` | `TerraMowHub` — owns the aiomqtt connection task, all dp caches, map/path HTTP fetching, command helpers, enums (`Mission`, `SubMission`, `MissionState`, …) |
 | `entity.py` | `TerraMowEntity` base — shared `device_info`, `unique_id` scheme, default `available` |
 | `entity_utils.py` | Thread-safe state helpers (`safe_write_ha_state`, `safe_schedule_update_ha_state`) and `PushUpdateMixin` |
 | `config_flow.py` | User/zeroconf/reauth/reconfigure flows, options (map resolution, theme, coverage), `validate_input`, `CannotConnect`/`InvalidAuth` |
@@ -110,25 +110,34 @@ versions against `const.MIN_REQUIRED_OVERALL_VERSION` / `MIN_SUPPORTED_HA_VERSIO
 The hub owns the MQTT connection and every piece of protocol state (dp caches,
 robot mission/sub-mission/state enums, map/path/pose caches, HTTP fetch state).
 
-- **`start()`** — constructs a `paho.mqtt.client.Client`, sets
-  `on_connect`/`on_disconnect`/`on_message`, launches a **daemon worker thread**
-  running `mqtt_loop()`, then calls `register_all_callbacks()`.
-- **`mqtt_loop()`** — the reconnect loop. Connects, then blocks in
-  `loop_forever()`. On any exception it increments a failure counter, sets the
-  connection-error flag, and waits with **exponential backoff**
-  (`MQTT_RECONNECT_BASE_DELAY * 2^(n-1)`, capped at `MQTT_RECONNECT_MAX_DELAY`).
-  Logging is **throttled**: first failure is `WARNING`, subsequent ones drop to
-  `DEBUG`, so an unreachable/sleeping/docked mower doesn't flood the log. The
-  wait uses `self._stop_event.wait(delay)` so shutdown is immediate.
-- **`on_mqtt_connect`** — subscribes to `data_point/{0..200}/robot`, the map
-  info/meta topics, path/history meta, pose, and `model/name`; then actively
-  requests compatibility info (publishes to dp 127). Clears the error flag and
+- **`start()`** — calls `register_all_callbacks()`, installs the sync
+  `_HubMqttClient` facade as `hub.mqtt_client`, and launches
+  `_async_mqtt_runner()` as a **background task on the event loop**
+  (`hass.async_create_background_task`).
+- **`_async_mqtt_runner()`** — the connection task. Opens an
+  `aiomqtt.Client` context (connect + clean disconnect on exit) and iterates
+  `client.messages`, feeding each message to `on_mqtt_message`. On any
+  exception (connect refused, connection lost, handler bug) it increments a
+  failure counter, sets the connection-error flag, and sleeps with
+  **exponential backoff** (`MQTT_RECONNECT_BASE_DELAY * 2^(n-1)`, capped at
+  `MQTT_RECONNECT_MAX_DELAY`). Logging is **throttled**: first failure is
+  `WARNING`, subsequent ones drop to `DEBUG`, so an unreachable/sleeping/
+  docked mower doesn't flood the log.
+- **`_async_on_connected`** — runs once per (re)connection: subscribes to
+  `data_point/+/robot`, `data_point/+/app`, the `#` discovery wildcard
+  (denial tolerated), the map info/meta topics, path/history meta, pose, and
+  `model/name`; then actively requests compatibility info (publishes to
+  dp 127) and the full weekly schedule (dp 122). Clears the error flag and
   notifies state listeners.
-- **`async_stop()`** — sets `_stop_event`, cancels retry tasks and pending meta,
-  calls `mqtt_client.disconnect()` (so `loop_forever()` returns), then
-  **joins the worker thread** in an executor with `MQTT_THREAD_JOIN_TIMEOUT`
-  so a reload/reconfigure never leaves a zombie thread reconnecting in the
-  background.
+- **`_HubMqttClient`** — the sync facade command senders publish through. It
+  keeps the tiny paho-like surface (`is_connected()`, `publish()` returning
+  an object with `rc`) so `publish_data_point` stays synchronous and callable
+  from the event loop *and* executor threads; the actual `aiomqtt` publish is
+  handed to the loop (`async_create_task` / `run_coroutine_threadsafe`).
+- **`async_stop()`** — sets `_stop_event`, cancels retry tasks and pending
+  meta, then **cancels and awaits the connection task**, which unwinds the
+  `async with` and sends the MQTT DISCONNECT — a reload/reconfigure never
+  leaves a half-open connection or a still-reconnecting task behind.
 
 Callback registries:
 
@@ -151,31 +160,33 @@ async handler; `pose/current` caches and fans out to pose callbacks;
 `data_point/{id}/robot` (regex `TOPIC_PATTERN`) is routed to the registered dp
 callbacks.
 
-## 5. Threading model (important)
+## 5. Execution model (important)
 
-Two execution contexts exist and the boundary matters for correctness.
+MQTT runs natively on the Home Assistant event loop: the connection task,
+`_async_on_connected`, `on_mqtt_message` and everything they call
+synchronously (`_set_connection_error()`, `_handle_model_name()`,
+`_notify_state_listeners()`) execute on the loop. Handlers are still
+decoupled through `_dispatch`/`_dispatch_batch`
+(`loop.call_soon_threadsafe`): dp callbacks and pose/map/path callbacks are
+scheduled onto the loop as separate jobs, so every `on_*` handler
+(`on_mission_status`, `on_battery_status`, …) and every push refresh runs as
+its own loop callback and one handler's error never stops the next.
+Device-registry updates are likewise scheduled via `_dispatch`.
 
-**Runs on the MQTT worker thread** (not the event loop):
-`mqtt_loop`, `on_mqtt_connect`, `on_mqtt_disconnect`, `on_mqtt_message`, and
-anything they call *synchronously* — notably `_set_connection_error()` and
-`_handle_model_name()`, both of which call `_notify_state_listeners()`.
-
-**Marshalled onto the HA event loop:** dp callbacks and pose/map/path callbacks
-are dispatched with **`hass.add_job(callback, payload)`**, so every `on_*`
-handler (`on_mission_status`, `on_battery_status`, …) and every push refresh
-runs on the loop. Device-registry updates are likewise scheduled with
-`hass.add_job`.
+One boundary still crosses threads: Home Assistant runs **sync entity
+methods in executor threads** (the lawn mower's `start_mowing`/`pause`/
+`dock`). Those paths go through the sync `publish_data_point` →
+`_HubMqttClient.publish`, which detects it is off-loop and hands the publish
+to the loop with `run_coroutine_threadsafe`; `get_cmd_seq()` stays
+lock-protected for the same reason.
 
 Consequence — the split responsibilities:
 
 - **dp callbacks / `on_*` handlers run on the loop.** They may safely mutate
-  caches and call loop-only APIs. `on_mission_status` (dp_107) calls
-  `_notify_state_listeners()`, but since it was itself dispatched via
-  `add_job`, that path is already on the loop.
-- **State listeners may run on the MQTT thread.** They fire from
-  `_set_connection_error` (connection changes, from `mqtt_loop`) and from
-  `_handle_model_name` (from `on_mqtt_message`). Therefore any
-  `register_state_listener` callback **must be thread-safe**:
+  caches and call loop-only APIs.
+- **State listeners fire on the loop** (from `_set_connection_error`,
+  `_handle_model_name` and `on_mission_status`), but the entity-side
+  listeners keep their historical thread-safe idiom, which remains correct:
   - `lawn_mower.TerraMowLawnMowerEntity._on_hub_state` uses
     `safe_schedule_update_ha_state`.
   - `event.TerraMowMowerEventEntity._on_hub_state` computes the transition, then
@@ -266,8 +277,8 @@ Live map/path/history are delivered as **metadata over MQTT** pointing at a
 symmetric — `_async_handle_map_meta`, `_async_handle_path_meta`,
 `_async_handle_history_path_meta`:
 
-1. `on_mqtt_message` (worker thread) caches the raw meta and schedules the
-   async handler with `hass.add_job` (→ loop).
+1. `on_mqtt_message` caches the raw meta and schedules the async handler as
+   its own loop job (via `_dispatch`).
 2. **Seq guard.** Each meta carries a `seq`. A meta with `seq <= _{kind}_seq` is
    dropped. Path/history additionally detect a **backward seq** (new mowing
    session republishing from 0) and reset `_{kind}_seq`/`_{kind}_etag` so the
@@ -356,7 +367,7 @@ CI (`.github/workflows/validate.yml`) enforces:
   suite covers every line **and branch**; the floor cannot silently regress.
 - **`mypy` strict** — `mypy` with `[tool.mypy] strict = true`,
   `disallow_untyped_defs`, `warn_return_any`; `follow_imports = silent` so
-  third-party gaps (homeassistant, paho) don't break the gate. Every shipped
+  third-party gaps (homeassistant, …) don't break the gate. Every shipped
   module is fully typed.
 - **hassfest** and **HACS** validation (the HACS job ignores store-only repo
   metadata: `topics description issues`).
