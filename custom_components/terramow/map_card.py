@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import logging
 import math
+import uuid
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -47,16 +48,21 @@ _LOGGER = logging.getLogger(__name__)
 # resource-update path on existing installs).
 CARD_VERSION = "1.1.1"
 
-# Register the card as a classic "js" resource, NOT an ES "module". A classic
-# <script> re-executes on every page load -- even when the file is served from
-# the browser cache -- so the custom element is reliably defined before the
-# dashboard first renders. An ES "module" served from cache is NOT re-executed
-# (the browser keeps its first evaluation in the module map), so on a cold or
-# cached load the element can stay undefined and Home Assistant shows a
-# permanent "Configuration error" -- the intermittent failure in issue #140.
-# "js" is deprecated-but-functional on current Home Assistant and is the only
-# type that loads reliably on both HA 2026.6 and 2026.7+.
-CARD_RESOURCE_TYPE = "js"
+# PARKED (do not merge until HA removes classic "js" resources):
+# register the card as an ES "module". The reason "js" is used today is that
+# a cached ES module is never re-executed (the browser keeps its first
+# evaluation in the module map), so the element could stay undefined on a
+# cached load (issue #140). This branch solves that root cause differently:
+# the resource URL carries a PER-BOOT cache-buster (below), so every Home
+# Assistant restart mints a fresh module URL that the browser has never
+# evaluated — the module always executes, and "module" becomes reliable.
+# The cost is one Lovelace resource-storage write per HA start.
+CARD_RESOURCE_TYPE = "module"
+
+# Fresh per-boot token: a new module URL on every HA start guarantees the
+# browser evaluates the module (see CARD_RESOURCE_TYPE). Import time is
+# process start, which for HA means boot.
+_BOOT_TOKEN = uuid.uuid4().hex[:8]
 
 CARD_URL_PATH = "/terramow-frontend/terramow-map-card.js"
 
@@ -83,7 +89,7 @@ async def async_setup_map_card(hass: HomeAssistant) -> None:
     # (default_config), absent in headless/test setups — then the card can
     # still be added manually as a Lovelace resource.
     if "frontend" in hass.config.components:
-        add_extra_js_url(hass, f"{CARD_URL_PATH}?v={CARD_VERSION}")
+        add_extra_js_url(hass, f"{CARD_URL_PATH}?v={CARD_VERSION}-{_BOOT_TOKEN}")
     await _async_try_register_lovelace_resource(hass)
 
     websocket_api.async_register_command(hass, ws_subscribe_map)
@@ -134,16 +140,15 @@ async def _async_register_lovelace_resource(hass: HomeAssistant) -> None:
         await resources.async_load()
         resources.loaded = True
 
-    # See CARD_RESOURCE_TYPE for why "js" (not "module").
-    url = f"{CARD_URL_PATH}?v={CARD_VERSION}"
+    # See CARD_RESOURCE_TYPE: per-boot URL so the module always re-executes.
+    url = f"{CARD_URL_PATH}?v={CARD_VERSION}-{_BOOT_TOKEN}"
     for item in resources.async_items():
         item_url = str(item.get("url", ""))
         if item_url.partition("?")[0] != CARD_URL_PATH:
             continue
         if item_url != url or item.get("type") != CARD_RESOURCE_TYPE:
-            # Stale cache-buster from an older version, or a "module" entry
-            # from <= 1.19.x (unreliable from browser cache, issue #140) —
-            # self-heal in place.
+            # Every boot mints a new token, so this update path runs on each
+            # start by design; it also heals "js" entries from the js era.
             await resources.async_update_item(
                 item["id"], {"res_type": CARD_RESOURCE_TYPE, "url": url}
             )

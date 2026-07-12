@@ -548,11 +548,13 @@ class _FakeResources:
         self.updated.append((item_id, data))
 
 
-_CARD_URL = f"{map_card.CARD_URL_PATH}?v={map_card.CARD_VERSION}"
+_CARD_URL = (
+    f"{map_card.CARD_URL_PATH}?v={map_card.CARD_VERSION}-{map_card._BOOT_TOKEN}"
+)
 
 
 async def test_lovelace_resource_created(hass: HomeAssistant) -> None:
-    """Storage mode: the card is registered as a classic-js resource."""
+    """Storage mode: the card is registered as a module resource."""
     resources = _FakeResources([], loaded=False)
     hass.data["lovelace"] = SimpleNamespace(resources=resources)
 
@@ -560,7 +562,7 @@ async def test_lovelace_resource_created(hass: HomeAssistant) -> None:
 
     assert resources.load_called
     assert resources.loaded is True
-    assert resources.created == [{"res_type": "js", "url": _CARD_URL}]
+    assert resources.created == [{"res_type": "module", "url": _CARD_URL}]
 
 
 async def test_lovelace_resource_updated_on_new_version(
@@ -573,7 +575,7 @@ async def test_lovelace_resource_updated_on_new_version(
             {
                 "id": "ours",
                 "url": f"{map_card.CARD_URL_PATH}?v=0.9.9",
-                "type": "js",
+                "type": "module",
             },
         ]
     )
@@ -583,31 +585,31 @@ async def test_lovelace_resource_updated_on_new_version(
     await setup_terramow(hass)
 
     assert resources.created == []
-    assert resources.updated == [("ours", {"res_type": "js", "url": _CARD_URL})]
+    assert resources.updated == [("ours", {"res_type": "module", "url": _CARD_URL})]
 
 
-async def test_lovelace_resource_heals_module_type(
+async def test_lovelace_resource_heals_js_type(
     hass: HomeAssistant,
 ) -> None:
-    """A "module" entry from <= 1.19.x is flipped to js (#140)."""
-    resources = _FakeResources([{"id": "ours", "url": _CARD_URL, "type": "module"}])
+    """A "js" entry from the classic-script era is flipped to module."""
+    resources = _FakeResources([{"id": "ours", "url": _CARD_URL, "type": "js"}])
     hass.data["lovelace"] = SimpleNamespace(resources=resources)
 
     await setup_terramow(hass)
 
     assert resources.created == []
     assert resources.updated == [
-        ("ours", {"res_type": "js", "url": _CARD_URL})
+        ("ours", {"res_type": "module", "url": _CARD_URL})
     ]
-    # Regression guard: "js" (classic script) is the type that reliably
-    # re-executes from browser cache on both HA 2026.6 and 2026.7+ (#140).
-    assert map_card.CARD_RESOURCE_TYPE == "js"
+    # This branch registers the card as a per-boot cache-busted ES module;
+    # the boot token in the URL guarantees re-execution after every restart.
+    assert map_card.CARD_RESOURCE_TYPE == "module"
 
 
 async def test_lovelace_resource_already_current(hass: HomeAssistant) -> None:
     """A current resource entry is left untouched."""
     resources = _FakeResources(
-        [{"id": "ours", "url": _CARD_URL, "type": "js"}]
+        [{"id": "ours", "url": _CARD_URL, "type": "module"}]
     )
     hass.data["lovelace"] = SimpleNamespace(resources=resources)
 
@@ -655,4 +657,4 @@ async def test_lovelace_resource_retries_after_start(hass: HomeAssistant) -> Non
     hass.bus.async_fire(EVENT_HOMEASSISTANT_STARTED)
     await hass.async_block_till_done()
 
-    assert resources.created == [{"res_type": "js", "url": _CARD_URL}]
+    assert resources.created == [{"res_type": "module", "url": _CARD_URL}]
