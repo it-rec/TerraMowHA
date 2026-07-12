@@ -473,6 +473,10 @@ class TerramowMapCard extends HTMLElement {
       }
       .rbtn svg { width: 18px; height: 18px; }
       .rbtn:hover { opacity: 1; }
+      .rbtn:focus-visible, .actions button:focus-visible {
+        outline: 2px solid var(--primary-color, #03a9f4);
+        outline-offset: 2px;
+      }
       .rbtn.active {
         background: var(--primary-color, #03a9f4);
         border-color: var(--primary-color, #03a9f4);
@@ -530,6 +534,9 @@ class TerramowMapCard extends HTMLElement {
 
     this._canvas = document.createElement("canvas");
     this._canvas.className = "main";
+    // The canvas is a status surface for assistive tech; the actionable
+    // controls live in the labelled button rows beside it.
+    this._canvas.setAttribute("role", "img");
     wrap.appendChild(this._canvas);
 
     this._hud = document.createElement("div");
@@ -610,7 +617,10 @@ class TerramowMapCard extends HTMLElement {
   _setFollow(on) {
     this._follow = Boolean(on) && Boolean(this._robot);
     this._followBtn.classList.toggle("active", this._follow);
-    this._followBtn.title = localize(this._hass, "follow");
+    const followLabel = localize(this._hass, "follow");
+    this._followBtn.title = followLabel;
+    this._followBtn.setAttribute("aria-label", followLabel);
+    this._followBtn.setAttribute("aria-pressed", String(this._follow));
     if (this._follow) {
       this._centerOnRobot();
       this._requestDraw();
@@ -630,6 +640,7 @@ class TerramowMapCard extends HTMLElement {
     if (!this._hud) {
       return;
     }
+    this._updateCanvasLabel();
     if (!this._config.show_hud) {
       this._hud.replaceChildren();
       return;
@@ -695,6 +706,30 @@ class TerramowMapCard extends HTMLElement {
     this._updateButtons();
   }
 
+  /** Keep the canvas's assistive-tech label in sync with visible status. */
+  _updateCanvasLabel() {
+    if (!this._canvas) {
+      return;
+    }
+    const parts = [];
+    const state = this._hass && this._hass.states[this._config.entity];
+    if (state) {
+      parts.push(
+        this._hass.formatEntityState
+          ? this._hass.formatEntityState(state)
+          : state.state
+      );
+    }
+    const level = this._battery && this._battery.level;
+    if (typeof level === "number") {
+      parts.push(`${Math.round(level)}%`);
+    }
+    if (this._scene && this._scene.map_name) {
+      parts.push(this._scene.map_name);
+    }
+    this._canvas.setAttribute("aria-label", parts.join(", ") || "TerraMow map");
+  }
+
   _updateButtons() {
     if (!this._controls) {
       return;
@@ -705,8 +740,12 @@ class TerramowMapCard extends HTMLElement {
     }
     // Show the follow toggle only when there is a robot pose to follow
     this._followBtn.style.display = this._robot ? "" : "none";
-    this._followBtn.title = localize(this._hass, "follow");
-    this._fitBtn.title = localize(this._hass, "reset_view");
+    const followLabel = localize(this._hass, "follow");
+    this._followBtn.title = followLabel;
+    this._followBtn.setAttribute("aria-label", followLabel);
+    const fitLabel = localize(this._hass, "reset_view");
+    this._fitBtn.title = fitLabel;
+    this._fitBtn.setAttribute("aria-label", fitLabel);
 
     const activity = this._activity();
     const wanted = [];
