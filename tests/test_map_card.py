@@ -639,6 +639,53 @@ async def test_zone_direction_angles_override_global(hass: HomeAssistant) -> Non
     assert subs[8]["direction_angle"] == 45
 
 
+async def test_payload_carries_zone_and_global_settings(
+    hass: HomeAssistant,
+) -> None:
+    """Per-zone mow settings and the global block reach the card payload."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    hub._apply_map_data(
+        {
+            **MAP_DATA,
+            "mow_param": {
+                "global_param": {
+                    "mow_height": 75,
+                    "mow_speed": "MOW_SPEED_TYPE_MEDIUM",
+                    "mow_spacing": 120,
+                },
+                "regions": [
+                    {
+                        "id": 7,
+                        "region_param": {
+                            "mow_height": 60,
+                            "blade_disk_speed": "BLADE_DISK_SPEED_TYPE_HIGH",
+                        },
+                    },
+                    # Malformed entries never crash the payload.
+                    "junk",
+                    {"id": None, "region_param": {"mow_height": 1}},
+                    {"id": 9, "region_param": "junk"},
+                ],
+            },
+        }
+    )
+    payload = build_scene_payload(hub)
+    assert payload["mow_params"]["mow_height"] == 75
+    assert payload["mow_params"]["mow_speed"] == "MOW_SPEED_TYPE_MEDIUM"
+    subs = {
+        sub["id"]: sub
+        for region in payload["regions"]
+        for sub in region["sub_regions"]
+    }
+    # Zone 7 has custom params; zone 8 runs on the global block.
+    assert subs[7]["params"]["mow_height"] == 60
+    assert subs[7]["params"]["blade_disk_speed"] == "BLADE_DISK_SPEED_TYPE_HIGH"
+    assert subs[8]["params"] is None
+
+
 class _FakeResources:
     """Storage-mode Lovelace resource collection double."""
 

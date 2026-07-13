@@ -22,6 +22,7 @@
  *   show_hud: true             # status chips (state, battery, progress)
  *   show_markers: true         # trapped / maintenance / passage markers
  *   show_direction: true       # mowing stripe-direction arrow per region
+ *   zone_info: true            # long-press a zone for its mow settings
  *   rotation: 0                # rotate the map view (degrees)
  *   fit_height: 420            # card canvas height in px
  *
@@ -43,12 +44,12 @@ const CARD_TAG = "terramow-map-card";
 /* Keys: no_map, not_connected, start, clear, zone, zones, reset_view,
    follow, start_mowing, pause, dock, sent, missing_entity */
 const STRINGS = {
-  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", follow: "Follow the mower", start_mowing: "Start mowing", pause: "Pause", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config" },
+  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", follow: "Follow the mower", start_mowing: "Start mowing", pause: "Pause", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High" },
   bg: { no_map: "Все още няма карта", not_connected: "Изчакване на данни от косачката…", start: "Коси", clear: "Изчисти", zone: "зона", zones: "зони", reset_view: "Побери картата", follow: "Следвай косачката", start_mowing: "Започни косене", pause: "Пауза", dock: "Върни към станцията", sent: "Косенето на зони започна", missing_entity: "Задайте обект на косачка TerraMow в конфигурацията" },
   ca: { no_map: "Encara no hi ha mapa", not_connected: "Esperant dades del tallagespa…", start: "Sega", clear: "Neteja", zone: "zona", zones: "zones", reset_view: "Ajusta el mapa", follow: "Segueix el tallagespa", start_mowing: "Comença a segar", pause: "Pausa", dock: "Torna a la base", sent: "Sega per zones iniciada", missing_entity: "Configureu una entitat de tallagespa TerraMow" },
   cs: { no_map: "Mapa zatím není k dispozici", not_connected: "Čekání na data sekačky…", start: "Sekat", clear: "Vymazat", zone: "zóna", zones: "zóny", reset_view: "Přizpůsobit mapu", follow: "Sledovat sekačku", start_mowing: "Zahájit sekání", pause: "Pozastavit", dock: "Zpět na stanici", sent: "Sekání zón zahájeno", missing_entity: "Nastavte entitu sekačky TerraMow v konfiguraci karty" },
   da: { no_map: "Intet kort tilgængeligt endnu", not_connected: "Venter på data fra plæneklipperen…", start: "Klip", clear: "Ryd", zone: "zone", zones: "zoner", reset_view: "Tilpas kortet", follow: "Følg plæneklipperen", start_mowing: "Start klipning", pause: "Pause", dock: "Kør til base", sent: "Zoneklipning startet", missing_entity: "Angiv en TerraMow-plæneklipperentitet i kortets konfiguration" },
-  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", follow: "Dem Mäher folgen", start_mowing: "Mähen starten", pause: "Pausieren", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen" },
+  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", follow: "Dem Mäher folgen", start_mowing: "Mähen starten", pause: "Pausieren", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch" },
   el: { no_map: "Δεν υπάρχει ακόμη χάρτης", not_connected: "Αναμονή δεδομένων χλοοκοπτικού…", start: "Κούρεμα", clear: "Καθαρισμός", zone: "ζώνη", zones: "ζώνες", reset_view: "Προσαρμογή χάρτη", follow: "Ακολούθησε το χλοοκοπτικό", start_mowing: "Έναρξη κουρέματος", pause: "Παύση", dock: "Επιστροφή στη βάση", sent: "Το κούρεμα ζωνών ξεκίνησε", missing_entity: "Ορίστε οντότητα χλοοκοπτικού TerraMow στη διαμόρφωση" },
   es: { no_map: "Aún no hay mapa disponible", not_connected: "Esperando datos del cortacésped…", start: "Cortar", clear: "Borrar", zone: "zona", zones: "zonas", reset_view: "Ajustar mapa", follow: "Seguir al cortacésped", start_mowing: "Iniciar corte", pause: "Pausar", dock: "Volver a la base", sent: "Corte por zonas iniciado", missing_entity: "Configura la entidad del cortacésped TerraMow" },
   et: { no_map: "Kaarti pole veel saadaval", not_connected: "Ootan niiduki andmeid…", start: "Niida", clear: "Tühjenda", zone: "tsoon", zones: "tsooni", reset_view: "Mahuta kaart", follow: "Jälgi niidukit", start_mowing: "Alusta niitmist", pause: "Paus", dock: "Tagasi baasi", sent: "Tsooniniitmine alustatud", missing_entity: "Määra kaardi seadetes TerraMow niiduki olem" },
@@ -246,6 +247,7 @@ class TerramowMapCard extends HTMLElement {
       show_controls: true,
       show_markers: true,
       show_direction: true,
+      zone_info: true,
       rotation: 0,
       fit_height: 420,
       ...config,
@@ -531,6 +533,35 @@ class TerramowMapCard extends HTMLElement {
         color: var(--secondary-text-color, #727272); pointer-events: none;
         padding: 0 16px;
       }
+      .zoneinfo {
+        position: absolute; top: 10px; left: 10px; display: none;
+        min-width: 190px; max-width: min(65vw, 280px);
+        background: var(--card-background-color, #fff);
+        border: 1px solid var(--divider-color, rgba(0,0,0,.12));
+        border-radius: 12px; padding: 10px 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,.22);
+        font-size: 12px; color: var(--primary-text-color, #212121);
+        z-index: 3;
+      }
+      .zoneinfo.visible { display: block; }
+      .zoneinfo .zi-title {
+        font-size: 13px; font-weight: 600; margin-bottom: 6px;
+        display: flex; justify-content: space-between; gap: 10px;
+      }
+      .zoneinfo .zi-title .zi-area {
+        font-weight: 400; color: var(--secondary-text-color, #727272);
+      }
+      .zoneinfo .zi-row {
+        display: flex; justify-content: space-between; gap: 14px;
+        padding: 1.5px 0;
+      }
+      .zoneinfo .zi-row .zi-label {
+        color: var(--secondary-text-color, #727272);
+      }
+      .zoneinfo .zi-scope {
+        margin-top: 6px; font-size: 11px;
+        color: var(--secondary-text-color, #727272);
+      }
     `;
 
     const card = document.createElement("ha-card");
@@ -586,6 +617,10 @@ class TerramowMapCard extends HTMLElement {
     });
     this._actionBar.append(this._actionNames, this._goBtn, this._clearBtn);
     wrap.appendChild(this._actionBar);
+
+    this._infoPanel = document.createElement("div");
+    this._infoPanel.className = "zoneinfo";
+    wrap.appendChild(this._infoPanel);
 
     this._msg = document.createElement("div");
     this._msg.className = "msg";
@@ -819,19 +854,28 @@ class TerramowMapCard extends HTMLElement {
       this._actionBar.classList.remove("visible");
       return;
     }
-    const zoneWord = localize(this._hass, "zone");
+    // Custom-named zones are listed by name; unnamed ones are grouped into a
+    // single compact "Zones 1, 3, 5" instead of repeating the word per zone.
     const names = [];
+    const unnamedIds = [];
     let areaM2 = 0;
     for (const region of this._scene?.regions || []) {
       for (const sub of region.sub_regions) {
         if (this._pending.has(sub.id)) {
-          names.push(
-            sub.name ||
-              `${zoneWord.charAt(0).toUpperCase()}${zoneWord.slice(1)} ${sub.id}`
-          );
+          if (sub.name) {
+            names.push(sub.name);
+          } else {
+            unnamedIds.push(sub.id);
+          }
           areaM2 += zoneAreaM2(sub);
         }
       }
+    }
+    if (unnamedIds.length) {
+      const word = pluralWord(this._hass, unnamedIds.length, "zone", "zones");
+      names.push(
+        `${word.charAt(0).toUpperCase()}${word.slice(1)} ${unnamedIds.join(", ")}`
+      );
     }
     let text = names.join(", ");
     if (areaM2 > 0.5) {
@@ -891,6 +935,18 @@ class TerramowMapCard extends HTMLElement {
       canvas.setPointerCapture(ev.pointerId);
       this._pointers.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
       this._dragged = false;
+      this._hideZoneInfo();
+      this._cancelLongPress();
+      if (this._pointers.size === 1 && this._config.zone_info) {
+        const { offsetX, offsetY } = ev;
+        this._lpTimer = setTimeout(() => {
+          this._lpTimer = null;
+          if (!this._dragged && this._pointers.size === 1) {
+            this._lpFired = true;
+            this._onZoneInfo(offsetX, offsetY);
+          }
+        }, 550);
+      }
       if (this._pointers.size === 2) {
         const [a, b] = [...this._pointers.values()];
         this._pinchStart = {
@@ -915,6 +971,7 @@ class TerramowMapCard extends HTMLElement {
           if (Math.hypot(dx, dy) > 2) {
             this._dragged = true;
             this._setFollow(false);
+            this._cancelLongPress();
           }
           this._view.tx += dx;
           this._view.ty += dy;
@@ -938,13 +995,16 @@ class TerramowMapCard extends HTMLElement {
       }
     });
     const endPointer = (ev) => {
-      const wasTap = this._pointers.size === 1 && !this._dragged;
+      this._cancelLongPress();
+      const wasTap =
+        this._pointers.size === 1 && !this._dragged && !this._lpFired;
       this._pointers.delete(ev.pointerId);
       if (this._pointers.size < 2) {
         this._pinchStart = null;
       }
       if (!this._pointers.size) {
         this._canvas.classList.remove("dragging");
+        this._lpFired = false;
       }
       if (wasTap && ev.type === "pointerup") {
         this._onTap(ev.offsetX, ev.offsetY);
@@ -1021,6 +1081,22 @@ class TerramowMapCard extends HTMLElement {
     if (!this._config.zone_selection) {
       return;
     }
+    const sub = this._zoneAt(px, py);
+    if (!sub) {
+      return;
+    }
+    if (this._pending.has(sub.id)) {
+      this._pending.delete(sub.id);
+    } else {
+      this._pending.add(sub.id);
+    }
+    this._staticCache = null; // selection tint lives on the static layer
+    this._updateActionBar();
+    this._requestDraw();
+  }
+
+  /** The zone (sub-region) under a screen point, or null. */
+  _zoneAt(px, py) {
     const [wx, wy] = this._screenToWorld(px, py);
     for (const region of this._scene.regions) {
       for (const sub of region.sub_regions) {
@@ -1033,20 +1109,118 @@ class TerramowMapCard extends HTMLElement {
         const inHole = (sub.inner_boundaries || []).some((hole) =>
           pointInPolygon(wx, wy, hole)
         );
-        if (inHole) {
-          continue;
+        if (!inHole) {
+          return sub;
         }
-        if (this._pending.has(sub.id)) {
-          this._pending.delete(sub.id);
-        } else {
-          this._pending.add(sub.id);
-        }
-        this._staticCache = null; // selection tint lives on the static layer
-        this._updateActionBar();
-        this._requestDraw();
-        return;
       }
     }
+    return null;
+  }
+
+  _cancelLongPress() {
+    if (this._lpTimer) {
+      clearTimeout(this._lpTimer);
+      this._lpTimer = null;
+    }
+  }
+
+  _hideZoneInfo() {
+    if (this._infoPanel) {
+      this._infoPanel.classList.remove("visible");
+    }
+  }
+
+  /**
+   * Long-press on a zone: show its effective mow settings. Zones with custom
+   * params (the app's per-zone overrides) show those; others show the global
+   * block, with a footer naming which scope applies.
+   */
+  _onZoneInfo(px, py) {
+    if (!this._scene || !this._view) {
+      return;
+    }
+    const sub = this._zoneAt(px, py);
+    if (!sub) {
+      return;
+    }
+    const t = (key) => localize(this._hass, key);
+    const level = (value) => {
+      if (typeof value !== "string") {
+        return null;
+      }
+      const token = value.split("_").pop().toLowerCase();
+      const localized = t(`lvl_${token}`);
+      return localized !== `lvl_${token}`
+        ? localized
+        : token.charAt(0).toUpperCase() + token.slice(1);
+    };
+    const custom = !!sub.params;
+    const params = sub.params || this._scene.mow_params || {};
+    const zoneWord = t("zone");
+    const title =
+      sub.name ||
+      `${zoneWord.charAt(0).toUpperCase()}${zoneWord.slice(1)} ${sub.id}`;
+    const areaM2 = zoneAreaM2(sub);
+    const angle =
+      typeof sub.direction_angle === "number"
+        ? sub.direction_angle
+        : this._scene.main_direction_angle;
+
+    const rows = [];
+    const push = (key, value) => {
+      if (value !== null && value !== undefined && value !== "") {
+        rows.push([t(key), String(value)]);
+      }
+    };
+    push(
+      "zi_cut_height",
+      typeof params.mow_height === "number" ? `${params.mow_height} mm` : null
+    );
+    push("zi_speed", level(params.mow_speed));
+    push(
+      "zi_spacing",
+      typeof params.mow_spacing === "number"
+        ? `${params.mow_spacing} mm`
+        : null
+    );
+    push("zi_blade", level(params.blade_disk_speed));
+    push(
+      "zi_edge",
+      typeof params.edge_cutting_distance === "number" &&
+        params.edge_cutting_distance > 0
+        ? `${params.edge_cutting_distance} mm`
+        : null
+    );
+    push("zi_direction", typeof angle === "number" ? `${angle}°` : null);
+    push("zi_order", sub.order && sub.order > 0 ? sub.order : null);
+
+    const panel = this._infoPanel;
+    panel.replaceChildren();
+    const head = document.createElement("div");
+    head.className = "zi-title";
+    const name = document.createElement("span");
+    name.textContent = title;
+    const area = document.createElement("span");
+    area.className = "zi-area";
+    area.textContent = areaM2 > 0.5 ? `${Math.round(areaM2)} m²` : "";
+    head.append(name, area);
+    panel.appendChild(head);
+    for (const [label, value] of rows) {
+      const row = document.createElement("div");
+      row.className = "zi-row";
+      const labelEl = document.createElement("span");
+      labelEl.className = "zi-label";
+      labelEl.textContent = label;
+      const valueEl = document.createElement("span");
+      valueEl.textContent = value;
+      row.append(labelEl, valueEl);
+      panel.appendChild(row);
+    }
+    const scope = document.createElement("div");
+    scope.className = "zi-scope";
+    scope.textContent = custom ? t("zi_custom") : t("zi_global");
+    panel.appendChild(scope);
+    panel.classList.add("visible");
   }
 
   /* ----------------------------------------------------------- drawing */
@@ -1394,13 +1568,18 @@ class TerramowMapCard extends HTMLElement {
       this._drawMarkers(ctx, scene.markers, view, colors);
     }
 
-    if (this._config.show_direction) {
+    // Zones must be reasonably large on screen for labels and direction
+    // arrows: both are screen-constant, so at low zoom they would dwarf the
+    // zones they describe and float outside them.
+    const zonesLegible = view.scale * 2000 >= 46;
+
+    if (this._config.show_direction && zonesLegible) {
       this._drawDirection(ctx, scene, view, colors);
     }
 
     // Zone labels once zones are reasonably large on screen; kept upright
     // regardless of the configured map rotation.
-    if (view.scale * 2000 >= 46) {
+    if (zonesLegible) {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       const zoneWord = localize(this._hass, "zone");
@@ -1839,6 +2018,11 @@ class TerramowMapCardEditor extends HTMLElement {
       {
         name: "show_direction",
         label: "Show mowing direction arrow",
+        selector: { boolean: {} },
+      },
+      {
+        name: "zone_info",
+        label: "Long-press zones for their mow settings",
         selector: { boolean: {} },
       },
       {
