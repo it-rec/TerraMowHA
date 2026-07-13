@@ -219,7 +219,9 @@ async def test_service_waits_for_ack(hass: HomeAssistant) -> None:
     assert topic == "data_point/103/app"
     command = json.loads(payload)
     assert command["mode"] == "START_MODE_SELECT_REGION_CLEAN"
-    assert command["select_region"]["region_id"] == [7]
+    # Outbound schema the firmware acts on (matches select.py); the inbound
+    # clean_info uses select_region/region_id, which is a different thing (#140).
+    assert command["select_region_clean"]["region_ids"] == [7]
 
 
 async def test_service_surfaces_rejection(hass: HomeAssistant) -> None:

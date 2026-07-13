@@ -2372,11 +2372,19 @@ class TerraMowHub:
         self.publish_data_point(103, command)
 
     def _build_select_region_command(self, region_ids: list[int]) -> dict[str, Any]:
-        """Build the dp_103 selective-mow command payload."""
+        """Build the dp_103 selective-mow command payload.
+
+        Uses the device's *outbound* command schema (``select_region_clean`` /
+        ``region_ids``) -- the same one ``select.py`` sends and the firmware
+        actually acts on. This is deliberately different from the *inbound*
+        ``clean_info.select_region`` / ``region_id`` the mower reports back:
+        sending those inbound names got the dp_103 acked but silently ignored,
+        so the map card's tap-to-mow was confirmed yet never started (#140).
+        """
         return {
             'seq': self.get_cmd_seq(),
             'mode': 'START_MODE_SELECT_REGION_CLEAN',
-            'select_region': {'region_id': list(region_ids)}
+            'select_region_clean': {'region_ids': list(region_ids)}
         }
 
     def start_select_region_clean(self, region_ids: list[int]) -> None:

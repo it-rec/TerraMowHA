@@ -135,7 +135,9 @@ def test_start_select_region_clean_publishes_region_ids() -> None:
     topic, command = _published(hub)
     assert topic == "data_point/103/app"
     assert command["mode"] == "START_MODE_SELECT_REGION_CLEAN"
-    assert command["select_region"] == {"region_id": [4, 5]}
+    # Outbound command schema the firmware acts on (matches select.py), NOT the
+    # inbound clean_info.select_region/region_id the mower reports back (#140).
+    assert command["select_region_clean"] == {"region_ids": [4, 5]}
 
 
 def test_start_select_region_clean_ignores_empty_ids() -> None:
