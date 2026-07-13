@@ -300,6 +300,9 @@
       },
       "map_save_progress": {
         "name": "Progres salvare hartă"
+      },
+      "wifi_signal": {
+        "name": "Semnal Wi-Fi"
       }
     },
     "camera": {

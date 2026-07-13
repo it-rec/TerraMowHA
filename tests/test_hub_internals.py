@@ -458,8 +458,9 @@ def test_diagnostics_redacts_secrets_and_exports_hub_state() -> None:
     hub.register_all_callbacks()
     asyncio.run(hub.on_battery_status(json.dumps({"state": "BATTERY_STATE_CHARGED"})))
     # an undocumented dp seen twice with a changed value -> a 2-point history
-    hub.on_mqtt_message(None, None, _msg("data_point/109/robot", b'{"int_value":54}'))
-    hub.on_mqtt_message(None, None, _msg("data_point/109/robot", b'{"int_value":70}'))
+    # dp_110 is (still) undocumented; dp_109 grew a handler (Wi-Fi signal)
+    hub.on_mqtt_message(None, None, _msg("data_point/110/robot", b'{"int_value":54}'))
+    hub.on_mqtt_message(None, None, _msg("data_point/110/robot", b'{"int_value":70}'))
 
     entry = MagicMock()
     entry.entry_id = "entry-1"
@@ -478,7 +479,7 @@ def test_diagnostics_redacts_secrets_and_exports_hub_state() -> None:
     assert 107 in diagnostics["device"]["registered_data_points"]
     assert diagnostics["state"]["battery_status"] == {"state": "BATTERY_STATE_CHARGED"}
     # the timestamped change-history is exported, keyed by dp id (string)
-    history = diagnostics["device"]["unknown_data_point_history"]["109"]
+    history = diagnostics["device"]["unknown_data_point_history"]["110"]
     assert [e["payload"] for e in history] == ['{"int_value":54}', '{"int_value":70}']
     # timestamps are ISO-8601 UTC strings
     assert history[0]["time"].endswith("+00:00")

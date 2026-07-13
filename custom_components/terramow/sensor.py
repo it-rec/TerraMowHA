@@ -388,6 +388,11 @@ def _after_rain_resume_delay(hub: TerraMowHub) -> StateType:
     return (hours or 0) * 60 + (minutes or 0)
 
 
+def _wifi_signal(hub: TerraMowHub) -> StateType:
+    """The mower-side Wi-Fi signal strength in percent (dp_109)."""
+    return hub.wifi_signal
+
+
 def _map_save_progress(hub: TerraMowHub) -> StateType:
     value = hub.map_save_progress.get("int_value")
     return value if isinstance(value, int) and not isinstance(value, bool) else None
@@ -848,6 +853,18 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         entity_registry_enabled_default=False,
         push_dp_ids=(118,),
         value_fn=_map_save_progress,
+    ),
+    # Wi-Fi signal (dp_109): the strength of the mower's own Wi-Fi link as a
+    # percentage (~= 2 * (RSSI dBm + 100)) -- the diagnostic for "the mower
+    # keeps dropping off MQTT at the far end of the lawn".
+    TerraMowSensorEntityDescription(
+        key="wifi_signal",
+        translation_key="wifi_signal",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        push_dp_ids=(109,),
+        value_fn=_wifi_signal,
     ),
 )
 

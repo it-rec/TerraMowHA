@@ -300,6 +300,9 @@
       },
       "map_save_progress": {
         "name": "Förlopp för kartsparande"
+      },
+      "wifi_signal": {
+        "name": "Wi-Fi-signal"
       }
     },
     "camera": {

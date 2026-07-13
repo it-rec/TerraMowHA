@@ -300,6 +300,9 @@
       },
       "map_save_progress": {
         "name": "Voortgang kaart opslaan"
+      },
+      "wifi_signal": {
+        "name": "Wifi-signaal"
       }
     },
     "camera": {

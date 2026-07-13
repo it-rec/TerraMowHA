@@ -300,6 +300,9 @@
       },
       "map_save_progress": {
         "name": "Napredak spremanja karte"
+      },
+      "wifi_signal": {
+        "name": "Wi-Fi signal"
       }
     },
     "camera": {

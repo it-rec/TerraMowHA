@@ -225,6 +225,7 @@ properties (mostly through `PushUpdateMixin._push_dp_ids`).
 | 106 | **out** | `_resume_mow` / `_resume_recharge` | — | lawn_mower resume | Resume command |
 | 107 | in | `on_mission_status` | `task_status`, `mission`, `sub_mission`, `mission_state`, `power_mode`, `is_robot_navi_located`, `is_upgrading`, `has_error`, `back_to_station_reason`, `is_saving_data`, `is_data_conversion_in_progress` | lawn_mower, event, mission/sub-mission/state sensors, power-mode, back-to-station, problem/rain/navigation/upgrading/saving/conversion binary sensors | Mission status (drives the whole activity model); fires state listeners |
 | 108 | in | `on_battery_status` | `battery_status` | battery state/temperature sensors, charging + power-switch binary sensors, camera (battery-connected) | Battery status payload |
+| 109 | in | `on_wifi_signal` | `wifi_signal` | **Wi-Fi signal** sensor | *Unofficial* — mower-side Wi-Fi signal % (~= 2·(dBm+100)); see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 113 | in | `on_current_work_data` | `current_work_data` | current-session area/time/progress + job-type sensors | Current mowing-session work data |
 | 116 | in | `on_error_list` | `error_list` | Active-errors sensor | *Unofficial* — active-error list; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 117 | in | `on_map_status` | `map_status` | `map_status` sensor, map-detected/buildable/backing-up binary sensors | Map status flags |

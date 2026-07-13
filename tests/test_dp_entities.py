@@ -224,6 +224,31 @@ def test_dp118_map_save_progress_sensor() -> None:
     assert progress.native_value is None
 
 
+def test_dp109_wifi_signal_sensor() -> None:
+    hub = _hub()
+    signal = _sensor(hub, "wifi_signal")
+    # None until the device reports
+    assert signal.native_value is None
+    _feed(hub.on_wifi_signal, {"int_value": 62})
+    assert signal.native_value == 62
+    _feed(hub.on_wifi_signal, {"int_value": 98})
+    assert signal.native_value == 98
+    # malformed frames keep the last known signal instead of blanking it
+    _feed(hub.on_wifi_signal, {"int_value": "x"})
+    assert signal.native_value == 98
+    _feed(hub.on_wifi_signal, {"int_value": True})
+    assert signal.native_value == 98
+    _feed(hub.on_wifi_signal, {"other": 1})
+    assert signal.native_value == 98
+    asyncio.run(hub.on_wifi_signal("[1]"))  # non-dict payload
+    assert signal.native_value == 98
+    asyncio.run(hub.on_wifi_signal("not json"))  # invalid JSON logs and skips
+    assert signal.native_value == 98
+    # without a lawn mower -> None
+    hub.basic_data.lawn_mower = None
+    assert signal.native_value is None
+
+
 def test_dp134_state_flag_binary_sensor() -> None:
     hub = _hub()
     flag = _binary(hub, "state_flag_134")

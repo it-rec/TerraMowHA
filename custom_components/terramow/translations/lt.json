@@ -300,6 +300,9 @@
       },
       "map_save_progress": {
         "name": "Žemėlapio įrašymo eiga"
+      },
+      "wifi_signal": {
+        "name": "Wi-Fi signalas"
       }
     },
     "camera": {

@@ -300,6 +300,9 @@
       },
       "map_save_progress": {
         "name": "Harita kaydetme ilerlemesi"
+      },
+      "wifi_signal": {
+        "name": "Wi-Fi sinyali"
       }
     },
     "camera": {

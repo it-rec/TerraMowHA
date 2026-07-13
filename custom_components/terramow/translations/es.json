@@ -300,6 +300,9 @@
       },
       "map_save_progress": {
         "name": "Progreso de guardado del mapa"
+      },
+      "wifi_signal": {
+        "name": "Señal Wi-Fi"
       }
     },
     "camera": {
