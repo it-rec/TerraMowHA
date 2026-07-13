@@ -20,6 +20,7 @@
  *   show_current_path: true    # path of the running job
  *   zone_selection: true       # tap zones to start a selective mow
  *   show_hud: true             # status chips (state, battery, progress)
+ *   show_markers: true         # trapped / maintenance / passage markers
  *   rotation: 0                # rotate the map view (degrees)
  *   fit_height: 420            # card canvas height in px
  *
@@ -242,6 +243,7 @@ class TerramowMapCard extends HTMLElement {
       zone_selection: true,
       show_hud: true,
       show_controls: true,
+      show_markers: true,
       rotation: 0,
       fit_height: 420,
       ...config,
@@ -1173,6 +1175,10 @@ class TerramowMapCard extends HTMLElement {
       station: dark ? "#9ccc65" : "#558b2f",
       robot: dark ? "#ffd54f" : "#f57f17",
       grid: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+      // Marker badges mirror the PNG camera palette (badge_orange/badge_blue).
+      markerTrapped: dark ? "#ffb74d" : "#ef6c00",
+      markerMaintenance: dark ? "#64b5f6" : "#1565c0",
+      markerOutline: dark ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.85)",
     };
   }
 
@@ -1382,6 +1388,10 @@ class TerramowMapCard extends HTMLElement {
     ctx.globalAlpha = 1;
     fillStrokePolys(scene.draw_regions, null, colors.robot, 2);
 
+    if (this._config.show_markers && scene.markers) {
+      this._drawMarkers(ctx, scene.markers, view, colors);
+    }
+
     // Zone labels once zones are reasonably large on screen; kept upright
     // regardless of the configured map rotation.
     if (view.scale * 2000 >= 46) {
@@ -1431,6 +1441,44 @@ class TerramowMapCard extends HTMLElement {
     if (scene.station) {
       this._drawStation(ctx, scene.station, view, colors);
     }
+  }
+
+  /**
+   * Point markers from the device map (mirrors the PNG camera's badges):
+   * trapped spots as orange triangles, maintenance points as blue hexagons,
+   * cross-boundary passage markers as accent diamonds. Marker size is
+   * screen-constant and the shapes stay upright under map rotation.
+   */
+  _drawMarkers(ctx, markers, view, colors) {
+    const r = 7 / view.scale;
+    const drawShape = (points, sides, phase, fill) => {
+      for (const point of points || []) {
+        ctx.save();
+        ctx.translate(point[0], point[1]);
+        ctx.rotate(-this._rot);
+        ctx.beginPath();
+        for (let i = 0; i < sides; i++) {
+          const a = phase + (i * 2 * Math.PI) / sides;
+          const x = r * Math.sin(a);
+          const y = -r * Math.cos(a);
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = colors.markerOutline;
+        ctx.lineWidth = 1.5 / view.scale;
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
+    drawShape(markers.cross_boundary, 4, 0, colors.accent);
+    drawShape(markers.trapped, 3, 0, colors.markerTrapped);
+    drawShape(markers.maintenance, 6, Math.PI / 6, colors.markerMaintenance);
   }
 
   _drawPathLayer(ctx, dpr, colors) {
@@ -1710,6 +1758,11 @@ class TerramowMapCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       { name: "show_hud", label: "Show status chips", selector: { boolean: {} } },
+      {
+        name: "show_markers",
+        label: "Show trapped / maintenance markers",
+        selector: { boolean: {} },
+      },
       {
         name: "rotation",
         label: "Map rotation (degrees)",
