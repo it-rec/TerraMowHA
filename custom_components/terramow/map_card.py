@@ -45,7 +45,7 @@ _LOGGER = logging.getLogger(__name__)
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.3.0"
+CARD_VERSION = "1.4.0"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -172,6 +172,65 @@ def _path_pts(points: list[dict[str, Any]]) -> list[list[int]]:
     return [[int(round(point["x"])), int(round(point["y"]))] for point in points]
 
 
+def _direction_angle_from_config(config: Any) -> Any:
+    """Resolve the effective stripe angle from a main_direction_angle_config.
+
+    In SINGLE mode the configured ``single_mode_config.angle`` is the truth;
+    the device's ``current_angle`` goes stale there (observed reporting 90
+    while the configured angle was 180/-90). Other modes rotate through
+    angles, so ``current_angle`` is the live value.
+    """
+    if not isinstance(config, dict):
+        return None
+    if config.get("mode") == "MAIN_DIRECTION_MODE_SINGLE":
+        single = config.get("single_mode_config")
+        if isinstance(single, dict) and single.get("angle") is not None:
+            return single.get("angle")
+    return config.get("current_angle")
+
+
+def _main_direction_angle(map_data: dict[str, Any]) -> Any:
+    """The global mowing-stripe direction in degrees, or None.
+
+    Read defensively from the raw map data (``mow_param`` blocks may be
+    missing or malformed while the device is still reporting).
+    """
+    mow_param = map_data.get("mow_param")
+    if not isinstance(mow_param, dict):
+        return None
+    global_param = mow_param.get("global_param")
+    if not isinstance(global_param, dict):
+        return None
+    return _direction_angle_from_config(
+        global_param.get("main_direction_angle_config")
+    )
+
+
+def _zone_direction_angles(map_data: dict[str, Any]) -> dict[int, Any]:
+    """Per-zone stripe angles from the custom region params, keyed by zone id.
+
+    Zones with custom parameters override the global direction (the map's
+    ``mow_param.regions`` entries); zones without stay on the global angle.
+    """
+    mow_param = map_data.get("mow_param")
+    if not isinstance(mow_param, dict):
+        return {}
+    angles: dict[int, Any] = {}
+    for item in mow_param.get("regions") or []:
+        if not isinstance(item, dict):
+            continue
+        zone_id = item.get("id")
+        param = item.get("region_param")
+        angle = _direction_angle_from_config(
+            param.get("main_direction_angle_config")
+            if isinstance(param, dict)
+            else None
+        )
+        if isinstance(zone_id, int) and angle is not None:
+            angles[zone_id] = angle
+    return angles
+
+
 def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
     """Serialize the drawable scene for the card."""
     map_data = hub.map_data
@@ -187,6 +246,7 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
             "theta": coerce_angle_radians(station_pose["theta"], milli_radian=True),
         }
 
+    zone_angles = _zone_direction_angles(map_data)
     regions: list[dict[str, Any]] = []
     for region in scene["regions"]:
         regions.append(
@@ -204,6 +264,9 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
                         "selected": sub["selected"],
                         "order": sub["order"],
                         "inner_boundaries": _polys(sub["inner_boundaries"]),
+                        # Zone-specific stripe direction (custom params); the
+                        # card falls back to the global main_direction_angle.
+                        "direction_angle": zone_angles.get(sub["id"]),
                     }
                     for sub in region["sub_regions"]
                 ],
@@ -226,6 +289,9 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
         "map_state": map_data.get("map_state"),
         "total_area": map_data.get("total_area"),
         "cutting_width": CUTTING_WIDTH_MM,
+        # Configured mowing-stripe direction in degrees (None when the device
+        # has not reported mow params yet); the card draws it as a lane arrow.
+        "main_direction_angle": _main_direction_angle(map_data),
         "map_extent": _poly(scene["map_extent"]),
         "station": station,
         "regions": regions,
