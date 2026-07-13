@@ -1,15 +1,16 @@
 """Device hub for the TerraMow integration.
 
-The hub owns everything protocol- and state-related: the MQTT client and
-its worker thread, the data point caches, the map/path HTTP fetching and
-the command helpers. Entities consume it through ``basic_data.lawn_mower``
-(the attribute keeps its historical name so the entity-facing API is
-unchanged) and register callbacks for push updates.
+The hub owns everything protocol- and state-related: the MQTT connection
+(an asyncio task around ``aiomqtt``), the data point caches, the map/path
+HTTP fetching and the command helpers. Entities consume it through
+``basic_data.lawn_mower`` (the attribute keeps its historical name so the
+entity-facing API is unchanged) and register callbacks for push updates.
 """
 
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import gzip
 import json
 import logging
@@ -23,7 +24,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any
 
 import aiohttp
-import paho.mqtt.client as mqtt_client
+import aiomqtt
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
@@ -44,7 +45,6 @@ from .const import (
     MQTT_PORT,
     MQTT_RECONNECT_BASE_DELAY,
     MQTT_RECONNECT_MAX_DELAY,
-    MQTT_THREAD_JOIN_TIMEOUT,
     MQTT_USERNAME,
     PATH_HISTORY_META_TOPIC,
     PATH_META_TOPIC,
@@ -57,7 +57,6 @@ from .issues import (
     async_sync_blade_maintenance_issue,
     async_sync_compatibility_issue,
 )
-from .mqtt_compat import create_mqtt_client
 
 if TYPE_CHECKING:
     from . import TerraMowBasicData
@@ -253,6 +252,74 @@ class _MetaFetchChannel:
         self.fetching = False  # a fetch for this channel is in flight
 
 
+# paho-compatible publish return codes (the tiny slice the hub still uses).
+_MQTT_ERR_SUCCESS = 0
+_MQTT_ERR_NO_CONN = 4
+
+
+class _MqttMessage:
+    """Topic/payload pair in the shape ``on_mqtt_message`` consumes."""
+
+    __slots__ = ("payload", "topic")
+
+    def __init__(self, topic: str, payload: bytes) -> None:
+        self.topic = topic
+        self.payload = payload
+
+
+class _PublishResult:
+    """Mimics the ``rc`` surface of paho's ``MQTTMessageInfo``."""
+
+    __slots__ = ("rc",)
+
+    def __init__(self, rc: int) -> None:
+        self.rc = rc
+
+
+class _HubMqttClient:
+    """Sync facade over the hub's live aiomqtt connection.
+
+    Presents the minimal paho-like surface the command path relies on —
+    ``is_connected()`` plus ``publish()`` returning an object with ``rc`` —
+    so command senders stay synchronous and callable from both the event
+    loop (async entity methods) and executor threads (the lawn mower's
+    sync service methods), exactly like paho's thread-safe ``publish``
+    allowed. Delivery happens on the event loop; a failure after handoff
+    can only surface asynchronously, so it is logged.
+    """
+
+    def __init__(self, hub: TerraMowHub) -> None:
+        self._hub = hub
+
+    def is_connected(self) -> bool:
+        """Return whether the MQTT connection is currently established."""
+        return self._hub._aiomqtt_client is not None
+
+    def publish(self, topic: str, payload: str, qos: int = 0) -> _PublishResult:
+        """Queue a publish onto the event loop and report acceptance."""
+        client = self._hub._aiomqtt_client
+        if client is None:
+            return _PublishResult(_MQTT_ERR_NO_CONN)
+
+        async def _async_publish() -> None:
+            try:
+                await client.publish(topic, payload, qos=qos)
+            except aiomqtt.MqttError as err:
+                _LOGGER.error("MQTT publish to %s failed: %s", topic, err)
+
+        hass = self._hub.hass
+        try:
+            running: asyncio.AbstractEventLoop | None = asyncio.get_running_loop()
+        except RuntimeError:
+            running = None
+        if running is hass.loop:
+            hass.async_create_task(_async_publish())
+        else:
+            # Called from an executor thread (sync lawn-mower commands).
+            asyncio.run_coroutine_threadsafe(_async_publish(), hass.loop)
+        return _PublishResult(_MQTT_ERR_SUCCESS)
+
+
 class TerraMowHub:
     """Owns the MQTT connection, protocol state and device commands."""
 
@@ -266,8 +333,12 @@ class TerraMowHub:
         self.host = basic_data.host
         self.password = basic_data.password
         self.hass = hass
-        self.mqtt_client: mqtt_client.Client | None = None
-        self._stop_event = threading.Event()  # Used to stop the reconnect loop
+        # Sync facade entities/commands publish through; the live aiomqtt
+        # client behind it only exists while the runner task is connected.
+        self.mqtt_client: _HubMqttClient | None = None
+        self._aiomqtt_client: aiomqtt.Client | None = None
+        self._mqtt_task: asyncio.Task[None] | None = None
+        self._stop_event = threading.Event()  # Set on shutdown; gates retries
         self.callbacks: dict[int, list[Callable[..., Any]]] = {}  # Stores dp_id and its list of callback functions
         self.map_callbacks: list[Callable[..., Any]] = []  # Stores map info callback functions
         self.pose_callbacks: list[Callable[..., Any]] = []  # Stores pose callback functions
@@ -362,9 +433,9 @@ class TerraMowHub:
         self._unknown_topic_captures: deque[tuple[float, str, str]] = deque(maxlen=50)
 
         self.cmd_seq = random.randint(0, 0xFFFFFFFF)  # Generate a random command sequence number
-        # get_cmd_seq is reachable from the paho network thread (compatibility
-        # request on connect) and from executor threads (sync command senders),
-        # so the increment must be atomic to avoid handing out a duplicate seq.
+        # get_cmd_seq is reachable from the event loop and from executor
+        # threads (sync command senders), so the increment must be atomic
+        # to avoid handing out a duplicate seq.
         self._cmd_seq_lock = threading.Lock()
 
         self._control_interval = 1.0  # Control interval time
@@ -387,9 +458,10 @@ class TerraMowHub:
     def diagnostics_snapshot(self) -> dict[str, Any]:
         """Return copies of the unknown-dp bookkeeping for the diagnostics export.
 
-        The MQTT worker thread appends to these structures; handing out
-        copies keeps the export from iterating live objects (a deque mutated
-        during iteration raises RuntimeError).
+        Message handling appends to these structures while an export can be
+        awaited mid-iteration; handing out copies keeps the export from
+        iterating live objects (a deque mutated during iteration raises
+        RuntimeError).
         """
         return {
             "seen_unknown_dp_ids": sorted(self._seen_unknown_dp_ids),
@@ -406,8 +478,9 @@ class TerraMowHub:
     def register_state_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
         """Register a listener called on connection/dp_107/model changes.
 
-        Listeners may be invoked from the MQTT worker thread, so they must
-        be thread-safe (e.g. use ``schedule_update_ha_state``).
+        Listeners historically had to be thread-safe (paho invoked them from
+        its network thread); messages now arrive on the event loop, but the
+        thread-safe idiom (``schedule_update_ha_state``) remains correct.
 
         Returns an idempotent unsubscribe callable removing the listener.
         """
@@ -416,9 +489,9 @@ class TerraMowHub:
 
     def _notify_state_listeners(self) -> None:
         """Notify listeners about a state change."""
-        # Iterate over a snapshot: listeners are registered from the event loop
-        # while this runs on the MQTT worker thread, so iterating the live list
-        # can raise "list changed size during iteration".
+        # Iterate over a snapshot: a listener may (un)register others while
+        # being notified, and iterating the live list would then raise
+        # "list changed size during iteration".
         for listener in list(self._state_listeners):
             try:
                 listener()
@@ -434,8 +507,9 @@ class TerraMowHub:
     def _dispatch(self, target: Callable[..., Any], *args: Any) -> None:
         """Schedule a handler onto the Home Assistant event loop from any thread.
 
-        The MQTT worker thread must never touch loop-bound APIs directly;
-        the deprecated ``hass.add_job`` used to provide this bridge.
+        Non-loop threads (executor command paths) must never touch
+        loop-bound APIs directly; the deprecated ``hass.add_job`` used to
+        provide this bridge.
         Coroutine functions become tasks on the loop; plain callables run
         directly. ``call_soon_threadsafe`` is also safe when already called
         from the loop thread.
@@ -501,51 +575,42 @@ class TerraMowHub:
             )
 
     def start(self) -> None:
-        """Start the MQTT client in a separate thread."""
+        """Start the MQTT connection task (called from the event loop)."""
         _LOGGER.info("Starting MQTT client, connecting to %s:%d", self.host, MQTT_PORT)
         _LOGGER.debug("MQTT connection params: username=%s", MQTT_USERNAME)
 
-        self.mqtt_client = create_mqtt_client()
-        self.mqtt_client.username_pw_set(MQTT_USERNAME, self.password)
-        self.mqtt_client.on_connect = self.on_mqtt_connect
-        self.mqtt_client.on_disconnect = self.on_mqtt_disconnect
-        self.mqtt_client.on_message = self.on_mqtt_message
-
-        # Register the hub's own dp handlers before the network thread starts,
+        # Register the hub's own dp handlers before the connection task starts,
         # so retained messages delivered right after connect cannot arrive
         # ahead of registration and be misfiled as undocumented data points.
         self.register_all_callbacks()
 
-        # Start MQTT loop thread
-        _LOGGER.debug("Starting MQTT thread")
-        self.mqtt_thread = threading.Thread(target=self.mqtt_loop)
-        self.mqtt_thread.daemon = True
-        self.mqtt_thread.start()
+        self.mqtt_client = _HubMqttClient(self)
+        self._mqtt_task = self.hass.async_create_background_task(
+            self._async_mqtt_runner(), f"terramow_mqtt_{self.host}"
+        )
 
         _LOGGER.debug("MQTT client startup completed")
 
     async def async_stop(self) -> None:
-        """Stop the MQTT client and clean up resources."""
+        """Stop the MQTT connection task and clean up resources."""
         _LOGGER.info("Stopping MQTT client")
         self._stop_event.set()
         for channel in self._meta_channels:
             self._reset_meta_retry(channel)
         self._reset_pending_meta()
-        if self.mqtt_client:
-            # disconnect() makes loop_forever() return so the worker thread can
-            # see the stop event and exit.
-            self.mqtt_client.disconnect()
-        # Wait for the worker thread to actually finish, to avoid leaving a
-        # zombie thread behind after a reload/reconfigure (which would keep
-        # reconnecting and flooding the log). Join in the executor so we don't
-        # block the event loop.
-        thread = getattr(self, "mqtt_thread", None)
-        if thread is not None and thread.is_alive():
-            await self.hass.async_add_executor_job(thread.join, MQTT_THREAD_JOIN_TIMEOUT)
-            if thread.is_alive():
-                _LOGGER.warning(
-                    "MQTT worker thread did not stop within %ds", MQTT_THREAD_JOIN_TIMEOUT
-                )
+        task = self._mqtt_task
+        self._mqtt_task = None
+        if task is not None:
+            # Cancelling unwinds the runner's ``async with``, which sends the
+            # MQTT DISCONNECT; await it so a reload/reconfigure never leaves a
+            # half-open connection (or a still-reconnecting task) behind.
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                _LOGGER.exception("MQTT connection task died unexpectedly")
 
     def register_all_callbacks(self) -> None:
         """Register all callbacks for data points."""
@@ -1357,25 +1422,44 @@ class TerraMowHub:
         except Exception as e:
             _LOGGER.error("Error processing version compatibility info: %s", e)
 
-    def mqtt_loop(self) -> None:
-        """MQTT main loop with auto-reconnect.
+    async def _async_mqtt_runner(self) -> None:
+        """Maintain the MQTT connection with auto-reconnect.
 
-        Uses exponential backoff and throttled logging so an unreachable
-        mower (asleep, docked, or after a DHCP IP change) does not flood
-        the log with an ERROR every few seconds or hammer the network.
-        The wait is interruptible via ``_stop_event`` so shutdown is
-        immediate when the hub is stopped.
+        Runs as a background task on the event loop for the life of the
+        config entry. Uses exponential backoff and throttled logging so an
+        unreachable mower (asleep, docked, or after a DHCP IP change) does
+        not flood the log with an ERROR every few seconds or hammer the
+        network. Cancellation (unload/reload) unwinds the ``async with``,
+        which sends the MQTT DISCONNECT.
         """
         consecutive_failures = 0
-        while not self._stop_event.is_set():
+        while True:
             try:
-                if self.mqtt_client and not self.mqtt_client.is_connected():
-                    _LOGGER.info("Attempting to connect to MQTT Broker %s", self.host)
-                    self.mqtt_client.connect(self.host, MQTT_PORT, 60)
+                _LOGGER.info("Attempting to connect to MQTT Broker %s", self.host)
+                async with aiomqtt.Client(
+                    hostname=self.host,
+                    port=MQTT_PORT,
+                    username=MQTT_USERNAME,
+                    password=self.password,
+                    keepalive=60,
+                    logger=_LOGGER.getChild("mqtt"),
+                ) as client:
                     _LOGGER.info("Connected to MQTT Broker")
-                consecutive_failures = 0
-                if self.mqtt_client:
-                    self.mqtt_client.loop_forever()
+                    self._aiomqtt_client = client
+                    try:
+                        consecutive_failures = 0
+                        await self._async_on_connected(client)
+                        async for message in client.messages:
+                            # Normalize to the plain topic-string/bytes shape
+                            # on_mqtt_message consumes (aiomqtt's Topic
+                            # wrapper does not compare equal to str).
+                            self.on_mqtt_message(
+                                None,
+                                None,
+                                _MqttMessage(str(message.topic), message.payload),
+                            )
+                    finally:
+                        self._aiomqtt_client = None
             except Exception as e:
                 consecutive_failures += 1
                 # Warn once on the first failure, then drop to DEBUG to avoid flooding the log.
@@ -1390,88 +1474,86 @@ class TerraMowHub:
                         "MQTT connection still failing (attempt %d): %s",
                         consecutive_failures, e,
                     )
-                # Set the error state
-                self._set_connection_error(True)
-                # Exponential backoff capped at MQTT_RECONNECT_MAX_DELAY; use an interruptible wait so we can stop immediately.
-                delay = min(
-                    MQTT_RECONNECT_BASE_DELAY * (2 ** (consecutive_failures - 1)),
-                    MQTT_RECONNECT_MAX_DELAY,
-                )
-                self._stop_event.wait(delay)
-
-    def on_mqtt_connect(self, client: Any, _userdata: Any, _flags: Any, rc: int) -> None:
-        """Callback when connected to MQTT Broker."""
-        if rc == 0:
-            _LOGGER.info("MQTT connected")
-            # One wildcard subscription covers every data point, including ids
-            # above the historical 0-200 range; the regex dispatcher in
-            # on_mqtt_message already handles arbitrary ids.
-            client.subscribe("data_point/+/robot")
-            # Capture app-direction writes: the vendor app's schedule
-            # ADD/DELETE payloads (and their carrier data point) are
-            # undocumented; recording this traffic is how the write format
-            # gets reverse-engineered from real app usage. Includes echoes of
-            # our own commands — those are useful reference samples.
-            client.subscribe(APP_DP_TOPIC_FILTER)
-            # Full-broker discovery: field evidence shows the mower's internal
-            # (BLE/cloud) commander gets dp_119 acks for commands that never
-            # transit the topics above — subscribe everything and record any
-            # message on a topic we do not already handle. Additional to the
-            # specific subscriptions on purpose: if the broker denies "#",
-            # nothing breaks; duplicate deliveries of known topics are benign.
-            client.subscribe("#")
-            # Subscribe to the map info topic (for older firmware compatibility)
-            client.subscribe(MAP_INFO_TOPIC)
-            _LOGGER.debug("Subscribed to %s topic", MAP_INFO_TOPIC)
-
-            # Subscribe to map/path meta data and pose
-            client.subscribe(MAP_META_TOPIC)
-            client.subscribe(PATH_META_TOPIC)
-            client.subscribe(PATH_HISTORY_META_TOPIC)
-            client.subscribe(POSE_TOPIC)
-            _LOGGER.debug(
-                "Subscribed to %s/%s/%s/%s topic",
-                MAP_META_TOPIC,
-                PATH_META_TOPIC,
-                PATH_HISTORY_META_TOPIC,
-                POSE_TOPIC,
+            else:
+                # The message stream ended without an error (broker closed the
+                # session cleanly); count it as a failure so reconnects still
+                # back off instead of spinning.
+                consecutive_failures += 1
+                _LOGGER.debug("MQTT message stream ended; reconnecting")
+            # Set the error state
+            self._set_connection_error(True)
+            # Exponential backoff capped at MQTT_RECONNECT_MAX_DELAY.
+            delay = min(
+                MQTT_RECONNECT_BASE_DELAY * (2 ** (consecutive_failures - 1)),
+                MQTT_RECONNECT_MAX_DELAY,
             )
+            await asyncio.sleep(delay)
 
-            # Subscribe to the device model topic
-            client.subscribe(MODEL_NAME_TOPIC)
-            _LOGGER.debug("Subscribed to %s topic", MODEL_NAME_TOPIC)
+    async def _async_on_connected(self, client: aiomqtt.Client) -> None:
+        """Subscribe to every topic of interest and prime the session.
 
-            # Proactively request version compatibility information
-            self._request_compatibility_info()
-            # Proactively request the full weekly schedule (dp_122 is only sent
-            # in response to a GET; without this the schedule calendar is empty)
-            self._request_full_schedule()
+        Runs once per (re)connection — the async equivalent of what paho's
+        ``on_connect`` callback used to do.
+        """
+        _LOGGER.info("MQTT connected")
+        # One wildcard subscription covers every data point, including ids
+        # above the historical 0-200 range; the regex dispatcher in
+        # on_mqtt_message already handles arbitrary ids.
+        await client.subscribe("data_point/+/robot")
+        # Capture app-direction writes: the vendor app's schedule
+        # ADD/DELETE payloads (and their carrier data point) are
+        # undocumented; recording this traffic is how the write format
+        # gets reverse-engineered from real app usage. Includes echoes of
+        # our own commands — those are useful reference samples.
+        await client.subscribe(APP_DP_TOPIC_FILTER)
+        # Full-broker discovery: field evidence shows the mower's internal
+        # (BLE/cloud) commander gets dp_119 acks for commands that never
+        # transit the topics above — subscribe everything and record any
+        # message on a topic we do not already handle. Additional to the
+        # specific subscriptions on purpose: if the broker denies "#",
+        # nothing breaks; duplicate deliveries of known topics are benign.
+        with contextlib.suppress(aiomqtt.MqttError):
+            await client.subscribe("#")
+        # Subscribe to the map info topic (for older firmware compatibility)
+        await client.subscribe(MAP_INFO_TOPIC)
+        _LOGGER.debug("Subscribed to %s topic", MAP_INFO_TOPIC)
 
-            self.connection_error = False
-            self._notify_state_listeners()
-        else:
-            _LOGGER.error(f"MQTT connection failed with code {rc}")
-            # Set the error state
-            self._set_connection_error(True)
+        # Subscribe to map/path meta data and pose
+        await client.subscribe(MAP_META_TOPIC)
+        await client.subscribe(PATH_META_TOPIC)
+        await client.subscribe(PATH_HISTORY_META_TOPIC)
+        await client.subscribe(POSE_TOPIC)
+        _LOGGER.debug(
+            "Subscribed to %s/%s/%s/%s topic",
+            MAP_META_TOPIC,
+            PATH_META_TOPIC,
+            PATH_HISTORY_META_TOPIC,
+            POSE_TOPIC,
+        )
 
-    def on_mqtt_disconnect(self, _client: Any, _userdata: Any, rc: int) -> None:
-        """Callback when disconnected from MQTT Broker."""
-        if rc != 0:
-            _LOGGER.warning(f"Unexpected MQTT disconnection: {rc}")
-            # Automatically reconnect after a disconnection
-            # Set the error state
-            self._set_connection_error(True)
+        # Subscribe to the device model topic
+        await client.subscribe(MODEL_NAME_TOPIC)
+        _LOGGER.debug("Subscribed to %s topic", MODEL_NAME_TOPIC)
+
+        # Proactively request version compatibility information
+        self._request_compatibility_info()
+        # Proactively request the full weekly schedule (dp_122 is only sent
+        # in response to a GET; without this the schedule calendar is empty)
+        self._request_full_schedule()
+
+        self.connection_error = False
+        self._notify_state_listeners()
 
     def on_mqtt_message(self, _client: Any, _userdata: Any, msg: Any) -> None:
-        """Callback when a message is received."""
+        """Handle one received MQTT message (paho-style signature kept)."""
         topic = msg.topic
         try:
             payload = msg.payload.decode()
         except UnicodeDecodeError:
-            # A raising on_message callback propagates out of loop_forever(),
-            # which the reconnect loop treats as a connection failure; a
-            # retained undecodable payload would then wedge the connection in
-            # a reconnect/redeliver cycle. Drop the message instead.
+            # A raising message handler propagates into the runner task, which
+            # treats it as a connection failure; a retained undecodable payload
+            # would then wedge the connection in a reconnect/redeliver cycle.
+            # Drop the message instead.
             _LOGGER.warning("Ignoring undecodable MQTT payload on topic %s", topic)
             return
 
@@ -1497,8 +1579,8 @@ class TerraMowHub:
             try:
                 pose = json.loads(payload)
                 self._pose = pose
-                # Snapshot: entities append callbacks from the event loop while
-                # this runs on the MQTT worker thread.
+                # Snapshot: a callback may (un)register others while the
+                # batch is being dispatched.
                 self._dispatch_batch(list(self.pose_callbacks), pose)
             except json.JSONDecodeError:
                 _LOGGER.error("Failed to parse pose JSON: %s", payload[:200])
@@ -2277,14 +2359,15 @@ class TerraMowHub:
 
         Commands are sent at QoS 1 so a brief reconnect buffers them instead of
         dropping them. If the MQTT client is missing or disconnected, or the
-        broker rejects the publish, raise ``HomeAssistantError`` so a service
+        publish is not accepted, raise ``HomeAssistantError`` so a service
         call surfaces the failure instead of silently reporting success — the
         mower would otherwise keep mowing while ``dock``/``pause`` "succeed".
 
         Only the synchronous command path (lawn_mower/button/select/number/
-        switch service calls) lets this propagate; the one background caller,
-        ``_request_compatibility_info`` on the MQTT worker thread, wraps this in
-        its own ``try/except`` so a raised error never kills the worker.
+        switch service calls) lets this propagate; the background callers,
+        ``_request_compatibility_info``/``_request_full_schedule`` in the
+        connection task, wrap this in their own ``try/except`` so a raised
+        error never kills the runner.
         """
         topic = f"data_point/{dp_id}/app"
         _LOGGER.debug("Publishing data to topic %s: %s", topic, data)
@@ -2297,7 +2380,7 @@ class TerraMowHub:
                 translation_key="command_not_delivered",
             )
         info = client.publish(topic, payload, qos=1)
-        if info.rc != mqtt_client.MQTT_ERR_SUCCESS:
+        if info.rc != _MQTT_ERR_SUCCESS:
             _LOGGER.error("MQTT publish to %s failed with rc=%s", topic, info.rc)
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
@@ -2466,7 +2549,7 @@ class TerraMowHub:
 
         Mirrors ``_request_compatibility_info``: a read-only query the device
         answers with its schedule list. Wrapped so a failure never kills the
-        MQTT worker thread.
+        MQTT connection task.
         """
         try:
             _LOGGER.info("Requesting full weekly schedule")

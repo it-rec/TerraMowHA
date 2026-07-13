@@ -32,7 +32,7 @@ config-entry lifecycle) see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) —
 keep it in sync when you add or rename a module; don't duplicate its detail
 here. Quick orientation:
 
-- `hub.py` — `TerraMowHub`: the central MQTT client and state holder. Subscribes to `data_point/{dp_id}/robot` topics, publishes commands to `data_point/{dp_id}/app`, and handles special topics (`map/current/info`, `map/current/meta`, `path/*/meta`, `model/name`). Contains the state enums (`Mission`, `SubMission`, `MissionState`, `PowerMode`, `BackToStationReason`).
+- `hub.py` — `TerraMowHub`: the central MQTT connection (an aiomqtt event-loop task) and state holder. Subscribes to `data_point/{dp_id}/robot` topics, publishes commands to `data_point/{dp_id}/app`, and handles special topics (`map/current/info`, `map/current/meta`, `path/*/meta`, `model/name`). Contains the state enums (`Mission`, `SubMission`, `MissionState`, `PowerMode`, `BackToStationReason`).
 - `__init__.py` — config entry setup/unload, `TerraMowBasicData` (runtime data), service registration (`terramow.start_select_region`).
 - `entity.py` — `TerraMowEntity`: common base class for all entities.
 - Platform modules (`__init__.PLATFORMS`, 11 total) — one file per platform: `lawn_mower.py`, `camera.py`, `sensor.py`, `binary_sensor.py`, `select.py`, `number.py`, `switch.py`, `button.py`, `update.py`, `event.py`, `calendar.py`. `map_sensor.py` adds map-derived sensors under the `sensor` platform (not its own platform).
@@ -42,7 +42,6 @@ here. Quick orientation:
 - `const.py`, `entity_utils.py` — constants and shared entity helpers.
 - `diagnostics.py` — diagnostics download support.
 - `issues.py` — repair issues (firmware compatibility, blade/base-station maintenance).
-- `mqtt_compat.py` — MQTT client compatibility shim.
 - `quality_scale.yaml`, `services.yaml` — HA quality-scale declaration and the `terramow.start_select_region` service schema.
 
 The device protocol is data-point based: each feature maps to a numeric data point ID (0–200). See `docs/en/developers/data_point.md` before adding entities for new data points.

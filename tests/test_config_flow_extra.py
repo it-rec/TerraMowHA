@@ -1,7 +1,9 @@
 """Additional config flow coverage: validate_input, zeroconf, options."""
 
+from types import SimpleNamespace
 from unittest.mock import patch
 
+import aiomqtt
 import pytest
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
@@ -27,42 +29,27 @@ from custom_components.terramow.const import (
 USER_INPUT = {CONF_HOST: "192.0.2.10", CONF_PASSWORD: "secret"}
 
 
-class _FakeMqttClient:
-    """Minimal paho stand-in that delivers a scripted CONNACK."""
+class _FakeAiomqttClient:
+    """Minimal aiomqtt stand-in whose connect delivers a scripted outcome."""
 
-    rc = 0
-    connect_raises = False
+    error: Exception | None = None
 
     def __init__(self, *args, **kwargs) -> None:
-        self.on_connect = None
-
-    def username_pw_set(self, username, password) -> None:
         pass
 
-    def connect(self, host, port, keepalive) -> None:
-        if type(self).connect_raises:
-            raise OSError("no route to host")
+    async def __aenter__(self):
+        if type(self).error is not None:
+            raise type(self).error
+        return self
 
-    def loop_start(self) -> None:
-        # paho would deliver the CONNACK from its network thread; do it inline.
-        if self.on_connect is not None:
-            self.on_connect(self, None, None, type(self).rc)
-
-    def loop_stop(self) -> None:
-        pass
-
-    def disconnect(self) -> None:
-        pass
+    async def __aexit__(self, *exc) -> bool:
+        return False
 
 
-def _patch_client(rc: int = 0, connect_raises: bool = False):
-    client_cls = type(
-        "ScriptedClient",
-        (_FakeMqttClient,),
-        {"rc": rc, "connect_raises": connect_raises},
-    )
+def _patch_client(error: Exception | None = None):
+    client_cls = type("ScriptedClient", (_FakeAiomqttClient,), {"error": error})
     return patch(
-        "custom_components.terramow.config_flow.create_mqtt_client",
+        "custom_components.terramow.config_flow.aiomqtt.Client",
         side_effect=client_cls,
     )
 
@@ -73,25 +60,48 @@ def _patch_client(rc: int = 0, connect_raises: bool = False):
 
 
 async def test_validate_input_success(hass: HomeAssistant) -> None:
-    with _patch_client(rc=0):
+    with _patch_client():
         info = await validate_input(hass, USER_INPUT)
     assert info["title"] == "TerraMow (192.0.2.10)"
 
 
-@pytest.mark.parametrize("rc", [4, 5])
-async def test_validate_input_auth_failure(hass: HomeAssistant, rc: int) -> None:
-    with _patch_client(rc=rc), pytest.raises(InvalidAuth):
+@pytest.mark.parametrize(
+    "error",
+    [
+        # MQTT 3.1.1 CONNACK: 4 = bad username/password, 5 = not authorized
+        aiomqtt.MqttCodeError(4),
+        aiomqtt.MqttCodeError(5),
+        # paho 2.x may normalize those to MQTT 5 ReasonCode objects (134/135)
+        aiomqtt.MqttCodeError(SimpleNamespace(value=134)),
+        aiomqtt.MqttCodeError(SimpleNamespace(value=135)),
+    ],
+)
+async def test_validate_input_auth_failure(
+    hass: HomeAssistant, error: Exception
+) -> None:
+    with _patch_client(error=error), pytest.raises(InvalidAuth):
         await validate_input(hass, USER_INPUT)
 
 
 async def test_validate_input_cannot_connect_on_exception(hass: HomeAssistant) -> None:
-    with _patch_client(connect_raises=True), pytest.raises(CannotConnect):
+    with (
+        _patch_client(error=OSError("no route to host")),
+        pytest.raises(CannotConnect),
+    ):
         await validate_input(hass, USER_INPUT)
 
 
-async def test_validate_input_cannot_connect_on_no_connack(hass: HomeAssistant) -> None:
-    # rc other than 0/4/5 leaves connected=False -> CannotConnect
-    with _patch_client(rc=3), pytest.raises(CannotConnect):
+async def test_validate_input_cannot_connect_on_refusal(hass: HomeAssistant) -> None:
+    # a CONNACK refusal other than bad credentials -> CannotConnect
+    with (
+        _patch_client(error=aiomqtt.MqttCodeError(3)),
+        pytest.raises(CannotConnect),
+    ):
+        await validate_input(hass, USER_INPUT)
+
+
+async def test_validate_input_cannot_connect_on_timeout(hass: HomeAssistant) -> None:
+    with _patch_client(error=TimeoutError()), pytest.raises(CannotConnect):
         await validate_input(hass, USER_INPUT)
 
 

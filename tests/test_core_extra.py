@@ -238,20 +238,26 @@ def test_request_compatibility_info_swallows_publish_error() -> None:
     hub._request_compatibility_info()  # must not raise
 
 
-def test_async_stop_without_mqtt_client() -> None:
+def test_async_stop_without_runner_task() -> None:
     hub = _hub()
     hub.mqtt_client = None
-    asyncio.run(hub.async_stop())  # no client -> nothing to disconnect/join
+    asyncio.run(hub.async_stop())  # never started -> nothing to cancel
 
 
-def test_async_stop_joins_thread_that_stops() -> None:
+def test_async_stop_awaits_already_cancelled_task() -> None:
     hub = _hub()
-    thread = MagicMock()
-    # alive when checked, stopped after the join -> no warning
-    thread.is_alive.side_effect = [True, False]
-    hub.mqtt_thread = thread
-    asyncio.run(hub.async_stop())
-    thread.join.assert_called_once()
+
+    async def main() -> None:
+        async def forever() -> None:
+            await asyncio.Event().wait()
+
+        task = asyncio.get_running_loop().create_task(forever())
+        task.cancel()
+        await asyncio.sleep(0)  # task settles as cancelled before stop
+        hub._mqtt_task = task
+        await hub.async_stop()
+
+    asyncio.run(main())
 
 
 def test_compatibility_without_overall_skips_sw_version() -> None:
@@ -363,30 +369,8 @@ def test_dock_recharge_idle_state_is_noop() -> None:
 
 
 # ---------------------------------------------------------------------------
-# hub: mqtt_loop with no client + meta pending/data-none/requeue partials
+# hub: meta pending/data-none/requeue partials
 # ---------------------------------------------------------------------------
-
-
-def test_mqtt_loop_without_client_skips_connect_and_loops() -> None:
-    hub = _hub()
-    hub.mqtt_client = None
-    # run exactly one iteration: enter the loop once, then stop
-    hub._stop_event.is_set = MagicMock(side_effect=[False, True])
-    hub.mqtt_loop()  # no client -> skips connect and loop_forever, returns cleanly
-
-
-def test_mqtt_loop_skips_connect_when_already_connected() -> None:
-    hub = _hub()
-    client = hub.mqtt_client
-    client.is_connected.return_value = True  # already connected -> skip connect
-
-    def stop(*_a):
-        hub._stop_event.set()
-
-    client.loop_forever.side_effect = stop
-    hub.mqtt_loop()
-    client.connect.assert_not_called()
-    client.loop_forever.assert_called_once()
 
 
 def test_map_meta_keeps_newer_pending_while_fetching() -> None:
@@ -648,26 +632,29 @@ async def test_unload_without_lawn_mower_removes_service(hass: HomeAssistant) ->
 # ---------------------------------------------------------------------------
 
 
-def test_validate_input_tolerates_disconnect_error() -> None:
+def test_validate_input_maps_generic_mqtt_error_to_cannot_connect() -> None:
+    import aiomqtt
+
     from custom_components.terramow import config_flow as cf
 
-    fake = MagicMock()
+    class _BrokenClient:
+        def __init__(self, *args, **kwargs) -> None:
+            pass
 
-    def connect(host, port, timeout):
-        # simulate the broker accepting the credentials
-        fake.on_connect(fake, None, None, 0)
+        async def __aenter__(self):
+            # not a CONNACK refusal: e.g. the socket dropped mid-handshake
+            raise aiomqtt.MqttError("connection lost before CONNACK")
 
-    fake.connect.side_effect = connect
-    fake.disconnect.side_effect = RuntimeError("already gone")
+        async def __aexit__(self, *exc) -> bool:
+            return False
 
-    hass = MagicMock()
-    hass.async_add_executor_job = AsyncMock(side_effect=lambda fn, *a: fn(*a))
-
-    with patch.object(cf, "create_mqtt_client", return_value=fake):
-        result = asyncio.run(
-            cf.validate_input(hass, {CONF_HOST: "192.0.2.1", CONF_PASSWORD: "p"})
+    with (
+        patch.object(cf.aiomqtt, "Client", _BrokenClient),
+        pytest.raises(cf.CannotConnect),
+    ):
+        asyncio.run(
+            cf.validate_input(MagicMock(), {CONF_HOST: "192.0.2.1", CONF_PASSWORD: "p"})
         )
-    assert isinstance(result, dict)
 
 
 async def test_user_pass_step_without_discovery_delegates(hass: HomeAssistant) -> None:

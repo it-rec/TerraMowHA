@@ -1,6 +1,9 @@
 pytest-homeassistant-custom-component
 tzdata
 pytest-cov
+# The integration's MQTT stack (manifest requirement); paho-mqtt arrives as
+# its transitive dependency.
+aiomqtt
 # Imported by homeassistant.components.camera, which the full-stack
 # integration tests (tests/test_integration_setup.py) set up for real.
 PyTurboJPEG
