@@ -45,7 +45,7 @@ _LOGGER = logging.getLogger(__name__)
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.4.0"
+CARD_VERSION = "1.5.0"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -206,6 +206,46 @@ def _main_direction_angle(map_data: dict[str, Any]) -> Any:
     )
 
 
+# The per-zone mow settings surfaced in the card's zone-info panel; the same
+# fields exist on the global param block and act as the fallback.
+_ZONE_SETTING_FIELDS = (
+    "mow_height",
+    "mow_speed",
+    "mow_spacing",
+    "blade_disk_speed",
+    "edge_cutting_distance",
+)
+
+
+def _zone_settings(map_data: dict[str, Any]) -> dict[int, dict[str, Any]]:
+    """Per-zone mow settings from the custom region params, keyed by zone id."""
+    mow_param = map_data.get("mow_param")
+    if not isinstance(mow_param, dict):
+        return {}
+    settings: dict[int, dict[str, Any]] = {}
+    for item in mow_param.get("regions") or []:
+        if not isinstance(item, dict):
+            continue
+        zone_id = item.get("id")
+        param = item.get("region_param")
+        if isinstance(zone_id, int) and isinstance(param, dict):
+            settings[zone_id] = {
+                key: param.get(key) for key in _ZONE_SETTING_FIELDS
+            }
+    return settings
+
+
+def _global_settings(map_data: dict[str, Any]) -> dict[str, Any] | None:
+    """The global mow settings block, or None while unreported/malformed."""
+    mow_param = map_data.get("mow_param")
+    if not isinstance(mow_param, dict):
+        return None
+    global_param = mow_param.get("global_param")
+    if not isinstance(global_param, dict):
+        return None
+    return {key: global_param.get(key) for key in _ZONE_SETTING_FIELDS}
+
+
 def _zone_direction_angles(map_data: dict[str, Any]) -> dict[int, Any]:
     """Per-zone stripe angles from the custom region params, keyed by zone id.
 
@@ -247,6 +287,7 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
         }
 
     zone_angles = _zone_direction_angles(map_data)
+    zone_settings = _zone_settings(map_data)
     regions: list[dict[str, Any]] = []
     for region in scene["regions"]:
         regions.append(
@@ -267,6 +308,9 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
                         # Zone-specific stripe direction (custom params); the
                         # card falls back to the global main_direction_angle.
                         "direction_angle": zone_angles.get(sub["id"]),
+                        # Zone-specific mow settings for the zone-info panel;
+                        # None -> the zone runs on the global mow_params.
+                        "params": zone_settings.get(sub["id"]),
                     }
                     for sub in region["sub_regions"]
                 ],
@@ -292,6 +336,8 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
         # Configured mowing-stripe direction in degrees (None when the device
         # has not reported mow params yet); the card draws it as a lane arrow.
         "main_direction_angle": _main_direction_angle(map_data),
+        # Global mow settings; zones without custom params inherit these.
+        "mow_params": _global_settings(map_data),
         "map_extent": _poly(scene["map_extent"]),
         "station": station,
         "regions": regions,
