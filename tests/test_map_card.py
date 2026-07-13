@@ -524,6 +524,119 @@ async def test_empty_scene_payload(hass: HomeAssistant) -> None:
     assert payload["regions"] == []
     assert payload["station"] is None
     assert payload["current_path"] == []
+    assert payload["main_direction_angle"] is None
+
+
+async def test_payload_carries_main_direction_angle(hass: HomeAssistant) -> None:
+    """The configured stripe direction reaches the card payload in degrees."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    hub._apply_map_data(
+        {
+            **MAP_DATA,
+            "mow_param": {
+                "global_param": {
+                    "main_direction_angle_config": {"current_angle": 135}
+                }
+            },
+        }
+    )
+    assert build_scene_payload(hub)["main_direction_angle"] == 135
+
+
+async def test_main_direction_angle_tolerates_malformed_blocks(
+    hass: HomeAssistant,
+) -> None:
+    """Missing or malformed mow_param structures resolve to None, not errors."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    for mow_param in (
+        "not-a-dict",
+        {"global_param": "not-a-dict"},
+        {"global_param": {"main_direction_angle_config": "not-a-dict"}},
+    ):
+        hub._apply_map_data({**MAP_DATA, "mow_param": mow_param})
+        assert build_scene_payload(hub)["main_direction_angle"] is None
+
+
+async def test_zone_direction_angles_override_global(hass: HomeAssistant) -> None:
+    """Zones with custom params carry their own stripe angle; SINGLE mode
+    prefers the configured angle over the (stale) current_angle."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    def _cfg(**config: Any) -> dict[str, Any]:
+        return {"region_param": {"main_direction_angle_config": config}}
+
+    hub._apply_map_data(
+        {
+            **MAP_DATA,
+            "mow_param": {
+                "global_param": {
+                    "main_direction_angle_config": {
+                        "mode": "MAIN_DIRECTION_MODE_SINGLE",
+                        "single_mode_config": {"angle": 180},
+                        "current_angle": 90,
+                    }
+                },
+                "regions": [
+                    # SINGLE mode: configured angle wins over stale current.
+                    {
+                        "id": 7,
+                        **_cfg(
+                            mode="MAIN_DIRECTION_MODE_SINGLE",
+                            single_mode_config={"angle": -90},
+                            current_angle=90,
+                        ),
+                    },
+                    # Non-single mode: current_angle is the live value.
+                    {
+                        "id": 8,
+                        **_cfg(
+                            mode="MAIN_DIRECTION_MODE_AUTO_ROTATE",
+                            current_angle=45,
+                        ),
+                    },
+                    # SINGLE with a malformed/empty single config falls back.
+                    {
+                        "id": 5,
+                        **_cfg(
+                            mode="MAIN_DIRECTION_MODE_SINGLE",
+                            single_mode_config="junk",
+                            current_angle=30,
+                        ),
+                    },
+                    {
+                        "id": 6,
+                        **_cfg(
+                            mode="MAIN_DIRECTION_MODE_SINGLE",
+                            single_mode_config={},
+                            current_angle=20,
+                        ),
+                    },
+                    # Malformed entries are skipped, never crash the payload.
+                    "junk",
+                    {"id": None, **_cfg(current_angle=10)},
+                    {"id": 9, "region_param": "junk"},
+                ],
+            },
+        }
+    )
+    payload = build_scene_payload(hub)
+    # Global SINGLE mode also prefers the configured angle.
+    assert payload["main_direction_angle"] == 180
+    subs = {
+        sub["id"]: sub
+        for region in payload["regions"]
+        for sub in region["sub_regions"]
+    }
+    assert subs[7]["direction_angle"] == -90
+    assert subs[8]["direction_angle"] == 45
 
 
 class _FakeResources:

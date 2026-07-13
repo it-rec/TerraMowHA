@@ -21,6 +21,7 @@
  *   zone_selection: true       # tap zones to start a selective mow
  *   show_hud: true             # status chips (state, battery, progress)
  *   show_markers: true         # trapped / maintenance / passage markers
+ *   show_direction: true       # mowing stripe-direction arrow per region
  *   rotation: 0                # rotate the map view (degrees)
  *   fit_height: 420            # card canvas height in px
  *
@@ -244,6 +245,7 @@ class TerramowMapCard extends HTMLElement {
       show_hud: true,
       show_controls: true,
       show_markers: true,
+      show_direction: true,
       rotation: 0,
       fit_height: 420,
       ...config,
@@ -1392,6 +1394,10 @@ class TerramowMapCard extends HTMLElement {
       this._drawMarkers(ctx, scene.markers, view, colors);
     }
 
+    if (this._config.show_direction) {
+      this._drawDirection(ctx, scene, view, colors);
+    }
+
     // Zone labels once zones are reasonably large on screen; kept upright
     // regardless of the configured map rotation.
     if (view.scale * 2000 >= 46) {
@@ -1479,6 +1485,73 @@ class TerramowMapCard extends HTMLElement {
     drawShape(markers.cross_boundary, 4, 0, colors.accent);
     drawShape(markers.trapped, 3, 0, colors.markerTrapped);
     drawShape(markers.maintenance, 6, Math.PI / 6, colors.markerMaintenance);
+  }
+
+  /**
+   * Configured mowing stripe direction (scene.main_direction_angle, degrees):
+   * a subtle double-headed arrow per zone, aligned with the lanes the mower
+   * will cut. Anchored at the device-provided zone center (always inside the
+   * zone -- a concave region's averaged centroid can land off the grass),
+   * nudged below the zone label. World-space direction, so it rotates with
+   * the map; length is screen-constant. Stripes run both ways -> two heads.
+   */
+  _drawDirection(ctx, scene, view, colors) {
+    const half = 22 / view.scale;
+    const head = 6 / view.scale;
+    ctx.strokeStyle = colors.subtext;
+    ctx.fillStyle = colors.subtext;
+    ctx.lineWidth = 2 / view.scale;
+    ctx.lineCap = "round";
+    ctx.globalAlpha = 0.75;
+    const arrowHead = (tipX, tipY, dx, dy, sign) => {
+      ctx.beginPath();
+      ctx.moveTo(tipX, tipY);
+      ctx.lineTo(
+        tipX - sign * (dx * head - dy * head * 0.6),
+        tipY - sign * (dy * head + dx * head * 0.6)
+      );
+      ctx.lineTo(
+        tipX - sign * (dx * head + dy * head * 0.6),
+        tipY - sign * (dy * head - dx * head * 0.6)
+      );
+      ctx.closePath();
+      ctx.fill();
+    };
+    for (const region of scene.regions) {
+      for (const sub of region.sub_regions) {
+        // Zone-specific custom angle wins; global is the fallback.
+        const angle =
+          typeof sub.direction_angle === "number"
+            ? sub.direction_angle
+            : scene.main_direction_angle;
+        if (!sub.center || typeof angle !== "number") {
+          continue;
+        }
+        const rad = (angle * Math.PI) / 180;
+        // Device angles are math-convention (counter-clockwise from +x) in
+        // a y-up world; canvas y points down, so negate the y component.
+        const dx = Math.cos(rad);
+        const dy = -Math.sin(rad);
+        // Keep the arrow's TOP edge a constant screen gap below the zone
+        // label: base gap plus the arrow's screen-vertical half-extent (a
+        // vertical arrow reaches `half` back up toward the text, a
+        // horizontal one not at all). Mapped through the map rotation so
+        // "below" stays screen-down.
+        const vertical = Math.abs(
+          dx * Math.sin(this._rot) + dy * Math.cos(this._rot)
+        );
+        const off = 16 / view.scale + half * vertical;
+        const cx = sub.center[0] + off * Math.sin(this._rot);
+        const cy = sub.center[1] + off * Math.cos(this._rot);
+        ctx.beginPath();
+        ctx.moveTo(cx - dx * half, cy - dy * half);
+        ctx.lineTo(cx + dx * half, cy + dy * half);
+        ctx.stroke();
+        arrowHead(cx + dx * half, cy + dy * half, dx, dy, 1);
+        arrowHead(cx - dx * half, cy - dy * half, dx, dy, -1);
+      }
+    }
+    ctx.globalAlpha = 1;
   }
 
   _drawPathLayer(ctx, dpr, colors) {
@@ -1761,6 +1834,11 @@ class TerramowMapCardEditor extends HTMLElement {
       {
         name: "show_markers",
         label: "Show trapped / maintenance markers",
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_direction",
+        label: "Show mowing direction arrow",
         selector: { boolean: {} },
       },
       {
