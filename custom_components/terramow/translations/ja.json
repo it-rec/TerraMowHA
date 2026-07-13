@@ -300,6 +300,9 @@
       },
       "map_save_progress": {
         "name": "地図保存の進捗"
+      },
+      "wifi_signal": {
+        "name": "Wi-Fi信号強度"
       }
     },
     "camera": {

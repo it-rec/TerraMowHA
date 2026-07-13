@@ -391,6 +391,7 @@ class TerraMowHub:
         self._full_schedule: dict[str, Any] = {}  # Store dp_122 full weekly schedule list
         self._state_flag_134: dict[str, Any] = {}  # Store dp_134 undecoded binary flag
         self._map_save_progress: dict[str, Any] = {}  # Store dp_118 map-save progress %
+        self._wifi_signal: int | None = None  # Store dp_109 Wi-Fi signal %
         # Monotonic timestamp when the current SAVING_MAP episode began, used to
         # decay the displayed sub_mission / mission_state back to idle once the
         # save finishes (issue #142). None whenever the raw sub_mission is not
@@ -635,6 +636,7 @@ class TerraMowHub:
         self.register_callback(122, self.on_full_schedule)
         self.register_callback(134, self.on_state_flag_134)
         self.register_callback(118, self.on_map_save_progress)
+        self.register_callback(109, self.on_wifi_signal)
         self.register_callback(150, self.on_advanced_settings)
         self.register_callback(COMMAND_ACK_DP, self.on_command_ack)
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
@@ -1185,6 +1187,25 @@ class TerraMowHub:
             return
         if isinstance(data, dict):
             self._map_save_progress = data
+
+    async def on_wifi_signal(self, payload: str) -> None:
+        """Handle the Wi-Fi signal strength (dp_109, undocumented).
+
+        Observed as ``{"int_value": 0..100}``: the strength of the mower's own
+        Wi-Fi link as a percentage (~= 2 * (RSSI dBm + 100)). Identified
+        empirically -- pinned at 98 right next to an access point, a noisy
+        52-68 on the lawn through a wall, and correlated with neither GNSS
+        visibility (98 inside a concrete cellar) nor the battery level.
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_109: %s", payload)
+            return
+        if isinstance(data, dict):
+            value = data.get("int_value")
+            if isinstance(value, int) and not isinstance(value, bool):
+                self._wifi_signal = value
 
     async def on_operating_modes(self, payload: str) -> None:
         """Handle the operating-mode triple (dp_154, undocumented).
@@ -2247,6 +2268,11 @@ class TerraMowHub:
     def map_save_progress(self) -> dict[str, Any]:
         """Get the map-save / upload progress payload (dp_118, undocumented)."""
         return self._map_save_progress
+
+    @property
+    def wifi_signal(self) -> int | None:
+        """Get the mower-side Wi-Fi signal strength in percent (dp_109)."""
+        return self._wifi_signal
 
     def _map_save_finished(self) -> bool:
         """Whether the current SAVING_MAP episode should read as completed.

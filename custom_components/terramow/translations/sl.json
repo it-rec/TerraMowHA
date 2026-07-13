@@ -300,6 +300,9 @@
       },
       "map_save_progress": {
         "name": "Napredek shranjevanja zemljevida"
+      },
+      "wifi_signal": {
+        "name": "Signal Wi-Fi"
       }
     },
     "camera": {

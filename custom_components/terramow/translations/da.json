@@ -300,6 +300,9 @@
       },
       "map_save_progress": {
         "name": "Fremskridt for kortlagring"
+      },
+      "wifi_signal": {
+        "name": "Wi-Fi-signal"
       }
     },
     "camera": {

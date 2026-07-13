@@ -300,6 +300,9 @@
       },
       "map_save_progress": {
         "name": "Kartes saglabāšanas norise"
+      },
+      "wifi_signal": {
+        "name": "Wi-Fi signāls"
       }
     },
     "camera": {

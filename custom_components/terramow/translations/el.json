@@ -300,6 +300,9 @@
       },
       "map_save_progress": {
         "name": "Πρόοδος αποθήκευσης χάρτη"
+      },
+      "wifi_signal": {
+        "name": "Σήμα Wi-Fi"
       }
     },
     "camera": {

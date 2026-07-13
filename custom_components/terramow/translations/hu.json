@@ -300,6 +300,9 @@
       },
       "map_save_progress": {
         "name": "Térkép mentésének folyamata"
+      },
+      "wifi_signal": {
+        "name": "Wi-Fi jel"
       }
     },
     "camera": {
