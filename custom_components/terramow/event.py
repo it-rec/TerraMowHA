@@ -80,6 +80,10 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
         self._last_phase: str | None = None
         self._was_complete = False
         self._pending: deque[tuple[str, dict[str, Any]]] = deque()
+        # Last (display_sub_mission, display_mission_state) written to HA, so a
+        # map-save decay (issue #142) re-writes the entity even when the phase
+        # itself does not change (the mower stays "docked" throughout).
+        self._shown_display: tuple[Any, Any] | None = None
         # _detect_event mutates _last_phase/_was_complete and is reachable from
         # both the event loop (dp_107 updates) and the MQTT worker thread
         # (connection-state changes), so guard the read-modify-write.
@@ -105,6 +109,7 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
         self._was_complete = (
             self.hub.mission_state == MissionState.MISSION_STATE_COMPLETE
         )
+        self._shown_display = self._display_key()
         self.async_on_remove(self.hub.register_state_listener(self._on_hub_state))
 
     def _compute_phase(self) -> str:
@@ -131,6 +136,29 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
             "has_error": hub.has_error,
         }
 
+    def _display_key(self) -> tuple[Any, Any]:
+        """The decayed (sub_mission, mission_state) used to spot a map-save decay."""
+        return (self.hub.display_sub_mission, self.hub.display_mission_state)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Keep the map-save sub-mission/state live over the event snapshot.
+
+        The firmware leaves ``sub_mission=SAVING_MAP`` / ``state=RUNNING`` set
+        after docking and never clears it, so the snapshot taken when the
+        "docked" event fired would otherwise freeze on "Saving Map" / "Running"
+        for hours (issue #142). Home Assistant applies ``extra_state_attributes``
+        after the event's own ``state_attributes``, so these override the frozen
+        pair with the decayed ``display_*`` values, which fall back to idle once
+        the save is done (100 % upload) or after the safety timeout.
+        """
+        sub = self.hub.display_sub_mission
+        state = self.hub.display_mission_state
+        return {
+            "sub_mission": sub.value if sub is not None else None,
+            "state": state.value if state is not None else None,
+        }
+
     def _detect_event(self) -> tuple[str, dict[str, Any]] | None:
         """Return the (event_type, attributes) to fire, or None if unchanged."""
         completed = self.hub.mission_state == MissionState.MISSION_STATE_COMPLETE
@@ -154,9 +182,13 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
     def _on_hub_state(self) -> None:
         """Handle a hub state change (may run on the MQTT worker thread)."""
         detected = self._detect_event()
-        if detected is None:
+        # Re-write on a map-save decay even without a phase change: the mower
+        # stays "docked" while SAVING_MAP settles to idle, so no event fires but
+        # the displayed attributes still need to refresh (issue #142).
+        if detected is None and self._display_key() == self._shown_display:
             return
-        self._pending.append(detected)
+        if detected is not None:
+            self._pending.append(detected)
         # Fire on the event loop; _trigger_event / state writes are not
         # thread-safe. The coroutine is created on the loop thread so a
         # failed schedule can't leave an un-awaited coroutine behind.
@@ -173,5 +205,7 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
             event_type, attributes = self._pending.popleft()
             self._trigger_event(event_type, attributes)
             fired = True
-        if fired:
+        display = self._display_key()
+        if fired or display != self._shown_display:
+            self._shown_display = display
             self.async_write_ha_state()

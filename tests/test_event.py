@@ -8,6 +8,7 @@ nothing changes.
 
 import asyncio
 import json
+import time
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -22,7 +23,7 @@ from custom_components.terramow.event import (
     TerraMowMowerEventEntity,
     async_setup_entry,
 )
-from custom_components.terramow.hub import TerraMowHub
+from custom_components.terramow.hub import MAP_SAVE_DISPLAY_TIMEOUT, TerraMowHub
 
 
 def _hub() -> TerraMowHub:
@@ -50,6 +51,10 @@ def _added(ent: TerraMowMowerEventEntity) -> None:
 
 def _feed(hub: TerraMowHub, **fields) -> None:
     asyncio.run(hub.on_mission_status(json.dumps(fields)))
+
+
+def _feed_dp118(hub: TerraMowHub, int_value: int) -> None:
+    asyncio.run(hub.on_map_save_progress(json.dumps({"int_value": int_value})))
 
 
 def _fire(ent: TerraMowMowerEventEntity) -> None:
@@ -271,12 +276,99 @@ def test_real_fault_still_fires_after_connection_blip() -> None:
 
 def test_no_event_when_phase_unchanged() -> None:
     hub = _hub()
+    _feed(hub, mission="MISSION_IDLE", state="MISSION_STATE_IDLE")
     ent = _entity(hub)
-    _added(ent)  # seeds "docked"
+    _added(ent)  # seeds "docked" and the shown display fields
+    # Re-feeding the identical state changes nothing: no event, no refresh write.
     _feed(hub, mission="MISSION_IDLE", state="MISSION_STATE_IDLE")
     _fire(ent)
     ent._trigger_event.assert_not_called()
     ent.async_write_ha_state.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# issue #142: the event entity's sub_mission/state must not freeze on a stale
+# "Saving Map" / "Running" after the mower docks and finishes the map upload.
+# ---------------------------------------------------------------------------
+
+
+def test_extra_state_attributes_default_idle_without_activity() -> None:
+    hub = _hub()
+    ent = _entity(hub)
+    _added(ent)
+    # A fresh hub sits at idle; the entity mirrors that (never a stale busy state).
+    assert ent.extra_state_attributes == {
+        "sub_mission": "SUB_MISSION_IDLE",
+        "state": "MISSION_STATE_IDLE",
+    }
+
+
+def test_extra_state_attributes_show_save_while_incomplete() -> None:
+    hub = _hub()
+    ent = _entity(hub)
+    _added(ent)
+    _feed(
+        hub,
+        mission="MISSION_GLOBAL_CLEAN",
+        sub_mission="SUB_MISSION_SAVING_MAP",
+        state="MISSION_STATE_RUNNING",
+    )
+    _feed_dp118(hub, 40)
+    # A genuinely in-progress save is still surfaced.
+    assert ent.extra_state_attributes == {
+        "sub_mission": "SUB_MISSION_SAVING_MAP",
+        "state": "MISSION_STATE_RUNNING",
+    }
+
+
+def test_map_save_decay_rewrites_without_new_event() -> None:
+    hub = _hub()
+    ent = _entity(hub)
+    _added(ent)
+    ent._last_phase = "mowing"  # force the docked transition to fire once
+    _feed(
+        hub,
+        mission="MISSION_GLOBAL_CLEAN",
+        sub_mission="SUB_MISSION_SAVING_MAP",
+        state="MISSION_STATE_RUNNING",
+    )
+    _fire(ent)
+    assert _last_event(ent) == EVENT_DOCKED
+    assert ent.extra_state_attributes["sub_mission"] == "SUB_MISSION_SAVING_MAP"
+
+    ent._trigger_event.reset_mock()
+    ent.async_write_ha_state.reset_mock()
+    # The upload completes while the mower stays docked: no phase change, so no
+    # new event fires -- but the entity must re-write so the stale busy fields
+    # decay to idle instead of freezing for hours (issue #142).
+    _feed_dp118(hub, 100)
+    _fire(ent)
+    ent._trigger_event.assert_not_called()
+    ent.async_write_ha_state.assert_called_once()
+    assert ent.extra_state_attributes == {
+        "sub_mission": "SUB_MISSION_IDLE",
+        "state": "MISSION_STATE_IDLE",
+    }
+
+
+def test_event_attributes_decay_after_timeout() -> None:
+    hub = _hub()
+    ent = _entity(hub)
+    _added(ent)
+    _feed(
+        hub,
+        mission="MISSION_GLOBAL_CLEAN",
+        sub_mission="SUB_MISSION_SAVING_MAP",
+        state="MISSION_STATE_RUNNING",
+    )
+    _fire(ent)
+    assert ent.extra_state_attributes["sub_mission"] == "SUB_MISSION_SAVING_MAP"
+    # No progress signal ever arrives; the timeout fallback retires it anyway.
+    hub._map_save_started_at = time.monotonic() - (MAP_SAVE_DISPLAY_TIMEOUT + 1)
+    assert ent.extra_state_attributes == {
+        "sub_mission": "SUB_MISSION_IDLE",
+        "state": "MISSION_STATE_IDLE",
+    }
 
 
 def test_drain_without_pending_writes_nothing() -> None:
