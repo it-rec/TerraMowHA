@@ -45,7 +45,7 @@ _LOGGER = logging.getLogger(__name__)
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.6.4"
+CARD_VERSION = "1.7.0"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -332,6 +332,10 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
         "map_name": map_data.get("name"),
         "map_state": map_data.get("map_state"),
         "total_area": map_data.get("total_area"),
+        # True when the reported path belongs to a different map than the one
+        # being drawn (paths were dropped): the card shows a "map refreshing"
+        # chip so the momentarily missing path isn't mistaken for a bug.
+        "path_map_mismatch": scene["path_map_mismatch"],
         "cutting_width": CUTTING_WIDTH_MM,
         # Configured mowing-stripe direction in degrees (None when the device
         # has not reported mow params yet); the card draws it as a lane arrow.

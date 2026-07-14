@@ -525,6 +525,9 @@ async def test_empty_scene_payload(hass: HomeAssistant) -> None:
     assert payload["station"] is None
     assert payload["current_path"] == []
     assert payload["main_direction_angle"] is None
+    # the staleness flag is always forwarded (default False) so the card's
+    # "map refreshing" chip has a value to read
+    assert payload["path_map_mismatch"] is False
 
 
 async def test_payload_carries_main_direction_angle(hass: HomeAssistant) -> None:
