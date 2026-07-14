@@ -44,12 +44,12 @@ const CARD_TAG = "terramow-map-card";
 /* Keys: no_map, not_connected, start, clear, zone, zones, reset_view,
    follow, start_mowing, pause, dock, sent, missing_entity */
 const STRINGS = {
-  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", follow: "Follow the mower", start_mowing: "Start mowing", pause: "Pause", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High" },
+  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", follow: "Follow the mower", start_mowing: "Start mowing", pause: "Pause", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area" },
   bg: { no_map: "Все още няма карта", not_connected: "Изчакване на данни от косачката…", start: "Коси", clear: "Изчисти", zone: "зона", zones: "зони", reset_view: "Побери картата", follow: "Следвай косачката", start_mowing: "Започни косене", pause: "Пауза", dock: "Върни към станцията", sent: "Косенето на зони започна", missing_entity: "Задайте обект на косачка TerraMow в конфигурацията" },
   ca: { no_map: "Encara no hi ha mapa", not_connected: "Esperant dades del tallagespa…", start: "Sega", clear: "Neteja", zone: "zona", zones: "zones", reset_view: "Ajusta el mapa", follow: "Segueix el tallagespa", start_mowing: "Comença a segar", pause: "Pausa", dock: "Torna a la base", sent: "Sega per zones iniciada", missing_entity: "Configureu una entitat de tallagespa TerraMow" },
   cs: { no_map: "Mapa zatím není k dispozici", not_connected: "Čekání na data sekačky…", start: "Sekat", clear: "Vymazat", zone: "zóna", zones: "zóny", reset_view: "Přizpůsobit mapu", follow: "Sledovat sekačku", start_mowing: "Zahájit sekání", pause: "Pozastavit", dock: "Zpět na stanici", sent: "Sekání zón zahájeno", missing_entity: "Nastavte entitu sekačky TerraMow v konfiguraci karty" },
   da: { no_map: "Intet kort tilgængeligt endnu", not_connected: "Venter på data fra plæneklipperen…", start: "Klip", clear: "Ryd", zone: "zone", zones: "zoner", reset_view: "Tilpas kortet", follow: "Følg plæneklipperen", start_mowing: "Start klipning", pause: "Pause", dock: "Kør til base", sent: "Zoneklipning startet", missing_entity: "Angiv en TerraMow-plæneklipperentitet i kortets konfiguration" },
-  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", follow: "Dem Mäher folgen", start_mowing: "Mähen starten", pause: "Pausieren", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch" },
+  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", follow: "Dem Mäher folgen", start_mowing: "Mähen starten", pause: "Pausieren", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch", legend: "Legende", legend_show: "Legende anzeigen", legend_hide: "Legende ausblenden", lg_mower: "Mäherposition", lg_dock: "Ladestation", lg_order: "Mähreihenfolge", lg_custom: "Eigene Zoneneinstellungen", lg_direction: "Mährichtung", lg_stuck: "Hier steckengeblieben", lg_maint: "Wartungspunkt", lg_passage: "Durchgangspunkt", lg_nogo: "Sperrzone", lg_wall: "Virtuelle Wand", lg_coverage: "Gemähte Fläche" },
   el: { no_map: "Δεν υπάρχει ακόμη χάρτης", not_connected: "Αναμονή δεδομένων χλοοκοπτικού…", start: "Κούρεμα", clear: "Καθαρισμός", zone: "ζώνη", zones: "ζώνες", reset_view: "Προσαρμογή χάρτη", follow: "Ακολούθησε το χλοοκοπτικό", start_mowing: "Έναρξη κουρέματος", pause: "Παύση", dock: "Επιστροφή στη βάση", sent: "Το κούρεμα ζωνών ξεκίνησε", missing_entity: "Ορίστε οντότητα χλοοκοπτικού TerraMow στη διαμόρφωση" },
   es: { no_map: "Aún no hay mapa disponible", not_connected: "Esperando datos del cortacésped…", start: "Cortar", clear: "Borrar", zone: "zona", zones: "zonas", reset_view: "Ajustar mapa", follow: "Seguir al cortacésped", start_mowing: "Iniciar corte", pause: "Pausar", dock: "Volver a la base", sent: "Corte por zonas iniciado", missing_entity: "Configura la entidad del cortacésped TerraMow" },
   et: { no_map: "Kaarti pole veel saadaval", not_connected: "Ootan niiduki andmeid…", start: "Niida", clear: "Tühjenda", zone: "tsoon", zones: "tsooni", reset_view: "Mahuta kaart", follow: "Jälgi niidukit", start_mowing: "Alusta niitmist", pause: "Paus", dock: "Tagasi baasi", sent: "Tsooniniitmine alustatud", missing_entity: "Määra kaardi seadetes TerraMow niiduki olem" },
@@ -117,10 +117,79 @@ const ICONS = {
   follow: "M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8M3.05,13H1V11H3.05C3.5,6.83 6.83,3.5 11,3.05V1H13V3.05C17.17,3.5 20.5,6.83 20.95,11H23V13H20.95C20.5,17.17 17.17,20.5 13,20.95V23H11V20.95C6.83,20.5 3.5,17.17 3.05,13M12,5A7,7 0 0,0 5,12A7,7 0 0,0 12,19A7,7 0 0,0 19,12A7,7 0 0,0 12,5Z",
   battery: "M16,18H8V6H16M16.67,4H15V2H9V4H7.33A1.33,1.33 0 0,0 6,5.33V20.67C6,21.4 6.6,22 7.33,22H16.67A1.33,1.33 0 0,0 18,20.67V5.33C18,4.6 17.4,4 16.67,4Z",
   batteryCharging: "M16,20H8V6H16M16.67,4H15V2H9V4H7.33A1.33,1.33 0 0,0 6,5.33V20.66C6,21.4 6.6,22 7.33,22H16.66C17.4,22 18,21.4 18,20.66V5.33C18,4.6 17.4,4 16.67,4M11,20V14.5H9L13,7V12.5H15L11,20Z",
+  legend: "M7,5H21V7H7V5M7,13V11H21V13H7M4,4.5A1.5,1.5 0 0,1 5.5,6A1.5,1.5 0 0,1 4,7.5A1.5,1.5 0 0,1 2.5,6A1.5,1.5 0 0,1 4,4.5M4,10.5A1.5,1.5 0 0,1 5.5,12A1.5,1.5 0 0,1 4,13.5A1.5,1.5 0 0,1 2.5,12A1.5,1.5 0 0,1 4,10.5M7,19V17H21V19H7M4,16.5A1.5,1.5 0 0,1 5.5,18A1.5,1.5 0 0,1 4,19.5A1.5,1.5 0 0,1 2.5,18A1.5,1.5 0 0,1 4,16.5Z",
+  close: "M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z",
 };
 
 function svgIcon(path) {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${path}"/></svg>`;
+}
+
+/**
+ * A 20×20 swatch mirroring an on-map glyph, for the legend. Colours come
+ * from the resolved palette so the swatch matches the current theme exactly.
+ * Shapes distinguish glyphs that share a colour (e.g. the orange custom-param
+ * dot vs. the orange "got stuck" triangle).
+ */
+/** localStorage flag so the legend auto-opens only on a browser's first visit. */
+const LEGEND_SEEN_KEY = "terramow-map-card:legend-seen";
+
+function legendSwatch(kind, c) {
+  const out = c.markerOutline;
+  const svg = (inner) =>
+    `<svg viewBox="0 0 20 20" aria-hidden="true">${inner}</svg>`;
+  switch (kind) {
+    case "mower":
+      return svg(
+        `<circle cx="10" cy="10" r="6.5" fill="none" stroke="${c.robot}" stroke-width="2.2"/>` +
+          `<circle cx="10" cy="10" r="2.4" fill="${c.robot}"/>`
+      );
+    case "dock":
+      return svg(
+        `<path d="M10,3 L17,9 H3 Z" fill="${c.station}"/>` +
+          `<rect x="4.5" y="8.5" width="11" height="8" rx="1.5" fill="${c.station}"/>`
+      );
+    case "order":
+      return svg(
+        `<circle cx="10" cy="10" r="8" fill="${c.badgeOrder}" stroke="${out}" stroke-width="1.2"/>` +
+          `<text x="10" y="10" font-size="11" font-weight="700" text-anchor="middle" dominant-baseline="central" fill="#fff">1</text>`
+      );
+    case "custom":
+      return svg(
+        `<circle cx="10" cy="10" r="5" fill="${c.markerTrapped}" stroke="${out}" stroke-width="1.2"/>`
+      );
+    case "direction":
+      return svg(
+        `<g stroke="${c.text}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round">` +
+          `<line x1="4" y1="10" x2="16" y2="10"/>` +
+          `<polyline points="6.5,7 4,10 6.5,13"/>` +
+          `<polyline points="13.5,7 16,10 13.5,13"/></g>`
+      );
+    case "stuck":
+      return svg(
+        `<path d="M10,3 L17,16 H3 Z" fill="${c.markerTrapped}" stroke="${out}" stroke-width="1.2" stroke-linejoin="round"/>`
+      );
+    case "maint":
+      return svg(
+        `<path d="M10,3 L16,6.5 V13.5 L10,17 L4,13.5 V6.5 Z" fill="${c.markerMaintenance}" stroke="${out}" stroke-width="1.2" stroke-linejoin="round"/>`
+      );
+    case "passage":
+      return svg(
+        `<path d="M10,3 L17,10 L10,17 L3,10 Z" fill="${c.accent}" stroke="${out}" stroke-width="1.2" stroke-linejoin="round"/>`
+      );
+    case "nogo":
+      return svg(
+        `<rect x="3" y="3" width="14" height="14" rx="2" fill="${c.forbidden}" stroke="${c.forbiddenEdge}" stroke-width="1.6"/>`
+      );
+    case "wall":
+      return svg(
+        `<line x1="3" y1="10" x2="17" y2="10" stroke="${c.wall}" stroke-width="2.4" stroke-dasharray="4 3" stroke-linecap="round"/>`
+      );
+    case "coverage":
+      return svg(`<rect x="3" y="3" width="14" height="14" rx="2" fill="${c.coverage}"/>`);
+    default:
+      return svg("");
+  }
 }
 
 /* ------------------------------------------------------------- geometry */
@@ -368,6 +437,10 @@ class TerramowMapCard extends HTMLElement {
         this._fitView();
       }
       this._updateHud();
+      if (this._legend && this._legend.classList.contains("visible")) {
+        this._buildLegend();
+      }
+      this._maybeAutoOpenLegend();
       this._requestDraw();
     } else if (msg.type === "paths_append") {
       if (!this._scene) {
@@ -435,9 +508,27 @@ class TerramowMapCard extends HTMLElement {
 
   /* --------------------------------------------------------------- DOM */
 
+  /**
+   * The card height: the configured fit_height, clamped to the viewport so
+   * a large value (e.g. the docs' 900px panel view) can never push the
+   * bottom selection bar below the fold on small screens.
+   */
+  _applyCardHeight(el) {
+    // Clamp to the *visible* viewport so a large fit_height (e.g. the docs'
+    // 900px panel view) can never push the bottom mow controls below the
+    // fold. `dvh` (dynamic viewport height) excludes the mobile browser's
+    // URL bar / bottom nav; `vh` counts the area behind them and would cut
+    // the controls off. Assign `vh` first as a fallback, then `dvh` — the
+    // second assignment is silently rejected on browsers without `dvh`,
+    // leaving the `vh` value in place.
+    const px = Number(this._config.fit_height) || 420;
+    el.style.height = `min(${px}px, calc(100vh - 96px))`;
+    el.style.height = `min(${px}px, calc(100dvh - 96px))`;
+  }
+
   _buildDom() {
     if (this._root) {
-      this._root.style.height = `${this._config.fit_height}px`;
+      this._applyCardHeight(this._root);
       this._updateHud();
       this._updateControls();
       return;
@@ -562,12 +653,44 @@ class TerramowMapCard extends HTMLElement {
         margin-top: 6px; font-size: 11px;
         color: var(--secondary-text-color, #727272);
       }
+      .legend-btn {
+        position: absolute; left: 8px; bottom: 32px; z-index: 3;
+      }
+      .legend {
+        position: absolute; left: 8px; bottom: 72px; display: none;
+        min-width: 168px; max-width: min(70vw, 250px);
+        max-height: calc(100% - 100px); overflow: auto;
+        background: var(--card-background-color, #fff);
+        border: 1px solid var(--divider-color, rgba(0,0,0,.12));
+        border-radius: 12px; padding: 8px 12px 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,.22);
+        font-size: 12px; color: var(--primary-text-color, #212121);
+        z-index: 3;
+      }
+      .legend.visible { display: block; }
+      .legend .lg-head {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; font-weight: 600; font-size: 13px; margin-bottom: 6px;
+      }
+      .legend .lg-head button {
+        border: none; background: transparent; cursor: pointer; padding: 2px;
+        color: var(--secondary-text-color, #727272); line-height: 0;
+      }
+      .legend .lg-head button svg { width: 16px; height: 16px; }
+      .legend .lg-row {
+        display: flex; align-items: center; gap: 9px; padding: 2.5px 0;
+      }
+      .legend .lg-sw {
+        width: 20px; height: 20px; flex: none;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      .legend .lg-sw svg { width: 20px; height: 20px; display: block; }
     `;
 
     const card = document.createElement("ha-card");
     const wrap = document.createElement("div");
     wrap.className = "wrap";
-    wrap.style.height = `${this._config.fit_height}px`;
+    this._applyCardHeight(wrap);
     this._root = wrap;
 
     this._canvas = document.createElement("canvas");
@@ -621,6 +744,18 @@ class TerramowMapCard extends HTMLElement {
     this._infoPanel = document.createElement("div");
     this._infoPanel.className = "zoneinfo";
     wrap.appendChild(this._infoPanel);
+
+    // bottom-left (above the scale bar): collapsible legend
+    this._legend = document.createElement("div");
+    this._legend.className = "legend";
+    wrap.appendChild(this._legend);
+    this._legendBtn = this._roundButton(ICONS.legend, () => this._toggleLegend());
+    this._legendBtn.classList.add("legend-btn");
+    this._legendBtn.setAttribute("aria-expanded", "false");
+    const legendLabel = localize(this._hass, "legend_show");
+    this._legendBtn.title = legendLabel;
+    this._legendBtn.setAttribute("aria-label", legendLabel);
+    wrap.appendChild(this._legendBtn);
 
     this._msg = document.createElement("div");
     this._msg.className = "msg";
@@ -1131,6 +1266,117 @@ class TerramowMapCard extends HTMLElement {
   }
 
   /**
+   * Open the legend once, on a browser's very first visit with a real map, so
+   * newcomers discover what the glyphs mean. A localStorage flag makes it
+   * one-shot; after that the legend is purely user-controlled.
+   */
+  _maybeAutoOpenLegend() {
+    if (this._legendAutoDone || !this._legend || !this._hasGeometry()) {
+      return;
+    }
+    this._legendAutoDone = true;
+    let seen = false;
+    try {
+      seen = window.localStorage.getItem(LEGEND_SEEN_KEY) === "1";
+    } catch (e) {
+      seen = true; // storage blocked (private mode): don't nag every load
+    }
+    if (seen) {
+      return;
+    }
+    try {
+      window.localStorage.setItem(LEGEND_SEEN_KEY, "1");
+    } catch (e) {
+      /* ignore */
+    }
+    if (!this._legend.classList.contains("visible")) {
+      this._toggleLegend();
+    }
+  }
+
+  _toggleLegend() {
+    if (!this._legend) {
+      return;
+    }
+    const show = !this._legend.classList.contains("visible");
+    if (show) {
+      this._buildLegend();
+    }
+    this._legend.classList.toggle("visible", show);
+    this._legendBtn.classList.toggle("active", show);
+    this._legendBtn.setAttribute("aria-expanded", String(show));
+    const label = localize(this._hass, show ? "legend_hide" : "legend_show");
+    this._legendBtn.title = label;
+    this._legendBtn.setAttribute("aria-label", label);
+  }
+
+  /**
+   * Populate the legend with one row per glyph *actually present* on the
+   * current map, so it never explains something the user can't see. Called
+   * on open and, while open, whenever a full scene arrives.
+   */
+  _buildLegend() {
+    if (!this._legend) {
+      return;
+    }
+    const c = this._colors();
+    const scene = this._scene || {};
+    const cfg = this._config || {};
+    const subs = [];
+    for (const region of scene.regions || []) {
+      for (const sub of region.sub_regions || []) {
+        subs.push(sub);
+      }
+    }
+    const markers = (cfg.show_markers && scene.markers) || {};
+    const hasAngle =
+      typeof scene.main_direction_angle === "number" ||
+      subs.some((s) => typeof s.direction_angle === "number");
+    const noGo =
+      (scene.forbidden_zones || []).length +
+      (scene.physical_forbidden_zones || []).length;
+    const entries = [];
+    const add = (cond, kind, key) => {
+      if (cond) {
+        entries.push([kind, key]);
+      }
+    };
+    add(Boolean(this._robot), "mower", "lg_mower");
+    add(Boolean(scene.station), "dock", "lg_dock");
+    add(subs.some((s) => s.order > 0), "order", "lg_order");
+    add(subs.some((s) => s.params), "custom", "lg_custom");
+    add(cfg.show_direction && hasAngle, "direction", "lg_direction");
+    add((markers.trapped || []).length > 0, "stuck", "lg_stuck");
+    add((markers.maintenance || []).length > 0, "maint", "lg_maint");
+    add((markers.cross_boundary || []).length > 0, "passage", "lg_passage");
+    add(noGo > 0, "nogo", "lg_nogo");
+    add((scene.virtual_walls || []).length > 0, "wall", "lg_wall");
+    add(Boolean(cfg.show_coverage), "coverage", "lg_coverage");
+
+    const rows = entries
+      .map(
+        ([kind, key]) =>
+          `<div class="lg-row"><span class="lg-sw">${legendSwatch(
+            kind,
+            c
+          )}</span><span>${localize(this._hass, key)}</span></div>`
+      )
+      .join("");
+    const title = localize(this._hass, "legend");
+    const hide = localize(this._hass, "legend_hide");
+    this._legend.innerHTML =
+      `<div class="lg-head"><span>${title}</span>` +
+      `<button type="button" aria-label="${hide}">${svgIcon(
+        ICONS.close
+      )}</button></div>` +
+      (rows || `<div class="lg-row"><span>${localize(this._hass, "no_map")}</span></div>`);
+    const closeBtn = this._legend.querySelector(".lg-head button");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => this._toggleLegend());
+    }
+  }
+
+  /**
    * Long-press on a zone: show its effective mow settings. Zones with custom
    * params (the app's per-zone overrides) show those; others show the global
    * block, with a footer naming which scope applies.
@@ -1355,6 +1601,7 @@ class TerramowMapCard extends HTMLElement {
       markerTrapped: dark ? "#ffb74d" : "#ef6c00",
       markerMaintenance: dark ? "#64b5f6" : "#1565c0",
       markerOutline: dark ? "rgba(0,0,0,0.55)" : "rgba(255,255,255,0.85)",
+      badgeOrder: dark ? "#ef5350" : "#d32f2f",
     };
   }
 
@@ -1568,18 +1815,16 @@ class TerramowMapCard extends HTMLElement {
       this._drawMarkers(ctx, scene.markers, view, colors);
     }
 
-    // Zones must be reasonably large on screen for labels and direction
-    // arrows: both are screen-constant, so at low zoom they would dwarf the
-    // zones they describe and float outside them.
-    const zonesLegible = view.scale * 2000 >= 46;
-
-    if (this._config.show_direction && zonesLegible) {
+    // Labels, badges and direction arrows are screen-constant, so they are
+    // gated PER ZONE by whether they actually fit inside that zone on screen
+    // (its rotated bounding box): a large zone keeps its label at any zoom
+    // while a small one sheds it before the glyphs overflow its boundary.
+    if (this._config.show_direction) {
       this._drawDirection(ctx, scene, view, colors);
     }
 
-    // Zone labels once zones are reasonably large on screen; kept upright
-    // regardless of the configured map rotation.
-    if (zonesLegible) {
+    // Zone labels + badges; kept upright regardless of map rotation.
+    {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       const zoneWord = localize(this._hass, "zone");
@@ -1588,6 +1833,10 @@ class TerramowMapCard extends HTMLElement {
       for (const region of scene.regions) {
         for (const sub of region.sub_regions) {
           if (!sub.center) {
+            continue;
+          }
+          const [zoneW, zoneH] = this._zoneScreenExtent(sub);
+          if (zoneW < 72 || zoneH < 36) {
             continue;
           }
           const label =
@@ -1605,6 +1854,35 @@ class TerramowMapCard extends HTMLElement {
           ctx.strokeText(label, 0, 0);
           ctx.fillStyle = colors.text;
           ctx.fillText(label, 0, 0);
+          // Camera-parity badges beside the label (screen-aligned frame):
+          // the red mow-order number top-left, and a small orange dot
+          // top-right when the zone has custom mow parameters.
+          if (sub.order && sub.order > 0) {
+            const r = 8 / view.scale;
+            const bx = -22 / view.scale;
+            const by = -16 / view.scale;
+            ctx.beginPath();
+            ctx.arc(bx, by, r, 0, Math.PI * 2);
+            ctx.fillStyle = colors.badgeOrder;
+            ctx.fill();
+            ctx.strokeStyle = colors.markerOutline;
+            ctx.lineWidth = 1.5 / view.scale;
+            ctx.stroke();
+            ctx.font = `700 ${11 / view.scale}px sans-serif`;
+            ctx.fillStyle = "#fff";
+            ctx.fillText(String(sub.order), bx, by + 0.5 / view.scale);
+            ctx.font = `600 ${fontPx}px sans-serif`;
+          }
+          if (sub.params) {
+            const r = 4 / view.scale;
+            ctx.beginPath();
+            ctx.arc(22 / view.scale, -16 / view.scale, r, 0, Math.PI * 2);
+            ctx.fillStyle = colors.markerTrapped;
+            ctx.fill();
+            ctx.strokeStyle = colors.markerOutline;
+            ctx.lineWidth = 1.2 / view.scale;
+            ctx.stroke();
+          }
           ctx.restore();
         }
       }
@@ -1674,6 +1952,34 @@ class TerramowMapCard extends HTMLElement {
    * nudged below the zone label. World-space direction, so it rotates with
    * the map; length is screen-constant. Stripes run both ways -> two heads.
    */
+  /**
+   * The zone's approximate on-screen extent [width, height] in CSS pixels:
+   * its world bounding box scaled to the view and widened for the current
+   * map rotation. Used to gate screen-constant glyphs (label, badges,
+   * direction arrow) so they never dwarf or overflow the zone they describe.
+   */
+  _zoneScreenExtent(sub) {
+    const boundary = sub.boundary;
+    if (!boundary || boundary.length < 3 || !this._view) {
+      return [0, 0];
+    }
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const point of boundary) {
+      if (point[0] < minX) minX = point[0];
+      if (point[0] > maxX) maxX = point[0];
+      if (point[1] < minY) minY = point[1];
+      if (point[1] > maxY) maxY = point[1];
+    }
+    const w = (maxX - minX) * this._view.scale;
+    const h = (maxY - minY) * this._view.scale;
+    const cos = Math.abs(Math.cos(this._rot));
+    const sin = Math.abs(Math.sin(this._rot));
+    return [w * cos + h * sin, w * sin + h * cos];
+  }
+
   _drawDirection(ctx, scene, view, colors) {
     const half = 22 / view.scale;
     const head = 6 / view.scale;
@@ -1704,6 +2010,12 @@ class TerramowMapCard extends HTMLElement {
             ? sub.direction_angle
             : scene.main_direction_angle;
         if (!sub.center || typeof angle !== "number") {
+          continue;
+        }
+        // The arrow hangs below the zone label, so it needs more vertical
+        // room than the label itself before it stops fitting the zone.
+        const [zoneW, zoneH] = this._zoneScreenExtent(sub);
+        if (zoneW < 72 || zoneH < 84) {
           continue;
         }
         const rad = (angle * Math.PI) / 180;
@@ -1754,9 +2066,14 @@ class TerramowMapCard extends HTMLElement {
       ctx.stroke();
     };
 
-    // Mowed swath at true cutting width, beneath the thin path lines
+    // Mowed swath beneath the thin path lines. Prefer the device-reported
+    // stripe spacing (mow_spacing, mm): adjacent lanes are exactly this far
+    // apart, so shading at the spacing tiles the mowed area seamlessly,
+    // while the blade's wider cutting width would over-shade the overlap.
     if (this._config.show_coverage) {
-      const width = Number(scene.cutting_width) || 320;
+      const spacing = Number(scene.mow_params && scene.mow_params.mow_spacing);
+      const width =
+        (spacing > 0 ? spacing : Number(scene.cutting_width)) || 320;
       strokePath(scene.history_path, colors.coverage, width);
       strokePath(scene.current_path, colors.coverage, width);
     }
