@@ -23,6 +23,7 @@
  *   show_markers: true         # trapped / maintenance / passage markers
  *   show_direction: true       # mowing stripe-direction arrow per region
  *   zone_info: true            # long-press a zone for its mow settings
+ *   show_layer_counts: false   # debug: list received layer counts in the legend
  *   rotation: 0                # rotate the map view (degrees)
  *   fit_height: 420            # card canvas height in px
  *
@@ -44,12 +45,12 @@ const CARD_TAG = "terramow-map-card";
 /* Keys: no_map, not_connected, start, clear, zone, zones, reset_view,
    follow, start_mowing, pause, dock, sent, missing_entity */
 const STRINGS = {
-  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", follow: "Follow the mower", start_mowing: "Start mowing", pause: "Pause", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area" },
+  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", follow: "Follow the mower", start_mowing: "Start mowing", pause: "Pause", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area", map_refreshing: "Map refreshing…", dbg_title: "Layers received", dbg_zones: "Zones", dbg_nogo: "No-go zones", dbg_walls: "Walls", dbg_obstacles: "Obstacles", dbg_passthrough: "Pass-through", dbg_required: "Required", dbg_tunnels: "Tunnels", dbg_markers: "Markers", dbg_draw: "Draw regions", dbg_paths: "Path points" },
   bg: { no_map: "Все още няма карта", not_connected: "Изчакване на данни от косачката…", start: "Коси", clear: "Изчисти", zone: "зона", zones: "зони", reset_view: "Побери картата", follow: "Следвай косачката", start_mowing: "Започни косене", pause: "Пауза", dock: "Върни към станцията", sent: "Косенето на зони започна", missing_entity: "Задайте обект на косачка TerraMow в конфигурацията" },
   ca: { no_map: "Encara no hi ha mapa", not_connected: "Esperant dades del tallagespa…", start: "Sega", clear: "Neteja", zone: "zona", zones: "zones", reset_view: "Ajusta el mapa", follow: "Segueix el tallagespa", start_mowing: "Comença a segar", pause: "Pausa", dock: "Torna a la base", sent: "Sega per zones iniciada", missing_entity: "Configureu una entitat de tallagespa TerraMow" },
   cs: { no_map: "Mapa zatím není k dispozici", not_connected: "Čekání na data sekačky…", start: "Sekat", clear: "Vymazat", zone: "zóna", zones: "zóny", reset_view: "Přizpůsobit mapu", follow: "Sledovat sekačku", start_mowing: "Zahájit sekání", pause: "Pozastavit", dock: "Zpět na stanici", sent: "Sekání zón zahájeno", missing_entity: "Nastavte entitu sekačky TerraMow v konfiguraci karty" },
   da: { no_map: "Intet kort tilgængeligt endnu", not_connected: "Venter på data fra plæneklipperen…", start: "Klip", clear: "Ryd", zone: "zone", zones: "zoner", reset_view: "Tilpas kortet", follow: "Følg plæneklipperen", start_mowing: "Start klipning", pause: "Pause", dock: "Kør til base", sent: "Zoneklipning startet", missing_entity: "Angiv en TerraMow-plæneklipperentitet i kortets konfiguration" },
-  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", follow: "Dem Mäher folgen", start_mowing: "Mähen starten", pause: "Pausieren", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch", legend: "Legende", legend_show: "Legende anzeigen", legend_hide: "Legende ausblenden", lg_mower: "Mäherposition", lg_dock: "Ladestation", lg_order: "Mähreihenfolge", lg_custom: "Eigene Zoneneinstellungen", lg_direction: "Mährichtung", lg_stuck: "Hier steckengeblieben", lg_maint: "Wartungspunkt", lg_passage: "Durchgangspunkt", lg_nogo: "Sperrzone", lg_wall: "Virtuelle Wand", lg_coverage: "Gemähte Fläche" },
+  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", follow: "Dem Mäher folgen", start_mowing: "Mähen starten", pause: "Pausieren", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch", legend: "Legende", legend_show: "Legende anzeigen", legend_hide: "Legende ausblenden", lg_mower: "Mäherposition", lg_dock: "Ladestation", lg_order: "Mähreihenfolge", lg_custom: "Eigene Zoneneinstellungen", lg_direction: "Mährichtung", lg_stuck: "Hier steckengeblieben", lg_maint: "Wartungspunkt", lg_passage: "Durchgangspunkt", lg_nogo: "Sperrzone", lg_wall: "Virtuelle Wand", lg_coverage: "Gemähte Fläche", map_refreshing: "Karte wird aktualisiert…", dbg_title: "Empfangene Ebenen", dbg_zones: "Zonen", dbg_nogo: "Sperrzonen", dbg_walls: "Wände", dbg_obstacles: "Hindernisse", dbg_passthrough: "Durchgänge", dbg_required: "Pflichtzonen", dbg_tunnels: "Tunnel", dbg_markers: "Markierungen", dbg_draw: "Zeichenregionen", dbg_paths: "Pfadpunkte" },
   el: { no_map: "Δεν υπάρχει ακόμη χάρτης", not_connected: "Αναμονή δεδομένων χλοοκοπτικού…", start: "Κούρεμα", clear: "Καθαρισμός", zone: "ζώνη", zones: "ζώνες", reset_view: "Προσαρμογή χάρτη", follow: "Ακολούθησε το χλοοκοπτικό", start_mowing: "Έναρξη κουρέματος", pause: "Παύση", dock: "Επιστροφή στη βάση", sent: "Το κούρεμα ζωνών ξεκίνησε", missing_entity: "Ορίστε οντότητα χλοοκοπτικού TerraMow στη διαμόρφωση" },
   es: { no_map: "Aún no hay mapa disponible", not_connected: "Esperando datos del cortacésped…", start: "Cortar", clear: "Borrar", zone: "zona", zones: "zonas", reset_view: "Ajustar mapa", follow: "Seguir al cortacésped", start_mowing: "Iniciar corte", pause: "Pausar", dock: "Volver a la base", sent: "Corte por zonas iniciado", missing_entity: "Configura la entidad del cortacésped TerraMow" },
   et: { no_map: "Kaarti pole veel saadaval", not_connected: "Ootan niiduki andmeid…", start: "Niida", clear: "Tühjenda", zone: "tsoon", zones: "tsooni", reset_view: "Mahuta kaart", follow: "Jälgi niidukit", start_mowing: "Alusta niitmist", pause: "Paus", dock: "Tagasi baasi", sent: "Tsooniniitmine alustatud", missing_entity: "Määra kaardi seadetes TerraMow niiduki olem" },
@@ -119,6 +120,7 @@ const ICONS = {
   batteryCharging: "M16,20H8V6H16M16.67,4H15V2H9V4H7.33A1.33,1.33 0 0,0 6,5.33V20.66C6,21.4 6.6,22 7.33,22H16.66C17.4,22 18,21.4 18,20.66V5.33C18,4.6 17.4,4 16.67,4M11,20V14.5H9L13,7V12.5H15L11,20Z",
   legend: "M7,5H21V7H7V5M7,13V11H21V13H7M4,4.5A1.5,1.5 0 0,1 5.5,6A1.5,1.5 0 0,1 4,7.5A1.5,1.5 0 0,1 2.5,6A1.5,1.5 0 0,1 4,4.5M4,10.5A1.5,1.5 0 0,1 5.5,12A1.5,1.5 0 0,1 4,13.5A1.5,1.5 0 0,1 2.5,12A1.5,1.5 0 0,1 4,10.5M7,19V17H21V19H7M4,16.5A1.5,1.5 0 0,1 5.5,18A1.5,1.5 0 0,1 4,19.5A1.5,1.5 0 0,1 2.5,18A1.5,1.5 0 0,1 4,16.5Z",
   close: "M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z",
+  refreshing: "M12,4V1L8,5L12,9V6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12H4A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z",
 };
 
 function svgIcon(path) {
@@ -317,6 +319,7 @@ class TerramowMapCard extends HTMLElement {
       show_markers: true,
       show_direction: true,
       zone_info: true,
+      show_layer_counts: false,
       rotation: 0,
       fit_height: 420,
       ...config,
@@ -558,6 +561,11 @@ class TerramowMapCard extends HTMLElement {
         background: var(--secondary-text-color, #727272);
       }
       .chip.state { text-transform: capitalize; }
+      .chip.warn {
+        border-color: var(--warning-color, #ffa726);
+        color: var(--warning-color, #ffa726);
+      }
+      .chip.warn svg { width: 13px; height: 13px; }
       .wrap.narrow .chip.map { display: none; }
       .side {
         position: absolute; top: 8px; right: 8px; display: flex;
@@ -685,6 +693,16 @@ class TerramowMapCard extends HTMLElement {
         display: inline-flex; align-items: center; justify-content: center;
       }
       .legend .lg-sw svg { width: 20px; height: 20px; display: block; }
+      .legend .lg-sec {
+        margin: 8px 0 3px; padding-top: 7px; font-weight: 600; font-size: 11px;
+        border-top: 1px solid var(--divider-color, rgba(0,0,0,.12));
+        color: var(--secondary-text-color, #727272);
+      }
+      .legend .lg-cnt {
+        display: flex; justify-content: space-between; gap: 14px; padding: 1.5px 0;
+      }
+      .legend .lg-cnt.zero { color: var(--secondary-text-color, #727272); opacity: .6; }
+      .legend .lg-cnt .lg-n { font-variant-numeric: tabular-nums; }
     `;
 
     const card = document.createElement("ha-card");
@@ -862,6 +880,14 @@ class TerramowMapCard extends HTMLElement {
       const chip = document.createElement("span");
       chip.className = "chip progress";
       chip.textContent = `${Math.round(progress)} %`;
+      chips.push(chip);
+    }
+    if (this._scene && this._scene.path_map_mismatch) {
+      const chip = document.createElement("span");
+      chip.className = "chip warn";
+      chip.innerHTML =
+        svgIcon(ICONS.refreshing) +
+        `<span>${localize(this._hass, "map_refreshing")}</span>`;
       chips.push(chip);
     }
     if (this._scene && this._scene.map_name) {
@@ -1369,11 +1395,57 @@ class TerramowMapCard extends HTMLElement {
       `<button type="button" aria-label="${hide}">${svgIcon(
         ICONS.close
       )}</button></div>` +
-      (rows || `<div class="lg-row"><span>${localize(this._hass, "no_map")}</span></div>`);
+      (rows || `<div class="lg-row"><span>${localize(this._hass, "no_map")}</span></div>`) +
+      this._layerCountsHtml(scene, subs, markers);
     const closeBtn = this._legend.querySelector(".lg-head button");
     if (closeBtn) {
       closeBtn.addEventListener("click", () => this._toggleLegend());
     }
+  }
+
+  /**
+   * Debug section (opt-in via `show_layer_counts`): how many of each layer the
+   * card actually received. Answers "why isn't my no-go zone / wall showing?"
+   * at a glance — a count of 0 means the device never sent it. Off by default.
+   */
+  _layerCountsHtml(scene, subs, markers) {
+    if (!this._config || !this._config.show_layer_counts) {
+      return "";
+    }
+    const counts = [
+      ["dbg_zones", subs.length],
+      [
+        "dbg_nogo",
+        (scene.forbidden_zones || []).length +
+          (scene.physical_forbidden_zones || []).length,
+      ],
+      ["dbg_walls", (scene.virtual_walls || []).length],
+      ["dbg_obstacles", (scene.obstacles || []).length],
+      ["dbg_passthrough", (scene.pass_through_zones || []).length],
+      ["dbg_required", (scene.required_zones || []).length],
+      ["dbg_tunnels", (scene.tunnels || []).length],
+      [
+        "dbg_markers",
+        (markers.trapped || []).length +
+          (markers.maintenance || []).length +
+          (markers.cross_boundary || []).length,
+      ],
+      ["dbg_draw", (scene.draw_regions || []).length],
+      [
+        "dbg_paths",
+        (scene.current_path || []).length + (scene.history_path || []).length,
+      ],
+    ];
+    const rows = counts
+      .map(
+        ([key, n]) =>
+          `<div class="lg-cnt${n ? "" : " zero"}"><span>${localize(
+            this._hass,
+            key
+          )}</span><span class="lg-n">${n}</span></div>`
+      )
+      .join("");
+    return `<div class="lg-sec">${localize(this._hass, "dbg_title")}</div>${rows}`;
   }
 
   /**
@@ -2340,6 +2412,11 @@ class TerramowMapCardEditor extends HTMLElement {
       {
         name: "zone_info",
         label: "Long-press zones for their mow settings",
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_layer_counts",
+        label: "Debug: list received layer counts in the legend",
         selector: { boolean: {} },
       },
       {
