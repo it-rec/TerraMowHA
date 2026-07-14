@@ -24,7 +24,7 @@ All upstream commits after v0.3.0 are already covered by the fork:
 | **Event** (`event.py`) | A mower event entity firing `mowing_started`, `paused`, `returning`, `docked`, `mowing_completed`, `error`, each with the raw mission fields as attributes. Lets automations react to transitions without polling. |
 | **Calendar** (`calendar.py`) | A read-only mowing-schedule calendar: the full weekly schedule when dp_122 is available, otherwise the dp_138 next scheduled mow, with active/upcoming/next-day and past-midnight handling. |
 | Camera | A second, default-disabled *clean* map-only camera for dashboards, plus a configurable output resolution. |
-| Sensor | A default-disabled pose sensor. |
+| Sensor | A default-disabled pose sensor, a **Wi-Fi signal** sensor (dp_109, mower-side strength in percent), and a session-level **Active Job** sensor that reports the running mission across mid-session heartbeat gaps. |
 
 ## New user-facing capabilities
 
@@ -32,7 +32,13 @@ All upstream commits after v0.3.0 are already covered by the fork:
   an auto-registered Lovelace card rendering the map as vectors over a
   `terramow/map/subscribe` WebSocket feed — pan/zoom, live robot marker,
   theme-aware, with tap-to-mow zone selection driving
-  `terramow.start_select_region`.
+  `terramow.start_select_region`. It has grown a full on-card control set:
+  status chips, a mowed-coverage overlay (true stripe spacing) and follow
+  mode, per-zone stripe-direction indicators, long-press for a zone's mow
+  settings, trapped / maintenance / passage markers, a layer legend,
+  camera-parity badges, a stale-map chip, two-finger rotate with a compass
+  reset, keyboard zone cycling, and a card editor with rotation presets and a
+  "use current rotation" capture.
 - **Repair issues** (`issues.py`): actionable dashboard cards for
   incompatible/too-old firmware (from dp_127) and for due blade (240 h) /
   base-station (30 day) maintenance (from dp_126 / dp_125), which clear
@@ -64,11 +70,11 @@ All upstream commits after v0.3.0 are already covered by the fork:
   translations, disabled-by-default entities where appropriate.
 - **100% line + branch test coverage**, enforced in CI
   (`--cov-fail-under=100`), starting from no test suite upstream.
-- **Hardened hub**: MQTT auto-reconnect with exponential backoff and throttled
-  logging; map/path HTTP fetch over Home Assistant's shared aiohttp session with
-  ETag caching, sequence guards, retry/backoff and pending-meta requeue; the
-  MQTT connection runs as an asyncio task (aiomqtt) that is cancelled and
-  awaited cleanly on unload.
+- **Async-native hub**: the paho worker thread has been replaced by an
+  `aiomqtt` asyncio task (cancelled and awaited cleanly on unload), with MQTT
+  auto-reconnect using exponential backoff and throttled logging; map/path HTTP
+  fetch runs over Home Assistant's shared aiohttp session with ETag caching,
+  sequence guards, retry/backoff and pending-meta requeue.
 - **Device-identifier migration** (`TerraMowLanwMower` → `TerraMowLawnMower`) and
   **S800 support** (older firmware HA-module version 2 works without nagging).
 - **CI/CD**: `validate.yml` (tests+coverage, mypy strict, ruff, hassfest, HACS)
@@ -84,3 +90,31 @@ All upstream commits after v0.3.0 are already covered by the fork:
 - **v0.8.7** — event entity, mowing-schedule calendar, maintenance repair
   issues, all localized across 33 languages.
 - **v1.0.0** — documentation completeness, clean-up and the first stable release.
+- **v1.15.0** — interactive Lovelace map card: live vector map with
+  tap-to-mow zones and an auto-registered Lovelace resource.
+- **v1.16.x** — map card v1.1 (on-card controls, status chips, coverage,
+  follow mode); dp_119 decode for confirmed commands and dp_122 schedule-write
+  capture; release notes generated from commit messages.
+- **v1.17.x** — command-ack and schedule captures exported in diagnostics;
+  app-direction capture widened to all data points.
+- **v1.18.x** — writable mowing schedule (`add_schedule` / `delete_schedule`)
+  with per-firmware format negotiation, full-broker discovery and numeric-verb
+  probing.
+- **v1.19.x** — weather-adaptive mowing blueprint; map card registered as a
+  `js` Lovelace resource (#140); stale "Saving Map" / "Running" display decayed
+  to idle (#142).
+- **v1.21.x** — select-region command sent with the device's outbound field
+  names; event entity's map-save fields decayed to idle (#142).
+- **v1.22.0** — async-native hub: the paho worker thread replaced by an
+  `aiomqtt` task (#148); map card correctness, performance and accessibility
+  pass.
+- **v1.23.0** — trapped / maintenance / passage markers on the map card.
+- **v1.24.0** — per-zone mowing-stripe direction on the map card.
+- **v1.25.0** — long-press a zone for its mow settings on the map card.
+- **v1.26.0** — dp_109 surfaced as a Wi-Fi signal sensor.
+- **v1.27.0** — map card true-spacing coverage, camera-parity badges and legend.
+- **v1.28.0** — map card stale-map chip and layer-count debug section.
+- **v1.29.0** — map card two-finger rotate and compass reset.
+- **v1.30.0** — session-level Active Job sensor (follow-up to #142).
+- **v1.31.0** — map card keyboard zone cycling.
+- **v1.32.0** — card editor rotation presets and "use current rotation" capture.
