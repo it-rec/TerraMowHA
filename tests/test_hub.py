@@ -12,6 +12,7 @@ from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.hub import (
+    ACTIVE_MISSION_DISPLAY_TIMEOUT,
     MAP_SAVE_DISPLAY_TIMEOUT,
     Mission,
     MissionState,
@@ -182,6 +183,93 @@ def test_new_saving_map_episode_ignores_previous_completion() -> None:
     )
     assert hub.display_sub_mission is SubMission.SUB_MISSION_SAVING_MAP
     assert hub.display_mission_state is MissionState.MISSION_STATE_RUNNING
+
+
+def test_active_mission_idle_without_a_session() -> None:
+    hub = _make_hub()
+    assert hub.active_mission is Mission.MISSION_IDLE
+    _feed_dp107(hub, mission="MISSION_IDLE", state="MISSION_STATE_IDLE")
+    assert hub.active_mission is Mission.MISSION_IDLE
+
+
+def test_active_mission_reports_the_running_job() -> None:
+    hub = _make_hub()
+    _feed_dp107(
+        hub,
+        mission="MISSION_GLOBAL_CLEAN",
+        sub_mission="SUB_MISSION_IDLE",
+        state="MISSION_STATE_RUNNING",
+    )
+    assert hub.active_mission is Mission.MISSION_GLOBAL_CLEAN
+
+
+def test_active_mission_survives_mid_session_dock() -> None:
+    # The darkness case from issue #142 (comment 4961842352): the mower returns
+    # to the dock before finishing and the firmware resets the raw mission to
+    # IDLE, but the active job should still read GLOBAL_CLEAN.
+    hub = _make_hub()
+    _feed_dp107(
+        hub,
+        mission="MISSION_GLOBAL_CLEAN",
+        sub_mission="SUB_MISSION_IDLE",
+        state="MISSION_STATE_RUNNING",
+    )
+    _feed_dp107(
+        hub,
+        mission="MISSION_IDLE",
+        sub_mission="SUB_MISSION_IDLE",
+        state="MISSION_STATE_IDLE",
+        back_to_station_reason="BACK_TO_STATION_REASON_NONE",
+    )
+    assert hub.active_mission is Mission.MISSION_GLOBAL_CLEAN
+    # The raw mission stays honest — only the derived view latches.
+    assert hub.mission is Mission.MISSION_IDLE
+    assert hub.task_status["mission"] == "MISSION_IDLE"
+
+
+def test_active_mission_clears_on_completion() -> None:
+    hub = _make_hub()
+    _feed_dp107(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
+    _feed_dp107(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_COMPLETE")
+    assert hub.active_mission is Mission.MISSION_IDLE
+    # And a following idle frame must not re-latch the finished job.
+    _feed_dp107(hub, mission="MISSION_IDLE", state="MISSION_STATE_IDLE")
+    assert hub.active_mission is Mission.MISSION_IDLE
+
+
+def test_active_mission_clears_on_abort() -> None:
+    hub = _make_hub()
+    _feed_dp107(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
+    _feed_dp107(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_ABORT")
+    assert hub.active_mission is Mission.MISSION_IDLE
+
+
+def test_active_mission_decays_after_safety_timeout() -> None:
+    hub = _make_hub()
+    _feed_dp107(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
+    _feed_dp107(hub, mission="MISSION_IDLE", state="MISSION_STATE_IDLE")
+    assert hub.active_mission is Mission.MISSION_GLOBAL_CLEAN
+    # Once parked longer than the safety window, the latch releases so a
+    # cancelled/parked session can't linger the way #142's stale fields did.
+    hub._active_mow_idle_since = time.monotonic() - (ACTIVE_MISSION_DISPLAY_TIMEOUT + 1)
+    assert hub.active_mission is Mission.MISSION_IDLE
+
+
+def test_active_mission_replaced_by_a_new_job() -> None:
+    hub = _make_hub()
+    _feed_dp107(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
+    _feed_dp107(hub, mission="MISSION_IDLE", state="MISSION_STATE_IDLE")
+    _feed_dp107(hub, mission="MISSION_SELECT_REGION_CLEAN", state="MISSION_STATE_RUNNING")
+    assert hub.active_mission is Mission.MISSION_SELECT_REGION_CLEAN
+
+
+def test_active_mission_persists_through_recharge() -> None:
+    # A recharge mid-mow is an interruption, not the end of the job — the active
+    # job should still show through it.
+    hub = _make_hub()
+    _feed_dp107(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
+    _feed_dp107(hub, mission="MISSION_RECHARGE", state="MISSION_STATE_RUNNING")
+    assert hub.active_mission is Mission.MISSION_GLOBAL_CLEAN
 
 
 def test_mission_status_notifies_state_listeners() -> None:

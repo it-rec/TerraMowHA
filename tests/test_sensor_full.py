@@ -326,6 +326,25 @@ def test_mission_sensor_none_when_member_unset() -> None:
     assert mission.native_value is None
 
 
+def test_active_job_sensor_survives_mid_session_dock() -> None:
+    hub = _hub()
+    mission = _sensor(hub, "mission")
+    active = _sensor(hub, "active_job")
+    _feed(hub.on_mission_status, {
+        "mission": "MISSION_GLOBAL_CLEAN",
+        "state": "MISSION_STATE_RUNNING",
+    })
+    assert active.native_value == "mission_global_clean"
+    # Mid-session dock: firmware resets raw mission to idle; the diagnostic
+    # mission sensor follows the device, the active-job sensor holds the job.
+    _feed(hub.on_mission_status, {
+        "mission": "MISSION_IDLE",
+        "state": "MISSION_STATE_IDLE",
+    })
+    assert mission.native_value == "mission_idle"
+    assert active.native_value == "mission_global_clean"
+
+
 def test_back_to_station_reason_unknown_value_is_none() -> None:
     hub = _hub()
     sensor = _sensor(hub, "back_to_station_reason")

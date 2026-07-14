@@ -233,6 +233,31 @@
           "mission_update_backup_map": "Updating Backup Map"
         }
       },
+      "active_job": {
+        "name": "Active Job",
+        "state": {
+          "mission_idle": "Idle",
+          "mission_recharge": "Recharging",
+          "mission_global_clean": "Global Mowing",
+          "mission_build_map": "Building Map",
+          "mission_build_map_and_clean": "Building Map and Mowing",
+          "mission_temporary_clean": "Temporary Mowing",
+          "mission_back_to_starting_point": "Returning to Start Point",
+          "mission_remote_control_clean": "Remote Control Mowing",
+          "mission_schedule_global_clean": "Scheduled Global Mowing",
+          "mission_schedule_build_map_and_clean": "Scheduled Map Build and Mow",
+          "mission_select_region_clean": "Zone Mowing",
+          "mission_create_custom_passage": "Creating Custom Passage",
+          "mission_backup_map": "Backing Up Map",
+          "mission_relocate_base_station": "Relocating Base Station",
+          "mission_user_auto_calibration": "Auto Calibration",
+          "mission_restore_backup_map": "Restoring Backup Map",
+          "mission_schedule_select_region_clean": "Scheduled Zone Mowing",
+          "mission_draw_region_clean": "Drawn Zone Mowing",
+          "mission_edge_trim_clean": "Edge Trim Mowing",
+          "mission_update_backup_map": "Updating Backup Map"
+        }
+      },
       "sub_mission": {
         "name": "Sub-mission",
         "state": {
