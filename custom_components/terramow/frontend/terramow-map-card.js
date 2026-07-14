@@ -24,7 +24,8 @@
  *   show_direction: true       # mowing stripe-direction arrow per region
  *   zone_info: true            # long-press a zone for its mow settings
  *   show_layer_counts: false   # debug: list received layer counts in the legend
- *   rotation: 0                # rotate the map view (degrees)
+ *   rotate_gesture: true       # two-finger rotate the map (compass button resets)
+ *   rotation: 0                # default map rotation (degrees); compass resets here
  *   fit_height: 420            # card canvas height in px
  *
  * NOTE: registered as a classic "js" Lovelace resource, not an ES "module".
@@ -45,12 +46,12 @@ const CARD_TAG = "terramow-map-card";
 /* Keys: no_map, not_connected, start, clear, zone, zones, reset_view,
    follow, start_mowing, pause, dock, sent, missing_entity */
 const STRINGS = {
-  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", follow: "Follow the mower", start_mowing: "Start mowing", pause: "Pause", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area", map_refreshing: "Map refreshing…", dbg_title: "Layers received", dbg_zones: "Zones", dbg_nogo: "No-go zones", dbg_walls: "Walls", dbg_obstacles: "Obstacles", dbg_passthrough: "Pass-through", dbg_required: "Required", dbg_tunnels: "Tunnels", dbg_markers: "Markers", dbg_draw: "Draw regions", dbg_paths: "Path points" },
+  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", reset_rotation: "Reset to default rotation", follow: "Follow the mower", start_mowing: "Start mowing", pause: "Pause", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area", map_refreshing: "Map refreshing…", dbg_title: "Layers received", dbg_zones: "Zones", dbg_nogo: "No-go zones", dbg_walls: "Walls", dbg_obstacles: "Obstacles", dbg_passthrough: "Pass-through", dbg_required: "Required", dbg_tunnels: "Tunnels", dbg_markers: "Markers", dbg_draw: "Draw regions", dbg_paths: "Path points" },
   bg: { no_map: "Все още няма карта", not_connected: "Изчакване на данни от косачката…", start: "Коси", clear: "Изчисти", zone: "зона", zones: "зони", reset_view: "Побери картата", follow: "Следвай косачката", start_mowing: "Започни косене", pause: "Пауза", dock: "Върни към станцията", sent: "Косенето на зони започна", missing_entity: "Задайте обект на косачка TerraMow в конфигурацията" },
   ca: { no_map: "Encara no hi ha mapa", not_connected: "Esperant dades del tallagespa…", start: "Sega", clear: "Neteja", zone: "zona", zones: "zones", reset_view: "Ajusta el mapa", follow: "Segueix el tallagespa", start_mowing: "Comença a segar", pause: "Pausa", dock: "Torna a la base", sent: "Sega per zones iniciada", missing_entity: "Configureu una entitat de tallagespa TerraMow" },
   cs: { no_map: "Mapa zatím není k dispozici", not_connected: "Čekání na data sekačky…", start: "Sekat", clear: "Vymazat", zone: "zóna", zones: "zóny", reset_view: "Přizpůsobit mapu", follow: "Sledovat sekačku", start_mowing: "Zahájit sekání", pause: "Pozastavit", dock: "Zpět na stanici", sent: "Sekání zón zahájeno", missing_entity: "Nastavte entitu sekačky TerraMow v konfiguraci karty" },
   da: { no_map: "Intet kort tilgængeligt endnu", not_connected: "Venter på data fra plæneklipperen…", start: "Klip", clear: "Ryd", zone: "zone", zones: "zoner", reset_view: "Tilpas kortet", follow: "Følg plæneklipperen", start_mowing: "Start klipning", pause: "Pause", dock: "Kør til base", sent: "Zoneklipning startet", missing_entity: "Angiv en TerraMow-plæneklipperentitet i kortets konfiguration" },
-  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", follow: "Dem Mäher folgen", start_mowing: "Mähen starten", pause: "Pausieren", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch", legend: "Legende", legend_show: "Legende anzeigen", legend_hide: "Legende ausblenden", lg_mower: "Mäherposition", lg_dock: "Ladestation", lg_order: "Mähreihenfolge", lg_custom: "Eigene Zoneneinstellungen", lg_direction: "Mährichtung", lg_stuck: "Hier steckengeblieben", lg_maint: "Wartungspunkt", lg_passage: "Durchgangspunkt", lg_nogo: "Sperrzone", lg_wall: "Virtuelle Wand", lg_coverage: "Gemähte Fläche", map_refreshing: "Karte wird aktualisiert…", dbg_title: "Empfangene Ebenen", dbg_zones: "Zonen", dbg_nogo: "Sperrzonen", dbg_walls: "Wände", dbg_obstacles: "Hindernisse", dbg_passthrough: "Durchgänge", dbg_required: "Pflichtzonen", dbg_tunnels: "Tunnel", dbg_markers: "Markierungen", dbg_draw: "Zeichenregionen", dbg_paths: "Pfadpunkte" },
+  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", reset_rotation: "Auf Standarddrehung zurücksetzen", follow: "Dem Mäher folgen", start_mowing: "Mähen starten", pause: "Pausieren", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch", legend: "Legende", legend_show: "Legende anzeigen", legend_hide: "Legende ausblenden", lg_mower: "Mäherposition", lg_dock: "Ladestation", lg_order: "Mähreihenfolge", lg_custom: "Eigene Zoneneinstellungen", lg_direction: "Mährichtung", lg_stuck: "Hier steckengeblieben", lg_maint: "Wartungspunkt", lg_passage: "Durchgangspunkt", lg_nogo: "Sperrzone", lg_wall: "Virtuelle Wand", lg_coverage: "Gemähte Fläche", map_refreshing: "Karte wird aktualisiert…", dbg_title: "Empfangene Ebenen", dbg_zones: "Zonen", dbg_nogo: "Sperrzonen", dbg_walls: "Wände", dbg_obstacles: "Hindernisse", dbg_passthrough: "Durchgänge", dbg_required: "Pflichtzonen", dbg_tunnels: "Tunnel", dbg_markers: "Markierungen", dbg_draw: "Zeichenregionen", dbg_paths: "Pfadpunkte" },
   el: { no_map: "Δεν υπάρχει ακόμη χάρτης", not_connected: "Αναμονή δεδομένων χλοοκοπτικού…", start: "Κούρεμα", clear: "Καθαρισμός", zone: "ζώνη", zones: "ζώνες", reset_view: "Προσαρμογή χάρτη", follow: "Ακολούθησε το χλοοκοπτικό", start_mowing: "Έναρξη κουρέματος", pause: "Παύση", dock: "Επιστροφή στη βάση", sent: "Το κούρεμα ζωνών ξεκίνησε", missing_entity: "Ορίστε οντότητα χλοοκοπτικού TerraMow στη διαμόρφωση" },
   es: { no_map: "Aún no hay mapa disponible", not_connected: "Esperando datos del cortacésped…", start: "Cortar", clear: "Borrar", zone: "zona", zones: "zonas", reset_view: "Ajustar mapa", follow: "Seguir al cortacésped", start_mowing: "Iniciar corte", pause: "Pausar", dock: "Volver a la base", sent: "Corte por zonas iniciado", missing_entity: "Configura la entidad del cortacésped TerraMow" },
   et: { no_map: "Kaarti pole veel saadaval", not_connected: "Ootan niiduki andmeid…", start: "Niida", clear: "Tühjenda", zone: "tsoon", zones: "tsooni", reset_view: "Mahuta kaart", follow: "Jälgi niidukit", start_mowing: "Alusta niitmist", pause: "Paus", dock: "Tagasi baasi", sent: "Tsooniniitmine alustatud", missing_entity: "Määra kaardi seadetes TerraMow niiduki olem" },
@@ -121,6 +122,7 @@ const ICONS = {
   legend: "M7,5H21V7H7V5M7,13V11H21V13H7M4,4.5A1.5,1.5 0 0,1 5.5,6A1.5,1.5 0 0,1 4,7.5A1.5,1.5 0 0,1 2.5,6A1.5,1.5 0 0,1 4,4.5M4,10.5A1.5,1.5 0 0,1 5.5,12A1.5,1.5 0 0,1 4,13.5A1.5,1.5 0 0,1 2.5,12A1.5,1.5 0 0,1 4,10.5M7,19V17H21V19H7M4,16.5A1.5,1.5 0 0,1 5.5,18A1.5,1.5 0 0,1 4,19.5A1.5,1.5 0 0,1 2.5,18A1.5,1.5 0 0,1 4,16.5Z",
   close: "M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z",
   refreshing: "M12,4V1L8,5L12,9V6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12H4A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z",
+  compass: "M14.19,14.19L6,18L9.81,9.81L18,6M12,10.9A1.1,1.1 0 0,0 10.9,12A1.1,1.1 0 0,0 12,13.1A1.1,1.1 0 0,0 13.1,12A1.1,1.1 0 0,0 12,10.9M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z",
 };
 
 function svgIcon(path) {
@@ -135,6 +137,10 @@ function svgIcon(path) {
  */
 /** localStorage flag so the legend auto-opens only on a browser's first visit. */
 const LEGEND_SEEN_KEY = "terramow-map-card:legend-seen";
+
+/** Two-finger twist must exceed this (radians, ~7°) before rotation engages,
+ *  so an ordinary pinch-zoom doesn't rotate the map by accident. */
+const ROTATE_DEADZONE = 0.12;
 
 function legendSwatch(kind, c) {
   const out = c.markerOutline;
@@ -283,6 +289,7 @@ class TerramowMapCard extends HTMLElement {
     this._pointers = new Map();
     this._dragged = false;
     this._pinchStart = null;
+    this._baseRot = 0; // configured rotation (radians); compass resets here
     this._unsub = null;
     this._subscribedEntity = null;
     this._resizeObserver = null;
@@ -320,11 +327,13 @@ class TerramowMapCard extends HTMLElement {
       show_direction: true,
       zone_info: true,
       show_layer_counts: false,
+      rotate_gesture: true,
       rotation: 0,
       fit_height: 420,
       ...config,
     };
     this._rot = ((Number(this._config.rotation) || 0) * Math.PI) / 180;
+    this._baseRot = this._rot;
     this._buildDom();
     this._staticCache = null;
     this._pathCache = null;
@@ -734,7 +743,16 @@ class TerramowMapCard extends HTMLElement {
       this._setFollow(!this._follow);
     });
     this._followBtn.style.display = "none";
-    side.append(this._fitBtn, this._followBtn);
+    this._compassBtn = this._roundButton(ICONS.compass, () => {
+      this._setFollow(false);
+      this._resetRotation();
+    });
+    this._compassBtn.style.display = "none";
+    const resetRotLabel = localize(this._hass, "reset_rotation");
+    this._compassBtn.title = resetRotLabel;
+    this._compassBtn.setAttribute("aria-label", resetRotLabel);
+    this._compassBtn.querySelector("svg").style.transition = "transform .15s";
+    side.append(this._fitBtn, this._followBtn, this._compassBtn);
     wrap.appendChild(side);
 
     // bottom-right: contextual mow controls
@@ -792,6 +810,7 @@ class TerramowMapCard extends HTMLElement {
     this._syncCanvasSize();
     this._updateHud();
     this._updateControls();
+    this._updateCompass();
     this._requestDraw();
   }
 
@@ -1108,13 +1127,22 @@ class TerramowMapCard extends HTMLElement {
           }
         }, 550);
       }
-      if (this._pointers.size === 2) {
+      if (this._pointers.size === 2 && this._view) {
         const [a, b] = [...this._pointers.values()];
+        const cx = (a.x + b.x) / 2;
+        const cy = (a.y + b.y) / 2;
+        // Anchor the world point currently under the pinch midpoint; the
+        // gesture keeps it under the fingers as they scale/rotate/pan.
+        const [wx, wy] = this._screenToWorld(cx, cy);
         this._pinchStart = {
           dist: Math.hypot(a.x - b.x, a.y - b.y),
-          scale: this._view ? this._view.scale : 1,
-          cx: (a.x + b.x) / 2,
-          cy: (a.y + b.y) / 2,
+          angle: Math.atan2(b.y - a.y, b.x - a.x),
+          scale: this._view.scale,
+          rot: this._rot,
+          wx,
+          wy,
+          engaged: false,
+          angleOffset: 0,
         };
       }
       canvas.classList.add("dragging");
@@ -1143,16 +1171,33 @@ class TerramowMapCard extends HTMLElement {
       if (this._pointers.size === 2 && this._pinchStart) {
         this._dragged = true;
         this._setFollow(false);
+        const ps = this._pinchStart;
         const [a, b] = [...this._pointers.values()];
+        const cx = (a.x + b.x) / 2;
+        const cy = (a.y + b.y) / 2;
         const dist = Math.hypot(a.x - b.x, a.y - b.y);
-        if (dist > 0 && this._pinchStart.dist > 0) {
-          const factor = dist / this._pinchStart.dist;
-          this._zoomAt(
-            this._pinchStart.cx,
-            this._pinchStart.cy,
-            (this._pinchStart.scale * factor) / this._view.scale
-          );
+        let scale = this._view.scale;
+        if (dist > 0 && ps.dist > 0) {
+          scale = ps.scale * (dist / ps.dist);
         }
+        let rot = ps.rot;
+        if (this._config.rotate_gesture) {
+          const angle = Math.atan2(b.y - a.y, b.x - a.x);
+          // Twist since the gesture began, unwrapped to (-pi, pi]; engage
+          // only past the dead-zone, then continue smoothly from there.
+          const twist = Math.atan2(
+            Math.sin(angle - ps.angle),
+            Math.cos(angle - ps.angle)
+          );
+          if (!ps.engaged && Math.abs(twist) > ROTATE_DEADZONE) {
+            ps.engaged = true;
+            ps.angleOffset = Math.sign(twist) * ROTATE_DEADZONE;
+          }
+          if (ps.engaged) {
+            rot = ps.rot + (twist - ps.angleOffset);
+          }
+        }
+        this._applyPinch(cx, cy, ps.wx, ps.wy, scale, rot);
       }
     });
     const endPointer = (ev) => {
@@ -1204,6 +1249,58 @@ class TerramowMapCard extends HTMLElement {
     view.ty = py - (py - view.ty) * realFactor;
     view.scale = newScale;
     this._requestDraw();
+  }
+
+  /**
+   * Apply a pinch's scale + rotation while pinning world point (wx, wy) under
+   * screen point (sx, sy) — the point the fingers grabbed. Solves the view
+   * translation from `screen = R(rot)·scale·world + t` for that constraint,
+   * which also yields two-finger pan for free as the midpoint moves.
+   */
+  _applyPinch(sx, sy, wx, wy, scale, rot) {
+    const view = this._view;
+    if (!view) {
+      return;
+    }
+    view.scale = Math.min(Math.max(scale, 1e-4), 10);
+    this._rot = rot;
+    const cos = Math.cos(rot);
+    const sin = Math.sin(rot);
+    view.tx = sx - (wx * cos - wy * sin) * view.scale;
+    view.ty = sy - (wx * sin + wy * cos) * view.scale;
+    this._updateCompass();
+    this._requestDraw();
+  }
+
+  /** Reset the map to the configured rotation, pivoting about the view center. */
+  _resetRotation() {
+    if (!this._view || !this._root) {
+      return;
+    }
+    const cx = this._root.clientWidth / 2;
+    const cy = this._root.clientHeight / 2;
+    const [wx, wy] = this._screenToWorld(cx, cy);
+    this._applyPinch(cx, cy, wx, wy, this._view.scale, this._baseRot);
+  }
+
+  /**
+   * Show the compass button only once the map is turned away from its
+   * configured angle, and spin its needle to reflect how far it is turned.
+   */
+  _updateCompass() {
+    if (!this._compassBtn) {
+      return;
+    }
+    const delta = Math.atan2(
+      Math.sin(this._rot - this._baseRot),
+      Math.cos(this._rot - this._baseRot)
+    );
+    const turned = Math.abs(delta) > 0.01;
+    this._compassBtn.style.display = turned ? "inline-flex" : "none";
+    const svg = this._compassBtn.querySelector("svg");
+    if (svg) {
+      svg.style.transform = `rotate(${-delta}rad)`;
+    }
   }
 
   /** World (mm) to screen (CSS px) under the current view + rotation. */
@@ -2420,8 +2517,13 @@ class TerramowMapCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       {
+        name: "rotate_gesture",
+        label: "Two-finger rotate (compass button resets)",
+        selector: { boolean: {} },
+      },
+      {
         name: "rotation",
-        label: "Map rotation (degrees)",
+        label: "Default map rotation (degrees)",
         selector: { number: { min: -180, max: 180, mode: "box" } },
       },
       {
