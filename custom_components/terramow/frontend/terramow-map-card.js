@@ -142,6 +142,11 @@ const LEGEND_SEEN_KEY = "terramow-map-card:legend-seen";
  *  so an ordinary pinch-zoom doesn't rotate the map by accident. */
 const ROTATE_DEADZONE = 0.12;
 
+/** localStorage key prefix (per entity) where the card mirrors its live
+ *  rotation in whole degrees, so the config editor's "use current rotation"
+ *  button can capture it — the editor and the preview card are isolated. */
+const LIVE_ROT_KEY = "terramow-map-card:rot:";
+
 function legendSwatch(kind, c) {
   const out = c.markerOutline;
   const svg = (inner) =>
@@ -291,6 +296,7 @@ class TerramowMapCard extends HTMLElement {
     this._pinchStart = null;
     this._baseRot = 0; // configured rotation (radians); compass resets here
     this._focusedZoneId = null; // keyboard-focused sub-region id
+    this._lastPersistedRot = null; // last live rotation mirrored to storage
     this._unsub = null;
     this._subscribedEntity = null;
     this._resizeObserver = null;
@@ -1333,7 +1339,26 @@ class TerramowMapCard extends HTMLElement {
     view.tx = sx - (wx * cos - wy * sin) * view.scale;
     view.ty = sy - (wx * sin + wy * cos) * view.scale;
     this._updateCompass();
+    this._persistLiveRotation();
     this._requestDraw();
+  }
+
+  /** Mirror the current rotation (whole degrees, 0-359) to localStorage so the
+   *  config editor's "use current rotation" button can read it. */
+  _persistLiveRotation() {
+    if (!this._config || !this._config.entity) {
+      return;
+    }
+    const deg = (((Math.round((this._rot * 180) / Math.PI) % 360) + 360) % 360);
+    if (deg === this._lastPersistedRot) {
+      return;
+    }
+    this._lastPersistedRot = deg;
+    try {
+      window.localStorage.setItem(LIVE_ROT_KEY + this._config.entity, String(deg));
+    } catch (e) {
+      /* storage blocked (private mode); capture button just won't update */
+    }
   }
 
   /** Reset the map to the configured rotation, pivoting about the view center. */
@@ -2682,7 +2707,7 @@ class TerramowMapCardEditor extends HTMLElement {
       {
         name: "rotation",
         label: "Default map rotation (degrees)",
-        selector: { number: { min: -180, max: 180, mode: "box" } },
+        selector: { number: { min: -180, max: 360, mode: "box" } },
       },
       {
         name: "fit_height",
@@ -2690,6 +2715,82 @@ class TerramowMapCardEditor extends HTMLElement {
         selector: { number: { min: 200, max: 1200, mode: "box" } },
       },
     ];
+
+    this._renderRotationTools();
+  }
+
+  _setRotation(deg) {
+    const rotation = (((Math.round(deg) % 360) + 360) % 360);
+    this.dispatchEvent(
+      new CustomEvent("config-changed", {
+        detail: { config: { ...this._config, rotation } },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  /**
+   * Quick-pick rotation presets + a "use current rotation" capture button,
+   * appended below the declarative form. Capture reads the live preview's
+   * rotation, which the card mirrors to localStorage (the editor and the
+   * preview card are isolated DOM, so they cannot talk directly).
+   */
+  _renderRotationTools() {
+    if (!this._rotTools) {
+      this._rotTools = document.createElement("div");
+      this._rotTools.className = "tm-rot-tools";
+      this._rotTools.innerHTML = `
+        <style>
+          .tm-rot-tools { margin: 8px 4px 4px; }
+          .tm-rot-tools .tm-rot-label {
+            font-size: 12px; color: var(--secondary-text-color, #727272);
+            margin-bottom: 6px;
+          }
+          .tm-rot-tools .tm-rot-row { display: flex; flex-wrap: wrap; gap: 6px; }
+          .tm-rot-tools button {
+            border: 1px solid var(--divider-color, rgba(0,0,0,.12));
+            background: var(--card-background-color, #fff);
+            color: var(--primary-text-color, #212121);
+            border-radius: 16px; padding: 5px 12px; font-size: 13px; cursor: pointer;
+          }
+          .tm-rot-tools button:hover { border-color: var(--primary-color, #03a9f4); }
+          .tm-rot-tools button.tm-capture { font-weight: 600; }
+        </style>
+        <div class="tm-rot-label">Default rotation presets</div>
+        <div class="tm-rot-row"></div>
+      `;
+      const row = this._rotTools.querySelector(".tm-rot-row");
+      for (const deg of [0, 90, 180, 270]) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = `${deg}°`;
+        btn.addEventListener("click", () => this._setRotation(deg));
+        row.appendChild(btn);
+      }
+      const capture = document.createElement("button");
+      capture.type = "button";
+      capture.className = "tm-capture";
+      capture.textContent = "Use current rotation";
+      capture.addEventListener("click", () => {
+        let deg = null;
+        try {
+          const raw = window.localStorage.getItem(
+            LIVE_ROT_KEY + (this._config && this._config.entity)
+          );
+          if (raw !== null) {
+            deg = Number(raw);
+          }
+        } catch (e) {
+          deg = null;
+        }
+        if (Number.isFinite(deg)) {
+          this._setRotation(deg);
+        }
+      });
+      row.appendChild(capture);
+      this.appendChild(this._rotTools);
+    }
   }
 }
 
