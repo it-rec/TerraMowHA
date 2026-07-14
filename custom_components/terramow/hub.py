@@ -80,6 +80,15 @@ UNKNOWN_DP_HISTORY_MAXLEN = 30
 # stalled progress signal can't leave the mower looking busy for hours.
 MAP_SAVE_DISPLAY_TIMEOUT = 30 * 60  # seconds
 
+# The firmware resets ``mission`` to IDLE the moment the mower docks, even when
+# the lawn isn't finished, with no dp_107 signal separating a pause (e.g.
+# returned because sunlight was gone, will resume) from a genuine completion
+# (follow-up to issue #142). The session-level "active job" view keeps reporting
+# the active mow mission for at most this long after the device idles, then
+# falls back to idle so a cancelled or parked session can't linger indefinitely
+# the way the stale sub-mission/state did before #142.
+ACTIVE_MISSION_DISPLAY_TIMEOUT = 6 * 60 * 60  # seconds
+
 
 def _decompress_and_parse(raw: bytes) -> Any:
     """Decompress (if gzip) and JSON-parse a fetched map/path body.
@@ -397,6 +406,13 @@ class TerraMowHub:
         # save finishes (issue #142). None whenever the raw sub_mission is not
         # SAVING_MAP.
         self._map_save_started_at: float | None = None
+        # The mow mission currently in progress at a session level, latched so
+        # the "active job" view survives a mid-session dock where the firmware
+        # resets the raw mission to IDLE (follow-up to #142). ``_idle_since`` is
+        # the monotonic timestamp the device went idle while that job was
+        # latched, bounding how long the latch lingers; None while working.
+        self._active_mow_mission: Mission | None = None
+        self._active_mow_idle_since: float | None = None
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
         # Bounded per-dp change history (epoch, payload) for undocumented dps, so
@@ -1309,6 +1325,29 @@ class TerraMowHub:
                 self._map_save_progress = {}
         else:
             self._map_save_started_at = None
+
+        # Track the active mow session for the session-level "active job" view so
+        # it survives a mid-session dock, where the firmware resets the raw
+        # mission to IDLE even though the lawn isn't finished (follow-up #142).
+        # COMPLETE/ABORT are checked before MOW_MISSIONS so a "GLOBAL_CLEAN +
+        # COMPLETE" frame clears the latch instead of re-latching it.
+        if self.mission_state in (
+            MissionState.MISSION_STATE_COMPLETE,
+            MissionState.MISSION_STATE_ABORT,
+        ):
+            self._active_mow_mission = None
+            self._active_mow_idle_since = None
+        elif self.mission in MOW_MISSIONS:
+            self._active_mow_mission = self.mission
+            self._active_mow_idle_since = None
+        elif self.mission == Mission.MISSION_IDLE:
+            if (
+                self._active_mow_mission is not None
+                and self._active_mow_idle_since is None
+            ):
+                self._active_mow_idle_since = time.monotonic()
+        # else: a recharge or other non-idle mid-session interruption — keep the
+        # latch so the job still shows through it.
 
         _LOGGER.debug("Mission state updated: mission=%s->%s, sub_mission=%s->%s, state=%s->%s, has_error=%s, back_to_station_reason=%s",
                      old_mission, self.mission, old_sub_mission, self.sub_mission,
@@ -2316,6 +2355,29 @@ class TerraMowHub:
         if self._map_save_finished():
             return MissionState.MISSION_STATE_IDLE
         return self.mission_state
+
+    @property
+    def active_mission(self) -> Mission:
+        """Session-level mow job, held across a mid-session dock (follow-up #142).
+
+        Reports the active mow mission while the mower works and keeps reporting
+        it across a mid-session return to the dock — where the firmware resets
+        the raw ``mission`` to IDLE even though the lawn isn't finished — until
+        the job completes/aborts, a new mission starts, or the safety timeout
+        (``ACTIVE_MISSION_DISPLAY_TIMEOUT``) elapses. Returns MISSION_IDLE when
+        there is no active session. The raw ``mission`` property is deliberately
+        left untouched, so the diagnostic ``mission`` sensor still mirrors the
+        device exactly; this is a separate, additive view.
+        """
+        if self._active_mow_mission is None:
+            return Mission.MISSION_IDLE
+        idle_since = self._active_mow_idle_since
+        if (
+            idle_since is not None
+            and time.monotonic() - idle_since >= ACTIVE_MISSION_DISPLAY_TIMEOUT
+        ):
+            return Mission.MISSION_IDLE
+        return self._active_mow_mission
 
     @property
     def advanced_settings(self) -> dict[str, Any]:

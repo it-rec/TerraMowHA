@@ -703,6 +703,19 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         push_dp_ids=(107,),
         value_fn=_mission_enum("mission"),
     ),
+    # Session-level view of the mow job in progress. Unlike ``mission`` (raw
+    # dp_107), this keeps reporting the active mow mission across a mid-session
+    # dock, where the firmware resets the raw mission to idle even though the
+    # lawn isn't finished (follow-up to #142). Shares the Mission enum options.
+    TerraMowSensorEntityDescription(
+        key="active_job",
+        translation_key="active_job",
+        device_class=SensorDeviceClass.ENUM,
+        options=[to_ha_enum_state(member.value) for member in Mission],
+        entity_category=EntityCategory.DIAGNOSTIC,
+        push_dp_ids=(107,),
+        value_fn=_mission_enum("active_mission"),
+    ),
     # Sub-mission surfaces transient states like waiting for rain.
     TerraMowSensorEntityDescription(
         key="sub_mission",

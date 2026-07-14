@@ -64,6 +64,7 @@
       "main_direction_status": { "default": "mdi:compass" },
       "back_to_station_reason": { "default": "mdi:home-import-outline" },
       "mission": { "default": "mdi:robot-mower-outline" },
+      "active_job": { "default": "mdi:robot-mower" },
       "sub_mission": { "default": "mdi:list-status" },
       "mission_state": { "default": "mdi:state-machine" },
       "map_status": { "default": "mdi:map" },

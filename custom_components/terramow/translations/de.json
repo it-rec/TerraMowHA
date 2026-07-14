@@ -233,6 +233,31 @@
           "mission_update_backup_map": "Karten-Sicherung aktualisieren"
         }
       },
+      "active_job": {
+        "name": "Aktiver Auftrag",
+        "state": {
+          "mission_idle": "Bereit",
+          "mission_recharge": "Lädt",
+          "mission_global_clean": "Komplettmähen",
+          "mission_build_map": "Karte erstellen",
+          "mission_build_map_and_clean": "Karte erstellen und mähen",
+          "mission_temporary_clean": "Temporäres Mähen",
+          "mission_back_to_starting_point": "Zurück zum Startpunkt",
+          "mission_remote_control_clean": "Mähen per Fernsteuerung",
+          "mission_schedule_global_clean": "Geplantes Komplettmähen",
+          "mission_schedule_build_map_and_clean": "Geplantes Karte erstellen und Mähen",
+          "mission_select_region_clean": "Zonenmähen",
+          "mission_create_custom_passage": "Benutzerdefinierte Passage erstellen",
+          "mission_backup_map": "Karte sichern",
+          "mission_relocate_base_station": "Basisstation neu positionieren",
+          "mission_user_auto_calibration": "Automatische Kalibrierung",
+          "mission_restore_backup_map": "Karten-Sicherung wiederherstellen",
+          "mission_schedule_select_region_clean": "Geplantes Zonenmähen",
+          "mission_draw_region_clean": "Mähen gezeichneter Zone",
+          "mission_edge_trim_clean": "Kantentrimmen",
+          "mission_update_backup_map": "Karten-Sicherung aktualisieren"
+        }
+      },
       "sub_mission": {
         "name": "Teilauftrag",
         "state": {
