@@ -68,3 +68,33 @@ Documented here for future work; not decoded into entities yet.
 | 134 | Undecoded binary flag (surfaced as **State flag 134**). Note: it stayed **constant** through a full start/pause/resume/dock session, so it is **not** tied to the mowing state — meaning still unknown | `{"enum_value":0}` |
 | 145 | Custom-passage creation status | `{"stage":"CUSTOM_PASSAGE_STAGE_INVALID","is_on_grass":false,…}` |
 | 146 | Unknown scalar | `{"int_value":1}` |
+
+## Behavioural findings (official data points)
+
+Reverse-engineered *behaviour* of data points that **are** documented in
+[`data_point.md`](./data_point.md), recorded here so that file stays a clean
+vendor mirror.
+
+**dp_107 `mission_status` — `mission` resets to `MISSION_IDLE` on docking, with
+no pause-vs-complete signal.** When the mower returns to the dock **before it has
+finished** (e.g. it ran out of daylight and will resume later), the firmware
+reports `mission = MISSION_IDLE` / `sub_mission = SUB_MISSION_IDLE` /
+`state = MISSION_STATE_IDLE` — byte-identical to a genuinely completed job.
+`back_to_station_reason` does **not** disambiguate it: the official spec notes
+that field is only meaningful while `sub_mission` is `SUB_MISSION_RETURN_TO_BASE`
+or `SUB_MISSION_FLEXIBLE_STATION_WAIT`, so once the mower is docked-idle it reads
+`BACK_TO_STATION_REASON_NONE` (confirmed on S1200 fw `9.9.210`, issue [#142]
+comment [4961842352](https://github.com/it-rec/TerraMowHA/issues/142#issuecomment-4961842352)).
+No observed dp_107 field marks "paused mid-session, will resume".
+
+- *Consequence:* the raw **Mission** sensor correctly drops to *Idle* here; the
+  session-level **Active Job** sensor reconstructs the in-progress job with a
+  bounded latch (`ACTIVE_MISSION_DISPLAY_TIMEOUT`), because the device gives no
+  direct signal (issue [#173](https://github.com/it-rec/TerraMowHA/issues/173)).
+- *To watch for:* on future firmware / diagnostics captures, check dp_107 for a
+  new field, or a `back_to_station_reason` that persists past docking, that would
+  mark a resumable pause — as well as any still-undecoded neighbouring dp that
+  tracks session progress. Any of these would let Active Job track true
+  completion instead of relying on the timeout.
+
+[#142]: https://github.com/it-rec/TerraMowHA/issues/142
