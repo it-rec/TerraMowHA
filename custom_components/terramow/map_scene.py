@@ -205,6 +205,13 @@ def _ellipse_points(ellipse: Any, segments: int = 36) -> list[tuple[float, float
         radius_x = coerce_float(ellipse.get("major_radius"))
     if radius_y is None:
         radius_y = coerce_float(ellipse.get("minor_radius"))
+    # The TerraMow firmware reports ellipse no-go zones as semi-axes (already
+    # a radius, not a diameter): {"center", "semi_major_axis", "semi_minor_axis",
+    # "rotation_angle"}. Confirmed against a real V1000 map export.
+    if radius_x is None:
+        radius_x = coerce_float(ellipse.get("semi_major_axis"))
+    if radius_y is None:
+        radius_y = coerce_float(ellipse.get("semi_minor_axis"))
     if radius_x is None:
         radius_x = coerce_float(ellipse.get("a"))
     if radius_y is None:
@@ -217,6 +224,8 @@ def _ellipse_points(ellipse: Any, segments: int = 36) -> list[tuple[float, float
         return []
 
     rotation = coerce_float(ellipse.get("rotation"))
+    if rotation is None:
+        rotation = coerce_float(ellipse.get("rotation_angle"))
     if rotation is None:
         rotation = coerce_float(ellipse.get("angle"))
     if rotation is None:

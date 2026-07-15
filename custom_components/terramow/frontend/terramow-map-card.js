@@ -1917,7 +1917,8 @@ class TerramowMapCard extends HTMLElement {
       forbidden: dark ? "rgba(230,80,80,0.30)" : "rgba(220,60,60,0.22)",
       forbiddenEdge: dark ? "#e66" : "#c33",
       obstacle: dark ? "rgba(200,200,200,0.25)" : "rgba(90,90,90,0.25)",
-      passThrough: dark ? "rgba(140,140,255,0.18)" : "rgba(90,90,220,0.12)",
+      passThrough: dark ? "rgba(255,170,60,0.16)" : "rgba(255,150,0,0.14)",
+      passThroughEdge: dark ? "#ffb74d" : "#ef6c00",
       wall: dark ? "#ff8a80" : "#d32f2f",
       coverage: dark ? "rgba(48,220,187,0.20)" : "rgba(48,180,150,0.22)",
       historyPath: dark ? "rgba(180,220,180,0.35)" : "rgba(90,140,90,0.35)",
@@ -2110,11 +2111,18 @@ class TerramowMapCard extends HTMLElement {
       }
     }
 
-    // Auxiliary device geometry (pass-through, required zones, tunnels) is
-    // kept subtle: on real lawns the device reports many of these boxes and
-    // full-strength accent strokes would dominate the map.
+    // Pass-through ("Durchfahrt") zones: orange outline like the vendor app,
+    // clearly visible — they mark where the mower may cross between regions.
+    fillStrokePolys(
+      scene.pass_through_zones,
+      colors.passThrough,
+      colors.passThroughEdge,
+      1.5
+    );
+    // Other auxiliary device geometry (required zones, tunnels) stays subtle:
+    // on real lawns the device reports many of these boxes and full-strength
+    // accent strokes would dominate the map.
     ctx.globalAlpha = 0.45;
-    fillStrokePolys(scene.pass_through_zones, colors.passThrough, null);
     fillStrokePolys(scene.required_zones, null, colors.accent, 1);
     ctx.globalAlpha = 1;
     fillStrokePolys(scene.obstacles, colors.obstacle, null);
