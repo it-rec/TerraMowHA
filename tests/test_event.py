@@ -245,6 +245,20 @@ def test_error_fires_error_event() -> None:
     assert ent._trigger_event.call_args.args[1]["has_error"] is True
 
 
+def test_error_list_fault_fires_error_event() -> None:
+    # A fault that shows up only in the dp_116 error list (has_error false) must
+    # still fire an error event (issue #171).
+    hub = _hub()
+    ent = _entity(hub)
+    _added(ent)
+    _feed(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
+    _fire(ent)
+    ent._trigger_event.reset_mock()
+    asyncio.run(hub.on_error_list(json.dumps({"error_list": [{"code": 5}]})))
+    _fire(ent)
+    assert _last_event(ent) == EVENT_ERROR
+
+
 def test_connection_error_does_not_fire_error_event() -> None:
     # A dropped MQTT connection is routine (mower asleep/docked/DHCP change)
     # and must not fire a spurious error event; only a real device fault does.

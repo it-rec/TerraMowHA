@@ -217,8 +217,12 @@ def compute_phase(hub: TerraMowHub, *, connection_error_is_error: bool) -> str:
 
     Returns one of ``"error"``, ``"mowing"``, ``"paused"``, ``"returning"``
     or ``"docked"``.
+
+    A fault is read from ``has_active_error`` (both the dp_107 ``has_error``
+    flag and a non-empty dp_116 error list), because some faults populate only
+    one of the two signals (issue #171).
     """
-    if (connection_error_is_error and hub.connection_error) or hub.has_error:
+    if (connection_error_is_error and hub.connection_error) or hub.has_active_error:
         return "error"
     if hub.mission_state == MissionState.MISSION_STATE_RUNNING:
         if hub.mission in MOW_MISSIONS:
@@ -820,7 +824,14 @@ class TerraMowHub:
         if isinstance(data, dict):
             errors = data.get("error_list")
             if isinstance(errors, list):
+                changed = errors != self._error_list
                 self._error_list = errors
+                # dp_116 does not flow through on_mission_status, so notify the
+                # mower / event entities here too: a fault that shows up only in
+                # the error list (issue #171) must surface the moment it arrives,
+                # not wait for the next dp_107 push.
+                if changed:
+                    self._notify_state_listeners()
 
     async def on_event_data(self, payload: str) -> None:
         """Handle the event log (dp_123, undocumented).
@@ -2408,6 +2419,32 @@ class TerraMowHub:
     def has_error(self) -> bool:
         """Return whether the robot currently reports a fault (dp_107)."""
         return bool(self._task_status.get("has_error", False))
+
+    @property
+    def active_error_codes(self) -> list[int]:
+        """Integer error codes from the dp_116 active-error list (best-effort).
+
+        Entries are parsed defensively: the list is undocumented, so anything
+        that is not a ``{"code": int}`` mapping is skipped rather than trusted.
+        """
+        codes: list[int] = []
+        for entry in self._error_list:
+            if isinstance(entry, dict):
+                code = entry.get("code")
+                if isinstance(code, int) and not isinstance(code, bool):
+                    codes.append(code)
+        return codes
+
+    @property
+    def has_active_error(self) -> bool:
+        """Whether the mower reports a fault via either error signal.
+
+        The dp_107 ``has_error`` flag and the dp_116 ``error_list`` are
+        independent: some faults (e.g. "cannot find the base station",
+        issue #171) populate only the error list while ``has_error`` stays
+        false, so surfacing a problem must consider both.
+        """
+        return self.has_error or bool(self._error_list)
 
     @property
     def back_to_station_reason(self) -> str | None:

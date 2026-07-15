@@ -91,6 +91,33 @@ def test_active_errors_sensor_from_dp116() -> None:
     assert sensor.native_value is None
 
 
+def test_problem_sensor_reflects_dp116_and_dp107() -> None:
+    hub = _hub()
+    problem = _binary(hub, "problem")
+    # refreshes on both the dp_107 flag and the dp_116 error list
+    assert problem.entity_description.push_dp_ids == (107, 116)
+    # clean state -> off, no attributes
+    assert problem.is_on is False
+    assert problem.extra_state_attributes == {}
+    # a fault reported only via dp_116 turns the problem on and exposes the
+    # error codes (issue #171)
+    _feed(hub.on_error_list, {"error_list": [{"code": 3}, {"code": 7}]})
+    assert problem.is_on is True
+    assert problem.extra_state_attributes == {"error_codes": [3, 7]}
+    # an error list with no parseable codes still reads as a problem, but yields
+    # no error_codes attribute
+    _feed(hub.on_error_list, {"error_list": ["opaque"]})
+    assert problem.is_on is True
+    assert problem.extra_state_attributes == {}
+    # clearing the list turns it back off
+    _feed(hub.on_error_list, {"error_list": []})
+    assert problem.is_on is False
+    # the dp_107 has_error flag alone also trips it
+    _feed(hub.on_mission_status, {"state": "MISSION_STATE_RUNNING", "has_error": True})
+    assert problem.is_on is True
+    assert problem.extra_state_attributes == {}
+
+
 def test_last_event_sensor_from_dp123() -> None:
     hub = _hub()
     sensor = _sensor(hub, "last_event")

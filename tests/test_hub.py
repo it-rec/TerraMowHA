@@ -470,6 +470,59 @@ def test_activity_error_on_device_fault() -> None:
     assert activity is LawnMowerActivity.ERROR
 
 
+def test_has_active_error_combines_dp107_flag_and_dp116_list() -> None:
+    hub = _make_hub()
+    # neither signal set -> no active error, no codes
+    assert hub.has_active_error is False
+    assert hub.active_error_codes == []
+    # dp_116 alone (dp_107 has_error stays false) is enough to be a fault; only
+    # well-formed ``{"code": int}`` entries yield codes (issue #171)
+    asyncio.run(
+        hub.on_error_list(
+            json.dumps({"error_list": [{"code": 3}, {"code": 7}, "weird", {}]})
+        )
+    )
+    assert hub.has_active_error is True
+    assert hub.active_error_codes == [3, 7]
+    # clearing the list drops the fault again
+    asyncio.run(hub.on_error_list(json.dumps({"error_list": []})))
+    assert hub.has_active_error is False
+    assert hub.active_error_codes == []
+    # the dp_107 has_error flag alone still counts, with an empty error list
+    _feed_dp107(
+        hub,
+        mission="MISSION_GLOBAL_CLEAN",
+        state="MISSION_STATE_RUNNING",
+        has_error=True,
+    )
+    assert hub.has_active_error is True
+    assert hub.active_error_codes == []
+
+
+def test_dp116_error_notifies_listeners_and_faults_the_mower() -> None:
+    probe = _Activity()
+    assert (
+        probe.feed(mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
+        is LawnMowerActivity.MOWING
+    )
+    # A fault reported only via dp_116 (has_error false) must notify listeners
+    # and drive the mower to ERROR the moment it arrives (issue #171).
+    listener = MagicMock()
+    probe.hub.register_state_listener(listener)
+    asyncio.run(probe.hub.on_error_list(json.dumps({"error_list": [{"code": 5}]})))
+    listener.assert_called_once()
+    probe.entity.update_activity_from_state()
+    assert probe.entity.activity is LawnMowerActivity.ERROR
+    # An unchanged error list does not re-notify.
+    listener.reset_mock()
+    asyncio.run(probe.hub.on_error_list(json.dumps({"error_list": [{"code": 5}]})))
+    listener.assert_not_called()
+    # Clearing the list recovers the mower.
+    asyncio.run(probe.hub.on_error_list(json.dumps({"error_list": []})))
+    probe.entity.update_activity_from_state()
+    assert probe.entity.activity is LawnMowerActivity.MOWING
+
+
 def test_activity_error_on_connection_loss_and_recovery() -> None:
     probe = _Activity()
     assert probe.feed(mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING") is (

@@ -311,6 +311,41 @@ async def test_main_direction_numbers_follow_device_reported_mode(
 # ---------------------------------------------------------------------------
 
 
+async def test_dp116_error_list_surfaces_as_problem_and_error(
+    hass: HomeAssistant,
+) -> None:
+    """A fault reported only via dp_116 (has_error false) must surface (#171)."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+
+    mower = resolve_entity_id(hass, "lawn_mower")
+    problem = resolve_entity_id(hass, "binary_sensor", "problem")
+    active_errors = resolve_entity_id(hass, "sensor", "active_errors")
+
+    # Mowing cleanly, no error flag.
+    await push_dp(
+        hass,
+        hub,
+        107,
+        {"mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_RUNNING",
+         "has_error": False},
+    )
+    assert hass.states.get(mower).state == "mowing"
+    assert hass.states.get(problem).state == "off"
+
+    # The mower reports a fault only through the dp_116 error list.
+    await push_dp(hass, hub, 116, {"error_list": [{"code": 42}]})
+    assert hass.states.get(active_errors).state == "1"
+    assert hass.states.get(problem).state == "on"
+    assert hass.states.get(problem).attributes["error_codes"] == [42]
+    assert hass.states.get(mower).state == "error"
+
+    # Clearing the list recovers both the problem sensor and the mower.
+    await push_dp(hass, hub, 116, {"error_list": []})
+    assert hass.states.get(problem).state == "off"
+    assert hass.states.get(mower).state == "mowing"
+
+
 async def test_mission_status_pushes_update_real_states(hass: HomeAssistant) -> None:
     entry = await setup_terramow(hass)
     hub = entry.runtime_data.lawn_mower

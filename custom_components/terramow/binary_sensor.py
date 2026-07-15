@@ -103,7 +103,13 @@ def _firmware_upgrading(hub: TerraMowHub) -> bool | None:
 
 
 def _problem(hub: TerraMowHub) -> bool:
-    return bool(hub.has_error)
+    return bool(hub.has_active_error)
+
+
+def _problem_attributes(hub: TerraMowHub) -> dict[str, Any]:
+    """Expose the dp_116 error codes behind the fault, when any are known."""
+    codes = hub.active_error_codes
+    return {"error_codes": codes} if codes else {}
 
 
 def _rain_detected(hub: TerraMowHub) -> bool:
@@ -238,14 +244,18 @@ BINARY_SENSORS: tuple[TerraMowBinarySensorEntityDescription, ...] = (
         push_dp_ids=(108,),
         is_on_fn=_battery_flag("is_switch_on"),
     ),
-    # The dp_107 has_error flag exposed as a problem.
+    # Device fault, from either error signal: the dp_107 has_error flag or a
+    # non-empty dp_116 active-error list (the two are independent; some faults
+    # set only the list, issue #171). The dp_116 error codes ride along as an
+    # attribute.
     TerraMowBinarySensorEntityDescription(
         key="problem",
         translation_key="problem",
         device_class=BinarySensorDeviceClass.PROBLEM,
         entity_category=EntityCategory.DIAGNOSTIC,
-        push_dp_ids=(107,),
+        push_dp_ids=(107, 116),
         is_on_fn=_problem,
+        attributes_fn=_problem_attributes,
     ),
     # Signals when the robot returns due to rain.
     TerraMowBinarySensorEntityDescription(
