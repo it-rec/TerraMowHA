@@ -42,7 +42,7 @@ setting), then export **once** and line the timestamps up with what you did.
 | ID | Meaning | Observed payload | Surfaced as |
 |----|---------|------------------|-------------|
 | 102 | Device / network info; carries the real app firmware version | `{"version":"9.9.210","sn":"…","wifi_mac":"…","ip":"…","ssid":"…","warranty":{…}}` | firmware `update` entity version + device `sw_version` (identifiers kept private) |
-| 116 | Active-error list | `{"error_list":[]}` | **Active errors** sensor (count + `errors` attribute) |
+| 116 | Active-error list | `{"error_list":[{"code":…}]}` (empty on the reference device) | **Active errors** sensor (count + `errors` attribute); also drives the **Problem** binary sensor / lawn-mower **error** state / mower **error** event (any non-empty list is a fault, `error_codes` attribute), because dp_107 `has_error` alone misses some faults (issue [#171]) |
 | 118 | Map-save / upload progress (0–100 %). Ramps while the device saves its map after a mow (`SUB_MISSION_SAVING_MAP` / "map is being saved"), confirmed by watching it climb `1 → … → 100` in lock-step with the app's on-screen "map saving %" | **Map save progress** sensor (`%`; diagnostic, **disabled by default**) |
 | 119 | Command acknowledgement — echoes a command's `seq` with `code:0` (= OK) or a non-zero error code. **Field finding (V1000 fw28):** the device does *not* ack commands sent over local MQTT by this integration — dp_119 acks observed there carry epoch-like seqs belonging to the mower's internal (BLE/cloud) commander, and unparseable dp_122 payloads are dropped silently (no rejection code). Schedule-write negotiation therefore relies on `GET` verification | `{"seq":1783335426,"code":0}` | **Confirmed commands**: `terramow.start_select_region` (and the map card's tap-to-mow) waits for the ack and surfaces rejections; rejected fire-and-forget commands log a warning; last ack in diagnostics |
 | 109 | **Wi-Fi signal strength** of the mower's own link, in percent (~= `2 * (RSSI dBm + 100)`). Identified empirically: pinned at 98 right next to an access point (router-side −42 dBm), a noisy 52–68 on the lawn through a wall (router-side −75…−80 dBm), 98 inside a concrete cellar (rules out the earlier GNSS-quality guess) and uncorrelated with the battery level. Note the FRITZ!Box-style router-side reading measures the *other* end of the asymmetric link and differs by up to ~10 dBm, more across mesh-AP roaming / 2.4↔5 GHz switches | `{"int_value":62}` | **Wi-Fi signal** sensor (%; diagnostic) |
@@ -97,4 +97,24 @@ No observed dp_107 field marks "paused mid-session, will resume".
   tracks session progress. Any of these would let Active Job track true
   completion instead of relying on the timeout.
 
+**dp_107 `has_error` and dp_116 `error_list` are independent fault signals.**
+A user reported a fault visible in the app ("mower could not find the home
+station") that populated the dp_116 **error list** while dp_107 `has_error`
+stayed `false`, so the mower's **Problem** binary sensor read *off* even though
+the **Active errors** sensor showed the error (issue [#171]). The reference
+device (S1200 fw `9.9.210`) always reports an empty `error_list`, which is why
+this went unnoticed. The `error_list` clears when the fault resolves.
+
+- *Consequence:* fault surfacing reads **both** signals — `has_active_error` is
+  `has_error` OR a non-empty `error_list` — so the **Problem** binary sensor, the
+  lawn-mower **error** activity and the **error** event all fire for either. The
+  dp_116 error codes are surfaced as the Problem sensor's `error_codes`
+  attribute. dp_116 does not flow through `on_mission_status`, so its handler
+  notifies the mower / event listeners directly to surface the fault live.
+- *To watch for:* the dp_116 entry structure is only known to carry a `code`
+  (from the dp_123 event log's shape); a diagnostics export with a **populated**
+  `error_list` would confirm the fields and let error codes be mapped to
+  human-readable fault messages.
+
 [#142]: https://github.com/it-rec/TerraMowHA/issues/142
+[#171]: https://github.com/it-rec/TerraMowHA/issues/171
