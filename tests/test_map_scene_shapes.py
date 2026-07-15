@@ -70,6 +70,31 @@ def test_item_level_ellipse_now_renders() -> None:
     assert _fz_count(item) == 1
 
 
+def test_firmware_ellipse_semi_axes_now_render() -> None:
+    # The real V1000 no-go ellipse encoding: an "ellipse" sub-object with
+    # semi_major_axis / semi_minor_axis / rotation_angle and NO vertex list.
+    item = {
+        "id": 19,
+        "is_polygon": False,
+        "shape": "SHAPE_ELLIPSE",
+        "ellipse": {
+            "center": {"x": -13578, "y": -10382},
+            "semi_major_axis": 1292,
+            "semi_minor_axis": 888,
+            "rotation_angle": 0,
+        },
+    }
+    polygons = _extract_polygons(item)
+    assert len(polygons) == 1 and len(polygons[0]) == 36
+    # the sampled ring spans the full semi-axes about the centre
+    xs = [p[0] for p in polygons[0]]
+    ys = [p[1] for p in polygons[0]]
+    assert round(max(xs) - min(xs)) == 2 * 1292
+    assert round(max(ys) - min(ys)) == 2 * 888
+    # and it reaches the card/camera end-to-end
+    assert _fz_count(item) == 1
+
+
 def test_circle_by_radius_variants() -> None:
     assert len(_circle_points({"center": {"x": 0, "y": 0}, "radius": 2})) == 36
     assert len(_circle_points({"center": {"x": 0, "y": 0}, "r": 2})) == 36
