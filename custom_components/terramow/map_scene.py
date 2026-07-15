@@ -240,6 +240,198 @@ def _ellipse_points(ellipse: Any, segments: int = 36) -> list[tuple[float, float
     return result
 
 
+def _axis_aligned_rect(
+    x0: float, y0: float, x1: float, y1: float
+) -> list[tuple[float, float]]:
+    """Four corners of an axis-aligned rectangle from two opposite corners.
+
+    Normalizes the corner order so the result is always a valid,
+    non-self-intersecting quad regardless of which diagonal the device gave;
+    a degenerate (zero-extent) rectangle yields no polygon.
+    """
+    left, right = (x0, x1) if x0 <= x1 else (x1, x0)
+    top, bottom = (y0, y1) if y0 <= y1 else (y1, y0)
+    if right - left <= 0 or bottom - top <= 0:
+        return []
+    return [(left, top), (right, top), (right, bottom), (left, bottom)]
+
+
+def _rotated_rect(
+    center: tuple[float, float],
+    half_width: float,
+    half_height: float,
+    rotation_deg: float,
+) -> list[tuple[float, float]]:
+    """Four corners of a rectangle centered at ``center``, optionally rotated.
+
+    Corners keep a fixed winding, so rotation can never turn the quad into a
+    self-intersecting bow-tie.
+    """
+    rotation_rad = math.radians(rotation_deg)
+    cos_a = math.cos(rotation_rad)
+    sin_a = math.sin(rotation_rad)
+    cx, cy = center
+    local = [
+        (-half_width, -half_height),
+        (half_width, -half_height),
+        (half_width, half_height),
+        (-half_width, half_height),
+    ]
+    return [
+        (cx + lx * cos_a - ly * sin_a, cy + lx * sin_a + ly * cos_a)
+        for lx, ly in local
+    ]
+
+
+def _rect_rotation(rect: dict[str, Any]) -> float:
+    """Resolve a rectangle's rotation in degrees (mirrors the ellipse cascade)."""
+    rotation = coerce_float(rect.get("rotation"))
+    if rotation is None:
+        rotation = coerce_float(rect.get("angle"))
+    if rotation is None:
+        theta = coerce_float(rect.get("theta"))
+        if theta is not None and abs(theta) > math.pi * 4:
+            theta = math.degrees(theta / 1000.0)
+        rotation = theta
+    return rotation or 0.0
+
+
+def _rect_points(rect: Any) -> list[tuple[float, float]]:
+    """Approximate a rectangle / square descriptor as four polygon points.
+
+    Handles the common parametric encodings a no-go zone can arrive in when it
+    is not a vertex list: two opposite corners (``top_left``/``bottom_right``,
+    ``min``/``max`` or the flat ``min_x``/``min_y``/``max_x``/``max_y``
+    scalars), or a ``center`` plus a size (``width``/``height``, ``w``/``h``,
+    ``size_x``/``size_y``, ``half_width``/``half_height`` or a single square
+    ``size``/``side``) with an optional rotation. Returns [] when nothing
+    resolves, so a non-rectangle item is left for the other shape parsers.
+    """
+    if not isinstance(rect, dict):
+        return []
+
+    for lo_key, hi_key in (
+        ("top_left", "bottom_right"),
+        ("bottom_left", "top_right"),
+        ("min", "max"),
+    ):
+        lo = point_tuple(rect.get(lo_key))
+        hi = point_tuple(rect.get(hi_key))
+        if lo is not None and hi is not None:
+            return _axis_aligned_rect(lo[0], lo[1], hi[0], hi[1])
+
+    min_x = coerce_float(rect.get("min_x"))
+    min_y = coerce_float(rect.get("min_y"))
+    max_x = coerce_float(rect.get("max_x"))
+    max_y = coerce_float(rect.get("max_y"))
+    if min_x is not None and min_y is not None and max_x is not None and max_y is not None:
+        return _axis_aligned_rect(min_x, min_y, max_x, max_y)
+
+    half_width = coerce_float(rect.get("half_width"))
+    if half_width is None:
+        width = coerce_float(rect.get("width"))
+        if width is None:
+            width = coerce_float(rect.get("w"))
+        if width is None:
+            width = coerce_float(rect.get("size_x"))
+        if width is not None:
+            half_width = width / 2
+    half_height = coerce_float(rect.get("half_height"))
+    if half_height is None:
+        height = coerce_float(rect.get("height"))
+        if height is None:
+            height = coerce_float(rect.get("h"))
+        if height is None:
+            height = coerce_float(rect.get("size_y"))
+        if height is not None:
+            half_height = height / 2
+    side = coerce_float(rect.get("size"))
+    if side is None:
+        side = coerce_float(rect.get("side"))
+    if side is not None:
+        if half_width is None:
+            half_width = side / 2
+        if half_height is None:
+            half_height = side / 2
+    # A square may specify only one axis; mirror it onto the other.
+    if half_width is None and half_height is not None:
+        half_width = half_height
+    if half_height is None and half_width is not None:
+        half_height = half_width
+
+    center = point_tuple(rect.get("center"))
+    if center is None:
+        center = point_tuple(rect)
+    if (
+        center is not None
+        and half_width is not None
+        and half_height is not None
+        and half_width > 0
+        and half_height > 0
+    ):
+        return _rotated_rect(center, half_width, half_height, _rect_rotation(rect))
+
+    return []
+
+
+def _circle_points(circle: Any, segments: int = 36) -> list[tuple[float, float]]:
+    """Approximate a circle descriptor (``center`` + ``radius``) as points.
+
+    A circle is an ellipse with equal radii; this reads the single-radius
+    encodings the ellipse parser does not (``radius`` / ``r`` / ``diameter``)
+    and delegates the sampling to :func:`_ellipse_points`, leaving that tested
+    helper untouched.
+    """
+    if not isinstance(circle, dict):
+        return []
+    radius = coerce_float(circle.get("radius"))
+    if radius is None:
+        radius = coerce_float(circle.get("r"))
+    if radius is None:
+        diameter = coerce_float(circle.get("diameter"))
+        if diameter is not None:
+            radius = diameter / 2
+    if radius is None or radius <= 0:
+        return []
+    center = point_tuple(circle.get("center"))
+    if center is None:
+        center = point_tuple(circle)
+    if center is None:
+        points = _collect_recursive_points(circle, limit=8)
+        center = points[0] if points else None
+    if center is None:
+        return []
+    return _ellipse_points(
+        {
+            "center": {"x": center[0], "y": center[1]},
+            "radius_x": radius,
+            "radius_y": radius,
+        },
+        segments,
+    )
+
+
+def _parametric_shape_points(obj: Any) -> list[tuple[float, float]]:
+    """Points for a parametric shape descriptor (rectangle, circle or ellipse).
+
+    First match wins: a rectangle is tried before the ellipse/circle forms so
+    a ``center`` + ``width``/``height`` descriptor renders as a rectangle
+    rather than an inscribed ellipse (an ellipse is expected to carry
+    ``radius_x``/``radius_y`` or live under an ``ellipse`` key). Returns [] for
+    anything that is not a recognizable parametric shape.
+    """
+    rect = _rect_points(obj)
+    if len(rect) >= 3:
+        return rect
+    circle = _circle_points(obj)
+    if len(circle) >= 3:
+        return circle
+    ellipse = _ellipse_points(obj)
+    if len(ellipse) >= 3:
+        return ellipse
+    return []
+
+
 def _extract_polygons(item: Any) -> list[list[tuple[float, float]]]:
     """Extract the list of polygons from an object."""
     polygons: list[list[tuple[float, float]]] = []
@@ -259,6 +451,23 @@ def _extract_polygons(item: Any) -> list[list[tuple[float, float]]]:
     ellipse_points = _ellipse_points(ellipse)
     if len(ellipse_points) >= 3:
         polygons.append(ellipse_points)
+
+    # A parametric shape may be nested under its own key, mirroring the
+    # existing "ellipse" handling. These keys were previously ignored, so
+    # appending them cannot change the output for any input handled before.
+    for key in ("circle", "rect", "rectangle", "bbox", "bounds"):
+        shape_points = _parametric_shape_points(item.get(key))
+        if len(shape_points) >= 3:
+            polygons.append(shape_points)
+
+    # Finally, the item itself may be a bare parametric descriptor (a circle,
+    # ellipse or rectangle no-go zone carrying no vertex list). Gated on "no
+    # polygon found yet" so a real polygon / nested-ellipse item is never also
+    # re-derived as a curve — the working paths above stay byte-for-byte.
+    if not polygons:
+        shape_points = _parametric_shape_points(item)
+        if len(shape_points) >= 3:
+            polygons.append(shape_points)
 
     return polygons
 
@@ -792,6 +1001,68 @@ def build_scene(
     return scene
 
 
+# Zone collections whose items are geometry descriptors; the diagnostic below
+# reports any whose shape the extractor could not turn into something drawable.
+_POLYGON_ZONE_KEYS = (
+    "forbidden_zones",
+    "physical_forbidden_zones",
+    "pass_through_zones",
+    "required_zones",
+    "obstacles",
+)
+_TUNNEL_ZONE_KEYS = ("cross_boundary_tunnels", "virtual_cross_boundary_tunnels")
+
+
+def _item_yields_geometry(key: str, item: Any) -> bool:
+    """Whether ``item`` produced any drawable geometry for collection ``key``.
+
+    Mirrors how ``build_scene`` extracts each collection: polylines for
+    virtual walls, either shape for tunnels, polygons for everything else.
+    """
+    if key == "virtual_walls":
+        return bool(_extract_polylines(item))
+    if key in _TUNNEL_ZONE_KEYS:
+        return bool(_extract_polygons(item) or _extract_polylines(item))
+    return bool(_extract_polygons(item))
+
+
+def zone_geometry_diagnostics(map_data: dict[str, Any]) -> dict[str, Any]:
+    """Report zone items whose shape produced no drawable geometry.
+
+    Answers "why isn't my no-go zone showing?" without a full map capture: for
+    every zone collection that has at least one item the extractor could not
+    render, it reports how many items were present, how many rendered, and the
+    sorted union of the JSON keys on the dropped items. A shape the extractor
+    does not yet understand (e.g. a circle/rectangle whose real field names
+    differ from those handled here) surfaces with its actual field names —
+    exactly what is needed to teach the extractor that encoding. Coordinates
+    are never included, only key names. Empty when every zone renders.
+    """
+    map_data = map_data if isinstance(map_data, dict) else {}
+    diagnostics: dict[str, Any] = {}
+    for key in (*_POLYGON_ZONE_KEYS, "virtual_walls", *_TUNNEL_ZONE_KEYS):
+        items = map_data.get(key)
+        if not isinstance(items, list) or not items:
+            continue
+        rendered = 0
+        dropped_keys: set[str] = set()
+        for item in items:
+            if _item_yields_geometry(key, item):
+                rendered += 1
+            elif isinstance(item, dict):
+                dropped_keys.update(str(inner_key) for inner_key in item)
+        dropped = len(items) - rendered
+        if dropped <= 0:
+            continue
+        diagnostics[key] = {
+            "raw_item_count": len(items),
+            "rendered_item_count": rendered,
+            "dropped_item_count": dropped,
+            "dropped_item_keys": sorted(dropped_keys),
+        }
+    return diagnostics
+
+
 def build_render_metadata(
     scene: dict[str, Any],
     map_data: dict[str, Any],
@@ -874,6 +1145,10 @@ def build_render_metadata(
         },
         "scene_counts": scene.get("scene_counts", {}),
         "rendered_layers": scene.get("rendered_layers", []),
+        # Zone items whose shape produced no drawable geometry, with the JSON
+        # keys of the dropped items — self-reports a device shape encoding the
+        # extractor does not yet understand. Empty when everything renders.
+        "geometry_diagnostics": zone_geometry_diagnostics(map_data),
         "unrendered_fields": {
             "map": sorted(set(map_data.keys()) - HANDLED_MAP_FIELDS),
             "path": {

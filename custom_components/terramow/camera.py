@@ -80,6 +80,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             "present_top_level_fields",
             "unrendered_fields",
             "scene_counts",
+            "geometry_diagnostics",
             "rendered_layers",
             "clean_info_summary",
             "mow_param_summary",
