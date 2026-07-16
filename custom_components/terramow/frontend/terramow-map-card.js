@@ -172,9 +172,10 @@ function legendSwatch(kind, c) {
         `<rect x="3" y="4" width="14" height="12" rx="2" fill="${c.zonePending}" stroke="${c.robot}" stroke-width="1.6"/>`
       );
     case "dock":
+      // House = "home / charging base"; matches the on-map station glyph.
       return svg(
-        `<path d="M10,3 L17,9 H3 Z" fill="${c.station}"/>` +
-          `<rect x="4.5" y="8.5" width="11" height="8" rx="1.5" fill="${c.station}"/>`
+        `<path d="M10,3 L17,9.5 L3,9.5 Z" fill="${c.station}"/>` +
+          `<rect x="5" y="9" width="10" height="7.5" fill="${c.station}"/>`
       );
     case "order":
       return svg(
@@ -2528,24 +2529,22 @@ class TerramowMapCard extends HTMLElement {
   _drawStation(ctx, station, view, colors) {
     ctx.save();
     ctx.translate(station.x, station.y);
-    // Station body is drawn nose-up; theta rotates it into the map frame
-    // (same convention as the camera renderer: theta - 90°, clockwise).
-    ctx.rotate((station.theta || 0) - Math.PI / 2);
-    const size = Math.max(300, 14 / view.scale); // >= 30 cm, >= 14 px
+    // A house = "home / charging base": instantly readable, and drawn
+    // upright (a house has no meaningful heading, so station.theta is not
+    // applied). Counter-rotate the configured map rotation so it stays level.
+    ctx.rotate(-this._rot);
+    const s = Math.max(300, 14 / view.scale); // >= 30 cm, >= 14 px
     ctx.fillStyle = colors.station;
-    const r = size * 0.25;
-    const x0 = -size / 2;
-    const y0 = -size / 2;
+    // roof
     ctx.beginPath();
-    if (ctx.roundRect) {
-      ctx.roundRect(x0, y0, size, size, r);
-    } else {
-      ctx.rect(x0, y0, size, size);
-    }
+    ctx.moveTo(0, -0.45 * s);
+    ctx.lineTo(0.45 * s, -0.05 * s);
+    ctx.lineTo(-0.45 * s, -0.05 * s);
+    ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = colors.bg;
+    // body
     ctx.beginPath();
-    ctx.arc(0, -size * 0.18, size * 0.14, 0, Math.PI * 2);
+    ctx.rect(-0.32 * s, -0.05 * s, 0.64 * s, 0.5 * s);
     ctx.fill();
     ctx.restore();
   }
