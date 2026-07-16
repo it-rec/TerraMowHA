@@ -554,6 +554,24 @@ async def test_empty_scene_payload(hass: HomeAssistant) -> None:
     assert payload["path_map_mismatch"] is False
 
 
+async def test_map_name_falls_back_to_map_id_when_unnamed(
+    hass: HomeAssistant,
+) -> None:
+    """An unnamed map still gets a chip name ('Map #<id>'), so the card's
+    map/area chip renders instead of being hidden entirely (issue #212)."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    # a named map keeps its name
+    hub._apply_map_data({**MAP_DATA, "name": "Garden"})
+    assert build_scene_payload(hub)["map_name"] == "Garden"
+
+    # an empty name falls back to "Map #<id>"
+    hub._apply_map_data({**MAP_DATA, "name": ""})
+    assert build_scene_payload(hub)["map_name"] == "Map #1"
+
+
 async def test_payload_carries_main_direction_angle(hass: HomeAssistant) -> None:
     """The configured stripe direction reaches the card payload in degrees."""
     entry = await setup_terramow(hass)
