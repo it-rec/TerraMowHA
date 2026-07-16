@@ -592,7 +592,12 @@ class TerramowMapCard extends HTMLElement {
         color: var(--warning-color, #ffa726);
       }
       .chip.warn svg { width: 13px; height: 13px; }
-      .wrap.narrow .chip.map { display: none; }
+      .chip.map .m-name + .m-area::before { content: " · "; }
+      /* Narrow (phone) cards: drop the map name, keep just the area to save
+         space; hide the chip entirely only if there's no area to show. */
+      .wrap.narrow .chip.map .m-name { display: none; }
+      .wrap.narrow .chip.map .m-name + .m-area::before { content: ""; }
+      .wrap.narrow .chip.map:not(:has(.m-area)) { display: none; }
       .side {
         position: absolute; top: 8px; right: 8px; display: flex;
         flex-direction: column; gap: 6px;
@@ -940,13 +945,20 @@ class TerramowMapCard extends HTMLElement {
     if (this._scene && this._scene.map_name) {
       const chip = document.createElement("span");
       chip.className = "chip map";
-      let label = this._scene.map_name;
+      // Name + area as separate spans so narrow (phone) cards can drop the
+      // name and keep just the area, instead of hiding the whole chip.
+      const nameSpan = document.createElement("span");
+      nameSpan.className = "m-name";
+      nameSpan.textContent = this._scene.map_name;
+      chip.appendChild(nameSpan);
+      // total_area is in units of 0.1 m² (same as sensor.map_area) — NOT mm²
       const area = Number(this._scene.total_area);
       if (Number.isFinite(area) && area > 0) {
-        // total_area arrives in square millimetres
-        label += ` · ${Math.round(area / 1e6)} m²`;
+        const areaSpan = document.createElement("span");
+        areaSpan.className = "m-area";
+        areaSpan.textContent = `${Math.round(area / 10)} m²`;
+        chip.appendChild(areaSpan);
       }
-      chip.textContent = label;
       chips.push(chip);
     }
     this._hud.replaceChildren(...chips);

@@ -45,7 +45,7 @@ _LOGGER = logging.getLogger(__name__)
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.12.0"
+CARD_VERSION = "1.12.2"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -329,7 +329,17 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
 
     payload: dict[str, Any] = {
         "map_id": map_data.get("id"),
-        "map_name": map_data.get("name"),
+        # Fall back to "Map #<id>" for unnamed maps, mirroring the PNG camera,
+        # so the card's map/area chip still renders (else an empty name hides
+        # the whole chip, area included).
+        "map_name": (
+            map_data.get("name")
+            or (
+                f"Map #{map_data['id']}"
+                if map_data.get("id") is not None
+                else None
+            )
+        ),
         "map_state": map_data.get("map_state"),
         "total_area": map_data.get("total_area"),
         # True when the reported path belongs to a different map than the one
