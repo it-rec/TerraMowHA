@@ -172,9 +172,11 @@ function legendSwatch(kind, c) {
         `<rect x="3" y="4" width="14" height="12" rx="2" fill="${c.zonePending}" stroke="${c.robot}" stroke-width="1.6"/>`
       );
     case "dock":
+      // Match the on-map station glyph: a rounded square with a small
+      // bg-coloured dot near the top (not a house).
       return svg(
-        `<path d="M10,3 L17,9 H3 Z" fill="${c.station}"/>` +
-          `<rect x="4.5" y="8.5" width="11" height="8" rx="1.5" fill="${c.station}"/>`
+        `<rect x="3.5" y="3.5" width="13" height="13" rx="3.2" fill="${c.station}"/>` +
+          `<circle cx="10" cy="7.7" r="1.8" fill="${c.bg}"/>`
       );
     case "order":
       return svg(
