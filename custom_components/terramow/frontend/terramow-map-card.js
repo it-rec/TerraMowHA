@@ -943,8 +943,8 @@ class TerramowMapCard extends HTMLElement {
       let label = this._scene.map_name;
       const area = Number(this._scene.total_area);
       if (Number.isFinite(area) && area > 0) {
-        // total_area arrives in square millimetres
-        label += ` · ${Math.round(area / 1e6)} m²`;
+        // total_area is in units of 0.1 m² (same as sensor.map_area) — NOT mm²
+        label += ` · ${Math.round(area / 10)} m²`;
       }
       chip.textContent = label;
       chips.push(chip);
