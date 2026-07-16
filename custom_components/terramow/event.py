@@ -133,7 +133,12 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
                 hub.mission_state.value if hub.mission_state is not None else None
             ),
             "back_to_station_reason": hub.back_to_station_reason,
-            "has_error": hub.has_error,
+            # Mirror the *combined* fault signal that actually fires the ``error``
+            # event (compute_phase reads ``has_active_error``), not the raw dp_107
+            # flag. A fault that only populates the dp_116 active-error list leaves
+            # dp_107 ``has_error`` false, which made the attribute contradict the
+            # ``error`` event it was attached to (issue #171).
+            "has_error": hub.has_active_error,
         }
 
     def _display_key(self) -> tuple[Any, Any]:

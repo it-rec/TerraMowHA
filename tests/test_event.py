@@ -257,6 +257,10 @@ def test_error_list_fault_fires_error_event() -> None:
     asyncio.run(hub.on_error_list(json.dumps({"error_list": [{"code": 5}]})))
     _fire(ent)
     assert _last_event(ent) == EVENT_ERROR
+    # The event's has_error attribute mirrors the combined fault signal that
+    # fired it, so it reads True even though the raw dp_107 flag is false (#171).
+    assert ent._trigger_event.call_args.args[1]["has_error"] is True
+    assert hub.has_error is False
 
 
 def test_connection_error_does_not_fire_error_event() -> None:
