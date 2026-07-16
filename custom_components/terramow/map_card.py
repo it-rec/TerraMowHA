@@ -45,7 +45,7 @@ _LOGGER = logging.getLogger(__name__)
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.13.5"
+CARD_VERSION = "1.14.0"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -511,7 +511,25 @@ def build_status_payload(hub: TerraMowHub) -> dict[str, Any]:
         if work_data.get("work_duration") is not None:
             work["duration_s"] = work_data.get("work_duration")
 
-    return {"battery": battery or None, "work": work or None}
+    # Mission info for the HUD (issue #205): raw enum values, only the
+    # non-idle ones (the card prettifies them). Uses the decayed display_*
+    # so a stale SAVING_MAP/RUNNING doesn't linger (issue #142).
+    status: dict[str, Any] = {}
+    if hub.mission.value != "MISSION_IDLE":
+        status["mission"] = hub.mission.value
+    if hub.display_sub_mission.value != "SUB_MISSION_IDLE":
+        status["sub_mission"] = hub.display_sub_mission.value
+    if hub.display_mission_state.value != "MISSION_STATE_IDLE":
+        status["state"] = hub.display_mission_state.value
+    reason = hub.back_to_station_reason
+    if reason and reason != "BACK_TO_STATION_REASON_NONE":
+        status["back_to_station_reason"] = reason
+
+    return {
+        "battery": battery or None,
+        "work": work or None,
+        "status": status or None,
+    }
 
 
 def _resolve_hub(hass: HomeAssistant, entity_id: str) -> TerraMowHub | None:
