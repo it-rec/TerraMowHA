@@ -373,7 +373,12 @@ async def test_status_payload(hass: HomeAssistant) -> None:
     hub = entry.runtime_data.lawn_mower
     assert hub is not None
 
-    assert build_status_payload(hub) == {"battery": None, "work": None}
+    # Fresh: everything idle -> no chips, and status (all-idle) collapses to None
+    assert build_status_payload(hub) == {
+        "battery": None,
+        "work": None,
+        "status": None,
+    }
 
     hub._battery_level = 87
     hub._battery_status = {"charger_connected": True}
@@ -389,6 +394,39 @@ async def test_status_payload(hass: HomeAssistant) -> None:
     # Work data without any numeric fields yields no work chip payload
     hub._current_work_data = {"type": "WORK_TYPE_NORMAL"}
     assert build_status_payload(hub)["work"] is None
+
+
+async def test_status_payload_mission_info(hass: HomeAssistant) -> None:
+    """Non-idle mission fields (#205) reach the HUD payload; idle ones don't."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    # An active mow, returned to base for the night
+    await hub.on_mission_status(
+        json.dumps(
+            {
+                "mission": "MISSION_GLOBAL_CLEAN",
+                "sub_mission": "SUB_MISSION_RETURN_TO_BASE",
+                "state": "MISSION_STATE_RUNNING",
+                "back_to_station_reason": "BACK_TO_STATION_REASON_NIGHT_TIME",
+            }
+        )
+    )
+    assert build_status_payload(hub)["status"] == {
+        "mission": "MISSION_GLOBAL_CLEAN",
+        "sub_mission": "SUB_MISSION_RETURN_TO_BASE",
+        "state": "MISSION_STATE_RUNNING",
+        "back_to_station_reason": "BACK_TO_STATION_REASON_NIGHT_TIME",
+    }
+
+    # A NONE reason is treated as absent
+    await hub.on_mission_status(
+        json.dumps({"back_to_station_reason": "BACK_TO_STATION_REASON_NONE"})
+    )
+    assert (
+        "back_to_station_reason" not in build_status_payload(hub)["status"]
+    )
 
 
 async def test_paths_append_delta(

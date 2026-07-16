@@ -130,6 +130,19 @@ function svgIcon(path) {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${path}"/></svg>`;
 }
 
+/** Turn a raw mission enum (e.g. "MISSION_GLOBAL_CLEAN") into readable text
+ *  ("Global clean") by stripping the known prefix and title-casing. */
+function prettyStatus(v) {
+  if (typeof v !== "string" || !v) {
+    return "";
+  }
+  return v
+    .replace(/^(MISSION_STATE_|SUB_MISSION_|MISSION_|BACK_TO_STATION_REASON_)/, "")
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/^./, (c) => c.toUpperCase());
+}
+
 /**
  * A 20×20 swatch mirroring an on-map glyph, for the legend. Colours come
  * from the resolved palette so the swatch matches the current theme exactly.
@@ -301,6 +314,7 @@ class TerramowMapCard extends HTMLElement {
     this._robot = null;
     this._battery = null;
     this._work = null;
+    this._status = null;
     this._robotPrev = null;
     this._robotAnimStart = 0;
     this._view = null; // {scale, tx, ty}
@@ -503,6 +517,7 @@ class TerramowMapCard extends HTMLElement {
       this._robot = msg.robot;
       this._battery = msg.battery || null;
       this._work = msg.work || null;
+      this._status = msg.status || null;
       if (this._follow && this._robot) {
         this._centerOnRobot();
       }
@@ -956,6 +971,35 @@ class TerramowMapCard extends HTMLElement {
         progress
       )} %`;
       chips.push(chip);
+    }
+    // Mission detail (#205): what the mower is doing + why it went home,
+    // only when there's something non-idle to report. Saves a dashboard card.
+    const st = this._status;
+    if (st) {
+      const missionText = prettyStatus(st.mission);
+      const parts = [];
+      if (st.mission && st.mission !== "MISSION_IDLE") {
+        parts.push(missionText);
+      }
+      if (
+        st.sub_mission &&
+        st.sub_mission !== "SUB_MISSION_IDLE" &&
+        prettyStatus(st.sub_mission) !== missionText
+      ) {
+        parts.push(prettyStatus(st.sub_mission));
+      }
+      if (
+        st.back_to_station_reason &&
+        st.back_to_station_reason !== "BACK_TO_STATION_REASON_NONE"
+      ) {
+        parts.push(prettyStatus(st.back_to_station_reason));
+      }
+      if (parts.length) {
+        const chip = document.createElement("span");
+        chip.className = "chip mission";
+        chip.textContent = parts.join(" · ");
+        chips.push(chip);
+      }
     }
     if (this._scene && this._scene.path_map_mismatch) {
       const chip = document.createElement("span");
