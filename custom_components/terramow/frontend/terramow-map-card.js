@@ -27,6 +27,7 @@
  *   rotate_gesture: true       # two-finger rotate the map (compass button resets)
  *   rotation: 0                # default map rotation (degrees); compass resets here
  *   fit_height: 420            # card canvas height in px
+ *   fit_padding: 0.95          # fraction of the card the lawn fills on fit-to-view
  *
  * NOTE: registered as a classic "js" Lovelace resource, not an ES "module".
  * A "module" served from the browser cache is not re-executed, so the custom
@@ -337,6 +338,7 @@ class TerramowMapCard extends HTMLElement {
       rotate_gesture: true,
       rotation: 0,
       fit_height: 420,
+      fit_padding: 0.95,
       ...config,
     };
     this._rot = ((Number(this._config.rotation) || 0) * Math.PI) / 180;
@@ -1819,10 +1821,18 @@ class TerramowMapCard extends HTMLElement {
   }
 
   _fitView() {
-    if (!this._scene || !this._scene.bounds || !this._root) {
+    if (!this._scene || !this._root) {
       return;
     }
-    const [minX, minY, maxX, maxY] = this._scene.bounds;
+    // Fit to the drawn content (lawn, zones, walls, station) rather than the
+    // full scanned extent, which the card never draws — otherwise the view
+    // pads out to an invisible rectangle and leaves the lawn tiny. Older
+    // payloads without content_bounds fall back to the full bounds.
+    const box = this._scene.content_bounds || this._scene.bounds;
+    if (!box) {
+      return;
+    }
+    const [minX, minY, maxX, maxY] = box;
     const w = this._root.clientWidth;
     const h = this._root.clientHeight;
     if (w <= 0 || h <= 0) {
@@ -1843,7 +1853,10 @@ class TerramowMapCard extends HTMLElement {
     const rMaxY = Math.max(...corners.map((c) => c[1]));
     const bw = Math.max(1, rMaxX - rMinX);
     const bh = Math.max(1, rMaxY - rMinY);
-    const scale = Math.min(w / bw, h / bh) * 0.9;
+    // fit_padding is the fraction of the card the content fills (0.5–1.0);
+    // the remainder is breathing room around the edges.
+    const pad = Math.min(Math.max(Number(this._config.fit_padding) || 0.95, 0.5), 1);
+    const scale = Math.min(w / bw, h / bh) * pad;
     this._view = {
       scale,
       tx: (w - bw * scale) / 2 - rMinX * scale,
@@ -1920,7 +1933,7 @@ class TerramowMapCard extends HTMLElement {
       passThrough: dark ? "rgba(255,170,60,0.16)" : "rgba(255,150,0,0.14)",
       passThroughEdge: dark ? "#ffb74d" : "#ef6c00",
       wall: dark ? "#ff8a80" : "#d32f2f",
-      coverage: dark ? "rgba(48,220,187,0.20)" : "rgba(48,180,150,0.22)",
+      coverage: dark ? "rgba(26,150,122,0.42)" : "rgba(20,130,105,0.42)",
       historyPath: dark ? "rgba(180,220,180,0.35)" : "rgba(90,140,90,0.35)",
       currentPath: dark ? "#7fd4ff" : "#0288d1",
       station: dark ? "#9ccc65" : "#558b2f",
@@ -2721,6 +2734,11 @@ class TerramowMapCardEditor extends HTMLElement {
         name: "fit_height",
         label: "Card height (px)",
         selector: { number: { min: 200, max: 1200, mode: "box" } },
+      },
+      {
+        name: "fit_padding",
+        label: "Zoom fill (fraction of card the lawn fills)",
+        selector: { number: { min: 0.5, max: 1, step: 0.01, mode: "box" } },
       },
     ];
 

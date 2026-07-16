@@ -118,7 +118,7 @@ COLOR_TRANSPARENT = (255, 255, 255, 0)
 
 COLOR_PLACEHOLDER_BG = (200, 200, 200, 255)
 COLOR_HATCH = (255, 120, 70, 88)
-COLOR_COVERAGE = (48, 220, 187, 64)
+COLOR_COVERAGE = (20, 130, 105, 107)
 
 RGBA = tuple[int, int, int, int]
 
@@ -196,7 +196,7 @@ DARK_PALETTE = replace(
     obstacle_fill=(125, 130, 140, 150),
     obstacle_outline=(170, 175, 185, 255),
     edge_line=(110, 117, 128, 220),
-    coverage=(48, 220, 187, 56),
+    coverage=(26, 150, 122, 107),
     origin=(232, 234, 238, 180),
     placeholder_bg=(38, 43, 51, 255),
 )

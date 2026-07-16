@@ -54,6 +54,12 @@ the robot marker moves without image reloads.
 | `show_hud` | `true` | Status chips (state, battery, job progress, map) |
 | `rotation` | `0` | Rotate the map view (degrees) |
 | `fit_height` | `420` | Card canvas height in pixels |
+| `fit_padding` | `0.95` | Fraction of the card the lawn fills on fit-to-view (`0.5`–`1.0`); higher zooms in tighter |
+
+Fit-to-view frames the lawn itself — the drawn zones, no-go areas and
+station — not the wider scanned area, so a small lawn on a large map fills
+the card instead of sitting in empty space. Raise `fit_padding` toward `1`
+for an even tighter zoom, or lower it for more margin.
 
 The card is wall-tablet friendly: static geometry is cached between
 frames, path updates stream as point deltas, and the live feed pauses
