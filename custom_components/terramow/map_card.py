@@ -367,13 +367,23 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
     # Bounds over the static geometry only — NOT the paths. A growing path
     # would otherwise shift the bounds on every mowing tick, defeating both
     # the paths_append delta and a stable fit-to-view on the card.
-    payload["bounds"] = _geometry_bounds(payload)
+    payload["bounds"] = _geometry_bounds(payload, include_extent=True)
+    # Tighter bounds over the drawn content only, excluding map_extent (the
+    # full scanned occupancy grid, which the card never draws). Fitting the
+    # view to this fills the card with the lawn instead of padding it out to
+    # an invisible rectangle. Falls back to the full bounds when the scene
+    # has nothing but the extent yet.
+    payload["content_bounds"] = (
+        _geometry_bounds(payload, include_extent=False) or payload["bounds"]
+    )
     return payload
 
 
-def _geometry_bounds(payload: dict[str, Any]) -> list[int] | None:
+def _geometry_bounds(
+    payload: dict[str, Any], *, include_extent: bool
+) -> list[int] | None:
     """Bounding box [minx, miny, maxx, maxy] of the payload's geometry."""
-    points = list(_iter_geometry_points(payload))
+    points = list(_iter_geometry_points(payload, include_extent=include_extent))
     if not points:
         return None
     xs = [point[0] for point in points]
@@ -381,9 +391,12 @@ def _geometry_bounds(payload: dict[str, Any]) -> list[int] | None:
     return [min(xs), min(ys), max(xs), max(ys)]
 
 
-def _iter_geometry_points(payload: dict[str, Any]) -> Iterator[list[int]]:
+def _iter_geometry_points(
+    payload: dict[str, Any], *, include_extent: bool
+) -> Iterator[list[int]]:
     """Yield every static-geometry point of a scene payload."""
-    yield from payload["map_extent"]
+    if include_extent:
+        yield from payload["map_extent"]
     for region in payload["regions"]:
         yield from region["boundary"]
         for line in region["edge_lines"]:

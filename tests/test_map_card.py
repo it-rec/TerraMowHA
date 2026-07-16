@@ -476,6 +476,29 @@ async def test_bounds_stable_while_path_grows(hass: HomeAssistant) -> None:
     assert build_scene_payload(hub)["bounds"] == bounds_before
 
 
+async def test_content_bounds_excludes_map_extent(hass: HomeAssistant) -> None:
+    """content_bounds hugs the drawn geometry, not the wider scanned extent."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    # A scanned grid far larger than the lawn: 500x500 cells at 100mm each
+    # => extent reaches 50 000mm, while the regions top out near 10 000mm.
+    oversized = {**MAP_DATA, "width": 500, "height": 500}
+    hub._apply_map_data(oversized)
+    hub._apply_path_data(PATH_DATA)
+
+    payload = build_scene_payload(hub)
+    bounds = payload["bounds"]
+    content = payload["content_bounds"]
+    assert bounds is not None and content is not None
+    # The full bounds stretch to the extent corner; the content bounds do not.
+    assert bounds[2] == 50000 and bounds[3] == 50000
+    assert content[2] < bounds[2] and content[3] < bounds[3]
+    # Every drawn point still fits inside the content box.
+    assert content[2] >= 10000 and content[3] >= 8000
+
+
 async def test_unsubscribe_cancels_pending_scene_push(
     hass: HomeAssistant, hass_ws_client: Any, monkeypatch: Any
 ) -> None:
@@ -521,6 +544,7 @@ async def test_empty_scene_payload(hass: HomeAssistant) -> None:
     payload = build_scene_payload(hub)
     assert payload["map_name"] is None
     assert payload["bounds"] is None
+    assert payload["content_bounds"] is None
     assert payload["regions"] == []
     assert payload["station"] is None
     assert payload["current_path"] == []
