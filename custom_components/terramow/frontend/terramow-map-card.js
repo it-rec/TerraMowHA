@@ -2480,10 +2480,12 @@ class TerramowMapCard extends HTMLElement {
           continue;
         }
         const rad = (angle * Math.PI) / 180;
-        // Device angles are math-convention (counter-clockwise from +x) in
-        // a y-up world; canvas y points down, so negate the y component.
+        // The zone geometry is drawn in the device frame straight to canvas
+        // (no y-flip), so the lane vector must use the same +y sense. The old
+        // `-sin` mirrored the arrow — invisible at 0/90/180/270 (sin=0 or the
+        // double-headed symmetry) but wrong at diagonal angles (issue #209).
         const dx = Math.cos(rad);
-        const dy = -Math.sin(rad);
+        const dy = Math.sin(rad);
         // Keep the arrow's TOP edge a constant screen gap below the zone
         // label: base gap plus the arrow's screen-vertical half-extent (a
         // vertical arrow reaches `half` back up toward the text, a
