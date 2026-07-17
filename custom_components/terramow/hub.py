@@ -14,6 +14,7 @@ import contextlib
 import gzip
 import json
 import logging
+import os
 import random
 import re
 import threading
@@ -71,6 +72,13 @@ APP_TOPIC_PATTERN = re.compile(r"^data_point/(\d+)/app$")
 # diagnostics export stays small; only value changes are recorded (see
 # ``on_mqtt_message``), so this is a window of transitions, not raw messages.
 UNKNOWN_DP_HISTORY_MAXLEN = 30
+
+# Persistent JSONL trace of undocumented-dp *changes*, written to the HA config
+# dir only while debug logging is enabled. Unlike the in-memory history above it
+# survives restarts, so slow-moving undocumented dps can be decoded over days.
+# Rotated once at the size cap so it cannot grow without bound.
+UNKNOWN_DP_LOG_FILE = "terramow_unknown_dp.jsonl"
+UNKNOWN_DP_LOG_MAX_BYTES = 5 * 1024 * 1024
 
 # The firmware keeps reporting ``state=RUNNING`` / ``sub_mission=SAVING_MAP``
 # after it has docked and finished uploading the map, and never clears it on
@@ -1615,6 +1623,33 @@ class TerraMowHub:
         self.connection_error = False
         self._notify_state_listeners()
 
+    def _persist_unknown_dp(
+        self, timestamp: float, dp_id: int, payload: str
+    ) -> None:
+        """Append an undocumented-dp change to a JSONL file for offline decoding.
+
+        Called only while debug logging is enabled. The file lives in the HA
+        config dir and survives restarts (unlike the in-memory history), so
+        slow-moving undocumented dps can be traced across sessions. Rotated once
+        at ``UNKNOWN_DP_LOG_MAX_BYTES`` so it never grows without bound. Runs on
+        the MQTT worker thread; any filesystem error is swallowed so a full or
+        read-only disk can never break message handling.
+        """
+        path = self.hass.config.path(UNKNOWN_DP_LOG_FILE)
+        try:
+            if os.path.getsize(path) >= UNKNOWN_DP_LOG_MAX_BYTES:
+                os.replace(path, f"{path}.1")
+        except OSError:
+            pass  # no file yet (first write) or unstatable — the append creates it
+        try:
+            with open(path, "a", encoding="utf-8") as handle:
+                handle.write(
+                    json.dumps({"t": timestamp, "dp": dp_id, "payload": payload})
+                    + "\n"
+                )
+        except OSError as err:
+            _LOGGER.debug("Failed to persist unknown-dp log: %s", err)
+
     def on_mqtt_message(self, _client: Any, _userdata: Any, msg: Any) -> None:
         """Handle one received MQTT message (paho-style signature kept)."""
         topic = msg.topic
@@ -1716,7 +1751,12 @@ class TerraMowHub:
                 history = deque(maxlen=UNKNOWN_DP_HISTORY_MAXLEN)
                 self._unknown_dp_history[dp_id] = history
             if not history or history[-1][1] != truncated:
-                history.append((time.time(), truncated))
+                now = time.time()
+                history.append((now, truncated))
+                # Debug logging on -> also persist the change to a restart-proof
+                # JSONL file so undocumented dps can be traced across sessions.
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    self._persist_unknown_dp(now, dp_id, truncated)
             if dp_id not in self._seen_unknown_dp_ids:
                 self._seen_unknown_dp_ids.add(dp_id)
                 _LOGGER.info(
