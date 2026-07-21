@@ -32,6 +32,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.storage import Store
 
 from .const import (
     APP_DP_TOPIC_FILTER,
@@ -109,6 +110,16 @@ ACTIVE_MISSION_DISPLAY_TIMEOUT = 6 * 60 * 60  # seconds
 SESSION_PATH_SIMPLIFY_EPSILON_MM = 25.0
 SESSION_PATH_SIMPLIFY_MIN_SEGMENT_MM = 40.0
 MAX_SESSION_PATH_SEGMENTS = 40
+
+# The archived segments are also persisted to disk (issue #239): a Home
+# Assistant restart mid-job — e.g. installing an integration update while the
+# mower waits out rain or recharges — used to drop everything mowed before the
+# restart, because the device only re-serves the *current* leg's path. On
+# startup the stored segments are parked until the first dp_113 frame shows
+# whether the session is still open (non-zero counters, not completed); a
+# finished or new session discards them. Writes are debounced.
+SESSION_PATH_STORE_VERSION = 1
+SESSION_PATH_SAVE_DELAY = 10.0  # seconds
 
 
 def _decompress_and_parse(raw: bytes) -> Any:
@@ -389,6 +400,13 @@ class TerraMowHub:
         # across the firmware clearing the realtime path on a mid-session
         # recharge dock (issue #214).
         self._session_path_segments: list[list[dict[str, Any]]] = []
+        # Disk persistence of the archived segments (issue #239). Restored
+        # segments are parked here until dp_113 confirms the session is still
+        # open; the store is created lazily so unit tests without a real hass
+        # never touch it.
+        self._session_path_store: Store[dict[str, Any]] | None = None
+        self._restored_session_paths: list[list[dict[str, Any]]] | None = None
+        self._restored_map_id: Any = None
         self._pose: dict[str, Any] = {}  # Stores the real-time pose
         # One meta-fetch channel per HTTP-backed resource; each bundles the
         # seq/etag/retry/pending bookkeeping for its meta topic.
@@ -742,6 +760,10 @@ class TerraMowHub:
         try:
             data = json.loads(payload)
             self._current_work_data = data
+            if self._restored_session_paths is not None:
+                # First counters after a restart decide the fate of the
+                # persisted session path segments (issue #239).
+                self._adopt_or_discard_restored_paths(data)
             _LOGGER.debug("Current work data updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_113: %s", payload)
@@ -1390,6 +1412,7 @@ class TerraMowHub:
                 # The session is over: drop its archived track (issue #214),
                 # matching the device clearing the realtime path at session end.
                 self._session_path_segments = []
+                self._schedule_session_path_save()
         elif self.mission in MOW_MISSIONS:
             if (
                 self._session_path_segments
@@ -1399,6 +1422,7 @@ class TerraMowHub:
                 # (the COMPLETE frame was missed or the latch expired) — the
                 # previous session's track must not bleed into the new one.
                 self._session_path_segments = []
+                self._schedule_session_path_save()
             # A session is running (fresh or resumed): no outcome yet.
             self._session_outcome = None
             self._active_mow_mission = self.mission
@@ -2010,6 +2034,16 @@ class TerraMowHub:
 
     def _apply_map_data(self, data: dict[str, Any]) -> None:
         """Apply fetched map data: cache it and derive/notify map info."""
+        incoming_id = data.get("id")
+        if self._restored_map_id is not None and incoming_id is not None:
+            if incoming_id != self._restored_map_id:
+                # The persisted segments (parked or already adopted) belong to
+                # a different map than the device now serves (#239).
+                self._restored_session_paths = None
+                if self._session_path_segments:
+                    self._session_path_segments = []
+                    self._schedule_session_path_save()
+            self._restored_map_id = None
         old_map_id = self._map_data.get("id")
         if (
             self._session_path_segments
@@ -2019,6 +2053,7 @@ class TerraMowHub:
             # The archived session track belongs to the previous map; drawn
             # onto a different map it would cross unrelated geometry (#214).
             self._session_path_segments = []
+            self._schedule_session_path_save()
         self._map_data = data
         map_info = self._build_map_info_from_map_data(data)
         if map_info is not None:
@@ -2066,11 +2101,99 @@ class TerraMowHub:
             [{"x": x, "y": y} for x, y in simplified]
         )
         del self._session_path_segments[:-MAX_SESSION_PATH_SEGMENTS]
+        self._schedule_session_path_save()
         _LOGGER.debug(
             "Archived a %d-point session path segment (%d total)",
             len(simplified),
             len(self._session_path_segments),
         )
+
+    def _get_session_path_store(self) -> Store[dict[str, Any]]:
+        """Lazily create the disk store for the archived session segments."""
+        if self._session_path_store is None:
+            self._session_path_store = Store(
+                self.hass,
+                SESSION_PATH_STORE_VERSION,
+                f"terramow.session_paths_{self.host}",
+            )
+        return self._session_path_store
+
+    def _session_path_save_data(self) -> dict[str, Any]:
+        """Snapshot the archived segments for the debounced disk write."""
+        return {
+            "map_id": self._map_data.get("id"),
+            "segments": self._session_path_segments,
+        }
+
+    def _schedule_session_path_save(self) -> None:
+        """Persist the archived segments soon (debounced; loop-only callers)."""
+        self._get_session_path_store().async_delay_save(
+            self._session_path_save_data, SESSION_PATH_SAVE_DELAY
+        )
+
+    async def async_restore_session_paths(self) -> None:
+        """Load segments a previous run persisted; park them until dp_113.
+
+        Whether they still belong to a *running* session can only be decided
+        once the device reports its work counters, so they are held in
+        ``_restored_session_paths`` and adopted or discarded there (#239).
+        """
+        try:
+            data = await self._get_session_path_store().async_load()
+        except Exception as err:  # corrupt store must never block setup
+            _LOGGER.warning("Could not load persisted session paths: %s", err)
+            return
+        segments = (data or {}).get("segments")
+        if isinstance(segments, list) and segments:
+            self._restored_session_paths = segments
+            self._restored_map_id = (data or {}).get("map_id")
+            _LOGGER.debug(
+                "Parked %d persisted session path segments pending dp_113",
+                len(segments),
+            )
+
+    def _adopt_or_discard_restored_paths(self, work: dict[str, Any]) -> None:
+        """First dp_113 after a restart decides the parked segments' fate.
+
+        Non-zero session counters and no completion flag mean the job the
+        segments belong to is still open — re-adopt them. A zeroed or
+        completed frame means the job ended while HA was down: discard.
+        """
+        restored = self._restored_session_paths
+        self._restored_session_paths = None
+        if restored is None:
+            return
+
+        def _positive(key: str) -> bool:
+            try:
+                return float(work.get(key) or 0) > 0
+            except (TypeError, ValueError):
+                return False
+
+        session_open = work.get("is_completed") is not True and (
+            _positive("clean_area") or _positive("work_time")
+        )
+        current_map_id = self._map_data.get("id")
+        map_matches = (
+            self._restored_map_id is None
+            or current_map_id is None
+            or current_map_id == self._restored_map_id
+        )
+        if session_open and map_matches:
+            self._session_path_segments = restored + self._session_path_segments
+            del self._session_path_segments[:-MAX_SESSION_PATH_SEGMENTS]
+            _LOGGER.info(
+                "Restored %d session path segments from before the restart",
+                len(restored),
+            )
+        else:
+            self._restored_map_id = None
+            _LOGGER.debug(
+                "Discarded persisted session paths (session %s, map %s)",
+                "open" if session_open else "over",
+                "match" if map_matches else "mismatch",
+            )
+        self._schedule_session_path_save()
 
     def _apply_path_data(self, data: dict[str, Any]) -> None:
         """Apply fetched path data: cache it and notify path callbacks."""

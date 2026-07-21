@@ -76,6 +76,7 @@ async def test_setup_entry_success_starts_hub_and_forwards(hass: HomeAssistant) 
             hass.config_entries, "async_forward_entry_setups", AsyncMock()
         ) as forward,
     ):
+        hub_cls.return_value.async_restore_session_paths = AsyncMock()
         result = await async_setup_entry(hass, entry)
 
     assert result is True

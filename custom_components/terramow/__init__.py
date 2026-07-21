@@ -282,6 +282,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     # before the platforms are forwarded guarantees every entity can
     # register its callbacks in __init__ regardless of platform order.
     hub = TerraMowHub(basic_data, hass)
+    # Park any session path segments a previous run persisted BEFORE the hub
+    # connects, so the first dp_113 frame can decide their fate (issue #239).
+    await hub.async_restore_session_paths()
     hub.start()
 
     try:
