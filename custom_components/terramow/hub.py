@@ -442,6 +442,11 @@ class TerraMowHub:
         # latched, bounding how long the latch lingers; None while working.
         self._active_mow_mission: Mission | None = None
         self._active_mow_idle_since: float | None = None
+        # How the last mow session ended ("completed" / "aborted"), latched at
+        # the dp_107 COMPLETE/ABORT frame that clears the mission latch and
+        # held until the next session starts. Drives the session sensors'
+        # completion/reset behaviour (issues #204/#207).
+        self._session_outcome: str | None = None
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
         # Bounded per-dp change history (epoch, payload) for undocumented dps, so
@@ -1371,6 +1376,14 @@ class TerraMowHub:
             MissionState.MISSION_STATE_COMPLETE,
             MissionState.MISSION_STATE_ABORT,
         ):
+            if self._active_mow_mission is not None:
+                # Remember how the session ended for the session sensors'
+                # snap/reset behaviour (issues #204/#207).
+                self._session_outcome = (
+                    "completed"
+                    if self.mission_state == MissionState.MISSION_STATE_COMPLETE
+                    else "aborted"
+                )
             self._active_mow_mission = None
             self._active_mow_idle_since = None
             if self._session_path_segments:
@@ -1386,6 +1399,8 @@ class TerraMowHub:
                 # (the COMPLETE frame was missed or the latch expired) — the
                 # previous session's track must not bleed into the new one.
                 self._session_path_segments = []
+            # A session is running (fresh or resumed): no outcome yet.
+            self._session_outcome = None
             self._active_mow_mission = self.mission
             self._active_mow_idle_since = None
         elif self.mission == Mission.MISSION_IDLE:
@@ -2526,6 +2541,29 @@ class TerraMowHub:
         ):
             return Mission.MISSION_IDLE
         return self._active_mow_mission
+
+    @property
+    def session_outcome(self) -> str | None:
+        """How the last mow session ended: "completed", "aborted" or None.
+
+        Derived state (see the AGENTS.md contract): latched from the dp_107
+        COMPLETE/ABORT frame that ends a mow session, with the device's own
+        dp_113 ``is_completed`` flag as a fallback (covers an HA restart
+        after the session finished). None while a session is running or
+        docked mid-session, and cleared the moment a new session starts.
+        Drives the session sensors' snap-to-100 %/reset-to-0 behaviour and
+        the map card's job chip (issues #204/#207).
+        """
+        if self._session_outcome is not None:
+            return self._session_outcome
+        if self._active_mow_mission is not None:
+            # A session is running (or docked mid-session): any is_completed
+            # in dp_113 belongs to an older job snapshot.
+            return None
+        work = self._current_work_data
+        if isinstance(work, dict) and work.get("is_completed") is True:
+            return "completed"
+        return None
 
     @property
     def advanced_settings(self) -> dict[str, Any]:

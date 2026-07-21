@@ -512,16 +512,25 @@ def build_status_payload(hub: TerraMowHub) -> dict[str, Any]:
 
     work: dict[str, Any] = {}
     work_data = hub.current_work_data
+    outcome = hub.session_outcome
     if isinstance(work_data, dict) and work_data:
-        total_area = work_data.get("total_area") or 0
-        clean_area = work_data.get("clean_area") or 0
-        if total_area > 0:
-            work["progress"] = round(min(100.0 * clean_area / total_area, 100.0), 1)
-        if clean_area:
-            # clean_area is in units of 0.1 m²
-            work["area_m2"] = round(float(clean_area) / 10, 1)
-        if work_data.get("work_duration") is not None:
-            work["duration_s"] = work_data.get("work_duration")
+        if outcome == "completed":
+            # Session over: show the completion, not the stale counters —
+            # mirrors the session sensors' snap/reset (issues #204/#207).
+            work["progress"] = 100.0
+        elif outcome is None:
+            total_area = work_data.get("total_area") or 0
+            clean_area = work_data.get("clean_area") or 0
+            if total_area > 0:
+                work["progress"] = round(
+                    min(100.0 * clean_area / total_area, 100.0), 1
+                )
+            if clean_area:
+                # clean_area is in units of 0.1 m²
+                work["area_m2"] = round(float(clean_area) / 10, 1)
+            if work_data.get("work_duration") is not None:
+                work["duration_s"] = work_data.get("work_duration")
+        # aborted: no job chip — the counters reset with the session sensors
 
     # Mission info for the HUD (issue #205): raw enum values, only the
     # non-idle ones (the card prettifies them). Uses the decayed display_*

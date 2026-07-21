@@ -140,7 +140,8 @@ def _total_mowed_area(hub: TerraMowHub) -> StateType:
     return round(float(clean_area) / 10, 1)
 
 
-def _current_session_area(hub: TerraMowHub) -> StateType:
+def _raw_session_area(hub: TerraMowHub) -> StateType:
+    """The session area exactly as dp_113 reports it."""
     current_work_data = hub.current_work_data
     if not current_work_data:
         return None
@@ -149,6 +150,82 @@ def _current_session_area(hub: TerraMowHub) -> StateType:
     if clean_area is None:
         return None
     return round(float(clean_area) / 10, 1)
+
+
+def _raw_session_progress(hub: TerraMowHub) -> StateType:
+    """The session progress computed from dp_113 as the device reports it."""
+    current_work_data = hub.current_work_data
+    if not current_work_data:
+        return None
+    total_area = current_work_data.get("total_area") or 0
+    clean_area = current_work_data.get("clean_area") or 0
+    if total_area <= 0:
+        return None
+    progress = 100.0 * clean_area / total_area
+    # Cap at 100; the device occasionally reports clean_area > total_area
+    # near the very end of a session.
+    return round(min(progress, 100.0), 1)
+
+
+def _raw_session_time(hub: TerraMowHub) -> StateType:
+    """The session duration exactly as dp_113 reports it."""
+    current_work_data = hub.current_work_data
+    if not current_work_data:
+        return None
+    return cast("StateType", current_work_data.get("work_duration"))
+
+
+# The session sensors layer the hub's derived ``session_outcome`` over the raw
+# dp_113 values (issues #204/#207, per the AGENTS.md derived-state contract):
+# once the job is over the counters reset to 0 and progress lands on 100 %
+# for a completed job (never for an aborted one), until the next session
+# starts. The raw values stay reachable via the ``raw_*`` attributes below.
+
+
+def _current_session_area(hub: TerraMowHub) -> StateType:
+    if hub.session_outcome is not None:
+        # The job is over: the session counters read 0 until the next
+        # session starts (issue #207).
+        return 0.0
+    return _raw_session_area(hub)
+
+
+def _current_session_progress(hub: TerraMowHub) -> StateType:
+    outcome = hub.session_outcome
+    if outcome == "completed":
+        # dp_113 stops short of 100 % on lawns with unreachable area (pools,
+        # sheds); the explicit completion signal is the truth that the job
+        # covered everything it could (issue #204).
+        return 100.0
+    if outcome is not None:
+        # An aborted job resets like the other session counters — no 100 %
+        # snap for a lawn that was not finished.
+        return 0.0
+    return _raw_session_progress(hub)
+
+
+def _current_session_time(hub: TerraMowHub) -> StateType:
+    if hub.session_outcome is not None:
+        return 0
+    return _raw_session_time(hub)
+
+
+def _session_outcome_attributes(
+    raw_fn: Callable[[TerraMowHub], StateType], raw_key: str
+) -> Callable[[TerraMowHub], dict[str, Any]]:
+    """Expose the outcome and the raw dp_113 value while a snap/reset holds."""
+
+    def attributes_fn(hub: TerraMowHub) -> dict[str, Any]:
+        outcome = hub.session_outcome
+        if outcome is None:
+            return {}
+        attrs: dict[str, Any] = {"session_outcome": outcome}
+        raw = raw_fn(hub)
+        if raw is not None:
+            attrs[raw_key] = raw
+        return attrs
+
+    return attributes_fn
 
 
 def _current_session_attributes(hub: TerraMowHub) -> dict[str, Any]:
@@ -169,28 +246,8 @@ def _current_session_attributes(hub: TerraMowHub) -> dict[str, Any]:
     if is_completed is not None:
         attrs["is_completed"] = is_completed
 
+    attrs.update(_session_outcome_attributes(_raw_session_area, "raw_area")(hub))
     return attrs
-
-
-def _current_session_progress(hub: TerraMowHub) -> StateType:
-    current_work_data = hub.current_work_data
-    if not current_work_data:
-        return None
-    total_area = current_work_data.get("total_area") or 0
-    clean_area = current_work_data.get("clean_area") or 0
-    if total_area <= 0:
-        return None
-    progress = 100.0 * clean_area / total_area
-    # Cap at 100; the device occasionally reports clean_area > total_area
-    # near the very end of a session.
-    return round(min(progress, 100.0), 1)
-
-
-def _current_session_time(hub: TerraMowHub) -> StateType:
-    current_work_data = hub.current_work_data
-    if not current_work_data:
-        return None
-    return cast("StateType", current_work_data.get("work_duration"))
 
 
 def _current_job_type(hub: TerraMowHub) -> StateType:
@@ -563,7 +620,9 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         device_class=getattr(SensorDeviceClass, "AREA", None),
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        push_dp_ids=(113,),
+        # dp_107 refreshes the snap/reset the moment a session completes or
+        # aborts, without waiting for the next dp_113 push (issues #204/#207)
+        push_dp_ids=(113, 107),
         value_fn=_current_session_area,
         attributes_fn=_current_session_attributes,
     ),
@@ -573,8 +632,11 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        push_dp_ids=(113,),
+        push_dp_ids=(113, 107),
         value_fn=_current_session_progress,
+        attributes_fn=_session_outcome_attributes(
+            _raw_session_progress, "raw_progress"
+        ),
     ),
     TerraMowSensorEntityDescription(
         key="current_session_time",
@@ -583,8 +645,11 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.DURATION,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        push_dp_ids=(113,),
+        push_dp_ids=(113, 107),
         value_fn=_current_session_time,
+        attributes_fn=_session_outcome_attributes(
+            _raw_session_time, "raw_duration"
+        ),
     ),
     TerraMowSensorEntityDescription(
         key="current_job_type",
