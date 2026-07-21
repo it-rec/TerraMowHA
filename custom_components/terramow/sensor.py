@@ -778,7 +778,9 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.ENUM,
         options=[to_ha_enum_state(member.value) for member in Mission],
         entity_category=EntityCategory.DIAGNOSTIC,
-        push_dp_ids=(107,),
+        # dp_113 included so the manual-end latch release (issue #206)
+        # refreshes this sensor immediately, not on the next dp_107 push.
+        push_dp_ids=(107, 113),
         value_fn=_mission_enum("active_mission"),
     ),
     # Sub-mission surfaces transient states like waiting for rain.

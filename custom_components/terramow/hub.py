@@ -764,9 +764,53 @@ class TerraMowHub:
                 # First counters after a restart decide the fate of the
                 # persisted session path segments (issue #239).
                 self._adopt_or_discard_restored_paths(data)
+            self._maybe_release_latch_on_manual_end(data)
             _LOGGER.debug("Current work data updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_113: %s", payload)
+
+    @staticmethod
+    def _work_counters_positive(work: dict[str, Any]) -> bool:
+        """Whether the dp_113 session counters show work done this session."""
+        for key in ("clean_area", "work_duration"):
+            try:
+                if float(work.get(key) or 0) > 0:
+                    return True
+            except (TypeError, ValueError):
+                continue
+        return False
+
+    def _maybe_release_latch_on_manual_end(self, work: dict[str, Any]) -> None:
+        """End the active-job latch when the app manually ends the job.
+
+        Ending a job in the vendor app ("End job / clear auto-mode progress")
+        zeroes the dp_113 counters without ever sending
+        ``MISSION_STATE_COMPLETE`` (live capture 2026-07-21, see
+        data_point_unofficial.md). Without this the **Active job** sensor kept
+        reporting the mow mission for up to the 6 h display timeout after the
+        job was already over (issue #206). Only the confirmed signature
+        releases the latch: docked-idle, counters zeroed, no completion flag —
+        a mid-session recharge dock keeps its non-zero counters and a fresh
+        session start is not docked-idle, so neither is affected.
+        """
+        if (
+            self._active_mow_mission is None
+            or self.mission != Mission.MISSION_IDLE
+            or work.get("is_completed") is True
+            or self._work_counters_positive(work)
+        ):
+            return
+        _LOGGER.debug(
+            "dp_113 counters zeroed while docked-idle: manual job end, "
+            "releasing the active-job latch"
+        )
+        self._session_outcome = "aborted"
+        self._active_mow_mission = None
+        self._active_mow_idle_since = None
+        if self._session_path_segments:
+            # The job is over: its archived track must not linger (issue #214).
+            self._session_path_segments = []
+            self._schedule_session_path_save()
 
     async def on_statistics_data(self, payload: str) -> None:
         """Handle statistics data updates (dp_124)."""
@@ -2164,14 +2208,9 @@ class TerraMowHub:
         if restored is None:
             return
 
-        def _positive(key: str) -> bool:
-            try:
-                return float(work.get(key) or 0) > 0
-            except (TypeError, ValueError):
-                return False
-
-        session_open = work.get("is_completed") is not True and (
-            _positive("clean_area") or _positive("work_time")
+        session_open = (
+            work.get("is_completed") is not True
+            and self._work_counters_positive(work)
         )
         current_map_id = self._map_data.get("id")
         map_matches = (
