@@ -63,6 +63,7 @@ async def test_setup_entry_stops_hub_when_platform_setup_fails(
     entry = _entry(hass)
     hub = MagicMock()
     hub.async_stop = AsyncMock()
+    hub.async_restore_session_paths = AsyncMock()
     with (
         patch("custom_components.terramow.validate_input", return_value={}),
         patch("custom_components.terramow.TerraMowHub", return_value=hub),
