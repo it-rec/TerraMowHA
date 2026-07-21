@@ -62,9 +62,12 @@ Documented here for future work; not decoded into entities yet.
 
 | ID | Likely meaning | Observed payload (truncated) |
 |----|----------------|------------------------------|
+| 103 | **Ack echo of the dp_103 command channel** (the integration publishes selective-mow / clean commands to `data_point/103/app`): the `/robot` side answers `{seq, ret:0}` per accepted command. Live-confirmed (V1000 fw28): each `start_mowing` / `dock` sent over local MQTT produced exactly one echo with a monotonically increasing `seq` — so unlike dp_119 (which only carries the internal commander's acks on this firmware), dp_103 *does* ack local-MQTT commands | `{"seq":917327464,"ret":0}` |
+| 104 | **Ack fired by the app's "End job / clear auto-mode progress"** action (V1000 fw28): observed exactly once, in the same second the user confirmed "Clear" in the vendor app; presumably the `/robot` ack of an end/clear command channel (the app writes over BLE/cloud, so only the ack is visible locally). `seq` is epoch-like | `{"seq":1784657579,"ret":0}` |
 | 110 | Unknown scalar | `{"int_value":60}` |
-| 111 | Upload progress (companion of dp_118?) | `{"is_uploading":false,"process":0}` |
-| 114 | **Latest event code** — mirrors the newest entry of the dp_123 event log. Observed `int_value:90` at the exact moment dp_123 appended `{code:90}` (a relocation event); earlier `int_value:8` matched dp_123 code 8. Redundant with the **Last event** sensor, so not surfaced separately | `{"int_value":90}` |
+| 111 | Upload progress (companion of dp_118?). Stayed `{false, 0}` through a full mow with a mid-session recharge dock — whatever it uploads, a normal mow does not trigger it | `{"is_uploading":false,"process":0}` |
+| 114 | **Latest event code** — mirrors the newest entry of the dp_123 event log. Observed `int_value:90` at the exact moment dp_123 appended `{code:90}` (a relocation event); earlier `int_value:8` matched dp_123 code 8. **Re-confirmed 2026-07-21 (V1000 fw28):** dp_114 and dp_123 arrive within <100 ms of each other, and a day's dp_114 values (`43`, `87`, `65`) each matched the newest dp_123 `code` with identical timestamps (`65` fired at a recharge-return dock; a cellar relocation had produced `135`) — this also refutes an earlier link-quality-metric hypothesis for this dp. Redundant with the **Last event** sensor, so not surfaced separately | `{"int_value":65}` |
+| 120 | Ack/echo-shaped, same family as dp_119 (`code` instead of `ret`); single observation while the mower idled docked, context unknown. `seq` epoch-like | `{"seq":1784579052,"code":0}` |
 | 134 | Undecoded binary flag (surfaced as **State flag 134**). Note: it stayed **constant** through a full start/pause/resume/dock session, so it is **not** tied to the mowing state — meaning still unknown | `{"enum_value":0}` |
 | 145 | Custom-passage creation status | `{"stage":"CUSTOM_PASSAGE_STAGE_INVALID","is_on_grass":false,…}` |
 | 146 | Unknown scalar | `{"int_value":1}` |
@@ -97,6 +100,27 @@ No observed dp_107 field marks "paused mid-session, will resume".
   tracks session progress. Any of these would let Active Job track true
   completion instead of relying on the timeout.
 
+**Recharge-return, manual job end and the missing `MISSION_STATE_COMPLETE`
+(dp_107 / dp_113).** Live capture of a full interrupted job (V1000 fw28,
+2026-07-21): when the battery ran low mid-job the mower reported
+`mission = MISSION_RECHARGE` while returning, then docked into the usual
+`MISSION_IDLE` (see the finding above) — the job stayed open device-side (the
+app still offered *End*). After a full charge the mower did **not** resume the
+remaining zone, and when the user ended the job in the app ("Clear auto-mode
+progress?" → *Clear*), the device **zeroed the dp_113 session counters** —
+without ever emitting `MISSION_STATE_COMPLETE`. The dp_104 ack (see table
+above) fired at exactly that moment.
+
+- *Consequence:* the session sensors detect "job over" from the dp_113
+  counter reset (issues [#204]/[#207]): a job that ends this way counts as
+  *aborted* — counters reset, **no** 100 % snap. `MISSION_STATE_COMPLETE`
+  (and the 100 % snap) has so far only been observed for jobs the firmware
+  itself finishes.
+- *Reality check:* during this capture the **vendor app displayed 100 % and
+  all zones green although one zone was never mowed** (dp_113 stood at 86 %,
+  session area confirmed the gap). The data points are the honest source —
+  when the app and the integration disagree, trust the data points.
+
 **dp_107 `has_error` and dp_116 `error_list` are independent fault signals.**
 A user reported a fault visible in the app ("mower could not find the home
 station") that populated the dp_116 **error list** while dp_107 `has_error`
@@ -118,3 +142,5 @@ this went unnoticed. The `error_list` clears when the fault resolves.
 
 [#142]: https://github.com/it-rec/TerraMowHA/issues/142
 [#171]: https://github.com/it-rec/TerraMowHA/issues/171
+[#204]: https://github.com/it-rec/TerraMowHA/issues/204
+[#207]: https://github.com/it-rec/TerraMowHA/issues/207
