@@ -58,6 +58,7 @@ from .issues import (
     async_sync_blade_maintenance_issue,
     async_sync_compatibility_issue,
 )
+from .map_scene import extract_cleaning_path_points, simplify_path_pixels
 
 if TYPE_CHECKING:
     from . import TerraMowBasicData
@@ -96,6 +97,18 @@ MAP_SAVE_DISPLAY_TIMEOUT = 30 * 60  # seconds
 # falls back to idle so a cancelled or parked session can't linger indefinitely
 # the way the stale sub-mission/state did before #142.
 ACTIVE_MISSION_DISPLAY_TIMEOUT = 6 * 60 * 60  # seconds
+
+# The firmware also clears the realtime path whenever the mower docks —
+# including a mid-session recharge — so everything mowed before the dock
+# vanished from the map until the session's next path push (issue #214). The
+# hub archives the outgoing track as a finished segment instead and keeps it
+# until the session completes/aborts, a new session starts, or the map
+# changes. Archived segments are RDP-simplified (millimetre tolerances) and
+# capped so a firmware resetting the path pathologically often cannot grow
+# memory without bound.
+SESSION_PATH_SIMPLIFY_EPSILON_MM = 25.0
+SESSION_PATH_SIMPLIFY_MIN_SEGMENT_MM = 40.0
+MAX_SESSION_PATH_SEGMENTS = 40
 
 
 def _decompress_and_parse(raw: bytes) -> Any:
@@ -372,6 +385,10 @@ class TerraMowHub:
         self._map_data: dict[str, Any] = {}  # Stores map data fetched over HTTP
         self._path_data: dict[str, Any] = {}  # Stores path data fetched over HTTP
         self._history_path_data: dict[str, Any] = {}  # Stores history path data fetched over HTTP
+        # Mow tracks archived from earlier in the running session, preserved
+        # across the firmware clearing the realtime path on a mid-session
+        # recharge dock (issue #214).
+        self._session_path_segments: list[list[dict[str, Any]]] = []
         self._pose: dict[str, Any] = {}  # Stores the real-time pose
         # One meta-fetch channel per HTTP-backed resource; each bundles the
         # seq/etag/retry/pending bookkeeping for its meta topic.
@@ -1356,7 +1373,19 @@ class TerraMowHub:
         ):
             self._active_mow_mission = None
             self._active_mow_idle_since = None
+            if self._session_path_segments:
+                # The session is over: drop its archived track (issue #214),
+                # matching the device clearing the realtime path at session end.
+                self._session_path_segments = []
         elif self.mission in MOW_MISSIONS:
+            if (
+                self._session_path_segments
+                and self.active_mission == Mission.MISSION_IDLE
+            ):
+                # A fresh session is starting while archived segments linger
+                # (the COMPLETE frame was missed or the latch expired) — the
+                # previous session's track must not bleed into the new one.
+                self._session_path_segments = []
             self._active_mow_mission = self.mission
             self._active_mow_idle_since = None
         elif self.mission == Mission.MISSION_IDLE:
@@ -1966,13 +1995,71 @@ class TerraMowHub:
 
     def _apply_map_data(self, data: dict[str, Any]) -> None:
         """Apply fetched map data: cache it and derive/notify map info."""
+        old_map_id = self._map_data.get("id")
+        if (
+            self._session_path_segments
+            and old_map_id is not None
+            and data.get("id") != old_map_id
+        ):
+            # The archived session track belongs to the previous map; drawn
+            # onto a different map it would cross unrelated geometry (#214).
+            self._session_path_segments = []
         self._map_data = data
         map_info = self._build_map_info_from_map_data(data)
         if map_info is not None:
             self._update_map_info(map_info)
 
+    def _maybe_archive_session_path(self, new_data: dict[str, Any]) -> None:
+        """Preserve the outgoing mow track when the path resets mid-session.
+
+        The firmware clears the realtime path whenever the mower docks — also
+        for a mid-session recharge — which made everything mowed before the
+        dock vanish from the map (issue #214). When the incoming payload does
+        not continue the cached one while the ``active_mission`` latch still
+        reports a running session, the cached mowing points are archived as a
+        finished segment; the scene keeps drawing them until the session
+        completes or a new one starts.
+        """
+        old_data = self._path_data
+        old_points = old_data.get("points")
+        if not isinstance(old_points, list) or not old_points:
+            return
+        if new_data.get("map_id") != old_data.get("map_id"):
+            # A map switch, not a mid-session reset: the old track belongs to
+            # the previous map and is dropped with it.
+            return
+        new_points = new_data.get("points")
+        if (
+            isinstance(new_points, list)
+            and len(new_points) >= len(old_points)
+            and new_points[: len(old_points)] == old_points
+        ):
+            return  # the same path, unchanged or grown at the tail
+        if self.active_mission == Mission.MISSION_IDLE:
+            return  # no running session: the normal end-of-job clear
+        segment = extract_cleaning_path_points(old_data)
+        if len(segment) < 2:
+            return
+        simplified = simplify_path_pixels(
+            [(point["x"], point["y"]) for point in segment],
+            SESSION_PATH_SIMPLIFY_EPSILON_MM,
+            SESSION_PATH_SIMPLIFY_MIN_SEGMENT_MM,
+        )
+        if len(simplified) < 2:
+            return
+        self._session_path_segments.append(
+            [{"x": x, "y": y} for x, y in simplified]
+        )
+        del self._session_path_segments[:-MAX_SESSION_PATH_SEGMENTS]
+        _LOGGER.debug(
+            "Archived a %d-point session path segment (%d total)",
+            len(simplified),
+            len(self._session_path_segments),
+        )
+
     def _apply_path_data(self, data: dict[str, Any]) -> None:
         """Apply fetched path data: cache it and notify path callbacks."""
+        self._maybe_archive_session_path(data)
         self._path_data = data
         for callback in self.path_callbacks:
             self.hass.async_create_task(callback(data))
@@ -2252,6 +2339,16 @@ class TerraMowHub:
     def history_path_data(self) -> dict[str, Any]:
         """Get HTTP-fetched history path data."""
         return self._history_path_data
+
+    @property
+    def session_path_segments(self) -> list[list[dict[str, Any]]]:
+        """Archived mow-track segments of the running session (issue #214).
+
+        Filled when the firmware resets the realtime path mid-session (a
+        recharge dock); cleared when the session completes/aborts, a new
+        session starts, or the map changes.
+        """
+        return self._session_path_segments
 
     @property
     def pose(self) -> dict[str, Any]:

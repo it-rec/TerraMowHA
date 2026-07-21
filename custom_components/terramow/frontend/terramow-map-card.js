@@ -17,7 +17,8 @@
  *   show_controls: true        # contextual start / pause / dock buttons
  *   show_coverage: false       # shade the mowed swath at cutting width
  *   show_history_path: true    # faded, previously mowed path
- *   show_current_path: true    # path of the running job
+ *   show_current_path: true    # path of the running job, incl. the track
+ *                              # from before a mid-session recharge dock
  *   zone_selection: true       # tap (or arrow-key) zones to start a selective mow
  *   show_hud: true             # status chips (state, battery, progress)
  *   show_markers: true         # trapped / maintenance / passage markers
@@ -478,6 +479,11 @@ class TerramowMapCard extends HTMLElement {
       }
       if (Array.isArray(this._scene.history_path)) {
         decimatePath(this._scene.history_path, MAX_PATH_POINTS);
+      }
+      if (Array.isArray(this._scene.session_paths)) {
+        for (const segment of this._scene.session_paths) {
+          decimatePath(segment, MAX_PATH_POINTS);
+        }
       }
       this._sceneRev += 1;
       this._pathRev += 1;
@@ -1779,7 +1785,12 @@ class TerramowMapCard extends HTMLElement {
       ["dbg_draw", (scene.draw_regions || []).length],
       [
         "dbg_paths",
-        (scene.current_path || []).length + (scene.history_path || []).length,
+        (scene.current_path || []).length +
+          (scene.history_path || []).length +
+          (scene.session_paths || []).reduce(
+            (total, segment) => total + segment.length,
+            0
+          ),
       ],
     ];
     const rows = counts
@@ -2533,10 +2544,19 @@ class TerramowMapCard extends HTMLElement {
     // stripe spacing (mow_spacing, mm): adjacent lanes are exactly this far
     // apart, so shading at the spacing tiles the mowed area seamlessly,
     // while the blade's wider cutting width would over-shade the overlap.
+    // Tracks mowed earlier in the running session, before a mid-session
+    // recharge dock (the firmware clears the realtime path on dock, issue
+    // #214). One polyline per segment — never joined across the dock gap.
+    const sessionPaths = Array.isArray(scene.session_paths)
+      ? scene.session_paths
+      : [];
     if (this._config.show_coverage) {
       const spacing = Number(scene.mow_params && scene.mow_params.mow_spacing);
       const width =
         (spacing > 0 ? spacing : Number(scene.cutting_width)) || 320;
+      for (const segment of sessionPaths) {
+        strokePath(segment, colors.coverage, width);
+      }
       strokePath(scene.history_path, colors.coverage, width);
       strokePath(scene.current_path, colors.coverage, width);
     }
@@ -2544,6 +2564,15 @@ class TerramowMapCard extends HTMLElement {
       strokePath(scene.history_path, colors.historyPath, 1.6 / view.scale);
     }
     if (this._config.show_current_path) {
+      if (sessionPaths.length) {
+        // Same colour as the live path but faded, so the whole session
+        // reads as one job with its earlier legs in the background.
+        ctx.globalAlpha = 0.55;
+        for (const segment of sessionPaths) {
+          strokePath(segment, colors.currentPath, 2.2 / view.scale);
+        }
+        ctx.globalAlpha = 1;
+      }
       strokePath(scene.current_path, colors.currentPath, 2.2 / view.scale);
     }
   }

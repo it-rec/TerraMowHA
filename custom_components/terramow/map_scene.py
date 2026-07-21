@@ -591,6 +591,11 @@ def _filter_cleaning_path_points(path_points: list[dict[str, Any]]) -> list[dict
     return [point for point in path_points if point.get("type") == "PATH_POINT_TYPE_CLEANING"]
 
 
+def extract_cleaning_path_points(path_data: dict[str, Any]) -> list[dict[str, Any]]:
+    """The mowing-only path points of an ha_path_v1 payload."""
+    return _filter_cleaning_path_points(_extract_path_points(path_data))
+
+
 class ScenePathCache:
     """Identity-keyed cache of extracted path points for one camera entity.
 
@@ -746,16 +751,27 @@ def build_scene(
     history_path_data: dict[str, Any],
     show_coverage: bool,
     cache: ScenePathCache | None = None,
+    session_path_segments: list[list[dict[str, Any]]] | None = None,
 ) -> dict[str, Any]:
     """Organize the raw protocol data into a drawable scene.
 
     Stays a pure function by default; a caller that rebuilds repeatedly
     (the camera) may pass its ``ScenePathCache`` to skip re-extracting
     path point lists whose source dict is unchanged.
+
+    ``session_path_segments`` are the hub's archived mow tracks from earlier
+    in the running session — the firmware clears the realtime path when the
+    mower docks mid-session to recharge (issue #214), and these keep the
+    already-mowed track drawable until the session actually finishes.
     """
     map_data = map_data if isinstance(map_data, dict) else {}
     path_data = path_data if isinstance(path_data, dict) else {}
     history_path_data = history_path_data if isinstance(history_path_data, dict) else {}
+    session_segments = [
+        segment
+        for segment in (session_path_segments or [])
+        if isinstance(segment, list) and len(segment) >= 2
+    ]
     clean_info = map_data.get("clean_info", {})
     mow_param = map_data.get("mow_param", {})
     current_map_id = coerce_int(map_data.get("id"))
@@ -816,6 +832,7 @@ def build_scene(
         "path_points": combined_path_points,
         "current_path_points": current_path_points,
         "history_path_points": history_path_points,
+        "session_path_segments": session_segments,
         "filtered_non_cleaning_point_count": {
             "current": len(raw_current_path_points) - len(current_path_points),
             "history": len(raw_history_path_points) - len(history_path_points),
@@ -959,6 +976,9 @@ def build_scene(
 
     for path_point in scene["path_points"]:
         all_points.append((path_point["x"], path_point["y"]))
+    for segment in scene["session_path_segments"]:
+        for path_point in segment:
+            all_points.append((path_point["x"], path_point["y"]))
 
     scene["all_points"] = _dedupe_points(all_points)
     scene["scene_counts"] = {
@@ -978,6 +998,10 @@ def build_scene(
         "path_points": len(scene["path_points"]),
         "current_path_points": len(scene["current_path_points"]),
         "history_path_points": len(scene["history_path_points"]),
+        "session_path_segments": len(scene["session_path_segments"]),
+        "session_path_points": sum(
+            len(segment) for segment in scene["session_path_segments"]
+        ),
         "filtered_non_cleaning_path_points": (
             scene["filtered_non_cleaning_point_count"]["current"]
             + scene["filtered_non_cleaning_point_count"]["history"]
@@ -1006,6 +1030,10 @@ def build_scene(
     if show_coverage:
         scene["rendered_layers"].insert(
             scene["rendered_layers"].index("path"), "coverage"
+        )
+    if scene["session_path_segments"]:
+        scene["rendered_layers"].insert(
+            scene["rendered_layers"].index("path"), "session_path"
         )
     return scene
 
@@ -1190,6 +1218,14 @@ def build_render_metadata(
             "point_count": len(scene.get("path_points", [])),
             "history_path_available": bool(history_path_data),
             "path_map_mismatch": scene.get("path_map_mismatch", False),
+        },
+        # Mow tracks archived from earlier in the running session, kept across
+        # a mid-session recharge dock (issue #214).
+        "session_path_summary": {
+            "segment_count": len(scene.get("session_path_segments", [])),
+            "point_count": sum(
+                len(segment) for segment in scene.get("session_path_segments", [])
+            ),
         },
         "filtered_non_cleaning_point_count": scene.get("filtered_non_cleaning_point_count", {}),
         "rotation_angle": scene.get("rotation_deg", 0.0),

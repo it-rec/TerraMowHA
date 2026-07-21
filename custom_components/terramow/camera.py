@@ -440,12 +440,18 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
 
     def _build_scene(self) -> dict[str, Any]:
         """Organize the raw protocol data into a drawable scene."""
+        # The hub owns the session-path archive (issue #214); every archive or
+        # clear coincides with a path/map push, so the callback-driven rebuild
+        # picks it up without a dedicated subscription.
         return build_scene(
             self._map_data,
             self._path_data,
             self._history_path_data,
             self._show_coverage,
             cache=self._scene_cache,
+            session_path_segments=getattr(
+                self.basic_data.lawn_mower, "session_path_segments", None
+            ),
         )
 
     def _rebuild_static_image(self) -> None:
