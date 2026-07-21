@@ -89,6 +89,44 @@ Run pytest with coverage, ruff, and mypy locally before pushing — a change tha
 - **Logging**: keep logs quiet at INFO level; use DEBUG for protocol chatter.
 - **Version compatibility**: device-side features are gated by an HA compatibility version (see "Version Compatibility Note" in `docs/en/developers.md`). Guard new protocol features behind the appropriate minimum version.
 
+## Derived vs. raw device state
+
+Some views intentionally go beyond what the device reports *right now*: the
+`active_mission` latch and `display_*` decays (#142), and the session-path
+archive that keeps the mowed track across a mid-session recharge dock (#214).
+When adding or extending derived state — including the work tracked in #202
+(bird-view / persisted coverage), #204 (progress reaching 100 % on
+completion) and #207 (session-sensor reset semantics) — hold the change to
+all of these rules:
+
+1. **Raw stays raw.** Anything that mirrors the device (the diagnostic
+   `mission` sensor, `path_data`, dp passthroughs) keeps mirroring it
+   exactly. Derived views are additive, never replacements.
+2. **Derived is named as derived.** New hub properties / payload fields get
+   names that say what they are (`active_mission`, `session_path_segments`)
+   and a docstring naming the source data and why it diverges from the raw
+   report.
+3. **Never fabricate.** Derived state may only retain, combine or decay data
+   the device actually reported over the local connection. Data that exists
+   only in the vendor cloud/app is not synthesized (see #208).
+4. **Every derived view has reset boundaries and a time bound.** Define when
+   it clears (session complete/abort, new session start, map switch, …) and
+   cap how long it can outlive the last device report (e.g.
+   `ACTIVE_MISSION_DISPLAY_TIMEOUT`). Nothing derived may linger
+   indefinitely — stale-looking state was the original sin of #142.
+5. **Prefer the presentation layer.** Keep derived data in the map
+   card/camera/diagnostics where possible. Where it must feed entity state
+   (e.g. #204), the entity's docs/attributes must make the derivation
+   visible instead of presenting it as a device report.
+6. **Restored ≠ live.** If derived state is ever persisted (`.storage`,
+   `RestoreEntity` — e.g. #202's approach B), it must be distinguishable
+   from a live report and revalidated against the device (map id, session
+   bounds) before being shown.
+7. **Tests pin the boundaries.** Every clear/decay/cap rule gets a test the
+   same way `tests/test_session_path.py` pins the #214 archive; the 100 %
+   coverage gate only helps if the *semantics* of each boundary are
+   asserted, not just the lines executed.
+
 ## Testing notes
 
 - Tests use `pytest-homeassistant-custom-component`; fixtures live in `tests/conftest.py`. MQTT is mocked — tests never need a real device.
