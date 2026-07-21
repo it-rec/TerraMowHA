@@ -108,7 +108,7 @@ def test_open_session_adopts_restored_segments() -> None:
     hub = _hub()
     _restore(hub, {"map_id": 1, "segments": [SEGMENT]})
     hub._session_path_store.async_delay_save.reset_mock()
-    _work(hub, clean_area=413, work_time=1628)
+    _work(hub, clean_area=413, work_duration=1628)
     assert hub.session_path_segments == [SEGMENT]
     assert hub._restored_session_paths is None
     hub._session_path_store.async_delay_save.assert_called_once()
@@ -118,7 +118,7 @@ def test_adopted_segments_precede_newly_archived_ones() -> None:
     hub = _hub()
     _restore(hub, {"map_id": None, "segments": [SEGMENT]})
     hub._session_path_segments = [SEGMENT_B]  # archived after the restart
-    _work(hub, work_time=99)
+    _work(hub, work_duration=99)
     assert hub.session_path_segments == [SEGMENT, SEGMENT_B]
 
 
@@ -126,7 +126,7 @@ def test_zeroed_counters_discard_restored_segments() -> None:
     hub = _hub()
     _restore(hub, {"map_id": 1, "segments": [SEGMENT]})
     hub._session_path_store.async_delay_save.reset_mock()
-    _work(hub, clean_area=0, work_time=0)
+    _work(hub, clean_area=0, work_duration=0)
     assert hub.session_path_segments == []
     assert hub._restored_map_id is None
     hub._session_path_store.async_delay_save.assert_called_once()
@@ -142,7 +142,7 @@ def test_completed_frame_discards_restored_segments() -> None:
 def test_unparseable_counters_count_as_session_over() -> None:
     hub = _hub()
     _restore(hub, {"map_id": 1, "segments": [SEGMENT]})
-    _work(hub, clean_area="junk", work_time=None)
+    _work(hub, clean_area="junk", work_duration=None)
     assert hub.session_path_segments == []
 
 
@@ -166,7 +166,7 @@ def test_adoption_caps_the_segment_count() -> None:
     many = [[{"x": i, "y": 0}, {"x": i, "y": 1}] for i in range(MAX_SESSION_PATH_SEGMENTS)]
     _restore(hub, {"map_id": None, "segments": many})
     hub._session_path_segments = [SEGMENT_B]
-    _work(hub, work_time=1)
+    _work(hub, work_duration=1)
     assert len(hub.session_path_segments) == MAX_SESSION_PATH_SEGMENTS
     assert hub.session_path_segments[-1] == SEGMENT_B
 

@@ -13,7 +13,7 @@ import json
 from unittest.mock import AsyncMock, MagicMock
 
 from custom_components.terramow import TerraMowBasicData
-from custom_components.terramow.hub import TerraMowHub
+from custom_components.terramow.hub import Mission, TerraMowHub
 from custom_components.terramow.map_card import build_status_payload
 from custom_components.terramow.sensor import (
     _current_session_area,
@@ -198,3 +198,83 @@ def test_card_job_chip_mirrors_the_session_sensors() -> None:
     _run_session(hub)
     _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_ABORT")
     assert build_status_payload(hub)["work"] is None
+
+
+# ---------------------------------------------------------------------------
+# issue #206: manual job end releases the active-job latch
+# ---------------------------------------------------------------------------
+
+ZEROED_WORK = {
+    "type": "MAP_AREA_TYPE_CLEANING",
+    "total_area": 3000,
+    "clean_area": 0,
+    "work_duration": 0,
+    "is_completed": False,
+}
+
+
+def _latched_idle_hub() -> TerraMowHub:
+    """A hub docked mid-session: latch active, counters still non-zero."""
+    hub = _hub()
+    _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
+    _work(hub, **RUNNING_WORK)
+    _mission(hub, "MISSION_IDLE", "MISSION_STATE_IDLE")
+    return hub
+
+
+def test_recharge_dock_keeps_the_latch() -> None:
+    hub = _latched_idle_hub()
+    _work(hub, **RUNNING_WORK)  # counters keep their values while charging
+    assert hub.active_mission == Mission.MISSION_GLOBAL_CLEAN
+
+
+def test_manual_end_releases_the_latch_and_aborts_the_session() -> None:
+    hub = _latched_idle_hub()
+    # App "End job / clear auto-mode progress": counters zeroed, never a
+    # MISSION_STATE_COMPLETE (live capture 2026-07-21).
+    _work(hub, **ZEROED_WORK)
+    assert hub.active_mission == Mission.MISSION_IDLE
+    assert hub.session_outcome == "aborted"
+
+
+def test_manual_end_clears_the_archived_session_paths() -> None:
+    hub = _latched_idle_hub()
+    hub._session_path_segments = [[{"x": 0, "y": 0}, {"x": 1, "y": 1}]]
+    _work(hub, **ZEROED_WORK)
+    assert hub.session_path_segments == []
+    hub._session_path_store.async_delay_save.assert_called()
+
+
+def test_manual_end_without_archived_paths_skips_the_save() -> None:
+    hub = _latched_idle_hub()
+    _work(hub, **ZEROED_WORK)
+    assert hub._session_path_store is None  # no segments -> no store touched
+
+
+def test_zero_counters_while_running_do_not_release() -> None:
+    # A fresh session starts with zeroed counters — not a manual end.
+    hub = _hub()
+    _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
+    _work(hub, **ZEROED_WORK)
+    assert hub.active_mission == Mission.MISSION_GLOBAL_CLEAN
+
+
+def test_completed_flag_keeps_the_conservative_guard() -> None:
+    # A zeroed frame carrying is_completed=True is not the confirmed manual-
+    # end signature; the latch stays and the dp_107/timeout paths handle it.
+    hub = _latched_idle_hub()
+    _work(hub, **{**ZEROED_WORK, "is_completed": True})
+    assert hub.active_mission == Mission.MISSION_GLOBAL_CLEAN
+
+
+def test_unparseable_counters_count_as_zeroed() -> None:
+    hub = _latched_idle_hub()
+    _work(hub, clean_area={"bogus": 1}, work_duration="junk", is_completed=False)
+    assert hub.active_mission == Mission.MISSION_IDLE
+
+
+def test_no_latch_means_no_release_work() -> None:
+    hub = _hub()
+    _work(hub, **ZEROED_WORK)  # idle hub, nothing latched: plain no-op
+    assert hub.active_mission == Mission.MISSION_IDLE
+    assert hub.session_outcome is None
