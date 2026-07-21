@@ -45,7 +45,7 @@ _LOGGER = logging.getLogger(__name__)
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.15.1"
+CARD_VERSION = "1.16.0"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -274,7 +274,13 @@ def _zone_direction_angles(map_data: dict[str, Any]) -> dict[int, Any]:
 def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
     """Serialize the drawable scene for the card."""
     map_data = hub.map_data
-    scene = build_scene(map_data, hub.path_data, hub.history_path_data, False)
+    scene = build_scene(
+        map_data,
+        hub.path_data,
+        hub.history_path_data,
+        False,
+        session_path_segments=hub.session_path_segments,
+    )
 
     station: dict[str, Any] | None = None
     station_pose = scene["station_pose"]
@@ -373,6 +379,12 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
         },
         "current_path": _path_pts(scene["current_path_points"]),
         "history_path": _path_pts(scene["history_path_points"]),
+        # Mow tracks from earlier in the running session, archived by the hub
+        # across a mid-session recharge dock (issue #214). One polyline per
+        # segment so the card never draws a connector across the dock gap.
+        "session_paths": [
+            _path_pts(segment) for segment in scene["session_path_segments"]
+        ],
     }
     # Bounds over the static geometry only — NOT the paths. A growing path
     # would otherwise shift the bounds on every mowing tick, defeating both

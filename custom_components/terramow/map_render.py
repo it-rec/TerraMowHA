@@ -1172,19 +1172,12 @@ class MapRenderer:
     def _draw_coverage(self, image: Image.Image, scene: dict[str, Any]) -> None:
         """Shade the mowed swath at the real cutting width under the path lines."""
         transformer = self._transformer
-        path_points = scene.get("path_points", [])
-        if transformer is None or len(path_points) < 2:
+        if transformer is None:
             return
         swath_px = int(round(CUTTING_WIDTH_MM * transformer.scale))
         # Keep the swath sane on degenerate/legacy coordinate scales: at least
         # a visible band, at most an eighth of the canvas.
         swath_px = max(self._s(3), min(swath_px, (IMAGE_WIDTH * self._scene_scale) // 8))
-        pixels = [transformer.to_pixel(point["x"], point["y"]) for point in path_points]
-        pixels = simplify_path_pixels(
-            pixels, 1.1 * self._scene_scale, 1.2 * self._scene_scale
-        )
-        if len(pixels) < 2:
-            return
         color = self._palette.coverage
         radius = max(1, swath_px // 2)
 
@@ -1197,11 +1190,33 @@ class MapRenderer:
                     [x - radius, y - radius, x + radius, y + radius], fill=color
                 )
 
-        self._composite_draw(image, pixels, draw_swath, pad=swath_px)
+        # Each archived session segment is swathed on its own so no false
+        # band is painted across the dock-and-resume gap (issue #214).
+        for path_points in [
+            *scene.get("session_path_segments", []),
+            scene.get("path_points", []),
+        ]:
+            if len(path_points) < 2:
+                continue
+            pixels = [
+                transformer.to_pixel(point["x"], point["y"])
+                for point in path_points
+            ]
+            pixels = simplify_path_pixels(
+                pixels, 1.1 * self._scene_scale, 1.2 * self._scene_scale
+            )
+            if len(pixels) < 2:
+                continue
+            self._composite_draw(image, pixels, draw_swath, pad=swath_px)
 
     def _draw_path(self, image: Image.Image, scene: dict[str, Any]) -> None:
         """Draw the history path and current path tracks separately."""
         self._draw_path_layer(image, scene.get("history_path_points", []), "history")
+        # Tracks mowed earlier in the running session, before a mid-session
+        # recharge (issue #214): part of the current job, drawn one segment at
+        # a time so no connector crosses the dock gap.
+        for segment in scene.get("session_path_segments", []):
+            self._draw_path_layer(image, segment, "current")
         self._draw_path_layer(image, scene.get("current_path_points", []), "current")
 
     def _station_pixel_size(self, transformer: CoordinateTransformer) -> tuple[int, int]:
@@ -1428,9 +1443,12 @@ class MapRenderer:
         pal = self._palette
         counts = scene.get("scene_counts", {})
         entries: list[tuple[tuple[int, int, int, int], str]] = []
-        if scene.get("path_points"):
+        has_mow_track = bool(
+            scene.get("path_points") or scene.get("session_path_segments")
+        )
+        if has_mow_track:
             entries.append((pal.path_current, self._t("path")))
-        if self._show_coverage and scene.get("path_points"):
+        if self._show_coverage and has_mow_track:
             entries.append((pal.coverage, self._t("coverage")))
         if counts.get("forbidden_zones", 0) or counts.get("physical_forbidden_zones", 0):
             entries.append((pal.restricted_outline, self._t("nogo")))
