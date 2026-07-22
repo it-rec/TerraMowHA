@@ -38,6 +38,7 @@ from homeassistant.helpers import entity_registry as er
 from .const import DOMAIN
 from .hub import TerraMowHub
 from .map_render import CUTTING_WIDTH_MM
+from .map_scene import point_in_polygon, polygon_area
 from .map_scene import build_scene, coerce_angle_radians, normalize_angle_radians
 
 _LOGGER = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ _LOGGER = logging.getLogger(__name__)
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.17.0"
+CARD_VERSION = "1.18.0"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -271,6 +272,44 @@ def _zone_direction_angles(map_data: dict[str, Any]) -> dict[int, Any]:
     return angles
 
 
+def _zone_coverage_ratios(scene: dict[str, Any]) -> dict[int, float]:
+    """Per-zone mowed fraction from the cycle coverage segments (#197).
+
+    Approximation: a segment edge counts for the zone its midpoint lies in;
+    covered area is edge length x cutting width, capped at the zone area
+    (stripe overlap and edge laps push the raw product past 100 %).
+    """
+    segments = scene["session_path_segments"]
+    if not segments:
+        return {}
+    edges: list[tuple[tuple[float, float], tuple[float, float]]] = []
+    for segment in segments:
+        pts = [(point["x"], point["y"]) for point in segment]
+        edges.extend(zip(pts, pts[1:]))
+    if not edges:
+        return {}
+    ratios: dict[int, float] = {}
+    for region in scene["regions"]:
+        for sub in region["sub_regions"]:
+            zone_id = sub["id"]
+            boundary = sub["boundary"]
+            if zone_id is None or len(boundary) < 3:
+                continue
+            area = polygon_area(boundary)
+            if area <= 0:
+                continue
+            covered = 0.0
+            for a, b in edges:
+                midpoint = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
+                if point_in_polygon(midpoint, boundary):
+                    covered += math.dist(a, b)
+            if covered > 0:
+                ratios[zone_id] = round(
+                    min(1.0, covered * CUTTING_WIDTH_MM / area), 3
+                )
+    return ratios
+
+
 def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
     """Serialize the drawable scene for the card."""
     map_data = hub.map_data
@@ -296,6 +335,7 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
 
     zone_angles = _zone_direction_angles(map_data)
     zone_settings = _zone_settings(map_data)
+    zone_coverage = _zone_coverage_ratios(scene)
     regions: list[dict[str, Any]] = []
     for region in scene["regions"]:
         regions.append(
@@ -319,6 +359,9 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
                         # Zone-specific mow settings for the zone-info panel;
                         # None -> the zone runs on the global mow_params.
                         "params": zone_settings.get(sub["id"]),
+                        # Mowed fraction of this zone in the running cycle
+                        # (None until the coverage touches it, issue #197).
+                        "coverage": zone_coverage.get(sub["id"]),
                     }
                     for sub in region["sub_regions"]
                 ],

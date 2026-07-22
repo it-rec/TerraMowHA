@@ -513,6 +513,30 @@ def _feature_points(item: Any) -> list[tuple[float, float]]:
     return _dedupe_points(points)
 
 
+def polygon_area(points: list[tuple[float, float]]) -> float:
+    """Unsigned polygon area (shoelace); 0.0 for degenerate input (#197)."""
+    if len(points) < 3:
+        return 0.0
+    total = 0.0
+    for (x1, y1), (x2, y2) in zip(points, points[1:] + points[:1]):
+        total += x1 * y2 - x2 * y1
+    return abs(total) / 2.0
+
+
+def point_in_polygon(
+    point: tuple[float, float], polygon: list[tuple[float, float]]
+) -> bool:
+    """Ray-casting point-in-polygon test (used for zone coverage, #197)."""
+    x, y = point
+    inside = False
+    for (x1, y1), (x2, y2) in zip(polygon, polygon[1:] + polygon[:1]):
+        if (y1 > y) != (y2 > y):
+            x_cross = x1 + (y - y1) * (x2 - x1) / (y2 - y1)
+            if x < x_cross:
+                inside = not inside
+    return inside
+
+
 def _polygon_centroid(points: list[tuple[float, float]]) -> tuple[float, float] | None:
     """Compute a simple centroid."""
     if not points:

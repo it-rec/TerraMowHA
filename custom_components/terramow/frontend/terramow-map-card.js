@@ -2250,6 +2250,15 @@ class TerramowMapCard extends HTMLElement {
             ? colors.zoneSelected
             : colors.zoneFill;
         ctx.fill("evenodd");
+        // Per-zone progress shading (#197): tint the zone with the coverage
+        // color, opacity scaled by how much of it is mowed this cycle.
+        if (typeof sub.coverage === "number" && sub.coverage > 0.01) {
+          ctx.save();
+          ctx.globalAlpha = Math.min(1, sub.coverage);
+          ctx.fillStyle = colors.coverage;
+          ctx.fill("evenodd");
+          ctx.restore();
+        }
         ctx.strokeStyle = pending ? colors.robot : colors.zoneEdge;
         ctx.lineWidth = lw(pending ? 2.5 : 1.2);
         ctx.stroke();
@@ -2359,6 +2368,19 @@ class TerramowMapCard extends HTMLElement {
           ctx.strokeText(label, 0, 0);
           ctx.fillStyle = colors.text;
           ctx.fillText(label, 0, 0);
+          // Zone progress percentage during the cycle (#197); hidden when
+          // untouched or (visually) complete.
+          if (
+            typeof sub.coverage === "number" &&
+            sub.coverage > 0.005 &&
+            sub.coverage < 0.995
+          ) {
+            const pct = `${Math.round(sub.coverage * 100)} %`;
+            ctx.font = `500 ${10 / view.scale}px sans-serif`;
+            ctx.strokeText(pct, 0, 14 / view.scale);
+            ctx.fillText(pct, 0, 14 / view.scale);
+            ctx.font = `600 ${fontPx}px sans-serif`;
+          }
           // Camera-parity badges beside the label (screen-aligned frame):
           // the red mow-order number top-left, and a small orange dot
           // top-right when the zone has custom mow parameters.
