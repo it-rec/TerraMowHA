@@ -339,7 +339,7 @@ def test_camera_renders_session_segments() -> None:
     hub = _hub()
     camera = TerraMowMapCamera(hub.basic_data, hub.hass, show_coverage=True)
     hub._map_data = MAP_DATA
-    hub._session_path_segments = [
+    hub._coverage_segments = [
         [{"x": 0.0, "y": 0.0}, {"x": 5000.0, "y": 0.0}, {"x": 5000.0, "y": 1000.0}],
         # collapses to a single pixel — skipped by both draw layers
         [{"x": 200.0, "y": 200.0}, {"x": 200.0, "y": 200.0}],

@@ -121,6 +121,14 @@ MAX_SESSION_PATH_SEGMENTS = 40
 SESSION_PATH_STORE_VERSION = 1
 SESSION_PATH_SAVE_DELAY = 10.0  # seconds
 
+# Cycle-level "already mowed" coverage (issue #202, approach B): the firmware
+# does not expose its bird-view raster locally (probe 2026-07-21), so the hub
+# accumulates its own coverage from the mow tracks — across sessions, until
+# the cycle ends. App-parity clearing: a manual "end job / clear progress"
+# clears it immediately; a completed cycle keeps it visible until the next
+# session starts; a map switch always clears. Persisted in the same store.
+MAX_COVERAGE_SEGMENTS = 400
+
 
 def _decompress_and_parse(raw: bytes) -> Any:
     """Decompress (if gzip) and JSON-parse a fetched map/path body.
@@ -407,6 +415,10 @@ class TerraMowHub:
         self._session_path_store: Store[dict[str, Any]] | None = None
         self._restored_session_paths: list[list[dict[str, Any]]] | None = None
         self._restored_map_id: Any = None
+        # Cycle-level mowed coverage (issue #202): superset of the session
+        # segments, kept across sessions until the cycle ends (see above).
+        self._coverage_segments: list[list[dict[str, Any]]] = []
+        self._coverage_cycle_done = False
         self._pose: dict[str, Any] = {}  # Stores the real-time pose
         # One meta-fetch channel per HTTP-backed resource; each bundles the
         # seq/etag/retry/pending bookkeeping for its meta topic.
@@ -807,10 +819,12 @@ class TerraMowHub:
         self._session_outcome = "aborted"
         self._active_mow_mission = None
         self._active_mow_idle_since = None
-        if self._session_path_segments:
-            # The job is over: its archived track must not linger (issue #214).
-            self._session_path_segments = []
-            self._schedule_session_path_save()
+        self._session_path_segments = []
+        # The user chose "clear auto-mode progress" — mirror the app and drop
+        # the accumulated cycle coverage as well (issue #202).
+        self._coverage_segments = []
+        self._coverage_cycle_done = False
+        self._schedule_session_path_save()
 
     async def on_statistics_data(self, payload: str) -> None:
         """Handle statistics data updates (dp_124)."""
@@ -1452,12 +1466,25 @@ class TerraMowHub:
                 )
             self._active_mow_mission = None
             self._active_mow_idle_since = None
+            # Fold the final leg into the cycle coverage before the device
+            # clears the realtime path; a COMPLETE marks the cycle done so
+            # the coverage resets when the next session starts (issue #202).
+            self._harvest_current_path_into_coverage()
+            self._coverage_cycle_done = (
+                self.mission_state == MissionState.MISSION_STATE_COMPLETE
+            )
             if self._session_path_segments:
                 # The session is over: drop its archived track (issue #214),
                 # matching the device clearing the realtime path at session end.
                 self._session_path_segments = []
-                self._schedule_session_path_save()
+            self._schedule_session_path_save()
         elif self.mission in MOW_MISSIONS:
+            if self._coverage_cycle_done:
+                # The previous cycle completed and a new one starts: the old
+                # coverage must not shade the fresh cycle (issue #202).
+                self._coverage_segments = []
+                self._coverage_cycle_done = False
+                self._schedule_session_path_save()
             if (
                 self._session_path_segments
                 and self.active_mission == Mission.MISSION_IDLE
@@ -2082,21 +2109,24 @@ class TerraMowHub:
         if self._restored_map_id is not None and incoming_id is not None:
             if incoming_id != self._restored_map_id:
                 # The persisted segments (parked or already adopted) belong to
-                # a different map than the device now serves (#239).
+                # a different map than the device now serves (#239/#202).
                 self._restored_session_paths = None
-                if self._session_path_segments:
-                    self._session_path_segments = []
-                    self._schedule_session_path_save()
+                self._session_path_segments = []
+                self._coverage_segments = []
+                self._coverage_cycle_done = False
+                self._schedule_session_path_save()
             self._restored_map_id = None
         old_map_id = self._map_data.get("id")
         if (
-            self._session_path_segments
+            (self._session_path_segments or self._coverage_segments)
             and old_map_id is not None
             and data.get("id") != old_map_id
         ):
-            # The archived session track belongs to the previous map; drawn
-            # onto a different map it would cross unrelated geometry (#214).
+            # The archived tracks belong to the previous map; drawn onto a
+            # different map they would cross unrelated geometry (#214/#202).
             self._session_path_segments = []
+            self._coverage_segments = []
+            self._coverage_cycle_done = False
             self._schedule_session_path_save()
         self._map_data = data
         map_info = self._build_map_info_from_map_data(data)
@@ -2141,16 +2171,44 @@ class TerraMowHub:
         )
         if len(simplified) < 2:
             return
-        self._session_path_segments.append(
-            [{"x": x, "y": y} for x, y in simplified]
-        )
+        segment = [{"x": x, "y": y} for x, y in simplified]
+        self._session_path_segments.append(segment)
         del self._session_path_segments[:-MAX_SESSION_PATH_SEGMENTS]
+        self._coverage_segments.append(segment)
+        del self._coverage_segments[:-MAX_COVERAGE_SEGMENTS]
         self._schedule_session_path_save()
         _LOGGER.debug(
             "Archived a %d-point session path segment (%d total)",
             len(simplified),
             len(self._session_path_segments),
         )
+
+    def _harvest_current_path_into_coverage(self) -> None:
+        """Fold the live path's mow track into the cycle coverage (#202).
+
+        Called when a session ends: the realtime path still holds the final
+        leg (the mid-session legs were archived on their resets), and the
+        device is about to clear it.
+        """
+        segment = extract_cleaning_path_points(self._path_data)
+        if len(segment) < 2:
+            return
+        simplified = simplify_path_pixels(
+            [(point["x"], point["y"]) for point in segment],
+            SESSION_PATH_SIMPLIFY_EPSILON_MM,
+            SESSION_PATH_SIMPLIFY_MIN_SEGMENT_MM,
+        )
+        if len(simplified) < 2:
+            return
+        self._coverage_segments.append(
+            [{"x": x, "y": y} for x, y in simplified]
+        )
+        del self._coverage_segments[:-MAX_COVERAGE_SEGMENTS]
+
+    @property
+    def coverage_segments(self) -> list[list[dict[str, Any]]]:
+        """Cycle-level mowed coverage segments (issue #202)."""
+        return self._coverage_segments
 
     def _get_session_path_store(self) -> Store[dict[str, Any]]:
         """Lazily create the disk store for the archived session segments."""
@@ -2167,6 +2225,8 @@ class TerraMowHub:
         return {
             "map_id": self._map_data.get("id"),
             "segments": self._session_path_segments,
+            "coverage_segments": self._coverage_segments,
+            "coverage_cycle_done": self._coverage_cycle_done,
         }
 
     def _schedule_session_path_save(self) -> None:
@@ -2187,6 +2247,16 @@ class TerraMowHub:
         except Exception as err:  # corrupt store must never block setup
             _LOGGER.warning("Could not load persisted session paths: %s", err)
             return
+        coverage = (data or {}).get("coverage_segments")
+        if isinstance(coverage, list) and coverage:
+            # Cycle coverage is restored unconditionally: it survives session
+            # boundaries by design; a map mismatch clears it in
+            # _apply_map_data (issue #202).
+            self._coverage_segments = coverage[-MAX_COVERAGE_SEGMENTS:]
+            self._coverage_cycle_done = bool(
+                (data or {}).get("coverage_cycle_done")
+            )
+            self._restored_map_id = (data or {}).get("map_id")
         segments = (data or {}).get("segments")
         if isinstance(segments, list) and segments:
             self._restored_session_paths = segments
@@ -2221,6 +2291,10 @@ class TerraMowHub:
         if session_open and map_matches:
             self._session_path_segments = restored + self._session_path_segments
             del self._session_path_segments[:-MAX_SESSION_PATH_SEGMENTS]
+            for segment in restored:
+                if segment not in self._coverage_segments:
+                    self._coverage_segments.append(segment)
+            del self._coverage_segments[:-MAX_COVERAGE_SEGMENTS]
             _LOGGER.info(
                 "Restored %d session path segments from before the restart",
                 len(restored),

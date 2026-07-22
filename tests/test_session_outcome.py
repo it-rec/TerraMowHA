@@ -245,10 +245,12 @@ def test_manual_end_clears_the_archived_session_paths() -> None:
     hub._session_path_store.async_delay_save.assert_called()
 
 
-def test_manual_end_without_archived_paths_skips_the_save() -> None:
+def test_manual_end_always_persists_the_clear() -> None:
+    # The manual end also drops the cycle coverage (issue #202), so the
+    # cleared state is always written to the store.
     hub = _latched_idle_hub()
     _work(hub, **ZEROED_WORK)
-    assert hub._session_path_store is None  # no segments -> no store touched
+    hub._session_path_store.async_delay_save.assert_called()
 
 
 def test_zero_counters_while_running_do_not_release() -> None:

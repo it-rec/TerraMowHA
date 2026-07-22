@@ -279,7 +279,9 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
         hub.path_data,
         hub.history_path_data,
         False,
-        session_path_segments=hub.session_path_segments,
+        # Cycle coverage (superset of the session archive) feeds the
+        # existing "mowed area" renderer (issue #202, approach B).
+        session_path_segments=hub.coverage_segments,
     )
 
     station: dict[str, Any] | None = None
