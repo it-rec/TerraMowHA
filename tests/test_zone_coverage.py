@@ -104,7 +104,9 @@ def test_no_segments_short_circuits() -> None:
 
 
 def test_single_point_segments_yield_no_edges() -> None:
-    scene = _scene([[{"x": 500, "y": 500}]])
+    # build_scene drops degenerate segments itself, so exercise the edge
+    # guard directly with a hand-built scene.
+    scene = {"session_path_segments": [[{"x": 500, "y": 500}]], "regions": []}
     assert _zone_coverage_ratios(scene) == {}
 
 
