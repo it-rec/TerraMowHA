@@ -450,7 +450,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             self._show_coverage,
             cache=self._scene_cache,
             session_path_segments=getattr(
-                self.basic_data.lawn_mower, "session_path_segments", None
+                self.basic_data.lawn_mower, "coverage_segments", None
             ),
         )
 
