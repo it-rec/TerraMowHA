@@ -99,8 +99,8 @@ def test_harvest_skips_an_empty_or_degenerate_path() -> None:
     hub._path_data = {}
     hub._harvest_current_path_into_coverage()  # no points at all
     assert hub.coverage_segments == []
-    # two cleaning points closer than the simplify minimum collapse to < 2
-    hub._path_data = _path(_clean((0, 0), (1, 0)))
+    # identical cleaning points dedupe to a single pixel -> not a segment
+    hub._path_data = _path(_clean((500, 500), (500, 500), (500, 500)))
     hub._harvest_current_path_into_coverage()
     assert hub.coverage_segments == []
 

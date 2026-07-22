@@ -58,7 +58,12 @@ def test_save_data_snapshots_segments_and_map() -> None:
     hub = _hub()
     hub._map_data = {"id": 7}
     hub._session_path_segments = [SEGMENT]
-    assert hub._session_path_save_data() == {"map_id": 7, "segments": [SEGMENT]}
+    assert hub._session_path_save_data() == {
+        "map_id": 7,
+        "segments": [SEGMENT],
+        "coverage_segments": [],
+        "coverage_cycle_done": False,
+    }
 
 
 def test_schedule_save_is_debounced() -> None:
@@ -204,13 +209,15 @@ def test_map_push_with_other_id_discards_parked_and_adopted() -> None:
     hub._session_path_store.async_delay_save.assert_called_once()
 
 
-def test_map_push_with_other_id_and_no_segments_skips_save() -> None:
+def test_map_push_with_other_id_always_persists_the_discard() -> None:
+    # Discarding parked segments must reach the disk too, otherwise the
+    # stale store would restore them again on the next boot.
     hub = _hub()
     _restore(hub, {"map_id": 1, "segments": [SEGMENT]})
     hub._session_path_store.async_delay_save.reset_mock()
     hub._apply_map_data(_map(2))
     assert hub._restored_session_paths is None
-    hub._session_path_store.async_delay_save.assert_not_called()
+    hub._session_path_store.async_delay_save.assert_called_once()
 
 
 def test_map_push_with_matching_id_keeps_parked_segments() -> None:
