@@ -27,7 +27,7 @@
     "aiomqtt>=2.0.0",
     "Pillow>=9.1.0"
   ],
-  "version": "1.47.0",
+  "version": "1.48.0",
   "zeroconf": [
     {
       "type": "_mqtt._tcp.local.",
