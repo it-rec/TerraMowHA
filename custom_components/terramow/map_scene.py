@@ -518,7 +518,7 @@ def polygon_area(points: list[tuple[float, float]]) -> float:
     if len(points) < 3:
         return 0.0
     total = 0.0
-    for (x1, y1), (x2, y2) in zip(points, points[1:] + points[:1]):
+    for (x1, y1), (x2, y2) in zip(points, points[1:] + points[:1], strict=True):
         total += x1 * y2 - x2 * y1
     return abs(total) / 2.0
 
@@ -529,7 +529,7 @@ def point_in_polygon(
     """Ray-casting point-in-polygon test (used for zone coverage, #197)."""
     x, y = point
     inside = False
-    for (x1, y1), (x2, y2) in zip(polygon, polygon[1:] + polygon[:1]):
+    for (x1, y1), (x2, y2) in zip(polygon, polygon[1:] + polygon[:1], strict=True):
         if (y1 > y) != (y2 > y):
             x_cross = x1 + (y - y1) * (x2 - x1) / (y2 - y1)
             if x < x_cross:

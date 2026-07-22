@@ -285,7 +285,7 @@ def _zone_coverage_ratios(scene: dict[str, Any]) -> dict[int, float]:
     edges: list[tuple[tuple[float, float], tuple[float, float]]] = []
     for segment in segments:
         pts = [(point["x"], point["y"]) for point in segment]
-        edges.extend(zip(pts, pts[1:]))
+        edges.extend(zip(pts, pts[1:], strict=False))
     if not edges:
         return {}
     ratios: dict[int, float] = {}
