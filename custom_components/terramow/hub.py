@@ -59,7 +59,7 @@ from .issues import (
     async_sync_blade_maintenance_issue,
     async_sync_compatibility_issue,
 )
-from .map_scene import extract_cleaning_path_points, simplify_path_pixels
+from .map_scene import extract_cleaning_path_runs, simplify_path_pixels
 
 if TYPE_CHECKING:
     from . import TerraMowBasicData
@@ -2161,25 +2161,32 @@ class TerraMowHub:
             return  # the same path, unchanged or grown at the tail
         if self.active_mission == Mission.MISSION_IDLE:
             return  # no running session: the normal end-of-job clear
-        segment = extract_cleaning_path_points(old_data)
-        if len(segment) < 2:
+        # Archive each contiguous mowing run on its own: a leg that transited
+        # between areas is not one straight segment, so a single archived
+        # segment would draw a phantom diagonal across the transit gap.
+        archived = 0
+        for run in extract_cleaning_path_runs(old_data):
+            if len(run) < 2:
+                continue
+            simplified = simplify_path_pixels(
+                [(point["x"], point["y"]) for point in run],
+                SESSION_PATH_SIMPLIFY_EPSILON_MM,
+                SESSION_PATH_SIMPLIFY_MIN_SEGMENT_MM,
+            )
+            if len(simplified) < 2:
+                continue
+            segment = [{"x": x, "y": y} for x, y in simplified]
+            self._session_path_segments.append(segment)
+            self._coverage_segments.append(segment)
+            archived += 1
+        if not archived:
             return
-        simplified = simplify_path_pixels(
-            [(point["x"], point["y"]) for point in segment],
-            SESSION_PATH_SIMPLIFY_EPSILON_MM,
-            SESSION_PATH_SIMPLIFY_MIN_SEGMENT_MM,
-        )
-        if len(simplified) < 2:
-            return
-        segment = [{"x": x, "y": y} for x, y in simplified]
-        self._session_path_segments.append(segment)
         del self._session_path_segments[:-MAX_SESSION_PATH_SEGMENTS]
-        self._coverage_segments.append(segment)
         del self._coverage_segments[:-MAX_COVERAGE_SEGMENTS]
         self._schedule_session_path_save()
         _LOGGER.debug(
-            "Archived a %d-point session path segment (%d total)",
-            len(simplified),
+            "Archived %d session path segment(s) (%d total)",
+            archived,
             len(self._session_path_segments),
         )
 
@@ -2190,20 +2197,23 @@ class TerraMowHub:
         leg (the mid-session legs were archived on their resets), and the
         device is about to clear it.
         """
-        segment = extract_cleaning_path_points(self._path_data)
-        if len(segment) < 2:
-            return
-        simplified = simplify_path_pixels(
-            [(point["x"], point["y"]) for point in segment],
-            SESSION_PATH_SIMPLIFY_EPSILON_MM,
-            SESSION_PATH_SIMPLIFY_MIN_SEGMENT_MM,
-        )
-        if len(simplified) < 2:
-            return
-        self._coverage_segments.append(
-            [{"x": x, "y": y} for x, y in simplified]
-        )
-        del self._coverage_segments[:-MAX_COVERAGE_SEGMENTS]
+        harvested = 0
+        for run in extract_cleaning_path_runs(self._path_data):
+            if len(run) < 2:
+                continue
+            simplified = simplify_path_pixels(
+                [(point["x"], point["y"]) for point in run],
+                SESSION_PATH_SIMPLIFY_EPSILON_MM,
+                SESSION_PATH_SIMPLIFY_MIN_SEGMENT_MM,
+            )
+            if len(simplified) < 2:
+                continue
+            self._coverage_segments.append(
+                [{"x": x, "y": y} for x, y in simplified]
+            )
+            harvested += 1
+        if harvested:
+            del self._coverage_segments[:-MAX_COVERAGE_SEGMENTS]
 
     @property
     def coverage_segments(self) -> list[list[dict[str, Any]]]:
