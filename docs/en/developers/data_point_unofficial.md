@@ -62,7 +62,7 @@ Documented here for future work; not decoded into entities yet.
 
 | ID | Likely meaning | Observed payload (truncated) |
 |----|----------------|------------------------------|
-| 103 | **Ack echo of the dp_103 command channel** (the integration publishes selective-mow / clean commands to `data_point/103/app`): the `/robot` side answers `{seq, ret:0}` per accepted command. Live-confirmed (V1000 fw28): each `start_mowing` / `dock` sent over local MQTT produced exactly one echo with a monotonically increasing `seq` — so unlike dp_119 (which only carries the internal commander's acks on this firmware), dp_103 *does* ack local-MQTT commands | `{"seq":917327464,"ret":0}` |
+| 103 | **Ack echo of the dp_103 command channel** (the integration publishes selective-mow / clean commands to `data_point/103/app`): the `/robot` side answers `{seq, ret:0}` per accepted command. Live-confirmed (V1000 fw28): each `start_mowing` / `dock` sent over local MQTT produced exactly one echo with a monotonically increasing `seq` — so unlike dp_119 (which only carries the internal commander's acks on this firmware), dp_103 *does* ack local-MQTT commands. **Draw-region finding (2026-07-22):** a guarded brute-force run fired six draw-region command shapes (`START_MODE_DRAW_REGION_CLEAN` / `_CUSTOM_REGION_CLEAN` / `_DRAW_CLEAN` with `{polygon:{points}}`, `{points}`, `{draw_region_polygons:[…]}` fragments) — **none was acked at all**, while a `START_MODE_SELECT_REGION_CLEAN` control was acked (`ret:0`) and started the mower. So local dp_103 only accepts the documented start modes (`GLOBAL_CLEAN` / `SELECT_REGION_CLEAN` / `EDGE_TRIM_CLEAN` / `RETURN`); there is **no local draw-region start mode** on this firmware (the app draws regions over BLE/cloud), issue [#199] | `{"seq":917327464,"ret":0}` |
 | 104 | **Ack fired by the app's "End job / clear auto-mode progress"** action (V1000 fw28): observed exactly once, in the same second the user confirmed "Clear" in the vendor app; presumably the `/robot` ack of an end/clear command channel (the app writes over BLE/cloud, so only the ack is visible locally). `seq` is epoch-like | `{"seq":1784657579,"ret":0}` |
 | 110 | Unknown scalar | `{"int_value":60}` |
 | 111 | Upload progress (companion of dp_118?). Stayed `{false, 0}` through a full mow with a mid-session recharge dock — whatever it uploads, a normal mow does not trigger it | `{"is_uploading":false,"process":0}` |
@@ -142,5 +142,6 @@ this went unnoticed. The `error_list` clears when the fault resolves.
 
 [#142]: https://github.com/it-rec/TerraMowHA/issues/142
 [#171]: https://github.com/it-rec/TerraMowHA/issues/171
+[#199]: https://github.com/it-rec/TerraMowHA/issues/199
 [#204]: https://github.com/it-rec/TerraMowHA/issues/204
 [#207]: https://github.com/it-rec/TerraMowHA/issues/207
