@@ -38,8 +38,13 @@ from homeassistant.helpers import entity_registry as er
 from .const import DOMAIN
 from .hub import TerraMowHub
 from .map_render import CUTTING_WIDTH_MM
-from .map_scene import point_in_polygon, polygon_area
-from .map_scene import build_scene, coerce_angle_radians, normalize_angle_radians
+from .map_scene import (
+    build_scene,
+    coerce_angle_radians,
+    normalize_angle_radians,
+    point_in_polygon,
+    polygon_area,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
