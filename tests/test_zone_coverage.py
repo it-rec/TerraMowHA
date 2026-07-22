@@ -48,7 +48,9 @@ MAP_DATA = {
 
 
 def _scene(coverage_segments):
-    return build_scene(MAP_DATA, session_path_segments=coverage_segments)
+    return build_scene(
+        MAP_DATA, {}, {}, False, session_path_segments=coverage_segments
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -133,6 +135,9 @@ def test_degenerate_zone_is_skipped() -> None:
     }
     scene = build_scene(
         map_data,
+        {},
+        {},
+        False,
         session_path_segments=[[{"x": 500, "y": 0}, {"x": 900, "y": 0}]],
     )
     assert _zone_coverage_ratios(scene) == {}
