@@ -322,12 +322,29 @@ const MAX_PATH_POINTS = 6000;
  * Halve a polyline's vertex density in place until it fits `cap`, keeping
  * every other point. At whole-lawn scale the coarser line is visually
  * indistinguishable, but memory and per-append redraw cost stay bounded.
+ *
+ * Empty `[]` run-break sentinels are always kept (dropping one would rejoin
+ * two mowing runs into a phantom diagonal), as is the first real point after
+ * a break so a run never loses its start vertex.
  */
 function decimatePath(points, cap) {
   while (points.length > cap) {
     let write = 0;
-    for (let read = 0; read < points.length; read += 2) {
-      points[write++] = points[read];
+    let keep = true;
+    for (let read = 0; read < points.length; read++) {
+      const p = points[read];
+      if (!p || p.length !== 2) {
+        points[write++] = p; // never drop a run break
+        keep = true; // keep the first point of the next run
+        continue;
+      }
+      if (keep) {
+        points[write++] = p;
+      }
+      keep = !keep;
+    }
+    if (write >= points.length) {
+      break; // nothing removed (all sentinels) — avoid an infinite loop
     }
     points.length = write;
   }
@@ -2713,7 +2730,7 @@ class TerramowMapCard extends HTMLElement {
     this._applyWorldTransform(ctx, dpr);
 
     const strokePath = (points, stroke, widthWorld) => {
-      if (points.length < 2) {
+      if (!points || points.length < 2) {
         return;
       }
       ctx.strokeStyle = stroke;
@@ -2721,9 +2738,22 @@ class TerramowMapCard extends HTMLElement {
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
       ctx.beginPath();
-      ctx.moveTo(points[0][0], points[0][1]);
-      for (let i = 1; i < points.length; i++) {
-        ctx.lineTo(points[i][0], points[i][1]);
+      // A path is a flat list of [x, y] points with empty `[]` sentinels
+      // marking run breaks: the mower stopped mowing to transit there, so the
+      // pen lifts instead of drawing a straight diagonal across the gap.
+      let penDown = false;
+      for (let i = 0; i < points.length; i++) {
+        const p = points[i];
+        if (!p || p.length !== 2) {
+          penDown = false; // run break — lift the pen
+          continue;
+        }
+        if (penDown) {
+          ctx.lineTo(p[0], p[1]);
+        } else {
+          ctx.moveTo(p[0], p[1]);
+          penDown = true;
+        }
       }
       ctx.stroke();
     };

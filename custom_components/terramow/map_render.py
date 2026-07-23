@@ -1191,10 +1191,13 @@ class MapRenderer:
                 )
 
         # Each archived session segment is swathed on its own so no false
-        # band is painted across the dock-and-resume gap (issue #214).
+        # band is painted across the dock-and-resume gap (issue #214). The live
+        # path is swathed per mowing run for the same reason: a transit leg
+        # between two runs must not leave a false mowed band across the gap.
         for path_points in [
             *scene.get("session_path_segments", []),
-            scene.get("path_points", []),
+            *self._path_runs(scene, "history"),
+            *self._path_runs(scene, "current"),
         ]:
             if len(path_points) < 2:
                 continue
@@ -1210,14 +1213,38 @@ class MapRenderer:
             self._composite_draw(image, pixels, draw_swath, pad=swath_px)
 
     def _draw_path(self, image: Image.Image, scene: dict[str, Any]) -> None:
-        """Draw the history path and current path tracks separately."""
-        self._draw_path_layer(image, scene.get("history_path_points", []), "history")
+        """Draw the history path and current path tracks separately.
+
+        Each path is split into contiguous mowing runs and every run is drawn
+        as its own polyline. A run break marks where the mower stopped mowing
+        to transit (or return to dock) — that leg was filtered out, so joining
+        the two runs would paint a straight diagonal the mower never drove.
+        """
+        for run in self._path_runs(scene, "history"):
+            self._draw_path_layer(image, run, "history")
         # Tracks mowed earlier in the running session, before a mid-session
         # recharge (issue #214): part of the current job, drawn one segment at
         # a time so no connector crosses the dock gap.
         for segment in scene.get("session_path_segments", []):
             self._draw_path_layer(image, segment, "current")
-        self._draw_path_layer(image, scene.get("current_path_points", []), "current")
+        for run in self._path_runs(scene, "current"):
+            self._draw_path_layer(image, run, "current")
+
+    @staticmethod
+    def _path_runs(
+        scene: dict[str, Any], variant: str
+    ) -> list[list[dict[str, Any]]]:
+        """The mowing runs for ``variant``, falling back to the flat list.
+
+        ``build_scene`` always supplies ``<variant>_path_runs``; the fallback
+        wraps the flat ``<variant>_path_points`` as a single run so a
+        hand-built scene without the split still renders.
+        """
+        runs = scene.get(f"{variant}_path_runs")
+        if runs is not None:
+            return runs
+        flat = scene.get(f"{variant}_path_points", [])
+        return [flat] if flat else []
 
     def _station_pixel_size(self, transformer: CoordinateTransformer) -> tuple[int, int]:
         """Station icon size in pixels on the active canvas, true to scale."""
