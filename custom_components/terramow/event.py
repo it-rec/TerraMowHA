@@ -20,6 +20,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowBasicData, TerraMowConfigEntry
 from .entity import TerraMowEntity
+from .error_codes import describe_error
 from .hub import MissionState, TerraMowHub, compute_phase
 
 # Push-based integration: no update throttling needed
@@ -139,6 +140,13 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
             # dp_107 ``has_error`` false, which made the attribute contradict the
             # ``error`` event it was attached to (issue #171).
             "has_error": hub.has_active_error,
+            # The dp_116 codes behind an ``error`` event, with readable text
+            # from the community-sourced catalog — lets an automation say
+            # "Mower stuck" instead of "903" without a lookup of its own.
+            "error_codes": hub.active_error_codes,
+            "error_descriptions": [
+                describe_error(code) for code in hub.active_error_codes
+            ],
         }
 
     def _display_key(self) -> tuple[Any, Any]:

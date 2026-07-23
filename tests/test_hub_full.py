@@ -110,6 +110,21 @@ def test_on_error_list_and_event_data_branches() -> None:
     assert hub.event_list[-1]["code"] == 8
 
 
+def test_on_active_error_code_branches() -> None:
+    hub = _hub()
+    # invalid JSON is swallowed
+    asyncio.run(hub.on_active_error_code("not-json"))
+    assert hub.active_error_code is None
+    # non-dict / wrong-typed / bool payloads are ignored
+    asyncio.run(hub.on_active_error_code(json.dumps([1])))
+    asyncio.run(hub.on_active_error_code(json.dumps({"int_value": "x"})))
+    asyncio.run(hub.on_active_error_code(json.dumps({"int_value": True})))
+    assert hub.active_error_code is None
+    # a real code is stored (dp_115 mirrors the newest dp_116 entry, #171)
+    asyncio.run(hub.on_active_error_code(json.dumps({"int_value": 903})))
+    assert hub.active_error_code == 903
+
+
 def test_on_cellular_info_branches() -> None:
     hub = _hub()
     asyncio.run(hub.on_cellular_info("not-json"))  # invalid JSON swallowed

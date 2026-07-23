@@ -83,9 +83,18 @@ def test_active_errors_sensor_from_dp116() -> None:
     # no data yet -> zero active errors, no attributes
     assert sensor.native_value == 0
     assert sensor.extra_state_attributes == {}
-    _feed(hub.on_error_list, {"error_list": [{"code": 3}, {"code": 7}]})
+    # a known code gains its catalog text, an unknown one the bare fallback
+    _feed(hub.on_error_list, {"error_list": [{"code": 903}, {"code": 7}]})
     assert sensor.native_value == 2
-    assert sensor.extra_state_attributes == {"errors": [{"code": 3}, {"code": 7}]}
+    assert sensor.extra_state_attributes == {
+        "errors": [
+            {"code": 903, "text": "Mower stuck"},
+            {"code": 7, "text": "Error 7"},
+        ]
+    }
+    # a non-dict entry passes through untouched
+    _feed(hub.on_error_list, {"error_list": ["opaque"]})
+    assert sensor.extra_state_attributes == {"errors": ["opaque"]}
     # without a lawn mower the sensor reports no value
     hub.basic_data.lawn_mower = None
     assert sensor.native_value is None
@@ -100,10 +109,13 @@ def test_problem_sensor_reflects_dp116_and_dp107() -> None:
     assert problem.is_on is False
     assert problem.extra_state_attributes == {}
     # a fault reported only via dp_116 turns the problem on and exposes the
-    # error codes (issue #171)
-    _feed(hub.on_error_list, {"error_list": [{"code": 3}, {"code": 7}]})
+    # error codes (issue #171) with their catalog descriptions
+    _feed(hub.on_error_list, {"error_list": [{"code": 201}, {"code": 7}]})
     assert problem.is_on is True
-    assert problem.extra_state_attributes == {"error_codes": [3, 7]}
+    assert problem.extra_state_attributes == {
+        "error_codes": [201, 7],
+        "error_descriptions": ["Mower lifted", "Error 7"],
+    }
     # an error list with no parseable codes still reads as a problem, but yields
     # no error_codes attribute
     _feed(hub.on_error_list, {"error_list": ["opaque"]})

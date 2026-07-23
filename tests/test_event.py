@@ -261,6 +261,11 @@ def test_error_list_fault_fires_error_event() -> None:
     # fired it, so it reads True even though the raw dp_107 flag is false (#171).
     assert ent._trigger_event.call_args.args[1]["has_error"] is True
     assert hub.has_error is False
+    # The codes behind the fault ride along, with readable catalog text
+    assert ent._trigger_event.call_args.args[1]["error_codes"] == [5]
+    assert ent._trigger_event.call_args.args[1]["error_descriptions"] == [
+        "Error 5"
+    ]
 
 
 def test_connection_error_does_not_fire_error_event() -> None:

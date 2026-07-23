@@ -67,6 +67,7 @@ Documented here for future work; not decoded into entities yet.
 | 110 | Unknown scalar | `{"int_value":60}` |
 | 111 | Upload progress (companion of dp_118?). Stayed `{false, 0}` through a full mow with a mid-session recharge dock — whatever it uploads, a normal mow does not trigger it | `{"is_uploading":false,"process":0}` |
 | 114 | **Latest event code** — mirrors the newest entry of the dp_123 event log. Observed `int_value:90` at the exact moment dp_123 appended `{code:90}` (a relocation event); earlier `int_value:8` matched dp_123 code 8. **Re-confirmed 2026-07-21 (V1000 fw28):** dp_114 and dp_123 arrive within <100 ms of each other, and a day's dp_114 values (`43`, `87`, `65`) each matched the newest dp_123 `code` with identical timestamps (`65` fired at a recharge-return dock; a cellar relocation had produced `135`) — this also refutes an earlier link-quality-metric hypothesis for this dp. Redundant with the **Last event** sensor, so not surfaced separately | `{"int_value":65}` |
+| 115 | **Latest error code** — mirrors the newest entry of the dp_116 active-error list, exactly as dp_114 mirrors the dp_123 event log. Community-confirmed twice on an S1200 fw `9.9.210` (issue [#171]): `int_value:201` arrived in the same instant dp_116 appended `{code:201}` (mower lifted), and `int_value:903` matched `{code:903}` (mower stuck). Decoded into the hub (`active_error_code`); fault surfacing stays on the richer dp_116 list. Known code meanings live in `error_codes.py` | `{"int_value":903}` |
 | 120 | Ack/echo-shaped, same family as dp_119 (`code` instead of `ret`); single observation while the mower idled docked, context unknown. `seq` epoch-like | `{"seq":1784579052,"code":0}` |
 | 134 | Undecoded binary flag (surfaced as **State flag 134**). Note: it stayed **constant** through a full start/pause/resume/dock session, so it is **not** tied to the mowing state — meaning still unknown | `{"enum_value":0}` |
 | 145 | Custom-passage creation status | `{"stage":"CUSTOM_PASSAGE_STAGE_INVALID","is_on_grass":false,…}` |
@@ -135,10 +136,15 @@ this went unnoticed. The `error_list` clears when the fault resolves.
   dp_116 error codes are surfaced as the Problem sensor's `error_codes`
   attribute. dp_116 does not flow through `on_mission_status`, so its handler
   notifies the mower / event listeners directly to surface the fault live.
-- *To watch for:* the dp_116 entry structure is only known to carry a `code`
-  (from the dp_123 event log's shape); a diagnostics export with a **populated**
-  `error_list` would confirm the fields and let error codes be mapped to
-  human-readable fault messages.
+- *Entry structure confirmed* (S1200 fw `9.9.210`, live captures in issue
+  [#171]): `{"error_list": [{"code": int, "time": "<RFC3339>"}]}` — the same
+  shape as the dp_123 event log. Each fault also fires dp_115 with the bare
+  code (see the table above).
+- *Known codes* (community-sourced, catalog in `error_codes.py`): `201` mower
+  lifted, `903` mower stuck. The codes surface with readable text on the
+  **Active errors** sensor (`errors[].text`), the **Problem** binary sensor
+  (`error_descriptions`) and the **error** event. Unknown codes fall back to
+  `Error <code>` — every new capture in [#171] grows the catalog.
 
 [#142]: https://github.com/it-rec/TerraMowHA/issues/142
 [#171]: https://github.com/it-rec/TerraMowHA/issues/171
