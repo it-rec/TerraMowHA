@@ -32,6 +32,17 @@ from custom_components.terramow.map_card import (
     build_status_payload,
 )
 
+@pytest.fixture(autouse=True)
+def _clear_hub_caches() -> Any:
+    """Reset the module-level per-hub caches so id(hub) reuse between tests
+    can't leak a stale scene/coverage entry into a fresh subscription."""
+    map_card._HUB_SCENE_CACHES.clear()
+    map_card._HUB_COVERAGE_CACHES.clear()
+    yield
+    map_card._HUB_SCENE_CACHES.clear()
+    map_card._HUB_COVERAGE_CACHES.clear()
+
+
 HOST = "192.0.2.10"
 SERIAL = "MP511MAP01"
 
@@ -575,6 +586,40 @@ async def test_unsubscribe_cancels_pending_scene_push(
         if result.get("id") == 2:
             break
     assert result["success"]
+
+
+async def test_resubscribe_pushes_cached_scene_immediately(
+    hass: HomeAssistant, hass_ws_client: Any, monkeypatch: Any
+) -> None:
+    """A second subscription paints the last scene at once (before rebuild)."""
+    monkeypatch.setattr(map_card, "SCENE_PUSH_DEBOUNCE", 0)
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    hub._apply_map_data(MAP_DATA)
+    hub._apply_path_data(PATH_DATA)
+    await hass.async_block_till_done()
+
+    # First subscription: cold cache -> the background build populates it.
+    client1 = await hass_ws_client(hass)
+    await client1.send_json(
+        {"id": 1, "type": WS_SUBSCRIBE_MAP, "entity_id": _lawn_mower_entity_id(hass)}
+    )
+    assert (await client1.receive_json())["success"]
+    await hass.async_block_till_done()
+    assert id(hub) in map_card._HUB_SCENE_CACHES
+
+    # Second subscription: the very first event is the cached scene, emitted
+    # synchronously from start() before any executor rebuild runs.
+    client2 = await hass_ws_client(hass)
+    await client2.send_json(
+        {"id": 2, "type": WS_SUBSCRIBE_MAP, "entity_id": _lawn_mower_entity_id(hass)}
+    )
+    assert (await client2.receive_json())["success"]
+    types = set()
+    for _ in range(2):
+        types.add((await client2.receive_json())["event"]["type"])
+    assert "scene" in types
 
 
 async def test_stop_cancels_inflight_build_task(hass: HomeAssistant) -> None:

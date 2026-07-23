@@ -85,6 +85,14 @@ COVERAGE_RECOMPUTE_INTERVAL = 12.0
 # entry and the stale one (a tiny dict) is orphaned.
 _HUB_COVERAGE_CACHES: dict[int, dict[str, Any]] = {}
 
+# Last fully-built scene payload per hub. A fresh subscription (initial load, or
+# a mobile view-swipe that recreates the card element) pushes this immediately
+# so the card paints the known map at once, instead of blanking to "Waiting for
+# mower data…" while the heavy build_scene_payload runs in the executor. The
+# background rebuild that follows sends a delta (or a fresh scene) moments later.
+# Keyed by id(hub); a reloaded hub gets a fresh entry and orphans the old one.
+_HUB_SCENE_CACHES: dict[int, dict[str, Any]] = {}
+
 _DATA_SETUP_DONE = f"{DOMAIN}_map_card_setup"
 
 
@@ -709,6 +717,12 @@ class _MapFeed:
             self.hub.register_callback(8, self._on_pose),
             self.hub.register_callback(113, self._on_pose),
         ]
+        # Paint instantly from the last known scene (if any card has rendered
+        # this hub before), then schedule the authoritative rebuild which sends
+        # a delta or a fresh scene once it completes.
+        cached = _HUB_SCENE_CACHES.get(id(self.hub))
+        if cached is not None:
+            self._emit_scene(cached)
         self._schedule_scene_build()
         self._push_robot()
 
@@ -761,6 +775,9 @@ class _MapFeed:
                 except Exception:  # pragma: no cover - defensive
                     _LOGGER.exception("Failed to build map card scene")
                     return
+                # Remember the freshest full scene so the next subscription can
+                # paint it immediately (see start()).
+                _HUB_SCENE_CACHES[id(self.hub)] = payload
                 self._emit_scene(payload)
                 if not self._rebuild_pending:
                     return
