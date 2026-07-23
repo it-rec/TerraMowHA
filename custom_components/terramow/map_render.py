@@ -1240,7 +1240,9 @@ class MapRenderer:
         wraps the flat ``<variant>_path_points`` as a single run so a
         hand-built scene without the split still renders.
         """
-        runs = scene.get(f"{variant}_path_runs")
+        runs: list[list[dict[str, Any]]] | None = scene.get(
+            f"{variant}_path_runs"
+        )
         if runs is not None:
             return runs
         flat = scene.get(f"{variant}_path_points", [])
