@@ -35,6 +35,7 @@ from .const import (
 )
 from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin, safe_write_ha_state
+from .error_codes import describe_error
 from .hub import Mission, MissionState, SubMission, TerraMowHub
 
 # Push-based integration: no update throttling needed
@@ -346,7 +347,16 @@ def _active_errors(hub: TerraMowHub) -> StateType:
 def _active_errors_attributes(hub: TerraMowHub) -> dict[str, Any]:
     if not hub.error_list:
         return {}
-    return {"errors": hub.error_list}
+    # Each entry gains a human-readable "text" from the community-sourced
+    # error-code catalog (issue #171); unknown codes echo "Error <code>".
+    return {
+        "errors": [
+            {**entry, "text": describe_error(entry.get("code"))}
+            if isinstance(entry, dict)
+            else entry
+            for entry in hub.error_list
+        ]
+    }
 
 
 def _latest_event(hub: TerraMowHub) -> dict[str, Any] | None:

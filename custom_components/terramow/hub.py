@@ -468,6 +468,7 @@ class TerraMowHub:
         self._robot_info: dict[str, Any] = {}  # Store dp_102 device/network info
         self._component_versions: dict[str, Any] = {}  # Store dp_129 component firmware versions
         self._error_list: list[Any] = []  # Store dp_116 active error list
+        self._active_error_code: int | None = None  # Store dp_115 latest error code
         self._event_list: list[Any] = []  # Store dp_123 event log
         self._cellular_info: dict[str, Any] = {}  # Store dp_135 cellular/4G info
         self._environment_info: dict[str, Any] = {}  # Store dp_152 environment/status
@@ -725,6 +726,7 @@ class TerraMowHub:
         self.register_callback(8, self.on_battery_level)
         self.register_callback(102, self.on_device_info)
         self.register_callback(129, self.on_component_versions)
+        self.register_callback(115, self.on_active_error_code)
         self.register_callback(116, self.on_error_list)
         self.register_callback(123, self.on_event_data)
         self.register_callback(135, self.on_cellular_info)
@@ -938,11 +940,31 @@ class TerraMowHub:
         if isinstance(data, dict):
             self._component_versions = data
 
+    async def on_active_error_code(self, payload: str) -> None:
+        """Handle the latest-error code (dp_115, undocumented).
+
+        Community-confirmed twice on an S1200 (issue #171): dp_115 carries the
+        newest dp_116 ``error_list`` entry's ``code`` alone, arriving in the
+        same instant — the exact mirror relationship dp_114 has to the dp_123
+        event log. Kept for diagnostics; fault surfacing itself stays on the
+        richer dp_116 list.
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.error("Invalid JSON payload for dp_115: %s", payload)
+            return
+        if isinstance(data, dict):
+            value = data.get("int_value")
+            if isinstance(value, int) and not isinstance(value, bool):
+                self._active_error_code = value
+
     async def on_error_list(self, payload: str) -> None:
         """Handle the active-error list (dp_116, undocumented).
 
-        Payload observed as ``{"error_list": [...]}``. Parsed defensively; the
-        entry structure is unknown (empty on the reference device).
+        Payload observed as ``{"error_list": [{"code": int, "time": str}]}``
+        (community-confirmed on an S1200, issue #171 — same entry shape as the
+        dp_123 event log). Parsed defensively; empty on the reference device.
         """
         try:
             data = json.loads(payload)
@@ -2804,6 +2826,11 @@ class TerraMowHub:
     def error_list(self) -> list[Any]:
         """Get the active-error list (dp_116, undocumented)."""
         return self._error_list
+
+    @property
+    def active_error_code(self) -> int | None:
+        """Get the latest-error code (dp_115, undocumented)."""
+        return self._active_error_code
 
     @property
     def event_list(self) -> list[Any]:

@@ -17,6 +17,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from . import TerraMowBasicData, TerraMowConfigEntry
 from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin
+from .error_codes import describe_error
 from .hub import TerraMowHub
 
 # Push-based integration: no update throttling needed
@@ -109,7 +110,14 @@ def _problem(hub: TerraMowHub) -> bool:
 def _problem_attributes(hub: TerraMowHub) -> dict[str, Any]:
     """Expose the dp_116 error codes behind the fault, when any are known."""
     codes = hub.active_error_codes
-    return {"error_codes": codes} if codes else {}
+    if not codes:
+        return {}
+    return {
+        "error_codes": codes,
+        # Human-readable companions from the community-sourced catalog
+        # (issue #171); unknown codes echo "Error <code>".
+        "error_descriptions": [describe_error(code) for code in codes],
+    }
 
 
 def _rain_detected(hub: TerraMowHub) -> bool:
