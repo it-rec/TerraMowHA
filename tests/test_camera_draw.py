@@ -453,6 +453,15 @@ def test_no_calibration_points_without_geometry() -> None:
     assert "calibration_points" not in camera.extra_state_attributes
 
 
+def test_no_calibration_points_with_degenerate_transformer() -> None:
+    """A rendered snapshot whose transformer has no scale yields no calibration."""
+    hub = _hub()
+    camera = _camera(hub)
+    # snapshot present but the transformer never established a scale (<= 0)
+    camera._render_snapshot = (MagicMock(), SimpleNamespace(scale=0.0))
+    assert camera._build_calibration_points() is None
+
+
 # ---------------------------------------------------------------------------
 # robot / station icons scale with the map
 # ---------------------------------------------------------------------------

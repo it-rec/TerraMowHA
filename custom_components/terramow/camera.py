@@ -151,6 +151,11 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         # pending rebuild task, so a burst of map/path/history updates (e.g.
         # after a reconnect) costs one extra render, not one per callback.
         self._rebuild_dirty = False
+        # Lazy static render: map/path/history pushes only mark this True and
+        # drop the PNG cache; the expensive supersampled render runs in
+        # async_camera_image when a frame is actually requested. Dashboards use
+        # the WebSocket-fed Lovelace card, so an unviewed camera costs nothing.
+        self._static_dirty = False
         self._rebuild_task: asyncio.Task[None] | None = None
         self._cached_png: bytes | None = None
         # Bumped on every cache invalidation; a render only publishes its PNG
@@ -264,7 +269,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
     ) -> bytes | None:
         # Lazy initial render: if data arrived but no snapshot was built yet
         # (e.g. the entity was just enabled), build it on the first request.
-        if self._render_snapshot is None and (
+        if (self._static_dirty or self._render_snapshot is None) and (
             self._map_data or self._path_data or self._history_path_data
         ):
             await self._async_rebuild()
@@ -274,6 +279,18 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         """Drop the cached PNG and retire any in-flight render."""
         self._render_generation += 1
         self._cached_png = None
+
+    def _mark_static_dirty(self) -> None:
+        """Flag the static layers stale WITHOUT rendering.
+
+        The supersampled map/coverage render is the integration's single
+        biggest CPU cost and is pure waste when no one is looking at the PNG.
+        Map/path/history pushes therefore only mark the scene stale and drop the
+        cached PNG here; async_camera_image does the actual render lazily when a
+        frame is requested.
+        """
+        self._static_dirty = True
+        self._invalidate_png_cache()
 
     async def _async_rebuild(self) -> None:
         """Rebuild the static layers, coalescing concurrent requests.
@@ -294,6 +311,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         async with self._rebuild_lock:
             while self._rebuild_dirty:
                 self._rebuild_dirty = False
+                self._static_dirty = False
                 await self.hass.async_add_executor_job(self._rebuild_static_image)
         self._invalidate_png_cache()
         safe_write_ha_state(self)
@@ -314,7 +332,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         ):
             return
         self._last_rendered_map_data = self._map_data
-        await self._async_rebuild()
+        self._mark_static_dirty()
 
     async def _on_path_data(self, path_data: dict[str, Any]) -> None:
         """Callback for path data updates."""
@@ -325,7 +343,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
                 list(path_data.keys()) if isinstance(path_data, dict) else type(path_data),
             )
             self._path_data_logged = True
-        await self._async_rebuild()
+        self._mark_static_dirty()
 
     async def _on_history_path_data(self, path_data: dict[str, Any]) -> None:
         """Callback for history path data updates."""
@@ -336,7 +354,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
                 list(path_data.keys()) if isinstance(path_data, dict) else type(path_data),
             )
             self._history_path_data_logged = True
-        await self._async_rebuild()
+        self._mark_static_dirty()
 
     async def _on_pose(self, pose: dict[str, Any]) -> None:
         """Callback for pose updates.

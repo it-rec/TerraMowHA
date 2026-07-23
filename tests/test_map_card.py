@@ -230,9 +230,15 @@ async def test_subscribe_snapshot_and_updates(
     result = await client.receive_json()
     assert result["success"]
 
-    scene_event = await client.receive_json()
-    assert scene_event["event"]["type"] == "scene"
-    scene = scene_event["event"]["scene"]
+    # The initial snapshot (scene) and the initial robot event both arrive.
+    # The scene build now runs off the event loop, so the synchronous robot
+    # event may lead it; accept either order.
+    initial: dict[str, Any] = {}
+    for _ in range(2):
+        event = (await client.receive_json())["event"]
+        initial[event["type"]] = event
+    assert set(initial) == {"scene", "robot"}
+    scene = initial["scene"]["scene"]
     assert scene["map_name"] == "Garden"
     assert scene["station"] == {"x": 1200, "y": 3400, "theta": 1.57}
     assert len(scene["regions"]) == 1
@@ -249,9 +255,7 @@ async def test_subscribe_snapshot_and_updates(
     assert scene["current_path"] == [[100, 200], [300, 400]]
     assert scene["bounds"] is not None
 
-    robot_event = await client.receive_json()
-    assert robot_event["event"]["type"] == "robot"
-    assert robot_event["event"]["robot"] is None
+    assert initial["robot"]["robot"] is None
 
     await _drain(client)
 
@@ -571,6 +575,21 @@ async def test_unsubscribe_cancels_pending_scene_push(
         if result.get("id") == 2:
             break
     assert result["success"]
+
+
+async def test_stop_cancels_inflight_build_task(hass: HomeAssistant) -> None:
+    """Stopping a feed with a scene build still running cancels that task."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    feed = map_card._MapFeed(hass, MagicMock(), 1, hub)
+    task = MagicMock()
+    feed._build_task = task
+    feed.stop()
+
+    task.cancel.assert_called_once()
+    assert feed._build_task is None
 
 
 async def test_empty_scene_payload(hass: HomeAssistant) -> None:
@@ -899,3 +918,97 @@ async def test_lovelace_resource_retries_after_start(hass: HomeAssistant) -> Non
     await hass.async_block_till_done()
 
     assert resources.created == [{"res_type": "js", "url": _CARD_URL}]
+
+
+def test_zone_coverage_ratios_covers_bbox_and_skip_branches() -> None:
+    """One mowed edge inside a zone, one far outside (bounding-box rejected)."""
+    scene = {
+        "session_path_segments": [
+            [{"x": 100, "y": 100}, {"x": 300, "y": 300}],
+            [{"x": 50000, "y": 50000}, {"x": 60000, "y": 60000}],
+        ],
+        "regions": [
+            {
+                "sub_regions": [
+                    {"id": 7, "boundary": [(0, 0), (1000, 0), (1000, 1000), (0, 1000)]},
+                    # a valid zone far away: every edge is bbox-rejected -> 0 %
+                    {
+                        "id": 9,
+                        "boundary": [
+                            (20000, 0),
+                            (21000, 0),
+                            (21000, 1000),
+                            (20000, 1000),
+                        ],
+                    },
+                    {"id": None, "boundary": [(0, 0), (1, 0), (1, 1)]},  # id None
+                    {"id": 8, "boundary": [(0, 0), (1, 1)]},  # < 3 vertices
+                    {"id": 11, "boundary": [(0, 0), (10, 0), (20, 0)]},  # area 0
+                ]
+            }
+        ],
+    }
+    ratios = map_card._zone_coverage_ratios(scene)
+    # only the zone with a mowed edge inside it gets a positive coverage ratio
+    assert set(ratios) == {7}
+    assert 0.0 < ratios[7] <= 1.0
+
+
+def test_zone_coverage_ratios_edge_in_bbox_but_outside_polygon() -> None:
+    """A mowed edge whose midpoint clears the bbox but misses the polygon."""
+    scene = {
+        # midpoint (800, 800): inside the triangle's 0..1000 bounding box but
+        # outside the triangle itself (x + y > 1000) -> point_in_polygon False
+        "session_path_segments": [[{"x": 700, "y": 900}, {"x": 900, "y": 700}]],
+        "regions": [
+            {
+                "sub_regions": [
+                    {
+                        "id": 7,
+                        "boundary": [(0, 0), (1000, 0), (0, 1000)],
+                    },
+                ]
+            }
+        ],
+    }
+    # bbox passes, polygon rejects -> no zone earns coverage
+    assert map_card._zone_coverage_ratios(scene) == {}
+
+
+def test_zone_coverage_ratios_empty_inputs() -> None:
+    assert (
+        map_card._zone_coverage_ratios({"session_path_segments": [], "regions": []})
+        == {}
+    )
+    # a single-point segment yields no drawable edges
+    assert (
+        map_card._zone_coverage_ratios(
+            {"session_path_segments": [[{"x": 1, "y": 1}]], "regions": []}
+        )
+        == {}
+    )
+
+
+async def test_zone_coverage_recompute_is_throttled(hass: HomeAssistant) -> None:
+    """The per-hub cache recomputes the coverage at most once per interval."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    hub._apply_map_data(MAP_DATA)
+    hub._apply_path_data(PATH_DATA)
+
+    # A shared cache: two builds within the interval recompute coverage once.
+    cache: dict[str, Any] = {}
+    with patch.object(
+        map_card, "_zone_coverage_ratios", wraps=map_card._zone_coverage_ratios
+    ) as zc:
+        build_scene_payload(hub, cache)
+        build_scene_payload(hub, cache)
+        assert zc.call_count == 1
+    # Without a cache every build recomputes.
+    with patch.object(
+        map_card, "_zone_coverage_ratios", wraps=map_card._zone_coverage_ratios
+    ) as zc:
+        build_scene_payload(hub)
+        build_scene_payload(hub)
+        assert zc.call_count == 2

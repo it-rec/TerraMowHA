@@ -16,8 +16,10 @@ world-to-screen transform client-side (pan/zoom without re-fetching).
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import math
+import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
@@ -71,6 +73,17 @@ WS_SUBSCRIBE_MAP = "terramow/map/subscribe"
 # Map/path/history pushes can land in a burst (one mowing tick updates all
 # three channels); collapse them into a single scene push.
 SCENE_PUSH_DEBOUNCE = 0.2
+# The per-zone mowed-% is O(edges x zones) and changes slowly; during active
+# mowing, recomputing it on every path push dominates CPU. Reuse the last result
+# for this long (path + robot still update live) so a viewed card stays cheap.
+COVERAGE_RECOMPUTE_INTERVAL = 12.0
+
+# The coverage cache is keyed per hub (not per subscription), so re-opening the
+# map dashboard — or viewing it on several devices at once — reuses the last
+# computed per-zone coverage instead of recomputing the O(edges x zones) result
+# from scratch each time. Keyed by id(hub); a reloaded hub simply gets a fresh
+# entry and the stale one (a tiny dict) is orphaned.
+_HUB_COVERAGE_CACHES: dict[int, dict[str, Any]] = {}
 
 _DATA_SETUP_DONE = f"{DOMAIN}_map_card_setup"
 
@@ -287,10 +300,14 @@ def _zone_coverage_ratios(scene: dict[str, Any]) -> dict[int, float]:
     segments = scene["session_path_segments"]
     if not segments:
         return {}
-    edges: list[tuple[tuple[float, float], tuple[float, float]]] = []
+    # Precompute each edge's midpoint + length ONCE (was recomputed per zone).
+    edges: list[tuple[float, float, float]] = []
     for segment in segments:
         pts = [(point["x"], point["y"]) for point in segment]
-        edges.extend(zip(pts, pts[1:], strict=False))
+        for a, b in zip(pts, pts[1:], strict=False):
+            edges.append((
+                (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, math.dist(a, b),
+            ))
     if not edges:
         return {}
     ratios: dict[int, float] = {}
@@ -303,11 +320,19 @@ def _zone_coverage_ratios(scene: dict[str, Any]) -> dict[int, float]:
             area = polygon_area(boundary)
             if area <= 0:
                 continue
+            # Cheap bounding-box reject before the O(V) point-in-polygon test:
+            # on a multi-zone lawn most edges fall outside most zones, so this
+            # turns the O(edges x zones x verts) hot loop into roughly O(edges).
+            xs = [p[0] for p in boundary]
+            ys = [p[1] for p in boundary]
+            min_x, max_x = min(xs), max(xs)
+            min_y, max_y = min(ys), max(ys)
             covered = 0.0
-            for a, b in edges:
-                midpoint = ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
-                if point_in_polygon(midpoint, boundary):
-                    covered += math.dist(a, b)
+            for mx, my, length in edges:
+                if mx < min_x or mx > max_x or my < min_y or my > max_y:
+                    continue
+                if point_in_polygon((mx, my), boundary):
+                    covered += length
             if covered > 0:
                 ratios[zone_id] = round(
                     min(1.0, covered * CUTTING_WIDTH_MM / area), 3
@@ -315,8 +340,16 @@ def _zone_coverage_ratios(scene: dict[str, Any]) -> dict[int, float]:
     return ratios
 
 
-def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
-    """Serialize the drawable scene for the card."""
+def build_scene_payload(
+    hub: TerraMowHub, coverage_cache: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Serialize the drawable scene for the card.
+
+    ``coverage_cache`` (a per-subscription dict) throttles the expensive
+    per-zone coverage math: it is recomputed at most every
+    COVERAGE_RECOMPUTE_INTERVAL seconds and otherwise reused, so a card viewed
+    during active mowing doesn't recompute it on every path push.
+    """
     map_data = hub.map_data
     scene = build_scene(
         map_data,
@@ -340,7 +373,18 @@ def build_scene_payload(hub: TerraMowHub) -> dict[str, Any]:
 
     zone_angles = _zone_direction_angles(map_data)
     zone_settings = _zone_settings(map_data)
-    zone_coverage = _zone_coverage_ratios(scene)
+    now = time.monotonic()
+    if (
+        coverage_cache is not None
+        and coverage_cache.get("value") is not None
+        and now - coverage_cache.get("time", 0.0) < COVERAGE_RECOMPUTE_INTERVAL
+    ):
+        zone_coverage = coverage_cache["value"]
+    else:
+        zone_coverage = _zone_coverage_ratios(scene)
+        if coverage_cache is not None:
+            coverage_cache["value"] = zone_coverage
+            coverage_cache["time"] = now
     regions: list[dict[str, Any]] = []
     for region in scene["regions"]:
         regions.append(
@@ -641,6 +685,15 @@ class _MapFeed:
         # two path lists, and the path lists themselves.
         self._last_geometry: dict[str, Any] | None = None
         self._last_paths: dict[str, list[list[int]]] = {}
+        # Scene building is CPU-heavy (polygon coverage math); it runs in an
+        # executor thread. These coalesce overlapping rebuilds so a burst of
+        # source callbacks never stacks up more than one pending build.
+        self._build_task: asyncio.Task[None] | None = None
+        self._rebuild_pending = False
+        # Throttles the expensive per-zone coverage recompute across pushes, and
+        # is shared per hub so re-opening the card (or another device viewing it)
+        # reuses the last result instead of recomputing it from scratch.
+        self._coverage_cache = _HUB_COVERAGE_CACHES.setdefault(id(hub), {})
 
     @callback
     def start(self) -> None:
@@ -656,7 +709,7 @@ class _MapFeed:
             self.hub.register_callback(8, self._on_pose),
             self.hub.register_callback(113, self._on_pose),
         ]
-        self._push_scene()
+        self._schedule_scene_build()
         self._push_robot()
 
     @callback
@@ -665,6 +718,9 @@ class _MapFeed:
         if self._scene_timer is not None:
             self._scene_timer.cancel()
             self._scene_timer = None
+        if self._build_task is not None:
+            self._build_task.cancel()
+            self._build_task = None
         for unsub in self._unsubs:
             unsub()
         self._unsubs = []
@@ -675,21 +731,44 @@ class _MapFeed:
         if self._scene_timer is not None:
             self._scene_timer.cancel()
         self._scene_timer = self.hass.loop.call_later(
-            SCENE_PUSH_DEBOUNCE, self._push_scene
+            SCENE_PUSH_DEBOUNCE, self._schedule_scene_build
         )
 
     async def _on_pose(self, _data: Any) -> None:
         self._push_robot()
 
     @callback
-    def _push_scene(self) -> None:
+    def _schedule_scene_build(self) -> None:
+        # Debounce fired: start a build unless one is already running, in which
+        # case just flag that another is needed once it finishes. Coalescing
+        # keeps a storm of map/path callbacks from stacking up 3-5 s builds.
         self._scene_timer = None
-        try:
-            payload = build_scene_payload(self.hub)
-        except Exception:  # pragma: no cover - defensive
-            _LOGGER.exception("Failed to build map card scene")
+        if self._build_task is not None and not self._build_task.done():
+            self._rebuild_pending = True
             return
+        self._build_task = self.hass.async_create_task(self._build_and_push())
 
+    async def _build_and_push(self) -> None:
+        try:
+            while True:
+                self._rebuild_pending = False
+                try:
+                    # The heavy polygon / zone-coverage math runs off the event
+                    # loop so the WebSocket + HTTP stack stays responsive.
+                    payload = await self.hass.async_add_executor_job(
+                        build_scene_payload, self.hub, self._coverage_cache
+                    )
+                except Exception:  # pragma: no cover - defensive
+                    _LOGGER.exception("Failed to build map card scene")
+                    return
+                self._emit_scene(payload)
+                if not self._rebuild_pending:
+                    return
+        finally:
+            self._build_task = None
+
+    @callback
+    def _emit_scene(self, payload: dict[str, Any]) -> None:
         # Delta detection: during mowing the only thing that usually changes
         # is the path growing at the tail. Sending just the appended points
         # keeps the per-update payload tiny on large lawns.
