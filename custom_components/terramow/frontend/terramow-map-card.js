@@ -142,11 +142,39 @@ function svgIcon(path) {
   return `<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${path}"/></svg>`;
 }
 
-/** Turn a raw mission enum (e.g. "MISSION_GLOBAL_CLEAN") into readable text
- *  ("Global clean") by stripping the known prefix and title-casing. */
-function prettyStatus(v) {
+/** Prefix -> the sensor translation_key whose entity-state translations carry
+ *  the localized labels for that status enum (strings.json / translations/*).
+ *  MISSION_STATE_ and SUB_MISSION_ must precede MISSION_ so the longer, more
+ *  specific prefixes win. */
+const STATUS_TRANSLATION_KEYS = [
+  ["MISSION_STATE_", "mission_state"],
+  ["SUB_MISSION_", "sub_mission"],
+  ["BACK_TO_STATION_REASON_", "back_to_station_reason"],
+  ["MISSION_", "mission"],
+];
+
+/** Turn a raw mission enum (e.g. "MISSION_GLOBAL_CLEAN") into readable text.
+ *  Prefers the integration's own entity-state translation so the label follows
+ *  the Home Assistant UI language (issue #248) — these are the same strings the
+ *  mission/sub_mission/mission_state sensors already show. Falls back to
+ *  stripping the known prefix and title-casing ("Global clean") when hass has
+ *  no matching translation loaded (or none is passed). */
+function prettyStatus(v, hass) {
   if (typeof v !== "string" || !v) {
     return "";
+  }
+  if (hass && typeof hass.localize === "function") {
+    for (const [prefix, tkey] of STATUS_TRANSLATION_KEYS) {
+      if (v.startsWith(prefix)) {
+        const translated = hass.localize(
+          `component.terramow.entity.sensor.${tkey}.state.${v.toLowerCase()}`
+        );
+        if (translated) {
+          return translated;
+        }
+        break;
+      }
+    }
   }
   return v
     .replace(/^(MISSION_STATE_|SUB_MISSION_|MISSION_|BACK_TO_STATION_REASON_)/, "")
@@ -1051,23 +1079,24 @@ class TerramowMapCard extends HTMLElement {
     // only when there's something non-idle to report. Saves a dashboard card.
     const st = this._status;
     if (st) {
-      const missionText = prettyStatus(st.mission);
+      const missionText = prettyStatus(st.mission, this._hass);
       const parts = [];
       if (st.mission && st.mission !== "MISSION_IDLE") {
         parts.push(missionText);
       }
+      const subMissionText = prettyStatus(st.sub_mission, this._hass);
       if (
         st.sub_mission &&
         st.sub_mission !== "SUB_MISSION_IDLE" &&
-        prettyStatus(st.sub_mission) !== missionText
+        subMissionText !== missionText
       ) {
-        parts.push(prettyStatus(st.sub_mission));
+        parts.push(subMissionText);
       }
       if (
         st.back_to_station_reason &&
         st.back_to_station_reason !== "BACK_TO_STATION_REASON_NONE"
       ) {
-        parts.push(prettyStatus(st.back_to_station_reason));
+        parts.push(prettyStatus(st.back_to_station_reason, this._hass));
       }
       if (parts.length) {
         const chip = document.createElement("span");
