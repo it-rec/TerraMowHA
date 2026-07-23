@@ -577,6 +577,21 @@ async def test_unsubscribe_cancels_pending_scene_push(
     assert result["success"]
 
 
+async def test_stop_cancels_inflight_build_task(hass: HomeAssistant) -> None:
+    """Stopping a feed with a scene build still running cancels that task."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    feed = map_card._MapFeed(hass, MagicMock(), 1, hub)
+    task = MagicMock()
+    feed._build_task = task
+    feed.stop()
+
+    task.cancel.assert_called_once()
+    assert feed._build_task is None
+
+
 async def test_empty_scene_payload(hass: HomeAssistant) -> None:
     """With no map data yet, the payload is well-formed and empty."""
     entry = await setup_terramow(hass)
@@ -937,6 +952,27 @@ def test_zone_coverage_ratios_covers_bbox_and_skip_branches() -> None:
     # only the zone with a mowed edge inside it gets a positive coverage ratio
     assert set(ratios) == {7}
     assert 0.0 < ratios[7] <= 1.0
+
+
+def test_zone_coverage_ratios_edge_in_bbox_but_outside_polygon() -> None:
+    """A mowed edge whose midpoint clears the bbox but misses the polygon."""
+    scene = {
+        # midpoint (800, 800): inside the triangle's 0..1000 bounding box but
+        # outside the triangle itself (x + y > 1000) -> point_in_polygon False
+        "session_path_segments": [[{"x": 700, "y": 900}, {"x": 900, "y": 700}]],
+        "regions": [
+            {
+                "sub_regions": [
+                    {
+                        "id": 7,
+                        "boundary": [(0, 0), (1000, 0), (0, 1000)],
+                    },
+                ]
+            }
+        ],
+    }
+    # bbox passes, polygon rejects -> no zone earns coverage
+    assert map_card._zone_coverage_ratios(scene) == {}
 
 
 def test_zone_coverage_ratios_empty_inputs() -> None:
