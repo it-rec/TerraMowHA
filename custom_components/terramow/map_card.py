@@ -53,7 +53,7 @@ _LOGGER = logging.getLogger(__name__)
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.21.0"
+CARD_VERSION = "1.23.0"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -197,6 +197,23 @@ def _polys(polygons: list[list[tuple[float, float]]]) -> list[list[list[int]]]:
 
 def _path_pts(points: list[dict[str, Any]]) -> list[list[int]]:
     return [[int(round(point["x"])), int(round(point["y"]))] for point in points]
+
+
+def _path_pts_runs(runs: list[list[dict[str, Any]]]) -> list[list[int]]:
+    """Flatten mowing runs into one point list with break sentinels.
+
+    Each run is a contiguous mowing stretch; an empty ``[]`` element separates
+    two runs so the card lifts the pen there instead of drawing a straight
+    diagonal across the transit leg that was filtered out between them. Keeping
+    a single flat list (rather than a list of runs) preserves the tail-append
+    delta protocol the card uses to stream a growing path cheaply.
+    """
+    flat: list[list[int]] = []
+    for run in runs:
+        if flat:
+            flat.append([])  # run break — pen up
+        flat.extend(_path_pts(run))
+    return flat
 
 
 def _direction_angle_from_config(config: Any) -> Any:
@@ -479,8 +496,8 @@ def build_scene_payload(
             "trapped": _poly(scene["trapped_points"]),
             "maintenance": _poly(scene["maintenance_points"]),
         },
-        "current_path": _path_pts(scene["current_path_points"]),
-        "history_path": _path_pts(scene["history_path_points"]),
+        "current_path": _path_pts_runs(scene["current_path_runs"]),
+        "history_path": _path_pts_runs(scene["history_path_runs"]),
         # Mow tracks from earlier in the running session, archived by the hub
         # across a mid-session recharge dock (issue #214). One polyline per
         # segment so the card never draws a connector across the dock gap.

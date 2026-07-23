@@ -615,9 +615,51 @@ def _filter_cleaning_path_points(path_points: list[dict[str, Any]]) -> list[dict
     return [point for point in path_points if point.get("type") == "PATH_POINT_TYPE_CLEANING"]
 
 
+def _split_cleaning_runs(
+    path_points: list[dict[str, Any]],
+) -> list[list[dict[str, Any]]]:
+    """Split extracted path points into contiguous mowing runs.
+
+    Keeps only ``PATH_POINT_TYPE_CLEANING`` points but, unlike
+    ``_filter_cleaning_path_points``, returns one sub-list per uninterrupted
+    mowing stretch: a run is broken wherever a non-cleaning point — a
+    return-to-dock or a transit hop between areas — sits between two mowing
+    points. Rendering each run on its own stops the map from bridging that gap
+    with a straight diagonal the mower never drove: the real transit route was
+    discarded together with the non-cleaning points, so the two mowing
+    stretches must not be joined into one polyline.
+
+    Concatenating the returned runs yields exactly
+    ``_filter_cleaning_path_points(path_points)``.
+    """
+    runs: list[list[dict[str, Any]]] = []
+    current: list[dict[str, Any]] = []
+    for point in path_points:
+        if point.get("type") == "PATH_POINT_TYPE_CLEANING":
+            current.append(point)
+        elif current:
+            runs.append(current)
+            current = []
+    if current:
+        runs.append(current)
+    return runs
+
+
 def extract_cleaning_path_points(path_data: dict[str, Any]) -> list[dict[str, Any]]:
     """The mowing-only path points of an ha_path_v1 payload."""
     return _filter_cleaning_path_points(_extract_path_points(path_data))
+
+
+def extract_cleaning_path_runs(
+    path_data: dict[str, Any],
+) -> list[list[dict[str, Any]]]:
+    """The mowing-only path of an ha_path_v1 payload, split into runs.
+
+    One sub-list per uninterrupted mowing stretch (see ``_split_cleaning_runs``)
+    so a transit between two areas is never archived as a single segment that
+    would draw a phantom diagonal across the gap.
+    """
+    return _split_cleaning_runs(_extract_path_points(path_data))
 
 
 class ScenePathCache:
@@ -633,20 +675,30 @@ class ScenePathCache:
     def __init__(self) -> None:
         self._entries: dict[
             str,
-            tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]],
+            tuple[
+                dict[str, Any],
+                list[dict[str, Any]],
+                list[dict[str, Any]],
+                list[list[dict[str, Any]]],
+            ],
         ] = {}
 
     def extract(
         self, key: str, path_data: dict[str, Any]
-    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-        """Return the (raw, cleaning-only) point lists for ``path_data``."""
+    ) -> tuple[
+        list[dict[str, Any]],
+        list[dict[str, Any]],
+        list[list[dict[str, Any]]],
+    ]:
+        """Return the (raw, cleaning-only, cleaning-runs) lists for ``path_data``."""
         entry = self._entries.get(key)
         if entry is not None and entry[0] is path_data:
-            return entry[1], entry[2]
+            return entry[1], entry[2], entry[3]
         raw = _extract_path_points(path_data)
         cleaning = _filter_cleaning_path_points(raw)
-        self._entries[key] = (path_data, raw, cleaning)
-        return raw, cleaning
+        runs = _split_cleaning_runs(raw)
+        self._entries[key] = (path_data, raw, cleaning, runs)
+        return raw, cleaning, runs
 
 
 def _pixel_distance(point_a: tuple[int, int], point_b: tuple[int, int]) -> float:
@@ -804,12 +856,14 @@ def build_scene(
         raw_history_path_points = _extract_path_points(history_path_data)
         current_path_points = _filter_cleaning_path_points(raw_current_path_points)
         history_path_points = _filter_cleaning_path_points(raw_history_path_points)
+        current_path_runs = _split_cleaning_runs(raw_current_path_points)
+        history_path_runs = _split_cleaning_runs(raw_history_path_points)
     else:
-        raw_current_path_points, current_path_points = cache.extract(
-            "current", path_data
+        raw_current_path_points, current_path_points, current_path_runs = (
+            cache.extract("current", path_data)
         )
-        raw_history_path_points, history_path_points = cache.extract(
-            "history", history_path_data
+        raw_history_path_points, history_path_points, history_path_runs = (
+            cache.extract("history", history_path_data)
         )
     current_path_map_id = _path_map_id(path_data)
     history_path_map_id = _path_map_id(history_path_data)
@@ -823,9 +877,11 @@ def build_scene(
     path_map_mismatch = False
     if target_map_id is not None and current_path_map_id is not None and current_path_map_id != target_map_id:
         current_path_points = []
+        current_path_runs = []
         path_map_mismatch = True
     if target_map_id is not None and history_path_map_id is not None and history_path_map_id != target_map_id:
         history_path_points = []
+        history_path_runs = []
         path_map_mismatch = True
 
     combined_path_points = _merge_path_points(history_path_points, current_path_points)
@@ -856,6 +912,11 @@ def build_scene(
         "path_points": combined_path_points,
         "current_path_points": current_path_points,
         "history_path_points": history_path_points,
+        # The mow path split into contiguous cleaning runs (one polyline each).
+        # Rendering per run avoids bridging a straight diagonal across the
+        # transit points that were filtered out between two mowing stretches.
+        "current_path_runs": current_path_runs,
+        "history_path_runs": history_path_runs,
         "session_path_segments": session_segments,
         "filtered_non_cleaning_point_count": {
             "current": len(raw_current_path_points) - len(current_path_points),

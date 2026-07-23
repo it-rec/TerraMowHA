@@ -25,6 +25,7 @@ from custom_components.terramow.map_scene import (  # noqa: E402
     build_render_metadata,
     build_scene,
     extract_cleaning_path_points,
+    extract_cleaning_path_runs,
 )
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
@@ -121,6 +122,33 @@ def test_mid_session_dock_archives_the_track() -> None:
     _start_session(hub)
     hub._apply_path_data(resumed)
     assert len(hub.session_path_segments) == 1
+
+
+def test_a_leg_with_a_transit_archives_one_segment_per_run() -> None:
+    hub = _hub()
+    _start_session(hub)
+    # A single leg that mowed one stretch, transited across the yard, then
+    # mowed another. Archiving it as one segment would draw a phantom diagonal
+    # across the transit, so each mowing run is archived on its own.
+    hub._apply_path_data(
+        _path(
+            [
+                (0, 0, "PATH_POINT_TYPE_CLEANING"),
+                (5000, 0, "PATH_POINT_TYPE_CLEANING"),
+                (9000, 9000, "PATH_POINT_TYPE_RETURN"),
+                (0, 2000, "PATH_POINT_TYPE_CLEANING"),
+                (5000, 2000, "PATH_POINT_TYPE_CLEANING"),
+            ]
+        )
+    )
+    hub._apply_path_data(DOCK_RESET)
+
+    assert len(hub.session_path_segments) == 2
+    first, second = hub.session_path_segments
+    assert first[0] == {"x": 0.0, "y": 0.0}
+    assert first[-1] == {"x": 5000.0, "y": 0.0}
+    assert second[0] == {"x": 0.0, "y": 2000.0}
+    assert second[-1] == {"x": 5000.0, "y": 2000.0}
 
 
 def test_second_recharge_archives_a_second_segment() -> None:
@@ -277,6 +305,77 @@ def test_extract_cleaning_path_points_filters_types() -> None:
     ]
 
 
+def test_extract_cleaning_path_runs_splits_on_a_transit() -> None:
+    # Two mowing stretches with a return/transit hop between them: the mower
+    # drove out to (9000, 9000) and back, but that leg is a non-cleaning point
+    # and is dropped. The two stretches must stay separate runs so nothing
+    # bridges the gap with a phantom diagonal.
+    runs = extract_cleaning_path_runs(
+        _path(
+            [
+                (0, 0, "PATH_POINT_TYPE_CLEANING"),
+                (100, 0, "PATH_POINT_TYPE_CLEANING"),
+                (9000, 9000, "PATH_POINT_TYPE_RETURN"),
+                (200, 0, "PATH_POINT_TYPE_CLEANING"),
+                (300, 0, "PATH_POINT_TYPE_CLEANING"),
+            ]
+        )
+    )
+    assert [[(p["x"], p["y"]) for p in run] for run in runs] == [
+        [(0, 0), (100, 0)],
+        [(200, 0), (300, 0)],
+    ]
+    # Concatenating the runs reproduces the flat cleaning-only filter exactly.
+    concatenated = [point for run in runs for point in run]
+    assert concatenated == extract_cleaning_path_points(
+        _path(
+            [
+                (0, 0, "PATH_POINT_TYPE_CLEANING"),
+                (100, 0, "PATH_POINT_TYPE_CLEANING"),
+                (9000, 9000, "PATH_POINT_TYPE_RETURN"),
+                (200, 0, "PATH_POINT_TYPE_CLEANING"),
+                (300, 0, "PATH_POINT_TYPE_CLEANING"),
+            ]
+        )
+    )
+
+
+def test_uninterrupted_mowing_is_a_single_run() -> None:
+    runs = extract_cleaning_path_runs(_path(_clean((0, 0), (1, 0), (2, 0))))
+    assert len(runs) == 1
+
+
+def test_build_scene_splits_current_and_history_into_runs() -> None:
+    transit_path = _path(
+        [
+            (0, 0, "PATH_POINT_TYPE_CLEANING"),
+            (5000, 0, "PATH_POINT_TYPE_CLEANING"),
+            (9000, 9000, "PATH_POINT_TYPE_RETURN"),
+            (0, 2000, "PATH_POINT_TYPE_CLEANING"),
+            (5000, 2000, "PATH_POINT_TYPE_CLEANING"),
+        ]
+    )
+    scene = build_scene(MAP_DATA, transit_path, transit_path, False)
+    assert len(scene["current_path_runs"]) == 2
+    assert len(scene["history_path_runs"]) == 2
+    # The flat lists are unchanged (still the union of every mowing point).
+    assert len(scene["current_path_points"]) == 4
+    assert len(scene["history_path_points"]) == 4
+
+
+def test_build_scene_drops_runs_on_a_map_mismatch() -> None:
+    # A path belonging to a different map is dropped whole — runs included.
+    scene = build_scene(
+        MAP_DATA,
+        _path(_clean((0, 0), (1, 0)), path_id=9, map_id=2),
+        {},
+        False,
+    )
+    assert scene["current_path_runs"] == []
+    assert scene["current_path_points"] == []
+    assert scene["path_map_mismatch"] is True
+
+
 def test_build_scene_carries_session_segments() -> None:
     segment = [{"x": 0.0, "y": 0.0}, {"x": 1000.0, "y": 0.0}]
     scene = build_scene(
@@ -311,6 +410,31 @@ def test_build_scene_defaults_to_no_session_segments() -> None:
     scene = build_scene(MAP_DATA, {}, {}, False)
     assert scene["session_path_segments"] == []
     assert "session_path" not in scene["rendered_layers"]
+
+
+def test_card_payload_breaks_current_path_between_runs() -> None:
+    hub = _hub()
+    hub._apply_map_data(MAP_DATA)
+    _start_session(hub)
+    hub._apply_path_data(
+        _path(
+            [
+                (0, 0, "PATH_POINT_TYPE_CLEANING"),
+                (5000, 0, "PATH_POINT_TYPE_CLEANING"),
+                (9000, 9000, "PATH_POINT_TYPE_RETURN"),
+                (0, 2000, "PATH_POINT_TYPE_CLEANING"),
+                (5000, 2000, "PATH_POINT_TYPE_CLEANING"),
+            ]
+        )
+    )
+
+    current = build_scene_payload(hub)["current_path"]
+    # Exactly one run break ([]), and the mow points on either side of it are
+    # the two stretches — the transit gap is never bridged.
+    assert current.count([]) == 1
+    break_at = current.index([])
+    assert current[:break_at] == [[0, 0], [5000, 0]]
+    assert current[break_at + 1 :] == [[0, 2000], [5000, 2000]]
 
 
 def test_card_payload_includes_session_paths() -> None:

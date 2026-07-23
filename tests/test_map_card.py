@@ -482,7 +482,10 @@ async def test_paths_append_delta(
     await hass.async_block_till_done()
     event = await client.receive_json()
     assert event["event"]["type"] == "paths_append"
-    assert event["event"]["current_path_append"] == [[500, 600]]
+    # PATH_DATA ends on a RETURN transit, so the new cleaning point starts a
+    # fresh run: the append leads with the [] run-break sentinel — the card
+    # lifts the pen instead of bridging the transit with a phantom line.
+    assert event["event"]["current_path_append"] == [[], [500, 600]]
     assert event["event"]["history_path_append"] == []
 
     # Unchanged data → no push at all
