@@ -135,6 +135,25 @@ def test_camera_image_rebuilds_lazily_without_snapshot() -> None:
     assert camera._render_snapshot is not None
 
 
+def test_camera_image_rebuilds_when_marked_stale() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    camera._map_data = SMALL_MAP
+    assert _render(camera).startswith(PNG_MAGIC)  # builds the first snapshot
+
+    # A later source push only marks the static layers stale (no proactive
+    # render); the next image request rebuilds before serving, then clears it.
+    camera._mark_static_dirty()
+    assert camera._static_dirty is True
+    assert camera._render_snapshot is not None
+    with patch.object(
+        camera, "_rebuild_static_image", wraps=camera._rebuild_static_image
+    ) as rebuild:
+        assert _render(camera).startswith(PNG_MAGIC)
+        assert rebuild.call_count == 1
+    assert camera._static_dirty is False
+
+
 # ---------------------------------------------------------------------------
 # rebuild coalescing
 # ---------------------------------------------------------------------------
@@ -186,28 +205,29 @@ def test_rebuild_runs_again_when_dirtied_mid_render() -> None:
 def test_on_map_info_skips_empty_and_unchanged_map_data() -> None:
     hub = _hub()
     camera = _camera(hub)
-    with patch.object(
-        camera, "_async_rebuild", new_callable=AsyncMock
-    ) as rebuild:
+    # Rendering is lazy now: a map push only marks the static layers stale
+    # (the render happens on the next image request), so the gating asserts on
+    # _mark_static_dirty rather than on a proactive rebuild.
+    with patch.object(camera, "_mark_static_dirty") as mark:
         # old-firmware push: map/current/info fires while map_data stays empty
         hub._map_data = {}
         asyncio.run(camera._on_map_info({"id": 1}))
-        assert rebuild.await_count == 0
-        # first real map data -> initial render happens
+        assert mark.call_count == 0
+        # first real map data -> marked stale
         hub._map_data = dict(SMALL_MAP)
         asyncio.run(camera._on_map_info({"id": 1}))
-        assert rebuild.await_count == 1
+        assert mark.call_count == 1
         # the same dict pushed again -> unchanged, skipped
         asyncio.run(camera._on_map_info({"id": 1}))
-        assert rebuild.await_count == 1
-        # a fresh dict (new HTTP fetch) -> rebuilt
+        assert mark.call_count == 1
+        # a fresh dict (new HTTP fetch) -> marked stale
         hub._map_data = dict(SMALL_MAP)
         asyncio.run(camera._on_map_info({"id": 1}))
-        assert rebuild.await_count == 2
-        # map_data dropping back to empty is a change -> rebuilt
+        assert mark.call_count == 2
+        # map_data dropping back to empty is a change -> marked stale
         hub._map_data = {}
         asyncio.run(camera._on_map_info({"id": 1}))
-        assert rebuild.await_count == 3
+        assert mark.call_count == 3
 
 
 # ---------------------------------------------------------------------------
@@ -271,6 +291,7 @@ def test_stale_render_does_not_repopulate_cache() -> None:
     camera = _camera(hub)
     hub._map_data = SMALL_MAP
     asyncio.run(camera._on_map_info({"id": 1}))
+    asyncio.run(camera._async_rebuild())  # lazy: build the snapshot explicitly
 
     # a pose update invalidates the cache while this render is in flight
     def _invalidate(*_args) -> None:
@@ -332,6 +353,7 @@ def test_checkpoint_skips_static_redraw_until_fit_or_map_changes() -> None:
     camera = _camera(hub)
     hub._map_data = SMALL_MAP
     asyncio.run(camera._on_map_info({"id": 1}))
+    asyncio.run(camera._async_rebuild())  # lazy: render builds the checkpoint
     renderer = camera._renderer
     assert renderer._static_checkpoint is not None
 
@@ -340,9 +362,11 @@ def test_checkpoint_skips_static_redraw_until_fit_or_map_changes() -> None:
     ) as static:
         # an in-bounds path push keeps the fit -> checkpoint replay
         asyncio.run(camera._on_path_data(_path([(0.5, 0.5), (1.0, 1.0)])))
+        asyncio.run(camera._async_rebuild())
         assert static.call_count == 0
         # a point outside the map extent changes the fit -> full redraw
         asyncio.run(camera._on_path_data(_path([(0.5, 0.5), (50.0, 50.0)])))
+        asyncio.run(camera._async_rebuild())
         assert static.call_count == 1
 
     # a new map dict (fresh HTTP fetch) misses on identity
@@ -351,6 +375,7 @@ def test_checkpoint_skips_static_redraw_until_fit_or_map_changes() -> None:
         renderer, "_draw_scene_static", wraps=renderer._draw_scene_static
     ) as static:
         asyncio.run(camera._on_map_info({"id": 1}))
+        asyncio.run(camera._async_rebuild())
         assert static.call_count == 1
 
 
@@ -359,6 +384,7 @@ def test_checkpoint_cleared_when_scene_empties() -> None:
     camera = _camera(hub)
     hub._map_data = SMALL_MAP
     asyncio.run(camera._on_map_info({"id": 1}))
+    asyncio.run(camera._async_rebuild())  # lazy: render builds the checkpoint
     assert camera._renderer._static_checkpoint is not None
     # all data gone -> reset() must release the supersampled canvas
     camera._map_data = {}
@@ -407,6 +433,7 @@ def test_camera_rebuild_uses_scene_cache_across_path_pushes() -> None:
     hub._map_data = SMALL_MAP
     asyncio.run(camera._on_map_info({"id": 1}))
     asyncio.run(camera._on_history_path_data(_path([(0.1, 0.1), (0.9, 0.9)])))
+    asyncio.run(camera._async_rebuild())  # initial render populates the scene cache
 
     with patch.object(
         map_scene_module,
@@ -416,6 +443,7 @@ def test_camera_rebuild_uses_scene_cache_across_path_pushes() -> None:
         # a current-path push re-extracts only the changed source; the
         # unchanged history dict is served from the camera's scene cache
         asyncio.run(camera._on_path_data(_path([(0.5, 0.5)])))
+        asyncio.run(camera._async_rebuild())
         assert extract.call_count == 1
 
 

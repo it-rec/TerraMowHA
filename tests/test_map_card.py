@@ -899,3 +899,76 @@ async def test_lovelace_resource_retries_after_start(hass: HomeAssistant) -> Non
     await hass.async_block_till_done()
 
     assert resources.created == [{"res_type": "js", "url": _CARD_URL}]
+
+
+def test_zone_coverage_ratios_covers_bbox_and_skip_branches() -> None:
+    """One mowed edge inside a zone, one far outside (bounding-box rejected)."""
+    scene = {
+        "session_path_segments": [
+            [{"x": 100, "y": 100}, {"x": 300, "y": 300}],
+            [{"x": 50000, "y": 50000}, {"x": 60000, "y": 60000}],
+        ],
+        "regions": [
+            {
+                "sub_regions": [
+                    {"id": 7, "boundary": [(0, 0), (1000, 0), (1000, 1000), (0, 1000)]},
+                    # a valid zone far away: every edge is bbox-rejected -> 0 %
+                    {
+                        "id": 9,
+                        "boundary": [
+                            (20000, 0),
+                            (21000, 0),
+                            (21000, 1000),
+                            (20000, 1000),
+                        ],
+                    },
+                    {"id": None, "boundary": [(0, 0), (1, 0), (1, 1)]},  # id None
+                    {"id": 8, "boundary": [(0, 0), (1, 1)]},  # < 3 vertices
+                    {"id": 11, "boundary": [(0, 0), (10, 0), (20, 0)]},  # area 0
+                ]
+            }
+        ],
+    }
+    ratios = map_card._zone_coverage_ratios(scene)
+    # only the zone with a mowed edge inside it gets a positive coverage ratio
+    assert set(ratios) == {7}
+    assert 0.0 < ratios[7] <= 1.0
+
+
+def test_zone_coverage_ratios_empty_inputs() -> None:
+    assert (
+        map_card._zone_coverage_ratios({"session_path_segments": [], "regions": []})
+        == {}
+    )
+    # a single-point segment yields no drawable edges
+    assert (
+        map_card._zone_coverage_ratios(
+            {"session_path_segments": [[{"x": 1, "y": 1}]], "regions": []}
+        )
+        == {}
+    )
+
+
+async def test_zone_coverage_recompute_is_throttled(hass: HomeAssistant) -> None:
+    """The per-hub cache recomputes the coverage at most once per interval."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    hub._apply_map_data(MAP_DATA)
+    hub._apply_path_data(PATH_DATA)
+
+    # A shared cache: two builds within the interval recompute coverage once.
+    cache: dict[str, Any] = {}
+    with patch.object(
+        map_card, "_zone_coverage_ratios", wraps=map_card._zone_coverage_ratios
+    ) as zc:
+        build_scene_payload(hub, cache)
+        build_scene_payload(hub, cache)
+        assert zc.call_count == 1
+    # Without a cache every build recomputes.
+    with patch.object(
+        map_card, "_zone_coverage_ratios", wraps=map_card._zone_coverage_ratios
+    ) as zc:
+        build_scene_payload(hub)
+        build_scene_payload(hub)
+        assert zc.call_count == 2
