@@ -316,6 +316,13 @@ const ACTIVITY_COLORS = {
 
 /* ------------------------------------------------------------ the card */
 
+// Scene memo keyed by entity id. It survives the card element being destroyed
+// and recreated within the same document (the JS module stays loaded), so
+// swiping back to the map view on mobile repaints the last scene instantly
+// instead of blanking to "Waiting for mower data…" while the WebSocket
+// re-subscribes and the server rebuilds the scene from scratch.
+const SCENE_MEMO = new Map();
+
 class TerramowMapCard extends HTMLElement {
   constructor() {
     super();
@@ -344,8 +351,9 @@ class TerramowMapCard extends HTMLElement {
     this._rafHandle = 0;
     this._lastFrameTs = 0;
     this._lastEntityState = null;
-    this._staticCache = null; // {canvas, sig}
-    this._pathCache = null; // {canvas, sig}
+    this._staticCache = null; // {canvas, sig, view}
+    this._pathCache = null; // {canvas, sig, view}
+    this._layerView = null; // view the offscreen layers were rasterized at
     this._colorCache = null; // resolved theme colors; invalidated on theme change
     this._themeSig = null;
     this._onVisibility = () => {
@@ -430,7 +438,32 @@ class TerramowMapCard extends HTMLElement {
   connectedCallback() {
     document.addEventListener("visibilitychange", this._onVisibility);
     this._colorCache = null; // CSS custom props only resolve while connected
+    this._restoreMemoScene();
     this._resubscribe();
+  }
+
+  /**
+   * Repaint the last known scene for this entity instantly when a freshly
+   * created element (e.g. after a mobile view swipe) has no scene yet. Avoids
+   * the "Waiting for mower data…" blank while the subscription re-establishes;
+   * the live feed replaces this with a fresh scene moments later.
+   */
+  _restoreMemoScene() {
+    if (this._scene || !this._config || !this._config.entity) {
+      return;
+    }
+    const memo = SCENE_MEMO.get(this._config.entity);
+    if (!memo) {
+      return;
+    }
+    this._scene = memo;
+    this._sceneRev += 1;
+    this._pathRev += 1;
+    if (this._hasGeometry()) {
+      this._fitView();
+    }
+    this._updateHud();
+    this._requestDraw();
   }
 
   disconnectedCallback() {
@@ -495,6 +528,9 @@ class TerramowMapCard extends HTMLElement {
         for (const segment of this._scene.session_paths) {
           decimatePath(segment, MAX_PATH_POINTS);
         }
+      }
+      if (this._config && this._config.entity) {
+        SCENE_MEMO.set(this._config.entity, this._scene);
       }
       this._sceneRev += 1;
       this._pathRev += 1;
@@ -1357,6 +1393,9 @@ class TerramowMapCard extends HTMLElement {
       if (!this._pointers.size) {
         this._canvas.classList.remove("dragging");
         this._lpFired = false;
+        // Gesture settled: re-rasterize the layers crisply at the final view
+        // (during the gesture they were only transform-blitted).
+        this._requestDraw();
       }
       if (wasTap && ev.type === "pointerup") {
         this._onTap(ev.offsetX, ev.offsetY);
@@ -2122,43 +2161,108 @@ class TerramowMapCard extends HTMLElement {
     }
 
     const themeSig = colors.bg + colors.accent;
-    const viewSig = `${view.scale.toFixed(6)}|${view.tx.toFixed(1)}|${view.ty.toFixed(1)}|${this._rot}`;
     const sizeSig = `${this._canvas.width}x${this._canvas.height}`;
+
+    // The two offscreen layers are rasterized at a *baseline* view and then
+    // composited under a cheap affine transform, so a pan/zoom never re-traces
+    // the (expensive) geometry and path polylines. While a touch/pinch gesture
+    // is in flight the baseline is frozen and the cached bitmap is merely
+    // transformed; once the gesture settles (no active pointers) the baseline
+    // snaps back to the live view and the layers re-rasterize crisply.
+    const interacting = this._pointers.size > 0;
+    if (
+      !this._layerView ||
+      (!interacting &&
+        (this._layerView.scale !== view.scale ||
+          this._layerView.tx !== view.tx ||
+          this._layerView.ty !== view.ty ||
+          this._layerView.rot !== this._rot))
+    ) {
+      this._layerView = {
+        scale: view.scale,
+        tx: view.tx,
+        ty: view.ty,
+        rot: this._rot,
+      };
+    }
+    const layerView = this._layerView;
 
     // Layer 1: static geometry (zones, forbidden areas, walls, station …)
     const staticSig = [
       this._sceneRev,
-      viewSig,
       sizeSig,
       themeSig,
       [...this._pending].sort().join(","),
     ].join("§");
-    if (!this._staticCache || this._staticCache.sig !== staticSig) {
-      const canvas = this._staticCache?.canvas || document.createElement("canvas");
-      canvas.width = this._canvas.width;
-      canvas.height = this._canvas.height;
-      const sctx = canvas.getContext("2d");
-      sctx.setTransform(1, 0, 0, 1, 0, 0);
-      sctx.clearRect(0, 0, canvas.width, canvas.height);
-      this._drawStaticLayer(sctx, dpr, w, h, colors);
-      this._staticCache = { canvas, sig: staticSig };
-    }
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.drawImage(this._staticCache.canvas, 0, 0, w, h);
-
     // Layer 2: coverage + paths (changes on every path push)
-    const pathSig = [this._sceneRev, this._pathRev, viewSig, sizeSig, themeSig].join("§");
-    if (!this._pathCache || this._pathCache.sig !== pathSig) {
-      const canvas = this._pathCache?.canvas || document.createElement("canvas");
-      canvas.width = this._canvas.width;
-      canvas.height = this._canvas.height;
-      const pctx = canvas.getContext("2d");
-      pctx.setTransform(1, 0, 0, 1, 0, 0);
-      pctx.clearRect(0, 0, canvas.width, canvas.height);
-      this._drawPathLayer(pctx, dpr, colors);
-      this._pathCache = { canvas, sig: pathSig };
+    const pathSig = [this._sceneRev, this._pathRev, sizeSig, themeSig].join("§");
+
+    const needStatic =
+      !this._staticCache ||
+      this._staticCache.sig !== staticSig ||
+      this._staticCache.view !== layerView;
+    const needPath =
+      !this._pathCache ||
+      this._pathCache.sig !== pathSig ||
+      this._pathCache.view !== layerView;
+
+    if (needStatic || needPath) {
+      // Rasterize at the baseline view: briefly point the world transform at
+      // layerView (a no-op when idle, since layerView === the live view).
+      const liveTx = view.tx;
+      const liveTy = view.ty;
+      const liveScale = view.scale;
+      const liveRot = this._rot;
+      view.tx = layerView.tx;
+      view.ty = layerView.ty;
+      view.scale = layerView.scale;
+      this._rot = layerView.rot;
+      if (needStatic) {
+        const canvas =
+          this._staticCache?.canvas || document.createElement("canvas");
+        canvas.width = this._canvas.width;
+        canvas.height = this._canvas.height;
+        const sctx = canvas.getContext("2d");
+        sctx.setTransform(1, 0, 0, 1, 0, 0);
+        sctx.clearRect(0, 0, canvas.width, canvas.height);
+        this._drawStaticLayer(sctx, dpr, w, h, colors);
+        this._staticCache = { canvas, sig: staticSig, view: layerView };
+      }
+      if (needPath) {
+        const canvas =
+          this._pathCache?.canvas || document.createElement("canvas");
+        canvas.width = this._canvas.width;
+        canvas.height = this._canvas.height;
+        const pctx = canvas.getContext("2d");
+        pctx.setTransform(1, 0, 0, 1, 0, 0);
+        pctx.clearRect(0, 0, canvas.width, canvas.height);
+        this._drawPathLayer(pctx, dpr, colors);
+        this._pathCache = { canvas, sig: pathSig, view: layerView };
+      }
+      view.tx = liveTx;
+      view.ty = liveTy;
+      view.scale = liveScale;
+      this._rot = liveRot;
     }
-    ctx.drawImage(this._pathCache.canvas, 0, 0, w, h);
+
+    // Composite both cached layers with the transform that maps the baseline
+    // view to the live view: identity when idle → pixel-crisp; a pure
+    // translation while panning → still crisp; a scale/rotation during a pinch
+    // → briefly resampled, then re-rasterized sharp once the gesture settles.
+    const k = view.scale / layerView.scale;
+    const dth = this._rot - layerView.rot;
+    const rc = Math.cos(dth);
+    const rs = Math.sin(dth);
+    const a = k * rc;
+    const b = k * rs;
+    const c = -k * rs;
+    const d = k * rc;
+    const e = dpr * view.tx - (a * dpr * layerView.tx + c * dpr * layerView.ty);
+    const f = dpr * view.ty - (b * dpr * layerView.tx + d * dpr * layerView.ty);
+    ctx.setTransform(a, b, c, d, e, f);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(this._staticCache.canvas, 0, 0);
+    ctx.drawImage(this._pathCache.canvas, 0, 0);
 
     // Layer 3: dynamic (robot marker + pulse) straight onto the main canvas
     this._drawRobot(ctx, dpr, view, colors);
