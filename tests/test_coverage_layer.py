@@ -103,6 +103,17 @@ def test_harvest_skips_an_empty_or_degenerate_path() -> None:
     hub._path_data = _path(_clean((500, 500), (500, 500), (500, 500)))
     hub._harvest_current_path_into_coverage()
     assert hub.coverage_segments == []
+    # single-point runs (isolated cleaning points around a transit) are
+    # skipped before simplification — no drawable segment either
+    hub._path_data = _path(
+        [
+            (500, 500, "PATH_POINT_TYPE_CLEANING"),
+            (600, 600, "PATH_POINT_TYPE_RETURN"),
+            (700, 700, "PATH_POINT_TYPE_CLEANING"),
+        ]
+    )
+    hub._harvest_current_path_into_coverage()
+    assert hub.coverage_segments == []
 
 
 def test_coverage_is_capped() -> None:

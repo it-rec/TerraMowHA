@@ -300,11 +300,27 @@ def test_draw_coverage_noop_on_degenerate_path() -> None:
                     {"position": {"x": 1.0, "y": 1.0}, "type": "PATH_POINT_TYPE_CLEANING"},
                     {"position": {"x": 1.0, "y": 1.0}, "type": "PATH_POINT_TYPE_CLEANING"},
                     {"position": {"x": 1.0, "y": 1.0}, "type": "PATH_POINT_TYPE_CLEANING"},
+                    # a transit followed by a lone cleaning point: the
+                    # resulting single-point run is skipped, not swathed
+                    {"position": {"x": 2.0, "y": 2.0}, "type": "PATH_POINT_TYPE_RETURN"},
+                    {"position": {"x": 3.0, "y": 3.0}, "type": "PATH_POINT_TYPE_CLEANING"},
                 ],
             }
         )
     )
     assert _render(camera).startswith(PNG_MAGIC)
+
+
+def test_path_runs_falls_back_to_flat_points() -> None:
+    # a hand-built scene without the run split still renders as one run
+    from custom_components.terramow.map_render import MapRenderer
+
+    assert MapRenderer._path_runs({}, "current") == []
+    flat = [{"x": 1, "y": 2}]
+    assert (
+        MapRenderer._path_runs({"current_path_points": flat}, "current")
+        == [flat]
+    )
 
 
 # ---------------------------------------------------------------------------
