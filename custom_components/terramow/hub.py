@@ -129,6 +129,19 @@ SESSION_PATH_SAVE_DELAY = 10.0  # seconds
 # session starts; a map switch always clears. Persisted in the same store.
 MAX_COVERAGE_SEGMENTS = 400
 
+# Self-sampled Wi-Fi heatmap (issue #200, approach B): the firmware exposes a
+# wifi_signal_map_index in map_data but never serves the raster locally (probe
+# 2026-07-23: no MQTT traffic even with the app's Wi-Fi map view open). So the
+# hub builds its own map — every realtime pose is paired with the latest dp_109
+# mower-side signal % and folded into a coarse grid via an exponential moving
+# average, so later mows overwrite stale signal reality. Persisted per host,
+# cleared on map change (cells are map-frame coordinates).
+WIFI_CELL_MM = 1500
+WIFI_EMA_ALPHA = 0.4
+MAX_WIFI_CELLS = 4000
+WIFI_MAP_STORE_VERSION = 1
+WIFI_MAP_SAVE_DELAY = 30.0  # seconds
+
 
 def _decompress_and_parse(raw: bytes) -> Any:
     """Decompress (if gzip) and JSON-parse a fetched map/path body.
@@ -419,6 +432,11 @@ class TerraMowHub:
         # segments, kept across sessions until the cycle ends (see above).
         self._coverage_segments: list[list[dict[str, Any]]] = []
         self._coverage_cycle_done = False
+        # Self-sampled Wi-Fi heatmap (issue #200): grid cell -> EMA signal %.
+        self._wifi_cells: dict[tuple[int, int], float] = {}
+        self._wifi_map_id: Any = None  # map the cells belong to
+        self._wifi_map_rev = 0  # bumped on visible cell changes
+        self._wifi_map_store: Store[dict[str, Any]] | None = None
         self._pose: dict[str, Any] = {}  # Stores the real-time pose
         # One meta-fetch channel per HTTP-backed resource; each bundles the
         # seq/etag/retry/pending bookkeeping for its meta topic.
@@ -1825,8 +1843,11 @@ class TerraMowHub:
                 pose = json.loads(payload)
                 self._pose = pose
                 # Snapshot: a callback may (un)register others while the
-                # batch is being dispatched.
-                self._dispatch_batch(list(self.pose_callbacks), pose)
+                # batch is being dispatched. The Wi-Fi sampler rides the same
+                # loop hop so heatmap sampling adds no extra wakeup.
+                self._dispatch_batch(
+                    [self._sample_wifi_cell, *self.pose_callbacks], pose
+                )
             except json.JSONDecodeError:
                 _LOGGER.error("Failed to parse pose JSON: %s", payload[:200])
             except Exception as e:
@@ -2128,6 +2149,19 @@ class TerraMowHub:
             self._coverage_segments = []
             self._coverage_cycle_done = False
             self._schedule_session_path_save()
+        # Wi-Fi heatmap cells are map-frame coordinates: on a different map
+        # they would paint signal readings over unrelated geometry (#200).
+        if (
+            self._wifi_cells
+            and self._wifi_map_id is not None
+            and incoming_id is not None
+            and incoming_id != self._wifi_map_id
+        ):
+            self._wifi_cells = {}
+            self._wifi_map_rev += 1
+            self._schedule_wifi_map_save()
+        if incoming_id is not None:
+            self._wifi_map_id = incoming_id
         self._map_data = data
         map_info = self._build_map_info_from_map_data(data)
         if map_info is not None:
@@ -2209,6 +2243,110 @@ class TerraMowHub:
     def coverage_segments(self) -> list[list[dict[str, Any]]]:
         """Cycle-level mowed coverage segments (issue #202)."""
         return self._coverage_segments
+
+    @property
+    def wifi_map_cells(self) -> dict[tuple[int, int], float]:
+        """Self-sampled Wi-Fi heatmap cells: grid cell -> EMA signal %."""
+        return self._wifi_cells
+
+    @property
+    def wifi_map_rev(self) -> int:
+        """Revision counter, bumped whenever a heatmap cell visibly changes."""
+        return self._wifi_map_rev
+
+    def _sample_wifi_cell(self, pose: dict[str, Any]) -> None:
+        """Fold the latest dp_109 signal % into the pose's heatmap cell.
+
+        Runs on the event loop (dispatched with the pose callbacks). An EMA
+        per cell lets fresh mows overwrite stale signal reality; the revision
+        only bumps when the rounded value changes, so the scene payload and
+        the debounced save aren't churned by noise.
+        """
+        signal = self._wifi_signal
+        if signal is None or not isinstance(pose, dict):
+            return
+        x = pose.get("x")
+        y = pose.get("y")
+        if (
+            not isinstance(x, (int, float))
+            or not isinstance(y, (int, float))
+            or isinstance(x, bool)
+            or isinstance(y, bool)
+        ):
+            return
+        if self._wifi_map_id is None:
+            self._wifi_map_id = self._map_data.get("id")
+        cell = (round(x / WIFI_CELL_MM), round(y / WIFI_CELL_MM))
+        prev = self._wifi_cells.get(cell)
+        value = (
+            float(signal)
+            if prev is None
+            else prev + WIFI_EMA_ALPHA * (signal - prev)
+        )
+        self._wifi_cells[cell] = value
+        if prev is not None and round(value) == round(prev):
+            return  # no visible change — skip the rev bump and save
+        if len(self._wifi_cells) > MAX_WIFI_CELLS:
+            # Bound the grid: drop the oldest-inserted cells (dict order).
+            for key in list(self._wifi_cells)[
+                : len(self._wifi_cells) - MAX_WIFI_CELLS
+            ]:
+                del self._wifi_cells[key]
+        self._wifi_map_rev += 1
+        self._schedule_wifi_map_save()
+
+    def _get_wifi_map_store(self) -> Store[dict[str, Any]]:
+        """Lazily create the disk store for the Wi-Fi heatmap cells."""
+        if self._wifi_map_store is None:
+            self._wifi_map_store = Store(
+                self.hass,
+                WIFI_MAP_STORE_VERSION,
+                f"terramow.wifi_map_{self.host}",
+            )
+        return self._wifi_map_store
+
+    def _wifi_map_save_data(self) -> dict[str, Any]:
+        """Snapshot the heatmap for the debounced disk write."""
+        return {
+            "map_id": self._wifi_map_id,
+            "cells": {
+                f"{gx},{gy}": round(value, 1)
+                for (gx, gy), value in self._wifi_cells.items()
+            },
+        }
+
+    def _schedule_wifi_map_save(self) -> None:
+        """Persist the heatmap soon (debounced; loop-only callers)."""
+        self._get_wifi_map_store().async_delay_save(
+            self._wifi_map_save_data, WIFI_MAP_SAVE_DELAY
+        )
+
+    async def async_restore_wifi_map(self) -> None:
+        """Load the heatmap a previous run persisted.
+
+        Restored unconditionally — the cells survive restarts by design; a
+        map mismatch clears them in ``_apply_map_data`` (same policy as the
+        cycle coverage).
+        """
+        try:
+            data = await self._get_wifi_map_store().async_load()
+        except Exception as err:  # corrupt store must never block setup
+            _LOGGER.warning("Could not load persisted Wi-Fi heatmap: %s", err)
+            return
+        cells = (data or {}).get("cells")
+        if not isinstance(cells, dict) or not cells:
+            return
+        restored: dict[tuple[int, int], float] = {}
+        for key, value in cells.items():
+            try:
+                gx_str, gy_str = str(key).split(",")
+                restored[(int(gx_str), int(gy_str))] = float(value)
+            except (ValueError, TypeError):
+                continue  # skip malformed entries, keep the rest
+        if restored:
+            self._wifi_cells = dict(list(restored.items())[-MAX_WIFI_CELLS:])
+            self._wifi_map_id = (data or {}).get("map_id")
+            self._wifi_map_rev += 1
 
     def _get_session_path_store(self) -> Store[dict[str, Any]]:
         """Lazily create the disk store for the archived session segments."""

@@ -285,6 +285,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     # Park any session path segments a previous run persisted BEFORE the hub
     # connects, so the first dp_113 frame can decide their fate (issue #239).
     await hub.async_restore_session_paths()
+    # The self-sampled Wi-Fi heatmap likewise survives restarts (issue #200).
+    await hub.async_restore_wifi_map()
     hub.start()
 
     try:
