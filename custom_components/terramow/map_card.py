@@ -78,6 +78,13 @@ SCENE_PUSH_DEBOUNCE = 0.2
 # for this long (path + robot still update live) so a viewed card stays cheap.
 COVERAGE_RECOMPUTE_INTERVAL = 12.0
 
+# The coverage cache is keyed per hub (not per subscription), so re-opening the
+# map dashboard — or viewing it on several devices at once — reuses the last
+# computed per-zone coverage instead of recomputing the O(edges x zones) result
+# from scratch each time. Keyed by id(hub); a reloaded hub simply gets a fresh
+# entry and the stale one (a tiny dict) is orphaned.
+_HUB_COVERAGE_CACHES: dict[int, dict[str, Any]] = {}
+
 _DATA_SETUP_DONE = f"{DOMAIN}_map_card_setup"
 
 
@@ -683,8 +690,10 @@ class _MapFeed:
         # source callbacks never stacks up more than one pending build.
         self._build_task: asyncio.Task[None] | None = None
         self._rebuild_pending = False
-        # Throttles the expensive per-zone coverage recompute across pushes.
-        self._coverage_cache: dict[str, Any] = {}
+        # Throttles the expensive per-zone coverage recompute across pushes, and
+        # is shared per hub so re-opening the card (or another device viewing it)
+        # reuses the last result instead of recomputing it from scratch.
+        self._coverage_cache = _HUB_COVERAGE_CACHES.setdefault(id(hub), {})
 
     @callback
     def start(self) -> None:
