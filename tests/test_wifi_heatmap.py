@@ -66,6 +66,10 @@ def test_first_sample_creates_cell_and_schedules_save() -> None:
     hub._wifi_map_store.async_delay_save.assert_called_once_with(
         hub._wifi_map_save_data, WIFI_MAP_SAVE_DELAY
     )
+    # A later sample keeps the already-adopted owner map
+    hub._map_data = {"id": 9}
+    hub._sample_wifi_cell(_pose(x=20 * WIFI_CELL_MM, y=0))
+    assert hub._wifi_map_id == 4
 
 
 def test_ema_moves_value_and_bumps_rev_on_visible_change() -> None:
