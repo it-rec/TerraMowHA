@@ -230,9 +230,15 @@ async def test_subscribe_snapshot_and_updates(
     result = await client.receive_json()
     assert result["success"]
 
-    scene_event = await client.receive_json()
-    assert scene_event["event"]["type"] == "scene"
-    scene = scene_event["event"]["scene"]
+    # The initial snapshot (scene) and the initial robot event both arrive.
+    # The scene build now runs off the event loop, so the synchronous robot
+    # event may lead it; accept either order.
+    initial: dict[str, Any] = {}
+    for _ in range(2):
+        event = (await client.receive_json())["event"]
+        initial[event["type"]] = event
+    assert set(initial) == {"scene", "robot"}
+    scene = initial["scene"]["scene"]
     assert scene["map_name"] == "Garden"
     assert scene["station"] == {"x": 1200, "y": 3400, "theta": 1.57}
     assert len(scene["regions"]) == 1
@@ -249,9 +255,7 @@ async def test_subscribe_snapshot_and_updates(
     assert scene["current_path"] == [[100, 200], [300, 400]]
     assert scene["bounds"] is not None
 
-    robot_event = await client.receive_json()
-    assert robot_event["event"]["type"] == "robot"
-    assert robot_event["event"]["robot"] is None
+    assert initial["robot"]["robot"] is None
 
     await _drain(client)
 
