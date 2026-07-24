@@ -41,6 +41,7 @@ from .const import DOMAIN
 from .hub import WIFI_CELL_MM, TerraMowHub
 from .map_render import CUTTING_WIDTH_MM
 from .map_scene import (
+    ScenePathCache,
     build_scene,
     coerce_angle_radians,
     normalize_angle_radians,
@@ -366,7 +367,9 @@ def _zone_coverage_ratios(scene: dict[str, Any]) -> dict[int, float]:
 
 
 def build_scene_payload(
-    hub: TerraMowHub, coverage_cache: dict[str, Any] | None = None
+    hub: TerraMowHub,
+    coverage_cache: dict[str, Any] | None = None,
+    scene_cache: ScenePathCache | None = None,
 ) -> dict[str, Any]:
     """Serialize the drawable scene for the card.
 
@@ -374,6 +377,11 @@ def build_scene_payload(
     per-zone coverage math: it is recomputed at most every
     COVERAGE_RECOMPUTE_INTERVAL seconds and otherwise reused, so a card viewed
     during active mowing doesn't recompute it on every path push.
+
+    ``scene_cache`` (a per-subscription :class:`ScenePathCache`) skips
+    re-extracting path point lists whose source dict is unchanged — during
+    mowing the history path in particular is re-fetched rarely, so every push
+    would otherwise re-parse its full O(N) point list.
     """
     map_data = hub.map_data
     scene = build_scene(
@@ -381,6 +389,7 @@ def build_scene_payload(
         hub.path_data,
         hub.history_path_data,
         False,
+        cache=scene_cache,
         # Cycle coverage (superset of the session archive) feeds the
         # existing "mowed area" renderer (issue #202, approach B).
         session_path_segments=hub.coverage_segments,
@@ -735,6 +744,10 @@ class _MapFeed:
         # is shared per hub so re-opening the card (or another device viewing it)
         # reuses the last result instead of recomputing it from scratch.
         self._coverage_cache = _HUB_COVERAGE_CACHES.setdefault(id(hub), {})
+        # Reuse path point extraction across pushes: the history path source is
+        # re-fetched rarely, so re-parsing its full point list on every mowing
+        # tick is wasted work (identity-keyed, so a new source dict re-parses).
+        self._scene_cache = ScenePathCache()
 
     @callback
     def start(self) -> None:
@@ -803,7 +816,10 @@ class _MapFeed:
                     # The heavy polygon / zone-coverage math runs off the event
                     # loop so the WebSocket + HTTP stack stays responsive.
                     payload = await self.hass.async_add_executor_job(
-                        build_scene_payload, self.hub, self._coverage_cache
+                        build_scene_payload,
+                        self.hub,
+                        self._coverage_cache,
+                        self._scene_cache,
                     )
                 except Exception:  # pragma: no cover - defensive
                     _LOGGER.exception("Failed to build map card scene")
