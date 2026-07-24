@@ -75,6 +75,22 @@ def test_mid_session_archive_feeds_both_lists() -> None:
     assert hub.coverage_segments == hub.session_path_segments
 
 
+def test_archive_skips_coverage_when_segment_collapses(monkeypatch) -> None:
+    # The session leg archives, but if its coarse coverage copy collapses to
+    # nothing the coverage list simply gets no segment (defensive branch).
+    hub = _hub()
+    _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
+    hub._apply_path_data(MOW_TRACK)
+    monkeypatch.setattr(
+        "custom_components.terramow.hub._slim_coverage_segment",
+        lambda run: None,
+    )
+    _mission(hub, "MISSION_IDLE", "MISSION_STATE_IDLE")  # recharge dock
+    hub._apply_path_data(DOCK_RESET)
+    assert len(hub.session_path_segments) == 1  # session leg still archived
+    assert hub.coverage_segments == []  # coverage copy skipped
+
+
 def test_complete_harvests_the_final_leg_and_marks_the_cycle_done() -> None:
     hub = _hub()
     _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
