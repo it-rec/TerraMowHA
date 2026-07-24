@@ -48,13 +48,15 @@
         "title": "TerraMow parinktys",
         "data": {
           "map_resolution": "Žemėlapio išvesties raiška (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Žemėlapio tema",
+          "map_show_coverage": "Rodyti nupjautą plotą",
+          "assume_job_complete": "Kiekvieną baigtą užduotį laikyti įvykdyta 100 %"
         },
         "data_description": {
           "map_resolution": "Žemėlapio kameros PNG kraštinės ilgis. Didesnės reikšmės suteikia ryškesnį vaizdą, kai jis įterpiamas į valdymo skydelius, tačiau padidina pralaidumo ir CPU apkrovą kiekvieno atvaizdavimo metu.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Atvaizduojamo žemėlapio kameros vaizdo spalvų tema. „dark“ tinka tamsiems valdymo skydeliams.",
+          "map_show_coverage": "Po maršruto linija užtamsina jau nupjautą plotą tikruoju pjovimo pločiu.",
+          "assume_job_complete": "Kai kurios programinės aparatinės įrangos versijos užbaigia užduotį be užbaigimo signalo, todėl sesijos eiga niekada nepasiekia 100 %. Įjunkite, kad kiekviena baigta užduotis būtų laikoma įvykdyta (100 %), kaip programėlėje; palikite išjungtą, kad išliktų tikroji skaitiklio reikšmė."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Atnaujinama žemėlapio atsarginė kopija"
         }
       },
+      "active_job": {
+        "name": "Aktyvi užduotis",
+        "state": {
+          "mission_idle": "Laukiama",
+          "mission_recharge": "Įkraunama",
+          "mission_global_clean": "Visuotinis pjovimas",
+          "mission_build_map": "Žemėlapio kūrimas",
+          "mission_build_map_and_clean": "Žemėlapio kūrimas ir pjovimas",
+          "mission_temporary_clean": "Laikinas pjovimas",
+          "mission_back_to_starting_point": "Grįžtama į pradžios tašką",
+          "mission_remote_control_clean": "Pjovimas nuotoliniu valdymu",
+          "mission_schedule_global_clean": "Suplanuotas visuotinis pjovimas",
+          "mission_schedule_build_map_and_clean": "Suplanuotas žemėlapio kūrimas ir pjovimas",
+          "mission_select_region_clean": "Zonų pjovimas",
+          "mission_create_custom_passage": "Kuriamas pasirinktinis pravažiavimas",
+          "mission_backup_map": "Kuriama žemėlapio atsarginė kopija",
+          "mission_relocate_base_station": "Perkeliama bazinė stotis",
+          "mission_user_auto_calibration": "Automatinis kalibravimas",
+          "mission_restore_backup_map": "Atkuriama žemėlapio atsarginė kopija",
+          "mission_schedule_select_region_clean": "Suplanuotas zonų pjovimas",
+          "mission_draw_region_clean": "Nubrėžtos zonos pjovimas",
+          "mission_edge_trim_clean": "Kraštų apipjovimas",
+          "mission_update_backup_map": "Atnaujinama žemėlapio atsarginė kopija"
+        }
+      },
       "sub_mission": {
         "name": "Papildoma misija",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Aktyvios klaidos"
+      },
+      "fault": {
+        "name": "Gedimas"
       },
       "last_event": {
         "name": "Paskutinis įvykis"
@@ -531,10 +561,10 @@
       "message": "{entity_id} skirta TerraMow vejapjovė dar neparuošta."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Vejapjovėje nėra tvarkaraščio įrašo su item id {item_id}."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Vejapjovė nepriėmė tvarkaraščio pakeitimo (bandymų: {attempts}). Dabartinė TerraMow programinė aparatinė įranga nepriima tvarkaraščio įrašymo per vietinį tinklą – gamintojo programėlė vietoje to naudoja „Bluetooth“/debesį. Planavimui iš Home Assistant naudokite orams prisitaikančio pjovimo planą (blueprint); šios paslaugos veiks, kai programinė aparatinė įranga pridės vietinio įrašymo palaikymą."
     }
   }
 }

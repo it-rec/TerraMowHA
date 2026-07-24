@@ -48,13 +48,15 @@
         "title": "TerraMow beállítások",
         "data": {
           "map_resolution": "Térkép kimeneti felbontása (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Térkép témája",
+          "map_show_coverage": "Lenyírt terület megjelenítése",
+          "assume_job_complete": "Minden befejezett feladat 100 %-ban késznek tekintése"
         },
         "data_description": {
           "map_resolution": "A térképkamera PNG kimenetének oldalhossza. A magasabb értékek élesebb képet adnak az irányítópultokba ágyazva, de minden megjelenítésnél növelik a sávszélesség- és CPU-használatot.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "A megjelenített térképkamera-kép színtémája. A „dark” a sötét irányítópultokhoz illik.",
+          "map_show_coverage": "Az útvonal vonala alatt a már lenyírt területet a valós vágásszélességgel árnyékolja.",
+          "assume_job_complete": "Egyes firmware-ek befejezés-jelzés nélkül zárják le a feladatot, ezért a munkamenet előrehaladása soha nem ugrik 100 %-ra. Kapcsolja be, hogy minden befejezett feladat késznek (100 %) számítson, ahogy az alkalmazásban is; hagyja kikapcsolva, ha meg szeretné tartani a számláló valós értékét."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Térkép-biztonsági Mentés Frissítése"
         }
       },
+      "active_job": {
+        "name": "Aktív feladat",
+        "state": {
+          "mission_idle": "Tétlen",
+          "mission_recharge": "Töltés",
+          "mission_global_clean": "Teljes Területű Nyírás",
+          "mission_build_map": "Térképkészítés",
+          "mission_build_map_and_clean": "Térképkészítés és Fűnyírás",
+          "mission_temporary_clean": "Ideiglenes Nyírás",
+          "mission_back_to_starting_point": "Visszatérés a Kiindulópontra",
+          "mission_remote_control_clean": "Távirányításos Nyírás",
+          "mission_schedule_global_clean": "Ütemezett Teljes Területű Nyírás",
+          "mission_schedule_build_map_and_clean": "Ütemezett Térképkészítés és Nyírás",
+          "mission_select_region_clean": "Zónanyírás",
+          "mission_create_custom_passage": "Egyéni Átjáró Létrehozása",
+          "mission_backup_map": "Térkép Biztonsági Mentése",
+          "mission_relocate_base_station": "Bázisállomás Áthelyezése",
+          "mission_user_auto_calibration": "Automatikus Kalibrálás",
+          "mission_restore_backup_map": "Térkép-biztonsági Mentés Visszaállítása",
+          "mission_schedule_select_region_clean": "Ütemezett Zónanyírás",
+          "mission_draw_region_clean": "Rajzolt Zóna Nyírása",
+          "mission_edge_trim_clean": "Szegélynyírás",
+          "mission_update_backup_map": "Térkép-biztonsági Mentés Frissítése"
+        }
+      },
       "sub_mission": {
         "name": "Részfeladat",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Aktív hibák"
+      },
+      "fault": {
+        "name": "Meghibásodás"
       },
       "last_event": {
         "name": "Utolsó esemény"
@@ -531,10 +561,10 @@
       "message": "A(z) {entity_id} TerraMow fűnyírója még nem áll készen."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "A fűnyírón nincs {item_id} item id-jű ütemterv-bejegyzés."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "A fűnyíró nem fogadta el az ütemterv módosítását (próbálkozások: {attempts}). A jelenlegi TerraMow firmware nem fogad el ütemterv-írást a helyi hálózaton keresztül – a gyártói alkalmazás helyette Bluetooth-t/felhőt használ. A Home Assistantból való ütemezéshez használja az időjáráshoz igazodó nyírás blueprintet; ezek a szolgáltatások akkor működnek majd, ha a firmware támogatja a helyi írást."
     }
   }
 }

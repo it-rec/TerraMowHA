@@ -48,13 +48,15 @@
         "title": "Опции на TerraMow",
         "data": {
           "map_resolution": "Изходна резолюция на картата (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Тема на картата",
+          "map_show_coverage": "Показване на окосената площ",
+          "assume_job_complete": "Всяка приключена задача да се счита за 100 % завършена"
         },
         "data_description": {
           "map_resolution": "Дължина на страната на изходното PNG изображение от камерата на картата. По-високите стойности дават по-ясно изображение при вграждане в табла, но увеличават трафика и натоварването на CPU при всяко рендиране.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Цветова тема на изобразеното изображение от камерата на картата. „dark“ подхожда на тъмни табла.",
+          "map_show_coverage": "Оцветява вече окосената площ с реалната ширина на косене под линията на маршрута.",
+          "assume_job_complete": "Някои версии на фърмуера приключват задачата без сигнал за завършване, така че напредъкът на сесията никога не достига 100 %. Включете, за да се счита всяка приключена задача за завършена (100 %), както в приложението; оставете изключено, за да се запази реалната стойност на брояча."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Актуализиране на архивираната карта"
         }
       },
+      "active_job": {
+        "name": "Активна задача",
+        "state": {
+          "mission_idle": "В покой",
+          "mission_recharge": "Зареждане",
+          "mission_global_clean": "Глобално косене",
+          "mission_build_map": "Изграждане на карта",
+          "mission_build_map_and_clean": "Изграждане на карта и косене",
+          "mission_temporary_clean": "Временно косене",
+          "mission_back_to_starting_point": "Връщане към началната точка",
+          "mission_remote_control_clean": "Косене с дистанционно управление",
+          "mission_schedule_global_clean": "Планирано глобално косене",
+          "mission_schedule_build_map_and_clean": "Планирано изграждане на карта и косене",
+          "mission_select_region_clean": "Косене на зона",
+          "mission_create_custom_passage": "Създаване на персонализиран проход",
+          "mission_backup_map": "Архивиране на картата",
+          "mission_relocate_base_station": "Преместване на базовата станция",
+          "mission_user_auto_calibration": "Автоматично калибриране",
+          "mission_restore_backup_map": "Възстановяване на архивираната карта",
+          "mission_schedule_select_region_clean": "Планирано косене на зона",
+          "mission_draw_region_clean": "Косене на начертана зона",
+          "mission_edge_trim_clean": "Косене на ръбовете",
+          "mission_update_backup_map": "Актуализиране на архивираната карта"
+        }
+      },
       "sub_mission": {
         "name": "Подмисия",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Активни грешки"
+      },
+      "fault": {
+        "name": "Неизправност"
       },
       "last_event": {
         "name": "Последно събитие"
@@ -531,10 +561,10 @@
       "message": "Косачката TerraMow за {entity_id} все още не е готова."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "На косачката няма запис в графика с item id {item_id}."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Косачката не прие промяната в графика (опити: {attempts}). Текущият фърмуер на TerraMow не приема запис на графици през локалната мрежа – приложението на производителя използва Bluetooth/облак вместо това. Използвайте блупринта за косене според времето, за да планирате от Home Assistant; тези услуги ще работят, когато фърмуерът добави поддръжка за локален запис."
     }
   }
 }

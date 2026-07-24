@@ -48,13 +48,15 @@
         "title": "Параметры TerraMow",
         "data": {
           "map_resolution": "Разрешение вывода карты (пикс.)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Тема карты",
+          "map_show_coverage": "Показывать скошенную площадь",
+          "assume_job_complete": "Считать любую завершённую задачу выполненной на 100 %"
         },
         "data_description": {
           "map_resolution": "Длина стороны выходного PNG-изображения камеры карты. Более высокие значения дают более чёткое изображение при встраивании в панели, но увеличивают трафик и нагрузку на CPU при каждой отрисовке.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Цветовая тема отрисованного изображения камеры карты. «dark» подходит для тёмных панелей.",
+          "map_show_coverage": "Закрашивает уже скошенную площадь реальной шириной кошения под линией маршрута.",
+          "assume_job_complete": "Некоторые версии прошивки завершают задачу без сигнала о завершении, поэтому прогресс сеанса никогда не доходит до 100 %. Включите, чтобы любая завершённая задача считалась выполненной (100 %), как в приложении; оставьте выключенным, чтобы сохранить реальное значение счётчика."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Обновление резервной копии карты"
         }
       },
+      "active_job": {
+        "name": "Активная задача",
+        "state": {
+          "mission_idle": "Простой",
+          "mission_recharge": "Зарядка",
+          "mission_global_clean": "Глобальное скашивание",
+          "mission_build_map": "Построение карты",
+          "mission_build_map_and_clean": "Построение карты и скашивание",
+          "mission_temporary_clean": "Временное скашивание",
+          "mission_back_to_starting_point": "Возврат к начальной точке",
+          "mission_remote_control_clean": "Скашивание с дистанционным управлением",
+          "mission_schedule_global_clean": "Глобальное скашивание по расписанию",
+          "mission_schedule_build_map_and_clean": "Построение карты и скашивание по расписанию",
+          "mission_select_region_clean": "Скашивание зоны",
+          "mission_create_custom_passage": "Создание пользовательского прохода",
+          "mission_backup_map": "Резервное копирование карты",
+          "mission_relocate_base_station": "Перемещение базовой станции",
+          "mission_user_auto_calibration": "Автокалибровка",
+          "mission_restore_backup_map": "Восстановление резервной копии карты",
+          "mission_schedule_select_region_clean": "Скашивание зоны по расписанию",
+          "mission_draw_region_clean": "Скашивание нарисованной зоны",
+          "mission_edge_trim_clean": "Скашивание кромок",
+          "mission_update_backup_map": "Обновление резервной копии карты"
+        }
+      },
       "sub_mission": {
         "name": "Подзадача",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Активные ошибки"
+      },
+      "fault": {
+        "name": "Неисправность"
       },
       "last_event": {
         "name": "Последнее событие"
@@ -531,10 +561,10 @@
       "message": "Газонокосилка TerraMow для {entity_id} ещё не готова."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "На газонокосилке нет записи расписания с item id {item_id}."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Газонокосилка не приняла изменение расписания (попыток: {attempts}). Текущая прошивка TerraMow не принимает запись расписания по локальной сети — приложение производителя использует Bluetooth/облако. Для планирования из Home Assistant используйте блупринт кошения с учётом погоды; эти сервисы заработают, когда прошивка добавит поддержку локальной записи."
     }
   }
 }

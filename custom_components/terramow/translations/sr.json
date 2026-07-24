@@ -48,13 +48,15 @@
         "title": "TerraMow опције",
         "data": {
           "map_resolution": "Излазна резолуција мапе (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Тема мапе",
+          "map_show_coverage": "Прикажи покошену површину",
+          "assume_job_complete": "Сматрај сваки завршени задатак 100 % довршеним"
         },
         "data_description": {
           "map_resolution": "Дужина странице излазне PNG слике камере мапе. Веће вредности дају оштрију слику при уграђивању у контролне табле, али повећавају проток и оптерећење CPU при сваком исцртавању.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Тема боја исцртане слике камере мапе. „dark“ одговара тамним контролним таблама.",
+          "map_show_coverage": "Сенчи већ покошену површину у стварној ширини кошења испод линије путање.",
+          "assume_job_complete": "Неки фирмвери завршавају задатак без сигнала о довршетку, па напредак сесије никада не достигне 100 %. Укључите да се сваки завршени задатак сматра довршеним (100 %), као у апликацији; оставите искључено да се задржи стварна вредност бројача."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Ажурирање резервне копије мапе"
         }
       },
+      "active_job": {
+        "name": "Активни задатак",
+        "state": {
+          "mission_idle": "Мировање",
+          "mission_recharge": "Пуњење",
+          "mission_global_clean": "Глобално кошење",
+          "mission_build_map": "Прављење мапе",
+          "mission_build_map_and_clean": "Прављење мапе и кошење",
+          "mission_temporary_clean": "Привремено кошење",
+          "mission_back_to_starting_point": "Повратак на почетну тачку",
+          "mission_remote_control_clean": "Кошење даљинским управљањем",
+          "mission_schedule_global_clean": "Заказано глобално кошење",
+          "mission_schedule_build_map_and_clean": "Заказано прављење мапе и кошење",
+          "mission_select_region_clean": "Кошење зоне",
+          "mission_create_custom_passage": "Прављење прилагођеног пролаза",
+          "mission_backup_map": "Прављење резервне копије мапе",
+          "mission_relocate_base_station": "Премештање базне станице",
+          "mission_user_auto_calibration": "Аутоматска калибрација",
+          "mission_restore_backup_map": "Враћање резервне копије мапе",
+          "mission_schedule_select_region_clean": "Заказано кошење зоне",
+          "mission_draw_region_clean": "Кошење нацртане зоне",
+          "mission_edge_trim_clean": "Кошење ивица",
+          "mission_update_backup_map": "Ажурирање резервне копије мапе"
+        }
+      },
       "sub_mission": {
         "name": "Подмисија",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Активне грешке"
+      },
+      "fault": {
+        "name": "Квар"
       },
       "last_event": {
         "name": "Последњи догађај"
@@ -531,10 +561,10 @@
       "message": "TerraMow косачица за {entity_id} још није спремна."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "На косачици не постоји ставка распореда са item id {item_id}."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Косачица није прихватила промену распореда (покушаја: {attempts}). Тренутни TerraMow фирмвер не прихвата уписивање распореда преко локалне мреже – апликација произвођача уместо тога користи Bluetooth/облак. За распоређивање из Home Assistant-а користите blueprint за кошење прилагођено времену; ове услуге ће радити када фирмвер дода подршку за локално уписивање."
     }
   }
 }

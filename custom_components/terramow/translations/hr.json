@@ -48,13 +48,15 @@
         "title": "TerraMow opcije",
         "data": {
           "map_resolution": "Izlazna razlučivost karte (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Tema karte",
+          "map_show_coverage": "Prikaži pokošenu površinu",
+          "assume_job_complete": "Svaki završeni zadatak smatraj 100 % dovršenim"
         },
         "data_description": {
           "map_resolution": "Duljina stranice izlazne PNG slike kamere karte. Veće vrijednosti daju oštriju sliku pri ugradnji u nadzorne ploče, ali povećavaju propusnost i opterećenje CPU-a pri svakom iscrtavanju.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Tema boja iscrtane slike kamere karte. „dark“ odgovara tamnim nadzornim pločama.",
+          "map_show_coverage": "Sjenča već pokošenu površinu u stvarnoj širini košnje ispod linije putanje.",
+          "assume_job_complete": "Neki firmveri završavaju zadatak bez signala o dovršetku pa napredak sesije nikada ne dosegne 100 %. Uključite da se svaki završeni zadatak smatra dovršenim (100 %), kao u aplikaciji; ostavite isključeno da se zadrži stvarna vrijednost brojača."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Ažuriranje sigurnosne kopije karte"
         }
       },
+      "active_job": {
+        "name": "Aktivni zadatak",
+        "state": {
+          "mission_idle": "Mirovanje",
+          "mission_recharge": "Punjenje",
+          "mission_global_clean": "Globalna košnja",
+          "mission_build_map": "Izrada karte",
+          "mission_build_map_and_clean": "Izrada karte i košnja",
+          "mission_temporary_clean": "Privremena košnja",
+          "mission_back_to_starting_point": "Povratak na početnu točku",
+          "mission_remote_control_clean": "Košnja daljinskim upravljanjem",
+          "mission_schedule_global_clean": "Zakazana globalna košnja",
+          "mission_schedule_build_map_and_clean": "Zakazana izrada karte i košnja",
+          "mission_select_region_clean": "Košnja zona",
+          "mission_create_custom_passage": "Izrada prilagođenog prolaza",
+          "mission_backup_map": "Sigurnosno kopiranje karte",
+          "mission_relocate_base_station": "Premještanje bazne stanice",
+          "mission_user_auto_calibration": "Automatska kalibracija",
+          "mission_restore_backup_map": "Vraćanje sigurnosne kopije karte",
+          "mission_schedule_select_region_clean": "Zakazana košnja zona",
+          "mission_draw_region_clean": "Košnja nacrtane zone",
+          "mission_edge_trim_clean": "Košnja rubova",
+          "mission_update_backup_map": "Ažuriranje sigurnosne kopije karte"
+        }
+      },
       "sub_mission": {
         "name": "Podmisija",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Aktivne greške"
+      },
+      "fault": {
+        "name": "Kvar"
       },
       "last_event": {
         "name": "Posljednji događaj"
@@ -531,10 +561,10 @@
       "message": "TerraMow kosilica za {entity_id} još nije spremna."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Na kosilici ne postoji stavka rasporeda s item id {item_id}."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Kosilica nije prihvatila promjenu rasporeda (pokušaja: {attempts}). Trenutni TerraMow firmver ne prihvaća zapisivanje rasporeda putem lokalne mreže – aplikacija proizvođača umjesto toga koristi Bluetooth/oblak. Za raspoređivanje iz Home Assistanta upotrijebite blueprint za košnju prilagođenu vremenu; ove će usluge raditi kada firmver dobije podršku za lokalno zapisivanje."
     }
   }
 }

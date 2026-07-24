@@ -48,13 +48,15 @@
         "title": "Opțiuni TerraMow",
         "data": {
           "map_resolution": "Rezoluția de ieșire a hărții (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Tema hărții",
+          "map_show_coverage": "Afișează suprafața tunsă",
+          "assume_job_complete": "Tratează orice lucrare finalizată ca fiind 100 % completă"
         },
         "data_description": {
           "map_resolution": "Lungimea laturii imaginii PNG generate de camera hărții. Valorile mai mari oferă o imagine mai clară atunci când este încorporată în tablouri de bord, dar cresc lățimea de bandă și utilizarea CPU la fiecare randare.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Tema de culori a imaginii randate de camera hărții. „dark” se potrivește cu tablourile de bord întunecate.",
+          "map_show_coverage": "Umbrește zona deja tunsă la lățimea reală de tăiere, sub linia traseului.",
+          "assume_job_complete": "Unele versiuni de firmware încheie o lucrare fără semnal de finalizare, astfel încât progresul sesiunii nu ajunge niciodată la 100 %. Activați pentru a considera orice lucrare încheiată drept completă (100 %), la fel ca în aplicație; lăsați dezactivat pentru a păstra valoarea reală a contorului."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Actualizarea Copiei de Rezervă a Hărții"
         }
       },
+      "active_job": {
+        "name": "Sarcină activă",
+        "state": {
+          "mission_idle": "Inactiv",
+          "mission_recharge": "Se Reîncarcă",
+          "mission_global_clean": "Tundere Globală",
+          "mission_build_map": "Construire Hartă",
+          "mission_build_map_and_clean": "Construire Hartă și Tundere",
+          "mission_temporary_clean": "Tundere Temporară",
+          "mission_back_to_starting_point": "Întoarcere la Punctul de Pornire",
+          "mission_remote_control_clean": "Tundere prin Telecomandă",
+          "mission_schedule_global_clean": "Tundere Globală Programată",
+          "mission_schedule_build_map_and_clean": "Construire Hartă și Tundere Programate",
+          "mission_select_region_clean": "Tundere pe Zone",
+          "mission_create_custom_passage": "Creare Pasaj Personalizat",
+          "mission_backup_map": "Copiere de Rezervă a Hărții",
+          "mission_relocate_base_station": "Mutarea Stației de Bază",
+          "mission_user_auto_calibration": "Calibrare Automată",
+          "mission_restore_backup_map": "Restaurarea Copiei de Rezervă a Hărții",
+          "mission_schedule_select_region_clean": "Tundere pe Zone Programată",
+          "mission_draw_region_clean": "Tundere Zonă Desenată",
+          "mission_edge_trim_clean": "Tundere Margini",
+          "mission_update_backup_map": "Actualizarea Copiei de Rezervă a Hărții"
+        }
+      },
       "sub_mission": {
         "name": "Submisiune",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Erori active"
+      },
+      "fault": {
+        "name": "Defecțiune"
       },
       "last_event": {
         "name": "Ultimul eveniment"
@@ -531,10 +561,10 @@
       "message": "Mașina de tuns iarba TerraMow pentru {entity_id} nu este încă pregătită."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Pe mașina de tuns iarba nu există niciun element de program cu item id {item_id}."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Mașina de tuns iarba nu a acceptat modificarea programului (încercări: {attempts}). Firmware-ul TerraMow actual nu acceptă scrierea programului prin rețeaua locală – aplicația producătorului folosește în schimb Bluetooth/cloud. Pentru programare din Home Assistant, folosiți blueprintul de tuns adaptat la vreme; aceste servicii vor funcționa după ce firmware-ul va adăuga suport pentru scriere locală."
     }
   }
 }

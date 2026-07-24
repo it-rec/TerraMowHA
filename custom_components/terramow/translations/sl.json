@@ -48,13 +48,15 @@
         "title": "Možnosti TerraMow",
         "data": {
           "map_resolution": "Izhodna ločljivost zemljevida (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Tema zemljevida",
+          "map_show_coverage": "Prikaži pokošeno površino",
+          "assume_job_complete": "Vsako končano opravilo obravnavaj kot 100 % dokončano"
         },
         "data_description": {
           "map_resolution": "Dolžina stranice izhodne slike PNG kamere zemljevida. Višje vrednosti dajejo ostrejšo sliko pri vdelavi v nadzorne plošče, vendar povečajo porabo pasovne širine in obremenitev CPU pri vsakem izrisu.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Barvna tema izrisane slike kamere zemljevida. »dark« se ujema s temnimi nadzornimi ploščami.",
+          "map_show_coverage": "Osenči že pokošeno površino v dejanski širini košnje pod črto poti.",
+          "assume_job_complete": "Nekatere različice vdelane programske opreme končajo opravilo brez signala o dokončanju, zato napredek seje nikoli ne doseže 100 %. Vklopite, da se vsako končano opravilo obravnava kot dokončano (100 %), enako kot v aplikaciji; pustite izklopljeno, da se ohrani dejanska vrednost števca."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Posodabljanje varnostne kopije zemljevida"
         }
       },
+      "active_job": {
+        "name": "Aktivno opravilo",
+        "state": {
+          "mission_idle": "Nedejavna",
+          "mission_recharge": "Polnjenje",
+          "mission_global_clean": "Košnja celotne površine",
+          "mission_build_map": "Izdelava zemljevida",
+          "mission_build_map_and_clean": "Izdelava zemljevida in košnja",
+          "mission_temporary_clean": "Začasna košnja",
+          "mission_back_to_starting_point": "Vračanje na izhodiščno točko",
+          "mission_remote_control_clean": "Košnja z daljinskim upravljanjem",
+          "mission_schedule_global_clean": "Načrtovana košnja celotne površine",
+          "mission_schedule_build_map_and_clean": "Načrtovana izdelava zemljevida in košnja",
+          "mission_select_region_clean": "Košnja območij",
+          "mission_create_custom_passage": "Ustvarjanje prehoda po meri",
+          "mission_backup_map": "Varnostno kopiranje zemljevida",
+          "mission_relocate_base_station": "Premeščanje bazne postaje",
+          "mission_user_auto_calibration": "Samodejna kalibracija",
+          "mission_restore_backup_map": "Obnavljanje varnostne kopije zemljevida",
+          "mission_schedule_select_region_clean": "Načrtovana košnja območij",
+          "mission_draw_region_clean": "Košnja narisanega območja",
+          "mission_edge_trim_clean": "Košnja robov",
+          "mission_update_backup_map": "Posodabljanje varnostne kopije zemljevida"
+        }
+      },
       "sub_mission": {
         "name": "Podmisija",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Aktivne napake"
+      },
+      "fault": {
+        "name": "Okvara"
       },
       "last_event": {
         "name": "Zadnji dogodek"
@@ -531,10 +561,10 @@
       "message": "Kosilnica TerraMow za {entity_id} še ni pripravljena."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Na kosilnici ni vnosa urnika z item id {item_id}."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Kosilnica ni sprejela spremembe urnika (poskusov: {attempts}). Trenutna vdelana programska oprema TerraMow ne sprejema zapisovanja urnikov prek lokalnega omrežja – aplikacija proizvajalca namesto tega uporablja Bluetooth/oblak. Za načrtovanje iz Home Assistanta uporabite načrt (blueprint) za košnjo glede na vreme; te storitve bodo delovale, ko bo vdelana programska oprema dodala podporo za lokalno zapisovanje."
     }
   }
 }

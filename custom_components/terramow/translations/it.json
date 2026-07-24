@@ -48,13 +48,15 @@
         "title": "Opzioni TerraMow",
         "data": {
           "map_resolution": "Risoluzione di output della mappa (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Tema della mappa",
+          "map_show_coverage": "Mostra superficie tagliata",
+          "assume_job_complete": "Considera ogni lavoro terminato come completato al 100 %"
         },
         "data_description": {
           "map_resolution": "Lunghezza del lato del PNG della fotocamera della mappa. Valori più alti danno un'immagine più nitida nei dashboard ma aumentano la larghezza di banda e il carico della CPU a ogni rendering.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Tema di colore dell'immagine renderizzata della fotocamera della mappa. \"dark\" si abbina ai dashboard scuri.",
+          "map_show_coverage": "Ombreggia l'area già tagliata alla larghezza di taglio reale sotto la linea del percorso.",
+          "assume_job_complete": "Alcuni firmware terminano un lavoro senza segnale di completamento, quindi l'avanzamento della sessione non raggiunge mai il 100 %. Attiva questa opzione per considerare completato (100 %) qualsiasi lavoro terminato, come fa l'app; lasciala disattivata per mantenere il valore reale del contatore."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Aggiornamento backup mappa"
         }
       },
+      "active_job": {
+        "name": "Lavoro attivo",
+        "state": {
+          "mission_idle": "Inattivo",
+          "mission_recharge": "In ricarica",
+          "mission_global_clean": "Taglio globale",
+          "mission_build_map": "Mappatura",
+          "mission_build_map_and_clean": "Mappatura e taglio",
+          "mission_temporary_clean": "Taglio temporaneo",
+          "mission_back_to_starting_point": "Ritorno al punto di partenza",
+          "mission_remote_control_clean": "Taglio telecomandato",
+          "mission_schedule_global_clean": "Taglio globale programmato",
+          "mission_schedule_build_map_and_clean": "Mappatura e taglio programmati",
+          "mission_select_region_clean": "Taglio a zone",
+          "mission_create_custom_passage": "Creazione passaggio personalizzato",
+          "mission_backup_map": "Backup della mappa",
+          "mission_relocate_base_station": "Riposizionamento stazione base",
+          "mission_user_auto_calibration": "Calibrazione automatica",
+          "mission_restore_backup_map": "Ripristino della mappa",
+          "mission_schedule_select_region_clean": "Taglio a zone programmato",
+          "mission_draw_region_clean": "Taglio zona disegnata",
+          "mission_edge_trim_clean": "Taglio bordi",
+          "mission_update_backup_map": "Aggiornamento backup mappa"
+        }
+      },
       "sub_mission": {
         "name": "Sotto-missione",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Errori attivi"
+      },
+      "fault": {
+        "name": "Guasto"
       },
       "last_event": {
         "name": "Ultimo evento"
@@ -531,10 +561,10 @@
       "message": "Il tosaerba TerraMow per {entity_id} non è ancora pronto."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Sul robot tosaerba non esiste alcuna voce di pianificazione con item id {item_id}."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Il robot tosaerba non ha accettato la modifica della pianificazione (tentativi: {attempts}). Il firmware TerraMow attuale non accetta la scrittura delle pianificazioni sulla rete locale: l'app del produttore usa invece Bluetooth/cloud. Usa il blueprint di taglio adattivo al meteo per pianificare da Home Assistant; questi servizi funzioneranno quando il firmware supporterà la scrittura locale."
     }
   }
 }

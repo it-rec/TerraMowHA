@@ -48,13 +48,15 @@
         "title": "TerraMow 选项",
         "data": {
           "map_resolution": "地图输出分辨率 (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "地图主题",
+          "map_show_coverage": "显示已割区域",
+          "assume_job_complete": "将所有已结束的任务视为 100 % 完成"
         },
         "data_description": {
           "map_resolution": "地图相机 PNG 的输出边长。更高的值在仪表板嵌入时画面更清晰，但每次渲染会占用更多带宽和 CPU。",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "渲染的地图相机图像的配色主题。“dark”适合深色仪表板。",
+          "map_show_coverage": "在路径线下方按真实割草宽度为已割区域着色。",
+          "assume_job_complete": "部分固件在任务结束时不会发送完成信号，因此本次会话进度永远不会跳到 100 %。启用后，任何已结束的任务都会被视为已完成（100 %），与 App 一致；保持关闭则保留真实的计数值。"
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "更新备份地图"
         }
       },
+      "active_job": {
+        "name": "当前任务",
+        "state": {
+          "mission_idle": "空闲",
+          "mission_recharge": "回充",
+          "mission_global_clean": "全局割草",
+          "mission_build_map": "建图",
+          "mission_build_map_and_clean": "建图并割草",
+          "mission_temporary_clean": "临时割草",
+          "mission_back_to_starting_point": "返回起点",
+          "mission_remote_control_clean": "遥控割草",
+          "mission_schedule_global_clean": "预约全局割草",
+          "mission_schedule_build_map_and_clean": "预约建图并割草",
+          "mission_select_region_clean": "选区割草",
+          "mission_create_custom_passage": "创建自定义通道",
+          "mission_backup_map": "备份地图",
+          "mission_relocate_base_station": "重新定位基站",
+          "mission_user_auto_calibration": "自动校准",
+          "mission_restore_backup_map": "恢复备份地图",
+          "mission_schedule_select_region_clean": "预约选区割草",
+          "mission_draw_region_clean": "划区割草",
+          "mission_edge_trim_clean": "沿边修剪",
+          "mission_update_backup_map": "更新备份地图"
+        }
+      },
       "sub_mission": {
         "name": "子任务",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "活动错误"
+      },
+      "fault": {
+        "name": "当前故障"
       },
       "last_event": {
         "name": "最新事件"
@@ -522,7 +552,7 @@
       "message": "刚刚已向割草机发送了另一条命令。请稍候片刻再试。"
     },
     "command_rejected": {
-      "message": "The mower rejected the command (error code {code})."
+      "message": "割草机拒绝了该命令（错误代码 {code}）。"
     },
     "entity_not_registered": {
       "message": "{entity_id} 不是已注册的 TerraMow 实体。"
@@ -531,10 +561,10 @@
       "message": "{entity_id} 对应的 TerraMow 割草机尚未就绪。"
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "割草机上不存在 item id 为 {item_id} 的日程条目。"
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "割草机未接受此日程更改（尝试次数：{attempts}）。当前 TerraMow 固件不支持通过本地网络写入日程——厂商 App 改用蓝牙/云端。请使用随天气自适应割草的蓝图在 Home Assistant 中进行排程；待固件支持本地写入后，这些服务即可使用。"
     }
   }
 }

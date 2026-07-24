@@ -48,13 +48,15 @@
         "title": "Opcions de TerraMow",
         "data": {
           "map_resolution": "Resolució de sortida del mapa (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Tema del mapa",
+          "map_show_coverage": "Mostra la superfície segada",
+          "assume_job_complete": "Considerar cada tasca finalitzada com a 100 % completada"
         },
         "data_description": {
           "map_resolution": "Longitud del costat del PNG de la càmera del mapa. Valors més alts donen una imatge més nítida quan s'incrusta als taulers, però augmenten l'amplada de banda i la càrrega de la CPU a cada renderització.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Tema de color de la imatge de la càmera del mapa. «dark» encaixa amb taulers foscos.",
+          "map_show_coverage": "Ombreja l'àrea ja segada amb l'amplada de tall real sota la línia del recorregut.",
+          "assume_job_complete": "Alguns microprogramaris finalitzen una tasca sense senyal de finalització, de manera que el progrés de la sessió mai no arriba al 100 %. Activeu-ho per considerar completada (100 %) qualsevol tasca finalitzada, igual que l'aplicació; deixeu-ho desactivat per mantenir el valor real del comptador."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Actualitzant la còpia de seguretat del mapa"
         }
       },
+      "active_job": {
+        "name": "Tasca activa",
+        "state": {
+          "mission_idle": "Inactiva",
+          "mission_recharge": "Recarregant",
+          "mission_global_clean": "Tall global",
+          "mission_build_map": "Creant el mapa",
+          "mission_build_map_and_clean": "Creant el mapa i tallant la gespa",
+          "mission_temporary_clean": "Tall temporal",
+          "mission_back_to_starting_point": "Tornant al punt d'inici",
+          "mission_remote_control_clean": "Tall per control remot",
+          "mission_schedule_global_clean": "Tall global programat",
+          "mission_schedule_build_map_and_clean": "Creació de mapa i tall programats",
+          "mission_select_region_clean": "Tall de zones",
+          "mission_create_custom_passage": "Creant un pas personalitzat",
+          "mission_backup_map": "Fent còpia de seguretat del mapa",
+          "mission_relocate_base_station": "Reubicant l'estació base",
+          "mission_user_auto_calibration": "Calibratge automàtic",
+          "mission_restore_backup_map": "Restaurant la còpia de seguretat del mapa",
+          "mission_schedule_select_region_clean": "Tall de zones programat",
+          "mission_draw_region_clean": "Tall de zona dibuixada",
+          "mission_edge_trim_clean": "Tall de vores",
+          "mission_update_backup_map": "Actualitzant la còpia de seguretat del mapa"
+        }
+      },
       "sub_mission": {
         "name": "Submissió",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Errors actius"
+      },
+      "fault": {
+        "name": "Avaria"
       },
       "last_event": {
         "name": "Últim esdeveniment"
@@ -531,10 +561,10 @@
       "message": "La talladora de gespa TerraMow per a {entity_id} encara no està a punt."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "A la gespadora no hi ha cap franja de la planificació amb l'identificador {item_id}."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "La gespadora no ha acceptat el canvi de planificació (intents: {attempts}). El microprogramari actual de TerraMow no accepta escriptures de planificació per la xarxa local: l'aplicació del fabricant utilitza Bluetooth/núvol. Utilitzeu el blueprint de sega adaptativa al temps per planificar des de Home Assistant; aquests serveis funcionaran quan el microprogramari admeti l'escriptura local."
     }
   }
 }

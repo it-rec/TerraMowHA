@@ -48,13 +48,15 @@
         "title": "TerraMow valikud",
         "data": {
           "map_resolution": "Kaardi väljundi eraldusvõime (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Kaardi teema",
+          "map_show_coverage": "Näita niidetud ala",
+          "assume_job_complete": "Käsitle iga lõpetatud tööd 100 % valminuna"
         },
         "data_description": {
           "map_resolution": "Kaardikaamera PNG väljundi külje pikkus. Suuremad väärtused annavad armatuurlaudadele manustamisel teravama pildi, kuid suurendavad ribalaiust ja CPU koormust igal renderdamisel.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Renderdatud kaardikaamera pildi värviteema. „dark“ sobib tumedate armatuurlaudadega.",
+          "map_show_coverage": "Varjutab juba niidetud ala tegelikus niitmislaiuses teejoone all.",
+          "assume_job_complete": "Mõni püsivara lõpetab töö ilma lõpetamissignaalita, mistõttu seansi edenemine ei jõua kunagi 100 %-ni. Lülita sisse, et käsitleda iga lõpetatud tööd valminuna (100 %) nagu rakenduses; jäta välja, et säilitada loenduri tegelik väärtus."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Varukaardi uuendamine"
         }
       },
+      "active_job": {
+        "name": "Aktiivne töö",
+        "state": {
+          "mission_idle": "Jõude",
+          "mission_recharge": "Laadimine",
+          "mission_global_clean": "Kogu ala niitmine",
+          "mission_build_map": "Kaardi koostamine",
+          "mission_build_map_and_clean": "Kaardi koostamine ja niitmine",
+          "mission_temporary_clean": "Ajutine niitmine",
+          "mission_back_to_starting_point": "Naasmine alguspunkti",
+          "mission_remote_control_clean": "Kaugjuhtimisega niitmine",
+          "mission_schedule_global_clean": "Plaanitud kogu ala niitmine",
+          "mission_schedule_build_map_and_clean": "Plaanitud kaardi koostamine ja niitmine",
+          "mission_select_region_clean": "Alade niitmine",
+          "mission_create_custom_passage": "Kohandatud läbipääsu loomine",
+          "mission_backup_map": "Kaardi varundamine",
+          "mission_relocate_base_station": "Baasjaama ümberpaigutamine",
+          "mission_user_auto_calibration": "Automaatne kalibreerimine",
+          "mission_restore_backup_map": "Varukaardi taastamine",
+          "mission_schedule_select_region_clean": "Plaanitud alade niitmine",
+          "mission_draw_region_clean": "Joonistatud ala niitmine",
+          "mission_edge_trim_clean": "Servade pügamine",
+          "mission_update_backup_map": "Varukaardi uuendamine"
+        }
+      },
       "sub_mission": {
         "name": "Alammissioon",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Aktiivsed vead"
+      },
+      "fault": {
+        "name": "Rike"
       },
       "last_event": {
         "name": "Viimane sündmus"
@@ -531,10 +561,10 @@
       "message": "{entity_id} TerraMow muruniiduk ei ole veel valmis."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Muruniidukil pole ajakava kirjet item id-ga {item_id}."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Muruniiduk ei võtnud ajakava muudatust vastu (katseid: {attempts}). Praegune TerraMow püsivara ei luba ajakava kirjutamist kohtvõrgu kaudu – tootja rakendus kasutab selleks Bluetoothi/pilve. Home Assistantist ajastamiseks kasuta ilmapõhise niitmise blueprinti; need teenused hakkavad tööle, kui püsivara lisab kohaliku kirjutamise toe."
     }
   }
 }

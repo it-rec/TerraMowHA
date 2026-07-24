@@ -48,13 +48,15 @@
         "title": "Opções do TerraMow",
         "data": {
           "map_resolution": "Resolução de saída do mapa (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Tema do mapa",
+          "map_show_coverage": "Mostrar área cortada",
+          "assume_job_complete": "Tratar todos os trabalhos terminados como 100 % concluídos"
         },
         "data_description": {
           "map_resolution": "Comprimento do lado do PNG da câmara do mapa. Valores mais altos produzem uma imagem mais nítida nos painéis, mas aumentam a largura de banda e a carga do CPU em cada renderização.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Tema de cores da imagem gerada pela câmara do mapa. \"dark\" combina com painéis escuros.",
+          "map_show_coverage": "Sombreia a área já cortada com a largura de corte real por baixo da linha do percurso.",
+          "assume_job_complete": "Alguns firmwares terminam um trabalho sem sinal de conclusão, pelo que o progresso da sessão nunca chega a 100 %. Ative para tratar qualquer trabalho terminado como concluído (100 %), tal como na aplicação; deixe desativado para manter o valor real do contador."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "A atualizar cópia do mapa"
         }
       },
+      "active_job": {
+        "name": "Trabalho ativo",
+        "state": {
+          "mission_idle": "Inativa",
+          "mission_recharge": "A recarregar",
+          "mission_global_clean": "Corte global",
+          "mission_build_map": "A criar mapa",
+          "mission_build_map_and_clean": "A criar mapa e a cortar",
+          "mission_temporary_clean": "Corte temporário",
+          "mission_back_to_starting_point": "A regressar ao ponto de partida",
+          "mission_remote_control_clean": "Corte por controlo remoto",
+          "mission_schedule_global_clean": "Corte global agendado",
+          "mission_schedule_build_map_and_clean": "Mapeamento e corte agendados",
+          "mission_select_region_clean": "Corte de zonas",
+          "mission_create_custom_passage": "A criar passagem personalizada",
+          "mission_backup_map": "A fazer cópia do mapa",
+          "mission_relocate_base_station": "A reposicionar a estação base",
+          "mission_user_auto_calibration": "Calibração automática",
+          "mission_restore_backup_map": "A restaurar o mapa",
+          "mission_schedule_select_region_clean": "Corte de zonas agendado",
+          "mission_draw_region_clean": "Corte de zona desenhada",
+          "mission_edge_trim_clean": "Corte de bordas",
+          "mission_update_backup_map": "A atualizar cópia do mapa"
+        }
+      },
       "sub_mission": {
         "name": "Submissão",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Erros ativos"
+      },
+      "fault": {
+        "name": "Falha"
       },
       "last_event": {
         "name": "Último evento"
@@ -531,10 +561,10 @@
       "message": "O corta-relva TerraMow para {entity_id} ainda não está pronto."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Não existe qualquer entrada de agendamento com item id {item_id} no robô corta-relva."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "O robô corta-relva não aceitou a alteração do agendamento (tentativas: {attempts}). O firmware atual do TerraMow não aceita a escrita de agendamentos através da rede local — a aplicação do fabricante utiliza Bluetooth/nuvem. Utilize o blueprint de corte adaptado à meteorologia para agendar a partir do Home Assistant; estes serviços funcionarão assim que o firmware suportar a escrita local."
     }
   }
 }

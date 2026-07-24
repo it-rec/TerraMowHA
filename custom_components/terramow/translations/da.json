@@ -48,13 +48,15 @@
         "title": "TerraMow-indstillinger",
         "data": {
           "map_resolution": "Kortets outputopløsning (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Korttema",
+          "map_show_coverage": "Vis klippet område",
+          "assume_job_complete": "Behandl enhver afsluttet opgave som 100 % fuldført"
         },
         "data_description": {
           "map_resolution": "Sidelængde på kortkameraets PNG. Højere værdier giver et skarpere billede i dashboards, men øger båndbredde og CPU-belastning ved hver gengivelse.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Farvetema for det gengivne kortkamerabillede. \"dark\" passer til mørke dashboards.",
+          "map_show_coverage": "Skygger det allerede klippede område i den reelle klippebredde under rutelinjen.",
+          "assume_job_complete": "Nogle firmwareversioner afslutter en opgave uden et fuldførelsessignal, så sessionens fremskridt aldrig når 100 %. Slå til for at behandle enhver afsluttet opgave som fuldført (100 %) ligesom appen; lad den være slået fra for at beholde den reelle tællerværdi."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Opdaterer kortsikkerhedskopi"
         }
       },
+      "active_job": {
+        "name": "Aktiv opgave",
+        "state": {
+          "mission_idle": "Inaktiv",
+          "mission_recharge": "Oplader",
+          "mission_global_clean": "Fuld klipning",
+          "mission_build_map": "Kortlægning",
+          "mission_build_map_and_clean": "Kortlægning og klipning",
+          "mission_temporary_clean": "Midlertidig klipning",
+          "mission_back_to_starting_point": "Retur til startpunkt",
+          "mission_remote_control_clean": "Fjernstyret klipning",
+          "mission_schedule_global_clean": "Planlagt fuld klipning",
+          "mission_schedule_build_map_and_clean": "Planlagt kortlægning og klipning",
+          "mission_select_region_clean": "Zoneklipning",
+          "mission_create_custom_passage": "Opretter brugerdefineret passage",
+          "mission_backup_map": "Sikkerhedskopierer kort",
+          "mission_relocate_base_station": "Flytter basestation",
+          "mission_user_auto_calibration": "Automatisk kalibrering",
+          "mission_restore_backup_map": "Gendanner kort",
+          "mission_schedule_select_region_clean": "Planlagt zoneklipning",
+          "mission_draw_region_clean": "Klipning af tegnet zone",
+          "mission_edge_trim_clean": "Kantklipning",
+          "mission_update_backup_map": "Opdaterer kortsikkerhedskopi"
+        }
+      },
       "sub_mission": {
         "name": "Delmission",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Aktive fejl"
+      },
+      "fault": {
+        "name": "Fejl"
       },
       "last_event": {
         "name": "Seneste hændelse"
@@ -531,10 +561,10 @@
       "message": "TerraMow-plæneklipperen for {entity_id} er ikke klar endnu."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Der findes ingen planlægningspost med item id {item_id} på plæneklipperen."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Plæneklipperen accepterede ikke ændringen af planen (forsøg: {attempts}). Den nuværende TerraMow-firmware accepterer ikke skrivning af planer over det lokale netværk – producentens app bruger i stedet Bluetooth/sky. Brug blueprintet til vejrtilpasset klipning til planlægning fra Home Assistant; disse tjenester virker, når firmwaren understøtter lokal skrivning."
     }
   }
 }

@@ -48,13 +48,15 @@
         "title": "TerraMow オプション",
         "data": {
           "map_resolution": "マップ出力解像度 (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "マップのテーマ",
+          "map_show_coverage": "刈り取り済みの範囲を表示",
+          "assume_job_complete": "終了したジョブをすべて 100 % 完了として扱う"
         },
         "data_description": {
           "map_resolution": "マップカメラ PNG の出力辺の長さです。値を大きくするとダッシュボードに埋め込んだ際の画像が鮮明になりますが、レンダリングごとの帯域幅と CPU 負荷が増加します。",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "レンダリングされるマップカメラ画像のカラーテーマです。「dark」はダークテーマのダッシュボードに適しています。",
+          "map_show_coverage": "経路線の下に、実際の刈り幅で刈り取り済みの範囲を塗りつぶします。",
+          "assume_job_complete": "一部のファームウェアは完了信号を送らずにジョブを終了するため、セッションの進捗が 100 % になりません。有効にすると、終了したジョブをアプリと同様にすべて完了 (100 %) として扱います。無効のままにすると、実際のカウンター値が保持されます。"
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "バックアップマップの更新"
         }
       },
+      "active_job": {
+        "name": "実行中のジョブ",
+        "state": {
+          "mission_idle": "アイドル",
+          "mission_recharge": "充電帰還",
+          "mission_global_clean": "全体芝刈り",
+          "mission_build_map": "マップ作成",
+          "mission_build_map_and_clean": "マップ作成と芝刈り",
+          "mission_temporary_clean": "一時芝刈り",
+          "mission_back_to_starting_point": "開始地点へ帰還",
+          "mission_remote_control_clean": "リモコン芝刈り",
+          "mission_schedule_global_clean": "スケジュール全体芝刈り",
+          "mission_schedule_build_map_and_clean": "スケジュールマップ作成と芝刈り",
+          "mission_select_region_clean": "ゾーン芝刈り",
+          "mission_create_custom_passage": "カスタム通路の作成",
+          "mission_backup_map": "マップのバックアップ中",
+          "mission_relocate_base_station": "ベースステーションの再配置",
+          "mission_user_auto_calibration": "自動キャリブレーション",
+          "mission_restore_backup_map": "バックアップマップの復元",
+          "mission_schedule_select_region_clean": "スケジュールゾーン芝刈り",
+          "mission_draw_region_clean": "描画ゾーン芝刈り",
+          "mission_edge_trim_clean": "エッジ刈り",
+          "mission_update_backup_map": "バックアップマップの更新"
+        }
+      },
       "sub_mission": {
         "name": "サブミッション",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "アクティブなエラー"
+      },
+      "fault": {
+        "name": "故障"
       },
       "last_event": {
         "name": "最新のイベント"
@@ -531,10 +561,10 @@
       "message": "{entity_id} の TerraMow 芝刈り機はまだ準備ができていません。"
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "item id が {item_id} のスケジュール枠は芝刈り機に存在しません。"
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "芝刈り機がスケジュールの変更を受け付けませんでした (試行回数: {attempts})。現在の TerraMow ファームウェアはローカルネットワーク経由のスケジュール書き込みに対応していません。メーカーのアプリは代わりに Bluetooth/クラウドを使用します。Home Assistant からスケジュールを設定するには、天候対応の芝刈りブループリントを使用してください。これらのサービスは、ファームウェアがローカル書き込みに対応すれば利用できるようになります。"
     }
   }
 }
