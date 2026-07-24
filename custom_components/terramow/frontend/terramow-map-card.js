@@ -453,6 +453,7 @@ class TerramowMapCard extends HTMLElement {
     this._battery = null;
     this._work = null;
     this._status = null;
+    this._errors = null;
     this._robotPrev = null;
     this._robotAnimStart = 0;
     this._view = null; // {scale, tx, ty}
@@ -716,6 +717,7 @@ class TerramowMapCard extends HTMLElement {
       this._battery = msg.battery || null;
       this._work = msg.work || null;
       this._status = msg.status || null;
+      this._errors = msg.errors || null;
       if (this._follow && this._robot) {
         this._centerOnRobot();
       }
@@ -815,6 +817,10 @@ class TerramowMapCard extends HTMLElement {
         opacity: .92; white-space: nowrap; line-height: 1.4;
       }
       .chip svg { width: 13px; height: 13px; }
+      .chip.error {
+        background: #c62828; color: #fff; border-color: #c62828;
+        font-weight: 600; opacity: 1;
+      }
       .chip .dot {
         width: 8px; height: 8px; border-radius: 50%; flex: none;
         background: var(--secondary-text-color, #727272);
@@ -1218,6 +1224,18 @@ class TerramowMapCard extends HTMLElement {
     const chips = [];
     const colors = this._colors();
     const activity = this._activity();
+    // Active faults first and most prominent (issue #171): the readable text
+    // comes from the integration's error-code catalog, so a stuck/lifted mower
+    // is spelled out on the map, not just in the Active-errors sensor.
+    if (Array.isArray(this._errors) && this._errors.length) {
+      for (const err of this._errors) {
+        const chip = document.createElement("span");
+        chip.className = "chip error";
+        chip.textContent = `⚠ ${err.text || `Error ${err.code}`}`;
+        chip.title = `Error ${err.code}`;
+        chips.push(chip);
+      }
+    }
     const state = this._hass && this._hass.states[this._config.entity];
     if (state) {
       const chip = document.createElement("span");
