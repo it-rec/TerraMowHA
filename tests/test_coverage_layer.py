@@ -75,6 +75,22 @@ def test_mid_session_archive_feeds_both_lists() -> None:
     assert hub.coverage_segments == hub.session_path_segments
 
 
+def test_archive_skips_coverage_when_segment_collapses(monkeypatch) -> None:
+    # The session leg archives, but if its coarse coverage copy collapses to
+    # nothing the coverage list simply gets no segment (defensive branch).
+    hub = _hub()
+    _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
+    hub._apply_path_data(MOW_TRACK)
+    monkeypatch.setattr(
+        "custom_components.terramow.hub._slim_coverage_segment",
+        lambda run: None,
+    )
+    _mission(hub, "MISSION_IDLE", "MISSION_STATE_IDLE")  # recharge dock
+    hub._apply_path_data(DOCK_RESET)
+    assert len(hub.session_path_segments) == 1  # session leg still archived
+    assert hub.coverage_segments == []  # coverage copy skipped
+
+
 def test_complete_harvests_the_final_leg_and_marks_the_cycle_done() -> None:
     hub = _hub()
     _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
@@ -114,6 +130,25 @@ def test_harvest_skips_an_empty_or_degenerate_path() -> None:
     )
     hub._harvest_current_path_into_coverage()
     assert hub.coverage_segments == []
+
+
+def test_slim_coverage_segment_caps_and_coarsens() -> None:
+    from custom_components.terramow.hub import (
+        COVERAGE_MAX_POINTS_PER_SEGMENT,
+        _slim_coverage_segment,
+    )
+
+    # A dense zig-zag: 120 sharp turns, each far more than the RDP epsilon, so
+    # simplification keeps them all — then the hard cap thins it down.
+    run = [{"x": i * 200, "y": 0 if i % 2 == 0 else 300} for i in range(120)]
+    seg = _slim_coverage_segment(run)
+    assert seg is not None
+    assert len(seg) <= COVERAGE_MAX_POINTS_PER_SEGMENT
+    # endpoints survive the thinning so the swath still spans the whole run
+    assert seg[0] == {"x": 0, "y": 0}
+    assert seg[-1]["x"] == 119 * 200
+    # a run that collapses below two points yields nothing
+    assert _slim_coverage_segment([{"x": 5, "y": 5}] * 3) is None
 
 
 def test_coverage_is_capped() -> None:
