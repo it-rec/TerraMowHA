@@ -38,6 +38,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 
 from .const import DOMAIN
+from .error_codes import describe_error
 from .hub import WIFI_CELL_MM, TerraMowHub
 from .map_render import CUTTING_WIDTH_MM
 from .map_scene import (
@@ -54,7 +55,7 @@ _LOGGER = logging.getLogger(__name__)
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.26.0"
+CARD_VERSION = "1.27.0"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -697,10 +698,19 @@ def build_status_payload(hub: TerraMowHub) -> dict[str, Any]:
     if reason and reason != "BACK_TO_STATION_REASON_NONE":
         status["back_to_station_reason"] = reason
 
+    # Active faults (dp_116) with readable text, so the card can surface the
+    # error on the map itself instead of only in the Active-errors sensor
+    # (issue #171). Empty when there's no fault.
+    errors = [
+        {"code": code, "text": describe_error(code)}
+        for code in hub.active_error_codes
+    ]
+
     return {
         "battery": battery or None,
         "work": work or None,
         "status": status or None,
+        "errors": errors or None,
     }
 
 

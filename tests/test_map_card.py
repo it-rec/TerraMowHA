@@ -396,7 +396,17 @@ async def test_status_payload(hass: HomeAssistant) -> None:
         "battery": None,
         "work": None,
         "status": None,
+        "errors": None,
     }
+
+    # An active dp_116 fault surfaces on the card with readable catalog text.
+    await hub.on_error_list(json.dumps({"error_list": [{"code": 909}, {"code": 7}]}))
+    assert build_status_payload(hub)["errors"] == [
+        {"code": 909, "text": "Mower stuck"},
+        {"code": 7, "text": "Error 7"},
+    ]
+    await hub.on_error_list(json.dumps({"error_list": []}))
+    assert build_status_payload(hub)["errors"] is None
 
     hub._battery_level = 87
     hub._battery_status = {"charger_connected": True}

@@ -20,6 +20,9 @@ ERROR_CODES: dict[int, str] = {
     # S1200 fw 9.9.210, issue #171 comment 5061068395: app said the mower
     # got stuck and could not free itself.
     903: "Mower stuck",
+    # S1200 fw 9.9.210, issue #171 comment 5069633047: a second stuck-type
+    # fault the app also labels "mower stuck".
+    909: "Mower stuck",
 }
 
 
