@@ -2359,7 +2359,9 @@ class TerramowMapCard extends HTMLElement {
       coverage: dark ? "rgba(26,150,122,0.42)" : "rgba(20,130,105,0.42)",
       historyPath: dark ? "rgba(180,220,180,0.35)" : "rgba(90,140,90,0.35)",
       currentPath: dark ? "#7fd4ff" : "#0288d1",
-      station: dark ? "#9ccc65" : "#558b2f",
+      // Amber, not green: the charging base has to stand out against the
+      // (green) mowed-coverage area, where a green house was invisible (#214).
+      station: dark ? "#ffca28" : "#f9a825",
       robot: dark ? "#ffd54f" : "#f57f17",
       grid: dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
       // Marker badges mirror the PNG camera palette (badge_orange/badge_blue).
@@ -3084,8 +3086,13 @@ class TerramowMapCard extends HTMLElement {
     // upright (a house has no meaningful heading, so station.theta is not
     // applied). Counter-rotate the configured map rotation so it stays level.
     ctx.rotate(-this._rot);
-    const s = Math.max(300, 14 / view.scale); // >= 30 cm, >= 14 px
+    const s = Math.max(360, 17 / view.scale); // a touch bigger for visibility
     ctx.fillStyle = colors.station;
+    // A contrasting outline so the base pops on any background (the mowed
+    // area, the lawn, or bare map), per issue #214.
+    ctx.strokeStyle = colors.markerOutline;
+    ctx.lineWidth = s * 0.06;
+    ctx.lineJoin = "round";
     // roof
     ctx.beginPath();
     ctx.moveTo(0, -0.45 * s);
@@ -3093,10 +3100,12 @@ class TerramowMapCard extends HTMLElement {
     ctx.lineTo(-0.45 * s, -0.05 * s);
     ctx.closePath();
     ctx.fill();
+    ctx.stroke();
     // body
     ctx.beginPath();
     ctx.rect(-0.32 * s, -0.05 * s, 0.64 * s, 0.5 * s);
     ctx.fill();
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -3106,9 +3115,13 @@ class TerramowMapCard extends HTMLElement {
       return;
     }
     const activity = this._activity();
+    // The mower must be findable on the (green) mowed area, so the marker keeps
+    // a fixed high-contrast colour instead of the green "mowing" activity tint
+    // that blended in (#214); a real fault still shows red. The activity itself
+    // is already spelled out in the HUD chip.
     const markerColor =
-      activity && ACTIVITY_COLORS[activity] && activity !== "docked"
-        ? this._activityColor(activity, colors)
+      activity === "error"
+        ? this._activityColor("error", colors)
         : colors.robot;
 
     let { x, y } = robot;
