@@ -142,7 +142,9 @@ def test_camera_image_rebuilds_when_marked_stale() -> None:
     assert _render(camera).startswith(PNG_MAGIC)  # builds the first snapshot
 
     # A later source push only marks the static layers stale (no proactive
-    # render); the next image request rebuilds before serving, then clears it.
+    # render). Because the first snapshot was just built, an immediate frame
+    # request is inside STATIC_REBUILD_MIN_INTERVAL and reuses it (a streamed
+    # live view must not re-render the expensive image on every frame).
     camera._mark_static_dirty()
     assert camera._static_dirty is True
     assert camera._render_snapshot is not None
@@ -150,8 +152,77 @@ def test_camera_image_rebuilds_when_marked_stale() -> None:
         camera, "_rebuild_static_image", wraps=camera._rebuild_static_image
     ) as rebuild:
         assert _render(camera).startswith(PNG_MAGIC)
+        assert rebuild.call_count == 0
+    assert camera._static_dirty is True  # still pending a rebuild
+
+    # Once the throttle interval has elapsed, the next request rebuilds and
+    # clears the stale mark.
+    camera._last_static_rebuild -= 3600.0
+    with patch.object(
+        camera, "_rebuild_static_image", wraps=camera._rebuild_static_image
+    ) as rebuild:
+        assert _render(camera).startswith(PNG_MAGIC)
         assert rebuild.call_count == 1
     assert camera._static_dirty is False
+
+
+def test_streaming_frames_during_mow_throttle_static_rebuilds() -> None:
+    # A live view streams async_camera_image at ~2 fps while path pushes keep
+    # marking the static layers stale; the expensive supersampled render must
+    # fire at most once per STATIC_REBUILD_MIN_INTERVAL, not on every frame.
+    hub = _hub()
+    camera = _camera(hub)
+    camera._map_data = SMALL_MAP
+    _render(camera)  # first frame builds the snapshot
+
+    with patch.object(
+        camera, "_rebuild_static_image", wraps=camera._rebuild_static_image
+    ) as rebuild:
+        # 20 streamed frames, each preceded by a fresh path push (as during an
+        # active mow), all inside one throttle window
+        for _ in range(20):
+            camera._mark_static_dirty()
+            assert _render(camera).startswith(PNG_MAGIC)
+        assert rebuild.call_count == 0  # all served from the reused snapshot
+
+        # the window elapses -> the next frame refreshes the static image once
+        camera._last_static_rebuild -= 3600.0
+        camera._mark_static_dirty()
+        assert _render(camera).startswith(PNG_MAGIC)
+        assert rebuild.call_count == 1
+
+
+def test_should_rebuild_static_gates() -> None:
+    hub = _hub()
+    camera = _camera(hub)
+    # No data at all -> never rebuild (the request serves the placeholder).
+    assert camera._should_rebuild_static() is False
+    assert _render(camera).startswith(PNG_MAGIC)
+
+    # Data present, no snapshot yet -> rebuild.
+    camera._map_data = SMALL_MAP
+    assert camera._should_rebuild_static() is True
+    _render(camera)  # builds the snapshot, clears the dirty flag
+
+    # Snapshot present and not stale -> no rebuild.
+    assert camera._static_dirty is False
+    assert camera._should_rebuild_static() is False
+
+
+def test_first_frame_always_renders_despite_throttle() -> None:
+    # Opening the camera must never serve a blank frame even if a rebuild
+    # "just happened" on the clock: no snapshot yet always forces a render.
+    hub = _hub()
+    camera = _camera(hub)
+    camera._map_data = SMALL_MAP
+    camera._last_static_rebuild = 1e12  # pretend a rebuild just ran
+    assert camera._render_snapshot is None
+    with patch.object(
+        camera, "_rebuild_static_image", wraps=camera._rebuild_static_image
+    ) as rebuild:
+        assert _render(camera).startswith(PNG_MAGIC)
+        assert rebuild.call_count == 1
+    assert camera._render_snapshot is not None
 
 
 # ---------------------------------------------------------------------------
