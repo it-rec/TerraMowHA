@@ -94,6 +94,14 @@ _HUB_COVERAGE_CACHES: dict[int, dict[str, Any]] = {}
 # Keyed by id(hub); a reloaded hub gets a fresh entry and orphans the old one.
 _HUB_SCENE_CACHES: dict[int, dict[str, Any]] = {}
 
+# In-flight scene build per hub. When several cards view the same mower, their
+# feeds get the same source callbacks at the same tick and would each run the
+# heavy build_scene_payload in the executor — identical work N times over. They
+# now share one build task per hub (each feed still emits its own delta), so N
+# simultaneous viewers cost one build, not N. Keyed by id(hub); the entry holds
+# a finished task between builds and is replaced on the next one.
+_HUB_BUILD_TASKS: dict[int, asyncio.Task[dict[str, Any]]] = {}
+
 _DATA_SETUP_DONE = f"{DOMAIN}_map_card_setup"
 
 
@@ -813,25 +821,43 @@ class _MapFeed:
             while True:
                 self._rebuild_pending = False
                 try:
-                    # The heavy polygon / zone-coverage math runs off the event
-                    # loop so the WebSocket + HTTP stack stays responsive.
-                    payload = await self.hass.async_add_executor_job(
-                        build_scene_payload,
-                        self.hub,
-                        self._coverage_cache,
-                        self._scene_cache,
-                    )
+                    payload = await self._shared_scene_build()
                 except Exception:  # pragma: no cover - defensive
                     _LOGGER.exception("Failed to build map card scene")
                     return
-                # Remember the freshest full scene so the next subscription can
-                # paint it immediately (see start()).
-                _HUB_SCENE_CACHES[id(self.hub)] = payload
                 self._emit_scene(payload)
                 if not self._rebuild_pending:
                     return
         finally:
             self._build_task = None
+
+    async def _shared_scene_build(self) -> dict[str, Any]:
+        """Await one build shared across every feed of this hub.
+
+        The first feed to ask starts the executor build; feeds that ask while
+        it is running await the same task instead of launching their own. Each
+        still emits its own delta from the shared payload.
+        """
+        key = id(self.hub)
+        task = _HUB_BUILD_TASKS.get(key)
+        if task is None or task.done():
+            task = self.hass.async_create_task(self._run_scene_build())
+            _HUB_BUILD_TASKS[key] = task
+        return await task
+
+    async def _run_scene_build(self) -> dict[str, Any]:
+        # The heavy polygon / zone-coverage math runs off the event loop so the
+        # WebSocket + HTTP stack stays responsive.
+        payload = await self.hass.async_add_executor_job(
+            build_scene_payload,
+            self.hub,
+            self._coverage_cache,
+            self._scene_cache,
+        )
+        # Remember the freshest full scene so the next subscription can paint it
+        # immediately (see start()).
+        _HUB_SCENE_CACHES[id(self.hub)] = payload
+        return payload
 
     @callback
     def _emit_scene(self, payload: dict[str, Any]) -> None:
