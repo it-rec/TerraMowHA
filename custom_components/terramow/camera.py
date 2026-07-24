@@ -61,6 +61,21 @@ _LOGGER = logging.getLogger(__name__)
 
 BATTERY_STATUS_DP = 108
 
+# Minimum wall-clock gap between two full supersampled static rebuilds while
+# frames are actively being requested. A live camera view (a picture card with
+# camera_view: live, or the more-info live stream) polls async_camera_image at
+# the base Camera frame_interval — ~2 fps — and during an active mow every path
+# push marks the static layers stale, so without this throttle each streamed
+# frame would re-run render_static (a 2048x2048 canvas copy + the whole growing
+# cycle-coverage overlay + a LANCZOS downsample: the integration's single
+# biggest CPU cost), pinning a core and starving the event loop. Between
+# rebuilds the last static snapshot is reused and only the cheap live robot
+# overlay is recomposited, so the path/coverage trail lags at most this long
+# while the marker still tracks every frame. Mirrors the map card's 12 s
+# coverage throttle (COVERAGE_RECOMPUTE_INTERVAL). An unviewed camera still
+# costs nothing: no frame request, no rebuild.
+STATIC_REBUILD_MIN_INTERVAL = 10.0
+
 
 class TerraMowMapCamera(TerraMowEntity, Camera):
     """Map camera entity."""
@@ -170,6 +185,10 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         # keepalives only invalidate the render when this actually changes.
         self._last_robot_source: str | None = None
         self._last_pose_state_update = 0.0
+        # Monotonic timestamp of the last completed full static rebuild; gates
+        # the throttle that keeps a live-streamed view from re-rendering the
+        # expensive supersampled image on every frame (STATIC_REBUILD_MIN_INTERVAL).
+        self._last_static_rebuild = 0.0
         self._render_metadata: dict[str, Any] = {}
         self._map_data_logged = False
         self._path_data_logged = False
@@ -267,13 +286,36 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         width: int | None = None,
         height: int | None = None,
     ) -> bytes | None:
-        # Lazy initial render: if data arrived but no snapshot was built yet
-        # (e.g. the entity was just enabled), build it on the first request.
-        if (self._static_dirty or self._render_snapshot is None) and (
-            self._map_data or self._path_data or self._history_path_data
-        ):
+        # The heavy supersampled render runs lazily, here, only when a frame is
+        # actually requested — and, while a live view streams frames, at most
+        # once per STATIC_REBUILD_MIN_INTERVAL (see _should_rebuild_static). The
+        # cheap live robot overlay is recomposited on every frame in
+        # _render_final_image regardless.
+        if self._should_rebuild_static():
             await self._async_rebuild()
         return await self.hass.async_add_executor_job(self._render_final_image)
+
+    def _should_rebuild_static(self) -> bool:
+        """Whether this frame request should trigger a full static rebuild.
+
+        Nothing to draw yet -> no rebuild. The very first render (no snapshot)
+        always rebuilds so an opened camera never serves a blank frame. Once a
+        snapshot exists, a stale mark only forces a rebuild if the last one was
+        more than STATIC_REBUILD_MIN_INTERVAL ago; a live view streaming at
+        ~2 fps during a mow therefore re-renders the expensive image at most
+        once per interval instead of on every frame, reusing the last snapshot
+        (with a fresh robot overlay) in between.
+        """
+        if not (self._map_data or self._path_data or self._history_path_data):
+            return False
+        if self._render_snapshot is None:
+            return True
+        if not self._static_dirty:
+            return False
+        return (
+            time.monotonic() - self._last_static_rebuild
+            >= STATIC_REBUILD_MIN_INTERVAL
+        )
 
     def _invalidate_png_cache(self) -> None:
         """Drop the cached PNG and retire any in-flight render."""
@@ -313,6 +355,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
                 self._rebuild_dirty = False
                 self._static_dirty = False
                 await self.hass.async_add_executor_job(self._rebuild_static_image)
+        self._last_static_rebuild = time.monotonic()
         self._invalidate_png_cache()
         safe_write_ha_state(self)
 
