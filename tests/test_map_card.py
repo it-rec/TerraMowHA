@@ -717,6 +717,51 @@ async def test_stop_cancels_inflight_build_task(hass: HomeAssistant) -> None:
     assert feed._build_task is None
 
 
+async def test_scene_cache_reuses_path_extraction(
+    hass: HomeAssistant, monkeypatch: Any
+) -> None:
+    """A per-feed ScenePathCache skips re-extracting unchanged path sources."""
+    from custom_components.terramow import map_scene
+
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    hub._apply_map_data(MAP_DATA)
+    hub._apply_path_data(PATH_DATA)
+
+    calls = {"n": 0}
+    real = map_scene._extract_path_points
+
+    def counting(path_data: Any) -> Any:
+        calls["n"] += 1
+        return real(path_data)
+
+    monkeypatch.setattr(map_scene, "_extract_path_points", counting)
+
+    cache = map_card.ScenePathCache()
+    first = build_scene_payload(hub, None, cache)
+    assert calls["n"] == 2  # current + history extracted once each
+
+    # Nothing changed: both source dicts hit the cache, no re-extraction.
+    again = build_scene_payload(hub, None, cache)
+    assert calls["n"] == 2
+    assert again["current_path"] == first["current_path"]
+
+    # A new current-path source re-extracts only the current path; the
+    # unchanged history source stays cached.
+    hub._apply_path_data(
+        {
+            **PATH_DATA,
+            "points": [
+                *PATH_DATA["points"],
+                {"position": {"x": 9, "y": 9}, "type": "PATH_POINT_TYPE_CLEANING"},
+            ],
+        }
+    )
+    build_scene_payload(hub, None, cache)
+    assert calls["n"] == 3
+
+
 async def test_empty_scene_payload(hass: HomeAssistant) -> None:
     """With no map data yet, the payload is well-formed and empty."""
     entry = await setup_terramow(hass)
