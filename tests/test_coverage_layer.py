@@ -116,6 +116,25 @@ def test_harvest_skips_an_empty_or_degenerate_path() -> None:
     assert hub.coverage_segments == []
 
 
+def test_slim_coverage_segment_caps_and_coarsens() -> None:
+    from custom_components.terramow.hub import (
+        COVERAGE_MAX_POINTS_PER_SEGMENT,
+        _slim_coverage_segment,
+    )
+
+    # A dense zig-zag: 120 sharp turns, each far more than the RDP epsilon, so
+    # simplification keeps them all — then the hard cap thins it down.
+    run = [{"x": i * 200, "y": 0 if i % 2 == 0 else 300} for i in range(120)]
+    seg = _slim_coverage_segment(run)
+    assert seg is not None
+    assert len(seg) <= COVERAGE_MAX_POINTS_PER_SEGMENT
+    # endpoints survive the thinning so the swath still spans the whole run
+    assert seg[0] == {"x": 0, "y": 0}
+    assert seg[-1]["x"] == 119 * 200
+    # a run that collapses below two points yields nothing
+    assert _slim_coverage_segment([{"x": 5, "y": 5}] * 3) is None
+
+
 def test_coverage_is_capped() -> None:
     hub = _hub()
     hub._coverage_segments = [

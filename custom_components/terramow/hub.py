@@ -128,6 +128,38 @@ SESSION_PATH_SAVE_DELAY = 10.0  # seconds
 # clears it immediately; a completed cycle keeps it visible until the next
 # session starts; a map switch always clears. Persisted in the same store.
 MAX_COVERAGE_SEGMENTS = 400
+# The coverage layer draws as a wide (~320 mm) swath, so its polylines need far
+# less point detail than the thin session-path lines. Simplifying coverage
+# segments coarsely and capping their point count keeps the persisted store
+# small (it was reaching several MB — needless flash writes on the USB SSD and
+# a slow load) and the per-frame swath draw cheap, with no visible change.
+COVERAGE_SIMPLIFY_EPSILON_MM = 90.0
+COVERAGE_MAX_POINTS_PER_SEGMENT = 48
+
+
+def _slim_coverage_segment(
+    run: list[dict[str, Any]],
+) -> list[dict[str, Any]] | None:
+    """Coarsely simplify + point-cap a mowing run for the wide coverage swath.
+
+    Returns ``None`` when the run collapses to fewer than two points.
+    """
+    simplified = simplify_path_pixels(
+        [(point["x"], point["y"]) for point in run],
+        COVERAGE_SIMPLIFY_EPSILON_MM,
+        SESSION_PATH_SIMPLIFY_MIN_SEGMENT_MM,
+    )
+    if len(simplified) < 2:
+        return None
+    if len(simplified) > COVERAGE_MAX_POINTS_PER_SEGMENT:
+        # Evenly thin the interior, always keeping the two endpoints so the
+        # swath still spans the full run.
+        step = (len(simplified) - 1) / (COVERAGE_MAX_POINTS_PER_SEGMENT - 1)
+        simplified = [
+            simplified[round(i * step)]
+            for i in range(COVERAGE_MAX_POINTS_PER_SEGMENT)
+        ]
+    return [{"x": x, "y": y} for x, y in simplified]
 
 # Self-sampled Wi-Fi heatmap (issue #200, approach B): the firmware exposes a
 # wifi_signal_map_index in map_data but never serves the raster locally (probe
@@ -2233,7 +2265,11 @@ class TerraMowHub:
                 continue
             segment = [{"x": x, "y": y} for x, y in simplified]
             self._session_path_segments.append(segment)
-            self._coverage_segments.append(segment)
+            # Coverage stores its own coarser copy (wide swath needs less
+            # detail) — a separate object, not the shared session segment.
+            cov = _slim_coverage_segment(run)
+            if cov is not None:
+                self._coverage_segments.append(cov)
             archived += 1
         if not archived:
             return
@@ -2257,16 +2293,10 @@ class TerraMowHub:
         for run in extract_cleaning_path_runs(self._path_data):
             if len(run) < 2:
                 continue
-            simplified = simplify_path_pixels(
-                [(point["x"], point["y"]) for point in run],
-                SESSION_PATH_SIMPLIFY_EPSILON_MM,
-                SESSION_PATH_SIMPLIFY_MIN_SEGMENT_MM,
-            )
-            if len(simplified) < 2:
+            cov = _slim_coverage_segment(run)
+            if cov is None:
                 continue
-            self._coverage_segments.append(
-                [{"x": x, "y": y} for x, y in simplified]
-            )
+            self._coverage_segments.append(cov)
             harvested += 1
         if harvested:
             del self._coverage_segments[:-MAX_COVERAGE_SEGMENTS]
