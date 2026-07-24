@@ -39,9 +39,11 @@ def _clear_hub_caches() -> Any:
     can't leak a stale scene/coverage entry into a fresh subscription."""
     map_card._HUB_SCENE_CACHES.clear()
     map_card._HUB_COVERAGE_CACHES.clear()
+    map_card._HUB_BUILD_TASKS.clear()
     yield
     map_card._HUB_SCENE_CACHES.clear()
     map_card._HUB_COVERAGE_CACHES.clear()
+    map_card._HUB_BUILD_TASKS.clear()
 
 
 HOST = "192.0.2.10"
@@ -715,6 +717,40 @@ async def test_stop_cancels_inflight_build_task(hass: HomeAssistant) -> None:
 
     task.cancel.assert_called_once()
     assert feed._build_task is None
+
+
+async def test_shared_scene_build_dedupes_across_feeds(
+    hass: HomeAssistant, monkeypatch: Any
+) -> None:
+    """Feeds of the same hub share one executor build, not one each."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    hub._apply_map_data(MAP_DATA)
+    hub._apply_path_data(PATH_DATA)
+
+    calls = {"n": 0}
+    real = map_card.build_scene_payload
+
+    def counting(*args: Any, **kwargs: Any) -> Any:
+        calls["n"] += 1
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(map_card, "build_scene_payload", counting)
+
+    feed_a = map_card._MapFeed(hass, MagicMock(), 1, hub)
+    feed_b = map_card._MapFeed(hass, MagicMock(), 2, hub)
+
+    payload_a, payload_b = await asyncio.gather(
+        feed_a._shared_scene_build(), feed_b._shared_scene_build()
+    )
+    assert calls["n"] == 1  # one build shared by both feeds
+    assert payload_a is payload_b
+    assert map_card._HUB_SCENE_CACHES[id(hub)] is payload_a
+
+    # The previous task has finished, so a later request builds afresh.
+    await feed_a._shared_scene_build()
+    assert calls["n"] == 2
 
 
 async def test_scene_cache_reuses_path_extraction(
