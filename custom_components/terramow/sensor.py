@@ -359,6 +359,22 @@ def _active_errors_attributes(hub: TerraMowHub) -> dict[str, Any]:
     }
 
 
+def _fault_text(hub: TerraMowHub) -> StateType:
+    """Human-readable active fault as the state, so a notification/dashboard/
+    voice assistant can say what's wrong without templating an attribute."""
+    codes = hub.active_error_codes
+    if codes:
+        return "; ".join(describe_error(code) for code in codes)
+    # A dp_107 has_error (or an opaque dp_116 entry) with no parseable code
+    # still reads as a fault; a clean device reads OK.
+    return "Fault" if hub.has_active_error else "OK"
+
+
+def _fault_attributes(hub: TerraMowHub) -> dict[str, Any]:
+    codes = hub.active_error_codes
+    return {"error_codes": codes} if codes else {}
+
+
 def _latest_event(hub: TerraMowHub) -> dict[str, Any] | None:
     if not hub.event_list:
         return None
@@ -827,6 +843,18 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         push_dp_ids=(116,),
         value_fn=_active_errors,
         attributes_fn=_active_errors_attributes,
+    ),
+    # The active fault as readable text ("Mower stuck" / "OK"), so a
+    # notification, dashboard or the voice assistant can state what's wrong
+    # without templating an attribute (issue #171). Refreshes on the dp_107
+    # has_error flag and the dp_116 active-error list.
+    TerraMowSensorEntityDescription(
+        key="fault",
+        translation_key="fault",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        push_dp_ids=(107, 116),
+        value_fn=_fault_text,
+        attributes_fn=_fault_attributes,
     ),
     # Code of the most recent device event (dp_123); its timestamp is an
     # attribute. Raw event code, niche; off by default.

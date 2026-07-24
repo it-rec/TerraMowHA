@@ -290,6 +290,9 @@
       "active_errors": {
         "name": "Active errors"
       },
+      "fault": {
+        "name": "Fault"
+      },
       "last_event": {
         "name": "Last event"
       },

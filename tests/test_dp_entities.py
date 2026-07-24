@@ -60,7 +60,7 @@ def test_niche_diagnostics_disabled_by_default() -> None:
         assert _sensor(hub, key).entity_registry_enabled_default is False
     # broadly-useful diagnostics stay enabled
     enabled_sensors = [
-        "active_errors", "cellular_signal_rsrp", "cellular_signal_rsrq",
+        "active_errors", "fault", "cellular_signal_rsrp", "cellular_signal_rsrq",
     ]
     for key in enabled_sensors:
         assert _sensor(hub, key).entity_registry_enabled_default is True
@@ -75,6 +75,28 @@ def test_niche_diagnostics_disabled_by_default() -> None:
 # ---------------------------------------------------------------------------
 # dp_116 / dp_123 — active errors + event log (unofficial)
 # ---------------------------------------------------------------------------
+
+
+def test_fault_sensor_text_state() -> None:
+    hub = _hub()
+    sensor = _sensor(hub, "fault")
+    # clean device reads OK, no attributes
+    assert sensor.native_value == "OK"
+    assert sensor.extra_state_attributes == {}
+    # a dp_116 fault becomes readable text + a codes attribute (issue #171)
+    _feed(hub.on_error_list, {"error_list": [{"code": 909}, {"code": 7}]})
+    assert sensor.native_value == "Mower stuck; Error 7"
+    assert sensor.extra_state_attributes == {"error_codes": [909, 7]}
+    # an opaque error entry (no parseable code) still reads as a fault
+    _feed(hub.on_error_list, {"error_list": ["opaque"]})
+    assert sensor.native_value == "Fault"
+    assert sensor.extra_state_attributes == {}
+    # cleared -> OK again
+    _feed(hub.on_error_list, {"error_list": []})
+    assert sensor.native_value == "OK"
+    # the dp_107 has_error flag alone (no dp_116 list) also reads as a fault
+    _feed(hub.on_mission_status, {"state": "MISSION_STATE_RUNNING", "has_error": True})
+    assert sensor.native_value == "Fault"
 
 
 def test_active_errors_sensor_from_dp116() -> None:
