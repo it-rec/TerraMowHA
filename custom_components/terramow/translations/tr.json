@@ -48,13 +48,15 @@
         "title": "TerraMow seçenekleri",
         "data": {
           "map_resolution": "Harita çıktı çözünürlüğü (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Harita teması",
+          "map_show_coverage": "Biçilen alanı göster",
+          "assume_job_complete": "Biten her işi %100 tamamlanmış say"
         },
         "data_description": {
           "map_resolution": "Harita kamerası PNG çıktısının kenar uzunluğu. Daha yüksek değerler, panolara gömüldüğünde daha keskin bir görüntü sağlar ancak her işlemede bant genişliğini ve CPU kullanımını artırır.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "İşlenen harita kamerası görüntüsünün renk teması. \"dark\", koyu panolara uyar.",
+          "map_show_coverage": "Rota çizgisinin altında, daha önce biçilmiş alanı gerçek biçme genişliğinde gölgelendirir.",
+          "assume_job_complete": "Bazı donanım yazılımları biten bir işi tamamlanma sinyali göndermeden sonlandırır, bu yüzden oturum ilerlemesi hiçbir zaman %100'e ulaşmaz. Biten her işi uygulamadaki gibi tamamlanmış (%100) saymak için bunu açın; gerçek sayaç değerini korumak için kapalı bırakın."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Yedek Harita Güncelleniyor"
         }
       },
+      "active_job": {
+        "name": "Etkin iş",
+        "state": {
+          "mission_idle": "Boşta",
+          "mission_recharge": "Şarj Oluyor",
+          "mission_global_clean": "Genel Biçme",
+          "mission_build_map": "Harita Oluşturuluyor",
+          "mission_build_map_and_clean": "Harita Oluşturma ve Biçme",
+          "mission_temporary_clean": "Geçici Biçme",
+          "mission_back_to_starting_point": "Başlangıç Noktasına Dönüyor",
+          "mission_remote_control_clean": "Uzaktan Kumandalı Biçme",
+          "mission_schedule_global_clean": "Planlanmış Genel Biçme",
+          "mission_schedule_build_map_and_clean": "Planlanmış Harita Oluşturma ve Biçme",
+          "mission_select_region_clean": "Bölge Biçme",
+          "mission_create_custom_passage": "Özel Geçit Oluşturuluyor",
+          "mission_backup_map": "Harita Yedekleniyor",
+          "mission_relocate_base_station": "Baz İstasyonu Taşınıyor",
+          "mission_user_auto_calibration": "Otomatik Kalibrasyon",
+          "mission_restore_backup_map": "Yedek Harita Geri Yükleniyor",
+          "mission_schedule_select_region_clean": "Planlanmış Bölge Biçme",
+          "mission_draw_region_clean": "Çizilen Bölgede Biçme",
+          "mission_edge_trim_clean": "Kenar Kesimi Biçme",
+          "mission_update_backup_map": "Yedek Harita Güncelleniyor"
+        }
+      },
       "sub_mission": {
         "name": "Alt Görev",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Etkin hatalar"
+      },
+      "fault": {
+        "name": "Arıza"
       },
       "last_event": {
         "name": "Son olay"
@@ -531,10 +561,10 @@
       "message": "{entity_id} için TerraMow çim biçme makinesi henüz hazır değil."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Çim biçme makinesinde {item_id} item id'sine sahip bir program kaydı yok."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Çim biçme makinesi program değişikliğini kabul etmedi (deneme: {attempts}). Mevcut TerraMow donanım yazılımı yerel ağ üzerinden program yazmayı kabul etmiyor; üretici uygulaması bunun yerine Bluetooth/bulut kullanıyor. Home Assistant üzerinden programlama için hava durumuna uyarlanan biçme blueprint'ini kullanın; donanım yazılımı yerel yazmayı desteklediğinde bu servisler çalışacaktır."
     }
   }
 }

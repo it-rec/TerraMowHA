@@ -48,13 +48,15 @@
         "title": "TerraMow-asetukset",
         "data": {
           "map_resolution": "Kartan tulostustarkkuus (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Kartan teema",
+          "map_show_coverage": "Näytä leikattu alue",
+          "assume_job_complete": "Käsittele jokainen päättynyt työ 100 % valmiina"
         },
         "data_description": {
           "map_resolution": "Karttakameran PNG-kuvan sivun pituus. Suuremmat arvot antavat terävämmän kuvan kojelaudoissa, mutta lisäävät kaistanleveyttä ja suorittimen kuormitusta jokaisella renderöinnillä.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Renderöidyn karttakamerakuvan väriteema. ”dark” sopii tummiin kojelautoihin.",
+          "map_show_coverage": "Varjostaa jo leikatun alueen todellisella leikkuuleveydellä reittiviivan alla.",
+          "assume_job_complete": "Jotkin laiteohjelmistot päättävät työn ilman valmistumissignaalia, jolloin istunnon edistyminen ei koskaan nouse 100 %:iin. Ota käyttöön, jos haluat käsitellä jokaisen päättyneen työn valmiina (100 %) kuten sovellus; jätä pois käytöstä, jos haluat säilyttää todellisen laskurin arvon."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Karttavarmuuskopion päivitys"
         }
       },
+      "active_job": {
+        "name": "Aktiivinen työ",
+        "state": {
+          "mission_idle": "Toimeton",
+          "mission_recharge": "Latautuu",
+          "mission_global_clean": "Koko alueen leikkuu",
+          "mission_build_map": "Kartoitus",
+          "mission_build_map_and_clean": "Kartoitus ja leikkuu",
+          "mission_temporary_clean": "Tilapäinen leikkuu",
+          "mission_back_to_starting_point": "Paluu aloituspisteeseen",
+          "mission_remote_control_clean": "Kauko-ohjattu leikkuu",
+          "mission_schedule_global_clean": "Ajastettu koko alueen leikkuu",
+          "mission_schedule_build_map_and_clean": "Ajastettu kartoitus ja leikkuu",
+          "mission_select_region_clean": "Alueleikkuu",
+          "mission_create_custom_passage": "Mukautetun kulkuväylän luonti",
+          "mission_backup_map": "Kartan varmuuskopiointi",
+          "mission_relocate_base_station": "Latausaseman siirto",
+          "mission_user_auto_calibration": "Automaattinen kalibrointi",
+          "mission_restore_backup_map": "Kartan palautus",
+          "mission_schedule_select_region_clean": "Ajastettu alueleikkuu",
+          "mission_draw_region_clean": "Piirretyn alueen leikkuu",
+          "mission_edge_trim_clean": "Reunojen leikkuu",
+          "mission_update_backup_map": "Karttavarmuuskopion päivitys"
+        }
+      },
       "sub_mission": {
         "name": "Alitehtävä",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Aktiiviset virheet"
+      },
+      "fault": {
+        "name": "Vika"
       },
       "last_event": {
         "name": "Viimeisin tapahtuma"
@@ -531,10 +561,10 @@
       "message": "Kohteen {entity_id} TerraMow-ruohonleikkuri ei ole vielä valmis."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Ruohonleikkurissa ei ole aikataulupaikkaa, jonka item id on {item_id}."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Ruohonleikkuri ei hyväksynyt aikataulumuutosta (yritykset: {attempts}). Nykyinen TerraMow-laiteohjelmisto ei hyväksy aikataulujen kirjoittamista lähiverkon kautta – valmistajan sovellus käyttää sen sijaan Bluetoothia/pilveä. Käytä sään mukaan mukautuvan leikkuun blueprintiä ajastukseen Home Assistantista; nämä palvelut toimivat, kun laiteohjelmisto tukee paikallista kirjoitusta."
     }
   }
 }

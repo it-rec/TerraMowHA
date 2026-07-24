@@ -48,13 +48,15 @@
         "title": "TerraMow 選項",
         "data": {
           "map_resolution": "地圖輸出解析度 (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "地圖主題",
+          "map_show_coverage": "顯示已割區域",
+          "assume_job_complete": "將所有已結束的任務視為 100 % 完成"
         },
         "data_description": {
           "map_resolution": "地圖攝影機 PNG 的輸出邊長。數值越高，嵌入儀表板時影像越清晰，但每次繪製會佔用更多頻寬與 CPU。",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "繪製的地圖攝影機影像的配色主題。「dark」適合深色儀表板。",
+          "map_show_coverage": "在路徑線下方以真實割草寬度為已割區域上色。",
+          "assume_job_complete": "部分韌體在任務結束時不會傳送完成訊號，因此本次工作階段進度永遠不會跳到 100 %。啟用後，任何已結束的任務都會視為已完成（100 %），與 App 一致；保持關閉則保留真實的計數值。"
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "更新備份地圖"
         }
       },
+      "active_job": {
+        "name": "目前任務",
+        "state": {
+          "mission_idle": "閒置",
+          "mission_recharge": "回充",
+          "mission_global_clean": "全域割草",
+          "mission_build_map": "建圖",
+          "mission_build_map_and_clean": "建圖並割草",
+          "mission_temporary_clean": "臨時割草",
+          "mission_back_to_starting_point": "返回起點",
+          "mission_remote_control_clean": "遙控割草",
+          "mission_schedule_global_clean": "排程全域割草",
+          "mission_schedule_build_map_and_clean": "排程建圖並割草",
+          "mission_select_region_clean": "選區割草",
+          "mission_create_custom_passage": "建立自訂通道",
+          "mission_backup_map": "備份地圖",
+          "mission_relocate_base_station": "重新定位基地台",
+          "mission_user_auto_calibration": "自動校正",
+          "mission_restore_backup_map": "還原備份地圖",
+          "mission_schedule_select_region_clean": "排程選區割草",
+          "mission_draw_region_clean": "劃區割草",
+          "mission_edge_trim_clean": "沿邊修剪",
+          "mission_update_backup_map": "更新備份地圖"
+        }
+      },
       "sub_mission": {
         "name": "子任務",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "使用中的錯誤"
+      },
+      "fault": {
+        "name": "目前故障"
       },
       "last_event": {
         "name": "最新事件"
@@ -531,10 +561,10 @@
       "message": "{entity_id} 對應的 TerraMow 割草機尚未就緒。"
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "割草機上不存在 item id 為 {item_id} 的排程項目。"
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "割草機未接受此排程變更（嘗試次數：{attempts}）。目前的 TerraMow 韌體不支援透過本機網路寫入排程——原廠 App 改用藍牙/雲端。請使用隨天氣調整的割草藍圖在 Home Assistant 中排程；待韌體支援本機寫入後，這些服務即可使用。"
     }
   }
 }

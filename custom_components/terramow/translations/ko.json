@@ -48,13 +48,15 @@
         "title": "TerraMow 옵션",
         "data": {
           "map_resolution": "지도 출력 해상도 (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "지도 테마",
+          "map_show_coverage": "예초 완료 영역 표시",
+          "assume_job_complete": "완료된 모든 작업을 100 % 완료로 처리"
         },
         "data_description": {
           "map_resolution": "지도 카메라 PNG의 출력 변 길이입니다. 값이 높을수록 대시보드에 삽입할 때 이미지가 더 선명해지지만, 렌더링할 때마다 대역폭과 CPU 사용량이 증가합니다.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "렌더링된 지도 카메라 이미지의 색상 테마입니다. \"dark\"는 어두운 대시보드에 어울립니다.",
+          "map_show_coverage": "경로선 아래에 실제 예초 폭으로 이미 깎은 영역을 음영 처리합니다.",
+          "assume_job_complete": "일부 펌웨어는 완료 신호 없이 작업을 종료하므로 세션 진행률이 100 %에 도달하지 않습니다. 이 옵션을 켜면 앱과 동일하게 종료된 모든 작업을 완료(100 %)로 처리합니다. 끄면 실제 카운터 값이 그대로 유지됩니다."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "백업 지도 업데이트"
         }
       },
+      "active_job": {
+        "name": "활성 작업",
+        "state": {
+          "mission_idle": "대기",
+          "mission_recharge": "충전 복귀",
+          "mission_global_clean": "전체 잔디 깎기",
+          "mission_build_map": "지도 생성",
+          "mission_build_map_and_clean": "지도 생성 및 잔디 깎기",
+          "mission_temporary_clean": "임시 잔디 깎기",
+          "mission_back_to_starting_point": "시작 지점으로 복귀",
+          "mission_remote_control_clean": "원격 제어 잔디 깎기",
+          "mission_schedule_global_clean": "예약 전체 잔디 깎기",
+          "mission_schedule_build_map_and_clean": "예약 지도 생성 및 잔디 깎기",
+          "mission_select_region_clean": "구역 잔디 깎기",
+          "mission_create_custom_passage": "사용자 지정 통로 생성",
+          "mission_backup_map": "지도 백업 중",
+          "mission_relocate_base_station": "베이스 스테이션 재배치",
+          "mission_user_auto_calibration": "자동 보정",
+          "mission_restore_backup_map": "백업 지도 복원",
+          "mission_schedule_select_region_clean": "예약 구역 잔디 깎기",
+          "mission_draw_region_clean": "지정 구역 잔디 깎기",
+          "mission_edge_trim_clean": "가장자리 다듬기",
+          "mission_update_backup_map": "백업 지도 업데이트"
+        }
+      },
       "sub_mission": {
         "name": "하위 미션",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "활성 오류"
+      },
+      "fault": {
+        "name": "고장"
       },
       "last_event": {
         "name": "마지막 이벤트"
@@ -531,10 +561,10 @@
       "message": "{entity_id}의 TerraMow 잔디깎이가 아직 준비되지 않았습니다."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "잔디깎이에 item id가 {item_id}인 일정 항목이 없습니다."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "잔디깎이가 일정 변경을 수락하지 않았습니다(시도: {attempts}). 현재 TerraMow 펌웨어는 로컬 네트워크를 통한 일정 쓰기를 지원하지 않으며, 제조사 앱은 대신 블루투스/클라우드를 사용합니다. Home Assistant에서 일정을 관리하려면 날씨 적응형 예초 블루프린트를 사용하세요. 펌웨어가 로컬 쓰기를 지원하면 이 서비스도 동작합니다."
     }
   }
 }

@@ -48,13 +48,15 @@
         "title": "Options TerraMow",
         "data": {
           "map_resolution": "Résolution de sortie de la carte (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Thème de la carte",
+          "map_show_coverage": "Afficher la surface tondue",
+          "assume_job_complete": "Considérer chaque tâche terminée comme achevée à 100 %"
         },
         "data_description": {
           "map_resolution": "Longueur du côté du PNG de la caméra de carte. Des valeurs plus élevées donnent une image plus nette dans les tableaux de bord mais augmentent la bande passante et la charge CPU à chaque rendu.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Thème de couleur de l'image rendue par la caméra de carte. « dark » s'accorde aux tableaux de bord sombres.",
+          "map_show_coverage": "Ombre la zone déjà tondue à la largeur de coupe réelle sous la ligne de trajet.",
+          "assume_job_complete": "Certains micrologiciels terminent une tâche sans signal d'achèvement, si bien que la progression de la session n'atteint jamais 100 %. Activez cette option pour considérer toute tâche terminée comme achevée (100 %), comme dans l'application ; laissez-la désactivée pour conserver la valeur réelle du compteur."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Mise à jour de la sauvegarde de carte"
         }
       },
+      "active_job": {
+        "name": "Tâche active",
+        "state": {
+          "mission_idle": "Inactif",
+          "mission_recharge": "En charge",
+          "mission_global_clean": "Tonte globale",
+          "mission_build_map": "Cartographie",
+          "mission_build_map_and_clean": "Cartographie et tonte",
+          "mission_temporary_clean": "Tonte temporaire",
+          "mission_back_to_starting_point": "Retour au point de départ",
+          "mission_remote_control_clean": "Tonte télécommandée",
+          "mission_schedule_global_clean": "Tonte globale programmée",
+          "mission_schedule_build_map_and_clean": "Cartographie et tonte programmées",
+          "mission_select_region_clean": "Tonte de zone",
+          "mission_create_custom_passage": "Création d'un passage personnalisé",
+          "mission_backup_map": "Sauvegarde de la carte",
+          "mission_relocate_base_station": "Déplacement de la station de base",
+          "mission_user_auto_calibration": "Calibration automatique",
+          "mission_restore_backup_map": "Restauration de la carte",
+          "mission_schedule_select_region_clean": "Tonte de zone programmée",
+          "mission_draw_region_clean": "Tonte de zone dessinée",
+          "mission_edge_trim_clean": "Tonte des bordures",
+          "mission_update_backup_map": "Mise à jour de la sauvegarde de carte"
+        }
+      },
       "sub_mission": {
         "name": "Sous-mission",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Erreurs actives"
+      },
+      "fault": {
+        "name": "Défaut"
       },
       "last_event": {
         "name": "Dernier événement"
@@ -531,10 +561,10 @@
       "message": "La tondeuse TerraMow pour {entity_id} n'est pas encore prête."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Aucun créneau de planning avec l'item id {item_id} n'existe sur le robot tondeuse."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Le robot tondeuse n'a pas accepté la modification du planning (tentatives : {attempts}). Le micrologiciel TerraMow actuel n'accepte pas l'écriture des plannings via le réseau local — l'application du fabricant utilise le Bluetooth/le cloud à la place. Utilisez le blueprint de tonte adaptée à la météo pour planifier depuis Home Assistant ; ces services fonctionneront dès que le micrologiciel prendra en charge l'écriture locale."
     }
   }
 }

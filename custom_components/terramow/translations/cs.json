@@ -48,13 +48,15 @@
         "title": "Možnosti TerraMow",
         "data": {
           "map_resolution": "Výstupní rozlišení mapy (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Motiv mapy",
+          "map_show_coverage": "Zobrazit posečenou plochu",
+          "assume_job_complete": "Považovat každou dokončenou úlohu za 100% dokončenou"
         },
         "data_description": {
           "map_resolution": "Délka strany PNG obrázku mapové kamery. Vyšší hodnoty poskytují ostřejší obraz v ovládacích panelech, ale zvyšují šířku pásma a zatížení procesoru při každém vykreslení.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Barevný motiv vykresleného obrázku mapové kamery. „dark“ se hodí k tmavým panelům.",
+          "map_show_coverage": "Podbarví již posečenou plochu ve skutečné šířce záběru pod čárou trasy.",
+          "assume_job_complete": "Některé firmwary ukončí dokončenou úlohu bez signálu o dokončení, takže průběh relace nikdy nedosáhne 100 %. Zapnutím se každá ukončená úloha bude považovat za dokončenou (100 %) stejně jako v aplikaci; při vypnutí zůstane zachována skutečná hodnota počítadla."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Aktualizace zálohy mapy"
         }
       },
+      "active_job": {
+        "name": "Aktivní úloha",
+        "state": {
+          "mission_idle": "Nečinná",
+          "mission_recharge": "Nabíjení",
+          "mission_global_clean": "Kompletní sečení",
+          "mission_build_map": "Mapování",
+          "mission_build_map_and_clean": "Mapování a sečení",
+          "mission_temporary_clean": "Dočasné sečení",
+          "mission_back_to_starting_point": "Návrat na výchozí bod",
+          "mission_remote_control_clean": "Dálkově ovládané sečení",
+          "mission_schedule_global_clean": "Plánované kompletní sečení",
+          "mission_schedule_build_map_and_clean": "Plánované mapování a sečení",
+          "mission_select_region_clean": "Sečení zón",
+          "mission_create_custom_passage": "Vytváření vlastního průchodu",
+          "mission_backup_map": "Zálohování mapy",
+          "mission_relocate_base_station": "Přemístění nabíjecí stanice",
+          "mission_user_auto_calibration": "Automatická kalibrace",
+          "mission_restore_backup_map": "Obnovování mapy",
+          "mission_schedule_select_region_clean": "Plánované sečení zón",
+          "mission_draw_region_clean": "Sečení nakreslené zóny",
+          "mission_edge_trim_clean": "Sečení okrajů",
+          "mission_update_backup_map": "Aktualizace zálohy mapy"
+        }
+      },
       "sub_mission": {
         "name": "Dílčí mise",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Aktivní chyby"
+      },
+      "fault": {
+        "name": "Porucha"
       },
       "last_event": {
         "name": "Poslední událost"
@@ -531,10 +561,10 @@
       "message": "Sekačka TerraMow pro {entity_id} ještě není připravena."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "V sekačce neexistuje žádná položka plánu s item id {item_id}."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Sekačka nepřijala změnu plánu (pokusů: {attempts}). Současný firmware TerraMow neumožňuje zápis plánu přes místní síť – aplikace výrobce místo toho používá Bluetooth/cloud. Pro plánování z Home Assistant použijte blueprint pro sečení podle počasí; tyto služby budou fungovat, jakmile firmware doplní podporu místního zápisu."
     }
   }
 }

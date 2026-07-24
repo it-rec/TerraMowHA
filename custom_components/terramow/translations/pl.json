@@ -48,13 +48,15 @@
         "title": "Opcje TerraMow",
         "data": {
           "map_resolution": "Rozdzielczość wyjściowa mapy (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Motyw mapy",
+          "map_show_coverage": "Pokaż skoszoną powierzchnię",
+          "assume_job_complete": "Traktuj każde zakończone zadanie jako ukończone w 100 %"
         },
         "data_description": {
           "map_resolution": "Długość boku pliku PNG kamery mapy. Wyższe wartości dają ostrzejszy obraz na pulpitach, ale zwiększają przepustowość i obciążenie procesora przy każdym renderowaniu.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Motyw kolorystyczny renderowanego obrazu kamery mapy. „dark” pasuje do ciemnych pulpitów.",
+          "map_show_coverage": "Cieniuje już skoszony obszar rzeczywistą szerokością koszenia pod linią trasy.",
+          "assume_job_complete": "Niektóre wersje oprogramowania układowego kończą zadanie bez sygnału ukończenia, przez co postęp sesji nigdy nie osiąga 100 %. Włącz, aby każde zakończone zadanie było traktowane jako ukończone (100 %), tak jak w aplikacji; pozostaw wyłączone, aby zachować rzeczywistą wartość licznika."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Aktualizacja kopii mapy"
         }
       },
+      "active_job": {
+        "name": "Aktywne zadanie",
+        "state": {
+          "mission_idle": "Bezczynność",
+          "mission_recharge": "Ładowanie",
+          "mission_global_clean": "Koszenie całości",
+          "mission_build_map": "Tworzenie mapy",
+          "mission_build_map_and_clean": "Tworzenie mapy i koszenie",
+          "mission_temporary_clean": "Koszenie tymczasowe",
+          "mission_back_to_starting_point": "Powrót do punktu startowego",
+          "mission_remote_control_clean": "Koszenie zdalnie sterowane",
+          "mission_schedule_global_clean": "Zaplanowane koszenie całości",
+          "mission_schedule_build_map_and_clean": "Zaplanowane mapowanie i koszenie",
+          "mission_select_region_clean": "Koszenie stref",
+          "mission_create_custom_passage": "Tworzenie własnego przejścia",
+          "mission_backup_map": "Kopia zapasowa mapy",
+          "mission_relocate_base_station": "Przenoszenie stacji bazowej",
+          "mission_user_auto_calibration": "Automatyczna kalibracja",
+          "mission_restore_backup_map": "Przywracanie mapy",
+          "mission_schedule_select_region_clean": "Zaplanowane koszenie stref",
+          "mission_draw_region_clean": "Koszenie narysowanej strefy",
+          "mission_edge_trim_clean": "Koszenie krawędzi",
+          "mission_update_backup_map": "Aktualizacja kopii mapy"
+        }
+      },
       "sub_mission": {
         "name": "Podmisja",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Aktywne błędy"
+      },
+      "fault": {
+        "name": "Usterka"
       },
       "last_event": {
         "name": "Ostatnie zdarzenie"
@@ -531,10 +561,10 @@
       "message": "Kosiarka TerraMow dla {entity_id} nie jest jeszcze gotowa."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "W kosiarce nie ma pozycji harmonogramu o item id {item_id}."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Kosiarka nie przyjęła zmiany harmonogramu (próby: {attempts}). Obecne oprogramowanie układowe TerraMow nie obsługuje zapisu harmonogramu przez sieć lokalną – aplikacja producenta używa zamiast tego Bluetooth/chmury. Do planowania z Home Assistanta użyj blueprintu koszenia dostosowanego do pogody; te usługi zadziałają, gdy oprogramowanie układowe doda obsługę zapisu lokalnego."
     }
   }
 }

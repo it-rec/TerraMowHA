@@ -48,13 +48,15 @@
         "title": "TerraMow-alternativ",
         "data": {
           "map_resolution": "Kartans utdataupplösning (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Karttema",
+          "map_show_coverage": "Visa klippt yta",
+          "assume_job_complete": "Behandla varje avslutat jobb som 100 % slutfört"
         },
         "data_description": {
           "map_resolution": "Sidlängd på kartkamerans PNG. Högre värden ger en skarpare bild i paneler men ökar bandbredd och CPU-belastning vid varje rendering.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Färgtema för den renderade kartkamerabilden. ”dark” passar mörka paneler.",
+          "map_show_coverage": "Skuggar den redan klippta ytan med verklig klippbredd under ruttlinjen.",
+          "assume_job_complete": "Vissa fastvaruversioner avslutar ett jobb utan slutförandesignal, så sessionens förlopp når aldrig 100 %. Slå på för att behandla varje avslutat jobb som slutfört (100 %), precis som appen; lämna av för att behålla det verkliga räknarvärdet."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Uppdaterar kartsäkerhetskopia"
         }
       },
+      "active_job": {
+        "name": "Aktivt jobb",
+        "state": {
+          "mission_idle": "Inaktiv",
+          "mission_recharge": "Laddar",
+          "mission_global_clean": "Fullständig klippning",
+          "mission_build_map": "Kartläggning",
+          "mission_build_map_and_clean": "Kartläggning och klippning",
+          "mission_temporary_clean": "Tillfällig klippning",
+          "mission_back_to_starting_point": "Återgår till startpunkt",
+          "mission_remote_control_clean": "Fjärrstyrd klippning",
+          "mission_schedule_global_clean": "Schemalagd fullständig klippning",
+          "mission_schedule_build_map_and_clean": "Schemalagd kartläggning och klippning",
+          "mission_select_region_clean": "Zonklippning",
+          "mission_create_custom_passage": "Skapar anpassad passage",
+          "mission_backup_map": "Säkerhetskopierar karta",
+          "mission_relocate_base_station": "Flyttar basstation",
+          "mission_user_auto_calibration": "Automatisk kalibrering",
+          "mission_restore_backup_map": "Återställer karta",
+          "mission_schedule_select_region_clean": "Schemalagd zonklippning",
+          "mission_draw_region_clean": "Klippning av ritad zon",
+          "mission_edge_trim_clean": "Kantklippning",
+          "mission_update_backup_map": "Uppdaterar kartsäkerhetskopia"
+        }
+      },
       "sub_mission": {
         "name": "Deluppdrag",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Aktiva fel"
+      },
+      "fault": {
+        "name": "Fel"
       },
       "last_event": {
         "name": "Senaste händelse"
@@ -531,10 +561,10 @@
       "message": "TerraMow-gräsklipparen för {entity_id} är inte redo än."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Det finns ingen schemapost med item id {item_id} på gräsklipparen."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Gräsklipparen accepterade inte schemaändringen (försök: {attempts}). Nuvarande TerraMow-fastvara accepterar inte schemaskrivningar över det lokala nätverket – tillverkarens app använder Bluetooth/moln i stället. Använd blueprinten för väderanpassad klippning för schemaläggning från Home Assistant; dessa tjänster fungerar när fastvaran stöder lokal skrivning."
     }
   }
 }

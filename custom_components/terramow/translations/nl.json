@@ -48,13 +48,15 @@
         "title": "TerraMow-opties",
         "data": {
           "map_resolution": "Uitvoerresolutie van de kaart (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Kaartthema",
+          "map_show_coverage": "Gemaaid oppervlak tonen",
+          "assume_job_complete": "Elke voltooide taak als 100 % afgerond beschouwen"
         },
         "data_description": {
           "map_resolution": "Zijlengte van de PNG van de kaartcamera. Hogere waarden geven een scherper beeld in dashboards, maar verhogen de bandbreedte en CPU-belasting per render.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Kleurthema van het weergegeven kaartcamerabeeld. \"dark\" past bij donkere dashboards.",
+          "map_show_coverage": "Arceert het al gemaaide gebied op de werkelijke maaibreedte onder de padlijn.",
+          "assume_job_complete": "Sommige firmware beëindigt een taak zonder voltooiingssignaal, waardoor de voortgang van de sessie nooit op 100 % uitkomt. Schakel dit in om elke beëindigde taak als afgerond (100 %) te beschouwen, net als de app; laat het uit om de werkelijke tellerwaarde te behouden."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Kaartback-up bijwerken"
         }
       },
+      "active_job": {
+        "name": "Actieve taak",
+        "state": {
+          "mission_idle": "Inactief",
+          "mission_recharge": "Opladen",
+          "mission_global_clean": "Volledig maaien",
+          "mission_build_map": "Kaart maken",
+          "mission_build_map_and_clean": "Kaart maken en maaien",
+          "mission_temporary_clean": "Tijdelijk maaien",
+          "mission_back_to_starting_point": "Terug naar startpunt",
+          "mission_remote_control_clean": "Maaien met afstandsbediening",
+          "mission_schedule_global_clean": "Gepland volledig maaien",
+          "mission_schedule_build_map_and_clean": "Gepland kaart maken en maaien",
+          "mission_select_region_clean": "Zones maaien",
+          "mission_create_custom_passage": "Aangepaste doorgang maken",
+          "mission_backup_map": "Kaart back-uppen",
+          "mission_relocate_base_station": "Basisstation verplaatsen",
+          "mission_user_auto_calibration": "Automatische kalibratie",
+          "mission_restore_backup_map": "Kaart herstellen",
+          "mission_schedule_select_region_clean": "Gepland zones maaien",
+          "mission_draw_region_clean": "Getekende zone maaien",
+          "mission_edge_trim_clean": "Randen maaien",
+          "mission_update_backup_map": "Kaartback-up bijwerken"
+        }
+      },
       "sub_mission": {
         "name": "Submissie",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Actieve fouten"
+      },
+      "fault": {
+        "name": "Storing"
       },
       "last_event": {
         "name": "Laatste gebeurtenis"
@@ -531,10 +561,10 @@
       "message": "De TerraMow-maaier voor {entity_id} is nog niet gereed."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Er bestaat geen schema-item met item id {item_id} op de maaier."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "De maaier heeft de schemawijziging niet geaccepteerd (pogingen: {attempts}). De huidige TerraMow-firmware accepteert geen schemaschrijfacties via het lokale netwerk - de app van de fabrikant gebruikt in plaats daarvan Bluetooth/cloud. Gebruik de blueprint voor weersafhankelijk maaien om vanuit Home Assistant te plannen; deze services werken zodra de firmware lokaal schrijven ondersteunt."
     }
   }
 }

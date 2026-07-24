@@ -48,13 +48,15 @@
         "title": "TerraMow opcijas",
         "data": {
           "map_resolution": "Kartes izvades izšķirtspēja (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Kartes tēma",
+          "map_show_coverage": "Rādīt nopļauto laukumu",
+          "assume_job_complete": "Uzskatīt katru pabeigtu uzdevumu par 100 % izpildītu"
         },
         "data_description": {
           "map_resolution": "Kartes kameras PNG attēla malas garums. Lielākas vērtības nodrošina asāku attēlu, iegulstot to informācijas paneļos, bet palielina joslas platumu un CPU noslodzi katrā renderēšanas reizē.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Renderētā kartes kameras attēla krāsu tēma. “dark” piestāv tumšiem informācijas paneļiem.",
+          "map_show_coverage": "Ieēno jau nopļauto laukumu reālajā pļaušanas platumā zem maršruta līnijas.",
+          "assume_job_complete": "Dažas programmaparatūras versijas pabeidz uzdevumu bez pabeigšanas signāla, tāpēc sesijas progress nekad nesasniedz 100 %. Ieslēdziet, lai katrs pabeigtais uzdevums tiktu uzskatīts par izpildītu (100 %), tāpat kā lietotnē; atstājiet izslēgtu, lai saglabātu reālo skaitītāja vērtību."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Kartes rezerves kopijas atjaunināšana"
         }
       },
+      "active_job": {
+        "name": "Aktīvais uzdevums",
+        "state": {
+          "mission_idle": "Dīkstāve",
+          "mission_recharge": "Uzlāde",
+          "mission_global_clean": "Globālā pļaušana",
+          "mission_build_map": "Kartes veidošana",
+          "mission_build_map_and_clean": "Kartes veidošana un pļaušana",
+          "mission_temporary_clean": "Pagaidu pļaušana",
+          "mission_back_to_starting_point": "Atgriešanās sākuma punktā",
+          "mission_remote_control_clean": "Pļaušana ar tālvadību",
+          "mission_schedule_global_clean": "Plānotā globālā pļaušana",
+          "mission_schedule_build_map_and_clean": "Plānotā kartes veidošana un pļaušana",
+          "mission_select_region_clean": "Zonu pļaušana",
+          "mission_create_custom_passage": "Pielāgotas ejas izveide",
+          "mission_backup_map": "Kartes dublēšana",
+          "mission_relocate_base_station": "Bāzes stacijas pārvietošana",
+          "mission_user_auto_calibration": "Automātiskā kalibrēšana",
+          "mission_restore_backup_map": "Kartes rezerves kopijas atjaunošana",
+          "mission_schedule_select_region_clean": "Plānotā zonu pļaušana",
+          "mission_draw_region_clean": "Uzzīmētās zonas pļaušana",
+          "mission_edge_trim_clean": "Malu apgriešana",
+          "mission_update_backup_map": "Kartes rezerves kopijas atjaunināšana"
+        }
+      },
       "sub_mission": {
         "name": "Apakšmisija",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Aktīvās kļūdas"
+      },
+      "fault": {
+        "name": "Kļūme"
       },
       "last_event": {
         "name": "Pēdējais notikums"
@@ -531,10 +561,10 @@
       "message": "TerraMow zāles pļāvējs {entity_id} vēl nav gatavs."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Zāles pļāvējā nav grafika ieraksta ar item id {item_id}."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Zāles pļāvējs neapstiprināja grafika izmaiņas (mēģinājumi: {attempts}). Pašreizējā TerraMow programmaparatūra neatbalsta grafika ierakstīšanu vietējā tīklā – ražotāja lietotne tā vietā izmanto Bluetooth/mākoni. Plānošanai no Home Assistant izmantojiet laikapstākļiem pielāgotās pļaušanas blueprint; šie pakalpojumi darbosies, tiklīdz programmaparatūra pievienos vietējās ierakstīšanas atbalstu."
     }
   }
 }

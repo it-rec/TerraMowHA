@@ -48,13 +48,15 @@
         "title": "Επιλογές TerraMow",
         "data": {
           "map_resolution": "Ανάλυση εξόδου χάρτη (px)",
-          "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_theme": "Θέμα χάρτη",
+          "map_show_coverage": "Εμφάνιση κομμένης επιφάνειας",
+          "assume_job_complete": "Να θεωρείται κάθε ολοκληρωμένη εργασία 100 % ολοκληρωμένη"
         },
         "data_description": {
           "map_resolution": "Μήκος πλευράς εξόδου του PNG της κάμερας χάρτη. Υψηλότερες τιμές δίνουν πιο ευκρινή εικόνα όταν ενσωματώνεται σε πίνακες ελέγχου, αλλά αυξάνουν το εύρος ζώνης και τη χρήση CPU σε κάθε απόδοση.",
-          "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_theme": "Χρωματικό θέμα της εικόνας της κάμερας χάρτη. Το «dark» ταιριάζει σε σκούρους πίνακες ελέγχου.",
+          "map_show_coverage": "Σκιάζει την ήδη κομμένη περιοχή στο πραγματικό πλάτος κοπής κάτω από τη γραμμή διαδρομής.",
+          "assume_job_complete": "Ορισμένες εκδόσεις υλικολογισμικού τερματίζουν μια εργασία χωρίς σήμα ολοκλήρωσης, οπότε η πρόοδος της συνεδρίας δεν φτάνει ποτέ το 100 %. Ενεργοποιήστε το για να θεωρείται κάθε ολοκληρωμένη εργασία πλήρης (100 %), όπως στην εφαρμογή· αφήστε το απενεργοποιημένο για να διατηρηθεί η πραγματική τιμή του μετρητή."
         }
       }
     }
@@ -233,6 +235,31 @@
           "mission_update_backup_map": "Ενημέρωση Αντιγράφου Ασφαλείας Χάρτη"
         }
       },
+      "active_job": {
+        "name": "Ενεργή εργασία",
+        "state": {
+          "mission_idle": "Σε Αδράνεια",
+          "mission_recharge": "Επαναφόρτιση",
+          "mission_global_clean": "Καθολική Κοπή",
+          "mission_build_map": "Δημιουργία Χάρτη",
+          "mission_build_map_and_clean": "Δημιουργία Χάρτη και Κοπή",
+          "mission_temporary_clean": "Προσωρινή Κοπή",
+          "mission_back_to_starting_point": "Επιστροφή στο Σημείο Εκκίνησης",
+          "mission_remote_control_clean": "Κοπή με Τηλεχειρισμό",
+          "mission_schedule_global_clean": "Προγραμματισμένη Καθολική Κοπή",
+          "mission_schedule_build_map_and_clean": "Προγραμματισμένη Δημιουργία Χάρτη και Κοπή",
+          "mission_select_region_clean": "Κοπή Ζώνης",
+          "mission_create_custom_passage": "Δημιουργία Προσαρμοσμένου Διαδρόμου",
+          "mission_backup_map": "Δημιουργία Αντιγράφου Ασφαλείας Χάρτη",
+          "mission_relocate_base_station": "Μετεγκατάσταση Σταθμού Βάσης",
+          "mission_user_auto_calibration": "Αυτόματη Βαθμονόμηση",
+          "mission_restore_backup_map": "Επαναφορά Αντιγράφου Ασφαλείας Χάρτη",
+          "mission_schedule_select_region_clean": "Προγραμματισμένη Κοπή Ζώνης",
+          "mission_draw_region_clean": "Κοπή Σχεδιασμένης Ζώνης",
+          "mission_edge_trim_clean": "Κοπή Άκρων",
+          "mission_update_backup_map": "Ενημέρωση Αντιγράφου Ασφαλείας Χάρτη"
+        }
+      },
       "sub_mission": {
         "name": "Υποαποστολή",
         "state": {
@@ -264,6 +291,9 @@
       },
       "active_errors": {
         "name": "Ενεργά σφάλματα"
+      },
+      "fault": {
+        "name": "Βλάβη"
       },
       "last_event": {
         "name": "Τελευταίο συμβάν"
@@ -531,10 +561,10 @@
       "message": "Το χλοοκοπτικό TerraMow για το {entity_id} δεν είναι ακόμη έτοιμο."
     },
     "schedule_item_not_found": {
-      "message": "No schedule slot with item id {item_id} exists on the mower."
+      "message": "Δεν υπάρχει θέση προγράμματος με item id {item_id} στο χλοοκοπτικό."
     },
     "schedule_write_failed": {
-      "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+      "message": "Το χλοοκοπτικό δεν αποδέχτηκε την αλλαγή προγράμματος (προσπάθειες: {attempts}). Το τρέχον υλικολογισμικό TerraMow δεν δέχεται εγγραφή προγράμματος μέσω τοπικού δικτύου – η εφαρμογή του κατασκευαστή χρησιμοποιεί Bluetooth/cloud. Χρησιμοποιήστε το blueprint κοπής με βάση τον καιρό για προγραμματισμό από το Home Assistant· αυτές οι υπηρεσίες θα λειτουργήσουν μόλις το υλικολογισμικό υποστηρίξει τοπική εγγραφή."
     }
   }
 }
