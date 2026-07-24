@@ -138,6 +138,19 @@ def test_aborted_session_resets_without_the_100_percent_snap() -> None:
     assert _current_session_time(hub) == 0
 
 
+def test_assume_job_complete_snaps_an_ended_session_to_100() -> None:
+    # Some firmware ends a finished job without MISSION_STATE_COMPLETE, so it
+    # reads as "aborted"; the opt-in treats any finished job as 100 % (#252).
+    hub = _hub()
+    hub.basic_data.assume_job_complete = True
+    _run_session(hub)
+    _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_ABORT")
+    assert _current_session_progress(hub) == 100.0
+    # The counters still reset — the job is over either way.
+    assert _current_session_area(hub) == 0.0
+    assert _current_session_time(hub) == 0
+
+
 def test_raw_values_stay_reachable_via_attributes() -> None:
     hub = _hub()
     _run_session(hub)

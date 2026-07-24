@@ -26,8 +26,10 @@ from homeassistant.helpers import entity_registry as er
 
 from .config_flow import CannotConnect, InvalidAuth, validate_input
 from .const import (
+    CONF_ASSUME_JOB_COMPLETE,
     CONF_SERIAL,
     CURRENT_HA_VERSION,
+    DEFAULT_ASSUME_JOB_COMPLETE,
     MIN_REQUIRED_OVERALL_VERSION,
     MIN_SUPPORTED_HA_VERSION,
     WEEKDAY_TO_DEVICE,
@@ -96,6 +98,10 @@ class TerraMowBasicData:
     firmware_version: dict[str, Any] | None = None
     compatibility_reason: str = ""  # Store the specific reason for compatibility check failure
     entry_id: str | None = None  # Config entry id, used to scope repair issues
+    # Option: treat any finished job as 100 % complete even without an explicit
+    # firmware completion signal (CONF_ASSUME_JOB_COMPLETE). Read from the
+    # config entry options at setup; an options change reloads the entry.
+    assume_job_complete: bool = False
 
     def check_version_compatibility(self, compatibility_info: dict[str, Any]) -> str:
         """Check version compatibility and return status."""
@@ -268,7 +274,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
         ) from err
 
     basic_data = TerraMowBasicData(
-        host=host, password=password, entry_id=entry.entry_id, device_uid=device_uid
+        host=host,
+        password=password,
+        entry_id=entry.entry_id,
+        device_uid=device_uid,
+        assume_job_complete=bool(
+            entry.options.get(
+                CONF_ASSUME_JOB_COMPLETE, DEFAULT_ASSUME_JOB_COMPLETE
+            )
+        ),
     )
 
     # Stash the live integration state on the config entry itself; Home
