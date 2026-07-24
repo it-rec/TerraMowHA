@@ -433,6 +433,15 @@ const ACTIVITY_COLORS = {
 // re-subscribes and the server rebuilds the scene from scratch.
 const SCENE_MEMO = new Map();
 
+/** Last fully-rendered frame per entity, as a data URL. The browser does NOT
+ *  keep canvas pixels when the card element is destroyed and recreated (which
+ *  Home Assistant does on every dashboard switch), so a freshly mounted card
+ *  shows a blank canvas for a frame or two before its first draw completes —
+ *  the flicker. Painting this cached frame as an overlay the instant the card
+ *  mounts, then fading it out once the live canvas has drawn, hides that gap.
+ *  Module-level, so it survives the element being recreated. */
+const FRAME_MEMO = new Map();
+
 class TerramowMapCard extends HTMLElement {
   constructor() {
     super();
@@ -465,6 +474,7 @@ class TerramowMapCard extends HTMLElement {
     this._pathCache = null; // {canvas, sig, view}
     this._layerView = null; // view the offscreen layers were rasterized at
     this._viewMode = null; // overlay mode (VIEW_MODES); set from storage/config
+    this._frameStamp = 0; // last time the rendered frame was cached (throttle)
     this._colorCache = null; // resolved theme colors; invalidated on theme change
     this._themeSig = null;
     this._onVisibility = () => {
@@ -554,8 +564,22 @@ class TerramowMapCard extends HTMLElement {
   connectedCallback() {
     document.addEventListener("visibilitychange", this._onVisibility);
     this._colorCache = null; // CSS custom props only resolve while connected
+    this._showFrameCache(); // paint the last frame at once → no mount flicker
     this._restoreMemoScene();
     this._resubscribe();
+  }
+
+  /** Show the last rendered frame (if any) over the still-blank canvas the
+   *  instant the card mounts; the first live _draw fades it out. */
+  _showFrameCache() {
+    if (!this._frameImg || !this._config) {
+      return;
+    }
+    const url = FRAME_MEMO.get(this._config.entity);
+    if (url) {
+      this._frameImg.src = url;
+      this._frameImg.classList.add("show");
+    }
   }
 
   /**
@@ -764,6 +788,12 @@ class TerramowMapCard extends HTMLElement {
       .wrap { position: relative; width: 100%; touch-action: none; }
       canvas.main { display: block; width: 100%; height: 100%; cursor: grab; }
       canvas.main.dragging { cursor: grabbing; }
+      .framecache {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        object-fit: contain; pointer-events: none;
+        opacity: 0; transition: opacity .12s ease-out;
+      }
+      .framecache.show { opacity: 1; }
       canvas.main:focus { outline: none; }
       canvas.main:focus-visible {
         outline: 2px solid var(--primary-color, #03a9f4); outline-offset: -3px;
@@ -960,6 +990,13 @@ class TerramowMapCard extends HTMLElement {
       this._canvas.tabIndex = 0;
     }
     wrap.appendChild(this._canvas);
+
+    // Overlay that shows the last rendered frame the instant the card mounts,
+    // hiding the blank-canvas flicker on a dashboard switch (see FRAME_MEMO).
+    this._frameImg = document.createElement("img");
+    this._frameImg.className = "framecache";
+    this._frameImg.alt = "";
+    wrap.appendChild(this._frameImg);
 
     // Off-screen live region announcing the keyboard-focused zone.
     this._srLive = document.createElement("div");
@@ -2489,6 +2526,25 @@ class TerramowMapCard extends HTMLElement {
     this._drawRobot(ctx, dpr, view, colors);
 
     this._drawScaleBar(ctx, view, w, h, colors);
+
+    // The live frame is now on screen: drop the mount-time overlay, and stash
+    // this frame (throttled — toDataURL isn't free) so the next mount can show
+    // it instantly instead of flickering through a blank canvas.
+    if (this._frameImg && this._frameImg.classList.contains("show")) {
+      this._frameImg.classList.remove("show");
+    }
+    const now = window.performance.now();
+    if (now - this._frameStamp > 800) {
+      this._frameStamp = now;
+      try {
+        FRAME_MEMO.set(
+          this._config.entity,
+          this._canvas.toDataURL("image/webp", 0.6)
+        );
+      } catch (e) {
+        /* toDataURL can throw on a tainted canvas — just skip caching */
+      }
+    }
   }
 
   _drawStaticLayer(ctx, dpr, w, h, colors) {
