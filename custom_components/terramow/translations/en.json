@@ -49,12 +49,14 @@
         "data": {
           "map_resolution": "Map output resolution (px)",
           "map_theme": "Map theme",
-          "map_show_coverage": "Show mowed coverage"
+          "map_show_coverage": "Show mowed coverage",
+          "assume_job_complete": "Treat every finished job as 100 % complete"
         },
         "data_description": {
           "map_resolution": "Output side length of the map camera PNG. Higher values give a sharper image when embedded in dashboards but increase bandwidth and CPU on each render.",
           "map_theme": "Color theme of the rendered map camera image. \"dark\" matches dark dashboards.",
-          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line."
+          "map_show_coverage": "Shade the already mowed area at the real cutting width underneath the path line.",
+          "assume_job_complete": "Some firmware ends a finished job without a completion signal, so the session progress never snaps to 100 %. Turn this on to treat any finished job as complete (100 %), matching the app; leave it off to keep the honest counter value."
         }
       }
     }

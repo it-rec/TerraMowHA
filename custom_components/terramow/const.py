@@ -157,3 +157,10 @@ MAP_THEME_OPTIONS = ["light", "dark"]
 # Map camera coverage layer: shade the mowed swath at the real cutting width
 CONF_MAP_SHOW_COVERAGE = "map_show_coverage"
 DEFAULT_MAP_SHOW_COVERAGE = False
+
+# Some firmware ends a finished job without emitting MISSION_STATE_COMPLETE, so
+# the session progress never snaps to 100 % even when the lawn is done (it reads
+# as "aborted"). With this on, any finished job is treated as complete (100 %),
+# matching the vendor app; default off keeps the honest, counter-truthful value.
+CONF_ASSUME_JOB_COMPLETE = "assume_job_complete"
+DEFAULT_ASSUME_JOB_COMPLETE = False

@@ -199,8 +199,12 @@ def _current_session_progress(hub: TerraMowHub) -> StateType:
         # covered everything it could (issue #204).
         return 100.0
     if outcome is not None:
-        # An aborted job resets like the other session counters — no 100 %
-        # snap for a lawn that was not finished.
+        # An aborted job normally resets like the other session counters — no
+        # 100 % snap for a lawn that was not finished. But some firmware ends a
+        # finished job without a completion signal, so the user can opt to
+        # treat any finished job as complete (issue #252).
+        if hub.basic_data.assume_job_complete:
+            return 100.0
         return 0.0
     return _raw_session_progress(hub)
 

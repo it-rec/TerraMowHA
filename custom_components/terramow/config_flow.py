@@ -26,10 +26,12 @@ if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigFlowResult
 
 from .const import (
+    CONF_ASSUME_JOB_COMPLETE,
     CONF_MAP_RESOLUTION,
     CONF_MAP_SHOW_COVERAGE,
     CONF_MAP_THEME,
     CONF_SERIAL,
+    DEFAULT_ASSUME_JOB_COMPLETE,
     DEFAULT_MAP_RESOLUTION,
     DEFAULT_MAP_SHOW_COVERAGE,
     DEFAULT_MAP_THEME,
@@ -348,6 +350,12 @@ class TerraMowOptionsFlow(OptionsFlow):
                     CONF_MAP_SHOW_COVERAGE,
                     default=options.get(
                         CONF_MAP_SHOW_COVERAGE, DEFAULT_MAP_SHOW_COVERAGE
+                    ),
+                ): bool,
+                vol.Required(
+                    CONF_ASSUME_JOB_COMPLETE,
+                    default=options.get(
+                        CONF_ASSUME_JOB_COMPLETE, DEFAULT_ASSUME_JOB_COMPLETE
                     ),
                 ): bool,
             }
