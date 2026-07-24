@@ -16,6 +16,7 @@
  * Options:
  *   show_controls: true        # contextual start / pause / dock buttons
  *   show_coverage: false       # shade the mowed swath at cutting width
+ *   show_wifi: false           # Wi-Fi heatmap overlay (self-sampled, green=strong)
  *   show_history_path: true    # faded, previously mowed path
  *   show_current_path: true    # path of the running job, incl. the track
  *                              # from before a mid-session recharge dock
@@ -48,12 +49,12 @@ const CARD_TAG = "terramow-map-card";
 /* Keys: no_map, not_connected, start, clear, zone, zones, reset_view,
    follow, start_mowing, pause, dock, sent, missing_entity */
 const STRINGS = {
-  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", reset_rotation: "Reset to default rotation", follow: "Follow the mower", start_mowing: "Start mowing", pause: "Pause", hud_progress: "Progress", hud_eta_left: "left", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", kbd_selected: "selected", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_zone: "Mowing zone", lg_zone_pending: "Selected to mow", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area", map_refreshing: "Map refreshing…", dbg_title: "Layers received", dbg_zones: "Zones", dbg_nogo: "No-go zones", dbg_walls: "Walls", dbg_obstacles: "Obstacles", dbg_passthrough: "Pass-through", dbg_required: "Required", dbg_tunnels: "Tunnels", dbg_markers: "Markers", dbg_draw: "Draw regions", dbg_paths: "Path points" },
+  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", reset_rotation: "Reset to default rotation", follow: "Follow the mower", start_mowing: "Start mowing", pause: "Pause", hud_progress: "Progress", hud_eta_left: "left", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", kbd_selected: "selected", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_zone: "Mowing zone", lg_zone_pending: "Selected to mow", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area", lg_wifi: "Wi-Fi signal (green = strong)", view_mode: "View", vw_beides: "Both", vw_weg: "Path", vw_flaeche: "Area", vw_wlan: "Wi-Fi", map_refreshing: "Map refreshing…", dbg_title: "Layers received", dbg_zones: "Zones", dbg_nogo: "No-go zones", dbg_walls: "Walls", dbg_obstacles: "Obstacles", dbg_passthrough: "Pass-through", dbg_required: "Required", dbg_tunnels: "Tunnels", dbg_markers: "Markers", dbg_draw: "Draw regions", dbg_paths: "Path points" },
   bg: { no_map: "Все още няма карта", not_connected: "Изчакване на данни от косачката…", start: "Коси", clear: "Изчисти", zone: "зона", zones: "зони", reset_view: "Побери картата", follow: "Следвай косачката", start_mowing: "Започни косене", pause: "Пауза", dock: "Върни към станцията", sent: "Косенето на зони започна", missing_entity: "Задайте обект на косачка TerraMow в конфигурацията" },
   ca: { no_map: "Encara no hi ha mapa", not_connected: "Esperant dades del tallagespa…", start: "Sega", clear: "Neteja", zone: "zona", zones: "zones", reset_view: "Ajusta el mapa", follow: "Segueix el tallagespa", start_mowing: "Comença a segar", pause: "Pausa", dock: "Torna a la base", sent: "Sega per zones iniciada", missing_entity: "Configureu una entitat de tallagespa TerraMow" },
   cs: { no_map: "Mapa zatím není k dispozici", not_connected: "Čekání na data sekačky…", start: "Sekat", clear: "Vymazat", zone: "zóna", zones: "zóny", reset_view: "Přizpůsobit mapu", follow: "Sledovat sekačku", start_mowing: "Zahájit sekání", pause: "Pozastavit", dock: "Zpět na stanici", sent: "Sekání zón zahájeno", missing_entity: "Nastavte entitu sekačky TerraMow v konfiguraci karty" },
   da: { no_map: "Intet kort tilgængeligt endnu", not_connected: "Venter på data fra plæneklipperen…", start: "Klip", clear: "Ryd", zone: "zone", zones: "zoner", reset_view: "Tilpas kortet", follow: "Følg plæneklipperen", start_mowing: "Start klipning", pause: "Pause", dock: "Kør til base", sent: "Zoneklipning startet", missing_entity: "Angiv en TerraMow-plæneklipperentitet i kortets konfiguration" },
-  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", reset_rotation: "Auf Standarddrehung zurücksetzen", follow: "Dem Mäher folgen", start_mowing: "Mähen starten", pause: "Pausieren", hud_progress: "Fortschritt", hud_eta_left: "übrig", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch", kbd_selected: "ausgewählt", legend: "Legende", legend_show: "Legende anzeigen", legend_hide: "Legende ausblenden", lg_zone: "Rasenmähzone", lg_zone_pending: "Zum Mähen ausgewählt", lg_mower: "Mäherposition", lg_dock: "Ladestation", lg_order: "Mähreihenfolge", lg_custom: "Eigene Zoneneinstellungen", lg_direction: "Mährichtung", lg_stuck: "Hier steckengeblieben", lg_maint: "Wartungspunkt", lg_passage: "Durchgangspunkt", lg_nogo: "Sperrzone", lg_wall: "Virtuelle Wand", lg_coverage: "Gemähte Fläche", map_refreshing: "Karte wird aktualisiert…", dbg_title: "Empfangene Ebenen", dbg_zones: "Zonen", dbg_nogo: "Sperrzonen", dbg_walls: "Wände", dbg_obstacles: "Hindernisse", dbg_passthrough: "Durchgänge", dbg_required: "Pflichtzonen", dbg_tunnels: "Tunnel", dbg_markers: "Markierungen", dbg_draw: "Zeichenregionen", dbg_paths: "Pfadpunkte" },
+  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", reset_rotation: "Auf Standarddrehung zurücksetzen", follow: "Dem Mäher folgen", start_mowing: "Mähen starten", pause: "Pausieren", hud_progress: "Fortschritt", hud_eta_left: "übrig", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch", kbd_selected: "ausgewählt", legend: "Legende", legend_show: "Legende anzeigen", legend_hide: "Legende ausblenden", lg_zone: "Rasenmähzone", lg_zone_pending: "Zum Mähen ausgewählt", lg_mower: "Mäherposition", lg_dock: "Ladestation", lg_order: "Mähreihenfolge", lg_custom: "Eigene Zoneneinstellungen", lg_direction: "Mährichtung", lg_stuck: "Hier steckengeblieben", lg_maint: "Wartungspunkt", lg_passage: "Durchgangspunkt", lg_nogo: "Sperrzone", lg_wall: "Virtuelle Wand", lg_coverage: "Gemähte Fläche", lg_wifi: "WLAN-Signal (grün = stark)", view_mode: "Ansicht", vw_beides: "Beides", vw_weg: "Weg", vw_flaeche: "Fläche", vw_wlan: "WLAN", map_refreshing: "Karte wird aktualisiert…", dbg_title: "Empfangene Ebenen", dbg_zones: "Zonen", dbg_nogo: "Sperrzonen", dbg_walls: "Wände", dbg_obstacles: "Hindernisse", dbg_passthrough: "Durchgänge", dbg_required: "Pflichtzonen", dbg_tunnels: "Tunnel", dbg_markers: "Markierungen", dbg_draw: "Zeichenregionen", dbg_paths: "Pfadpunkte" },
   el: { no_map: "Δεν υπάρχει ακόμη χάρτης", not_connected: "Αναμονή δεδομένων χλοοκοπτικού…", start: "Κούρεμα", clear: "Καθαρισμός", zone: "ζώνη", zones: "ζώνες", reset_view: "Προσαρμογή χάρτη", follow: "Ακολούθησε το χλοοκοπτικό", start_mowing: "Έναρξη κουρέματος", pause: "Παύση", dock: "Επιστροφή στη βάση", sent: "Το κούρεμα ζωνών ξεκίνησε", missing_entity: "Ορίστε οντότητα χλοοκοπτικού TerraMow στη διαμόρφωση" },
   es: { no_map: "Aún no hay mapa disponible", not_connected: "Esperando datos del cortacésped…", start: "Cortar", clear: "Borrar", zone: "zona", zones: "zonas", reset_view: "Ajustar mapa", follow: "Seguir al cortacésped", start_mowing: "Iniciar corte", pause: "Pausar", dock: "Volver a la base", sent: "Corte por zonas iniciado", missing_entity: "Configura la entidad del cortacésped TerraMow" },
   et: { no_map: "Kaarti pole veel saadaval", not_connected: "Ootan niiduki andmeid…", start: "Niida", clear: "Tühjenda", zone: "tsoon", zones: "tsooni", reset_view: "Mahuta kaart", follow: "Jälgi niidukit", start_mowing: "Alusta niitmist", pause: "Paus", dock: "Tagasi baasi", sent: "Tsooniniitmine alustatud", missing_entity: "Määra kaardi seadetes TerraMow niiduki olem" },
@@ -125,6 +126,8 @@ function pluralWord(hass, count, oneKey, otherKey) {
 /* ---------------------------------------------------------------- icons */
 
 const ICONS = {
+  layers:
+    "M12,16L19.36,10.27L21,9L12,2L3,9L4.63,10.27L12,16M12,18.54L4.62,12.81L3,14.07L12,21.07L21,14.07L19.37,12.81L12,18.54Z",
   play: "M8,5.14V19.14L19,12.14L8,5.14Z",
   pause: "M14,19H18V5H14M6,19H10V5H6V19Z",
   dock: "M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z",
@@ -201,6 +204,61 @@ const ROTATE_DEADZONE = 0.12;
  *  button can capture it — the editor and the preview card are isolated. */
 const LIVE_ROT_KEY = "terramow-map-card:rot:";
 
+/** localStorage key prefix (per entity) for the last picked overlay view mode,
+ *  so the tap-to-cycle button remembers your choice across reloads. */
+const VIEW_MODE_KEY = "terramow-map-card:view:";
+
+/** Overlay view modes the on-map button cycles through. Each maps to a set of
+ *  effective layer flags in _layers(); the button replaces needing separate
+ *  dashboard views (or the show_* config flags) to switch what's drawn. */
+const VIEW_MODES = ["beides", "weg", "flaeche", "wlan"];
+
+/** Gap-fill the sparse Wi-Fi heatmap so a single (or interrupted) mow still
+ *  reads as a continuous map: an empty grid cell surrounded by at least 3 of
+ *  its 8 neighbours takes their average. Cells far from any sample stay empty
+ *  — we fill holes between mow passes, never invent unmeasured ground. Returns
+ *  `[gx, gy, pct, isFilled]` tuples. */
+function interpolateWifiCells(cells) {
+  const have = new Map();
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const [gx, gy, pct] of cells) {
+    have.set(`${gx},${gy}`, pct);
+    minX = Math.min(minX, gx);
+    maxX = Math.max(maxX, gx);
+    minY = Math.min(minY, gy);
+    maxY = Math.max(maxY, gy);
+  }
+  const out = cells.map((c) => [c[0], c[1], c[2], false]);
+  for (let gx = minX; gx <= maxX; gx++) {
+    for (let gy = minY; gy <= maxY; gy++) {
+      if (have.has(`${gx},${gy}`)) {
+        continue;
+      }
+      let n = 0;
+      let sum = 0;
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          if (dx === 0 && dy === 0) {
+            continue;
+          }
+          const v = have.get(`${gx + dx},${gy + dy}`);
+          if (v !== undefined) {
+            n += 1;
+            sum += v;
+          }
+        }
+      }
+      if (n >= 3) {
+        out.push([gx, gy, sum / n, true]);
+      }
+    }
+  }
+  return out;
+}
+
 function legendSwatch(kind, c) {
   const out = c.markerOutline;
   const svg = (inner) =>
@@ -268,6 +326,13 @@ function legendSwatch(kind, c) {
       );
     case "coverage":
       return svg(`<rect x="3" y="3" width="14" height="14" rx="2" fill="${c.coverage}"/>`);
+    case "wifi":
+      // Green-to-red gradient chip mirroring the heatmap cell colours.
+      return svg(
+        `<rect x="3" y="3" width="4" height="14" fill="hsla(120,75%,45%,0.8)"/>` +
+          `<rect x="8" y="3" width="4" height="14" fill="hsla(60,75%,45%,0.8)"/>` +
+          `<rect x="13" y="3" width="4" height="14" fill="hsla(0,75%,45%,0.8)"/>`
+      );
     default:
       return svg("");
   }
@@ -368,6 +433,15 @@ const ACTIVITY_COLORS = {
 // re-subscribes and the server rebuilds the scene from scratch.
 const SCENE_MEMO = new Map();
 
+/** Last fully-rendered frame per entity, as a data URL. The browser does NOT
+ *  keep canvas pixels when the card element is destroyed and recreated (which
+ *  Home Assistant does on every dashboard switch), so a freshly mounted card
+ *  shows a blank canvas for a frame or two before its first draw completes —
+ *  the flicker. Painting this cached frame as an overlay the instant the card
+ *  mounts, then fading it out once the live canvas has drawn, hides that gap.
+ *  Module-level, so it survives the element being recreated. */
+const FRAME_MEMO = new Map();
+
 class TerramowMapCard extends HTMLElement {
   constructor() {
     super();
@@ -399,6 +473,8 @@ class TerramowMapCard extends HTMLElement {
     this._staticCache = null; // {canvas, sig, view}
     this._pathCache = null; // {canvas, sig, view}
     this._layerView = null; // view the offscreen layers were rasterized at
+    this._viewMode = null; // overlay mode (VIEW_MODES); set from storage/config
+    this._frameStamp = 0; // last time the rendered frame was cached (throttle)
     this._colorCache = null; // resolved theme colors; invalidated on theme change
     this._themeSig = null;
     this._onVisibility = () => {
@@ -421,6 +497,7 @@ class TerramowMapCard extends HTMLElement {
       show_history_path: true,
       show_current_path: true,
       show_coverage: false,
+      show_wifi: false,
       zone_selection: true,
       show_hud: true,
       show_controls: true,
@@ -444,9 +521,13 @@ class TerramowMapCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const firstHass = !this._hass;
     this._hass = hass;
     if (!this._unsub) {
       this._resubscribe();
+    }
+    if (firstHass) {
+      this._updateModeBtn(); // localize the mode label once hass is available
     }
     const themeSig = this._themeSignature(hass);
     if (themeSig !== this._themeSig) {
@@ -483,8 +564,22 @@ class TerramowMapCard extends HTMLElement {
   connectedCallback() {
     document.addEventListener("visibilitychange", this._onVisibility);
     this._colorCache = null; // CSS custom props only resolve while connected
+    this._showFrameCache(); // paint the last frame at once → no mount flicker
     this._restoreMemoScene();
     this._resubscribe();
+  }
+
+  /** Show the last rendered frame (if any) over the still-blank canvas the
+   *  instant the card mounts; the first live _draw fades it out. */
+  _showFrameCache() {
+    if (!this._frameImg || !this._config) {
+      return;
+    }
+    const url = FRAME_MEMO.get(this._config.entity);
+    if (url) {
+      this._frameImg.src = url;
+      this._frameImg.classList.add("show");
+    }
   }
 
   /**
@@ -601,6 +696,11 @@ class TerramowMapCard extends HTMLElement {
         this._scene.history_path.push(...msg.history_path_append);
         decimatePath(this._scene.history_path, MAX_PATH_POINTS);
       }
+      if (msg.wifi_heatmap !== undefined) {
+        // The heatmap rides the append channel whole (it is small); it is
+        // drawn in the path layer, so the path revision covers it.
+        this._scene.wifi_heatmap = msg.wifi_heatmap;
+      }
       this._pathRev += 1;
       this._requestDraw();
     } else if (msg.type === "robot") {
@@ -688,6 +788,12 @@ class TerramowMapCard extends HTMLElement {
       .wrap { position: relative; width: 100%; touch-action: none; }
       canvas.main { display: block; width: 100%; height: 100%; cursor: grab; }
       canvas.main.dragging { cursor: grabbing; }
+      .framecache {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        object-fit: contain; pointer-events: none;
+        opacity: 0; transition: opacity .12s ease-out;
+      }
+      .framecache.show { opacity: 1; }
       canvas.main:focus { outline: none; }
       canvas.main:focus-visible {
         outline: 2px solid var(--primary-color, #03a9f4); outline-offset: -3px;
@@ -738,6 +844,10 @@ class TerramowMapCard extends HTMLElement {
         display: inline-flex; align-items: center; justify-content: center;
       }
       .rbtn svg { width: 18px; height: 18px; }
+      .rbtn.mode {
+        width: auto; border-radius: 17px; padding: 0 11px 0 8px;
+        gap: 5px; font-size: 12px; font-weight: 600; white-space: nowrap;
+      }
       .rbtn:hover { opacity: 1; }
       .rbtn:focus-visible, .actions button:focus-visible {
         outline: 2px solid var(--primary-color, #03a9f4);
@@ -881,6 +991,13 @@ class TerramowMapCard extends HTMLElement {
     }
     wrap.appendChild(this._canvas);
 
+    // Overlay that shows the last rendered frame the instant the card mounts,
+    // hiding the blank-canvas flicker on a dashboard switch (see FRAME_MEMO).
+    this._frameImg = document.createElement("img");
+    this._frameImg.className = "framecache";
+    this._frameImg.alt = "";
+    wrap.appendChild(this._frameImg);
+
     // Off-screen live region announcing the keyboard-focused zone.
     this._srLive = document.createElement("div");
     this._srLive.className = "sr-only";
@@ -912,7 +1029,13 @@ class TerramowMapCard extends HTMLElement {
     this._compassBtn.title = resetRotLabel;
     this._compassBtn.setAttribute("aria-label", resetRotLabel);
     this._compassBtn.querySelector("svg").style.transition = "transform .15s";
-    side.append(this._fitBtn, this._followBtn, this._compassBtn);
+    // Overlay view toggle (path / area / both / Wi-Fi) — one tap cycles what's
+    // drawn, so a single card replaces separate dashboard views.
+    this._modeBtn = this._roundButton(ICONS.layers, () => this._cycleViewMode());
+    this._modeBtn.classList.add("mode");
+    this._initViewMode();
+    this._updateModeBtn();
+    side.append(this._modeBtn, this._fitBtn, this._followBtn, this._compassBtn);
     wrap.appendChild(side);
 
     // bottom-right: contextual mow controls
@@ -980,6 +1103,79 @@ class TerramowMapCard extends HTMLElement {
     btn.innerHTML = svgIcon(iconPath);
     btn.addEventListener("click", onClick);
     return btn;
+  }
+
+  /* --------------------------------------------------------- view modes */
+
+  _initViewMode() {
+    let mode = null;
+    try {
+      mode = window.localStorage.getItem(VIEW_MODE_KEY + this._config.entity);
+    } catch (e) {
+      /* storage blocked (private mode) — fall through to the config default */
+    }
+    this._viewMode = VIEW_MODES.includes(mode) ? mode : this._deriveViewMode();
+  }
+
+  /** Seed the initial mode from the show_* config flags, so cards/dashboards
+   *  that used them to pick what to draw keep their look on first load. */
+  _deriveViewMode() {
+    const c = this._config;
+    if (
+      c.show_wifi &&
+      !c.show_coverage &&
+      !c.show_current_path &&
+      !c.show_history_path
+    ) {
+      return "wlan";
+    }
+    if (c.show_coverage && !c.show_current_path && !c.show_history_path) {
+      return "flaeche";
+    }
+    return c.show_coverage ? "beides" : "weg";
+  }
+
+  _cycleViewMode() {
+    const i = VIEW_MODES.indexOf(this._viewMode);
+    this._viewMode = VIEW_MODES[(i + 1) % VIEW_MODES.length];
+    try {
+      window.localStorage.setItem(
+        VIEW_MODE_KEY + this._config.entity,
+        this._viewMode
+      );
+    } catch (e) {
+      /* storage blocked; the choice just won't persist across reloads */
+    }
+    this._updateModeBtn();
+    if (this._legend && this._legend.classList.contains("visible")) {
+      this._buildLegend();
+    }
+    this._requestDraw();
+  }
+
+  /** Effective layer flags for the active view mode. */
+  _layers() {
+    switch (this._viewMode) {
+      case "wlan":
+        return { coverage: false, history: false, current: false, wifi: true };
+      case "flaeche":
+        return { coverage: true, history: false, current: false, wifi: false };
+      case "weg":
+        return { coverage: false, history: true, current: true, wifi: false };
+      default: // beides
+        return { coverage: true, history: true, current: true, wifi: false };
+    }
+  }
+
+  _updateModeBtn() {
+    if (!this._modeBtn) {
+      return;
+    }
+    const label = localize(this._hass, `vw_${this._viewMode}`);
+    const title = `${localize(this._hass, "view_mode")}: ${label}`;
+    this._modeBtn.innerHTML = svgIcon(ICONS.layers) + `<span>${label}</span>`;
+    this._modeBtn.title = title;
+    this._modeBtn.setAttribute("aria-label", title);
   }
 
   _showMessage(text) {
@@ -1809,6 +2005,7 @@ class TerramowMapCard extends HTMLElement {
     const c = this._colors();
     const scene = this._scene || {};
     const cfg = this._config || {};
+    const L = this._layers();
     const subs = [];
     for (const region of scene.regions || []) {
       for (const sub of region.sub_regions || []) {
@@ -1847,7 +2044,16 @@ class TerramowMapCard extends HTMLElement {
     add((markers.cross_boundary || []).length > 0, "passage", "lg_passage");
     add(noGo > 0, "nogo", "lg_nogo");
     add((scene.virtual_walls || []).length > 0, "wall", "lg_wall");
-    add(Boolean(cfg.show_coverage), "coverage", "lg_coverage");
+    add(Boolean(L.coverage), "coverage", "lg_coverage");
+    add(
+      Boolean(
+        L.wifi &&
+          scene.wifi_heatmap &&
+          (scene.wifi_heatmap.cells || []).length
+      ),
+      "wifi",
+      "lg_wifi"
+    );
 
     const rows = entries
       .map(
@@ -2241,7 +2447,13 @@ class TerramowMapCard extends HTMLElement {
       [...this._pending].sort().join(","),
     ].join("§");
     // Layer 2: coverage + paths (changes on every path push)
-    const pathSig = [this._sceneRev, this._pathRev, sizeSig, themeSig].join("§");
+    const pathSig = [
+      this._sceneRev,
+      this._pathRev,
+      sizeSig,
+      themeSig,
+      this._viewMode,
+    ].join("§");
 
     const needStatic =
       !this._staticCache ||
@@ -2314,6 +2526,25 @@ class TerramowMapCard extends HTMLElement {
     this._drawRobot(ctx, dpr, view, colors);
 
     this._drawScaleBar(ctx, view, w, h, colors);
+
+    // The live frame is now on screen: drop the mount-time overlay, and stash
+    // this frame (throttled — toDataURL isn't free) so the next mount can show
+    // it instantly instead of flickering through a blank canvas.
+    if (this._frameImg && this._frameImg.classList.contains("show")) {
+      this._frameImg.classList.remove("show");
+    }
+    const now = window.performance.now();
+    if (now - this._frameStamp > 800) {
+      this._frameStamp = now;
+      try {
+        FRAME_MEMO.set(
+          this._config.entity,
+          this._canvas.toDataURL("image/webp", 0.6)
+        );
+      } catch (e) {
+        /* toDataURL can throw on a tainted canvas — just skip caching */
+      }
+    }
   }
 
   _drawStaticLayer(ctx, dpr, w, h, colors) {
@@ -2729,6 +2960,24 @@ class TerramowMapCard extends HTMLElement {
     const scene = this._scene;
     this._applyWorldTransform(ctx, dpr);
 
+    // Wi-Fi heatmap (issue #200): self-sampled by the integration from the
+    // mower's own signal % at each pose. Drawn first so coverage and paths
+    // stay readable on top. Green = strong, red = weak; cells are coarse
+    // (the signal doesn't change at blade resolution).
+    const L = this._layers();
+    const wifi = L.wifi && scene.wifi_heatmap;
+    if (wifi && Array.isArray(wifi.cells) && wifi.cells.length) {
+      const cell = Number(wifi.cell_mm) || 1500;
+      // Interpolated cells draw a touch fainter than real samples, so measured
+      // ground still reads stronger than the gap-filled bridges between passes.
+      for (const [gx, gy, pct, isFill] of interpolateWifiCells(wifi.cells)) {
+        // <=20 % maps to red (hue 0), >=80 % to green (hue 120).
+        const hue = Math.max(0, Math.min(120, ((pct - 20) / 60) * 120));
+        ctx.fillStyle = `hsla(${hue}, 75%, 45%, ${isFill ? 0.22 : 0.34})`;
+        ctx.fillRect(gx * cell - cell / 2, gy * cell - cell / 2, cell, cell);
+      }
+    }
+
     const strokePath = (points, stroke, widthWorld) => {
       if (!points || points.length < 2) {
         return;
@@ -2768,7 +3017,7 @@ class TerramowMapCard extends HTMLElement {
     const sessionPaths = Array.isArray(scene.session_paths)
       ? scene.session_paths
       : [];
-    if (this._config.show_coverage) {
+    if (L.coverage) {
       const spacing = Number(scene.mow_params && scene.mow_params.mow_spacing);
       const width =
         (spacing > 0 ? spacing : Number(scene.cutting_width)) || 320;
@@ -2778,10 +3027,10 @@ class TerramowMapCard extends HTMLElement {
       strokePath(scene.history_path, colors.coverage, width);
       strokePath(scene.current_path, colors.coverage, width);
     }
-    if (this._config.show_history_path) {
+    if (L.history) {
       strokePath(scene.history_path, colors.historyPath, 1.6 / view.scale);
     }
-    if (this._config.show_current_path) {
+    if (L.current) {
       if (sessionPaths.length) {
         // Same colour as the live path but faded, so the whole session
         // reads as one job with its earlier legs in the background.
@@ -3025,6 +3274,11 @@ class TerramowMapCardEditor extends HTMLElement {
       {
         name: "show_coverage",
         label: "Shade mowed area (cutting width)",
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_wifi",
+        label: "Wi-Fi heatmap overlay (green = strong)",
         selector: { boolean: {} },
       },
       {

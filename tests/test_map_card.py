@@ -32,6 +32,7 @@ from custom_components.terramow.map_card import (
     build_status_payload,
 )
 
+
 @pytest.fixture(autouse=True)
 def _clear_hub_caches() -> Any:
     """Reset the module-level per-hub caches so id(hub) reuse between tests
@@ -506,6 +507,82 @@ async def test_paths_append_delta(
     event = await client.receive_json()
     assert event["event"]["type"] == "scene"
     assert event["event"]["scene"]["current_path"] == [[7, 8]]
+
+
+async def test_wifi_heatmap_payload_and_delta(
+    hass: HomeAssistant, hass_ws_client: Any, monkeypatch: Any
+) -> None:
+    """The heatmap rides the scene once and the append channel afterwards."""
+    monkeypatch.setattr(map_card, "SCENE_PUSH_DEBOUNCE", 0)
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    # No samples yet -> the payload slot exists but is None
+    assert build_scene_payload(hub)["wifi_heatmap"] is None
+
+    hub._wifi_cells = {(2, 3): 87.6}
+    hub._apply_map_data(MAP_DATA)
+    hub._apply_path_data(PATH_DATA)
+    await hass.async_block_till_done()
+
+    client = await hass_ws_client(hass)
+    await client.send_json(
+        {
+            "id": 1,
+            "type": WS_SUBSCRIBE_MAP,
+            "entity_id": _lawn_mower_entity_id(hass),
+        }
+    )
+    assert (await client.receive_json())["success"]
+    events: dict[str, Any] = {}
+    for _ in range(2):
+        event = (await client.receive_json())["event"]
+        events[event["type"]] = event
+    # The initial scene carries the heatmap (values rounded to whole %)
+    assert events["scene"]["scene"]["wifi_heatmap"] == {
+        "cell_mm": 1500,
+        "cells": [[2, 3, 88]],
+    }
+    await _drain(client)
+
+    # Heatmap change + path growth -> the append event carries the whole map
+    hub._wifi_cells[(4, 5)] = 42.0
+    extended = {
+        **PATH_DATA,
+        "points": [
+            *PATH_DATA["points"],
+            {"position": {"x": 500, "y": 600}, "type": "PATH_POINT_TYPE_CLEANING"},
+        ],
+    }
+    hub._apply_path_data(extended)
+    await hass.async_block_till_done()
+    event = (await client.receive_json())["event"]
+    assert event["type"] == "paths_append"
+    assert event["wifi_heatmap"]["cells"] == [[2, 3, 88], [4, 5, 42]]
+
+    # Path grows again, heatmap unchanged -> no wifi key in the event
+    extended2 = {
+        **extended,
+        "points": [
+            *extended["points"],
+            {"position": {"x": 700, "y": 800}, "type": "PATH_POINT_TYPE_CLEANING"},
+        ],
+    }
+    hub._apply_path_data(extended2)
+    await hass.async_block_till_done()
+    event = (await client.receive_json())["event"]
+    assert event["type"] == "paths_append"
+    assert "wifi_heatmap" not in event
+
+    # Heatmap-only change (paths untouched) -> an append event still goes out
+    hub._wifi_cells[(6, 7)] = 55.0
+    hub._apply_path_data(extended2)
+    await hass.async_block_till_done()
+    event = (await client.receive_json())["event"]
+    assert event["type"] == "paths_append"
+    assert event["current_path_append"] == []
+    assert len(event["wifi_heatmap"]["cells"]) == 3
 
 
 async def test_bounds_stable_while_path_grows(hass: HomeAssistant) -> None:

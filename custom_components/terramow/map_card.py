@@ -38,7 +38,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
 
 from .const import DOMAIN
-from .hub import TerraMowHub
+from .hub import WIFI_CELL_MM, TerraMowHub
 from .map_render import CUTTING_WIDTH_MM
 from .map_scene import (
     build_scene,
@@ -53,7 +53,7 @@ _LOGGER = logging.getLogger(__name__)
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.22.0"
+CARD_VERSION = "1.25.0"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -504,6 +504,21 @@ def build_scene_payload(
         "session_paths": [
             _path_pts(segment) for segment in scene["session_path_segments"]
         ],
+        # Self-sampled Wi-Fi heatmap (issue #200): coarse grid of the mower's
+        # own dp_109 signal %, accumulated by the hub while it drives. None
+        # until the first sample exists. Excluded from the delta-detection
+        # geometry in _emit_scene (it changes on every mowing tick).
+        "wifi_heatmap": (
+            {
+                "cell_mm": WIFI_CELL_MM,
+                "cells": [
+                    [gx, gy, int(round(value))]
+                    for (gx, gy), value in hub.wifi_map_cells.items()
+                ],
+            }
+            if hub.wifi_map_cells
+            else None
+        ),
     }
     # Bounds over the static geometry only — NOT the paths. A growing path
     # would otherwise shift the bounds on every mowing tick, defeating both
@@ -710,6 +725,7 @@ class _MapFeed:
         # two path lists, and the path lists themselves.
         self._last_geometry: dict[str, Any] | None = None
         self._last_paths: dict[str, list[list[int]]] = {}
+        self._last_wifi: dict[str, Any] | None = None
         # Scene building is CPU-heavy (polygon coverage math); it runs in an
         # executor thread. These coalesce overlapping rebuilds so a burst of
         # source callbacks never stacks up more than one pending build.
@@ -810,11 +826,17 @@ class _MapFeed:
             "current_path": payload["current_path"],
             "history_path": payload["history_path"],
         }
+        # The Wi-Fi heatmap changes on nearly every mowing tick, so it rides
+        # its own delta channel (like the paths) — including it in the
+        # geometry comparison would turn every append push into a full scene.
+        wifi = payload.get("wifi_heatmap")
         geometry = {
-            key: value for key, value in payload.items() if key not in paths
+            key: value
+            for key, value in payload.items()
+            if key not in paths and key != "wifi_heatmap"
         }
         if self._last_geometry == geometry:
-            appends: dict[str, list[list[int]]] = {}
+            appends: dict[str, Any] = {}
             is_delta = True
             for key, new_points in paths.items():
                 old_points = self._last_paths.get(key, [])
@@ -828,7 +850,11 @@ class _MapFeed:
                     break
             if is_delta:
                 self._last_paths = paths
-                if any(appends.values()):
+                if wifi != self._last_wifi:
+                    # Small payload (a few hundred triplets), sent whole.
+                    appends["wifi_heatmap"] = wifi
+                    self._last_wifi = wifi
+                if any(value for value in appends.values()):
                     self.connection.send_message(
                         event_message(
                             self.msg_id, {"type": "paths_append", **appends}
@@ -838,6 +864,7 @@ class _MapFeed:
 
         self._last_geometry = geometry
         self._last_paths = paths
+        self._last_wifi = wifi
         self.connection.send_message(
             event_message(self.msg_id, {"type": "scene", "scene": payload})
         )

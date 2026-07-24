@@ -77,6 +77,7 @@ async def test_setup_entry_success_starts_hub_and_forwards(hass: HomeAssistant) 
         ) as forward,
     ):
         hub_cls.return_value.async_restore_session_paths = AsyncMock()
+        hub_cls.return_value.async_restore_wifi_map = AsyncMock()
         result = await async_setup_entry(hass, entry)
 
     assert result is True
