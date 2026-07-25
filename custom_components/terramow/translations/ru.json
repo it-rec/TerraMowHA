@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Автовозобновление после дождя"
+      },
+      "defogger_heating": {
+        "name": "Defogger обогрев"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "Отчёт о покосе"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Освещение"
       }
     }
   },

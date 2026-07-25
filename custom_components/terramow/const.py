@@ -100,6 +100,13 @@ SCHEDULE_DP = 122
 # same way as the dp_122 schedule writes.
 ADVANCED_SETTINGS_DP = 150
 
+# dp_152: environment / status block. Mostly device-computed state (sunrise,
+# sunset, manual-mapping flags) but it also carries two actuators — the
+# illumination light and the defogger heater — which the same negotiation can
+# write. Because the block mixes settings with state, it is never echoed back
+# wholesale (no merged-block candidate).
+ENVIRONMENT_INFO_DP = 152
+
 # How long a dp_150 write waits for the device to report the new value back.
 # The device pushes dp_150 on change, so a successful write shows up as a
 # fresh report; nothing arriving within this window means the write was

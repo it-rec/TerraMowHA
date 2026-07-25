@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Represa automàtica després de pluja"
+      },
+      "defogger_heating": {
+        "name": "Defogger calefacció"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "Informe de sega"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Il·luminació"
       }
     }
   },

@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Reprise auto après pluie"
+      },
+      "defogger_heating": {
+        "name": "Defogger chauffage"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "Rapport de tonte"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Éclairage"
       }
     }
   },

@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Automaattinen jatkaminen sateen jälkeen"
+      },
+      "defogger_heating": {
+        "name": "Defogger lämmitys"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "Leikkuuraportti"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Valaistus"
       }
     }
   },

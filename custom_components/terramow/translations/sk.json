@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Automatické pokračovanie po daždi"
+      },
+      "defogger_heating": {
+        "name": "Defogger ohrev"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "Správa o kosení"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Osvetlenie"
       }
     }
   },

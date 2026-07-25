@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "비 온 후 자동 재개"
+      },
+      "defogger_heating": {
+        "name": "Defogger 히터"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "예초 리포트"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "조명"
       }
     }
   },

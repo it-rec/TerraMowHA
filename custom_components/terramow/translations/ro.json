@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Reluare automată după ploaie"
+      },
+      "defogger_heating": {
+        "name": "Defogger încălzire"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "Raport de tuns"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Iluminare"
       }
     }
   },

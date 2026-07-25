@@ -25,9 +25,9 @@ read/command surfaces over that hub. Because the device pushes state, entities
 refresh reactively (via callbacks) rather than by polling — every platform sets
 `PARALLEL_UPDATES = 0`.
 
-The 13 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
+The 14 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
 `binary_sensor`, `select`, `number`, `camera`, `image`, `update`, `button`,
-`switch`, `event`, `calendar`, `todo`.
+`switch`, `light`, `event`, `calendar`, `todo`.
 
 ## 2. Component map
 
@@ -47,7 +47,7 @@ The 13 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
 | `map_sensor.py` | Map-derived sensors (`map_status`, `map_area`, `clean_mode`); added by the `sensor` platform, not its own platform |
 | `binary_sensor.py` | Charging, navigation-located, upgrading, power switch, problem, rain, map-status and task-status binary sensors |
 | `select.py` | Zone select, mow-speed, blade-speed, main-direction mode, high-grass edge-trim mode |
-| `number.py` | Mow height/spacing, edge-cutting distance, main-direction angles/interval (all dp_155 writers) |
+| `number.py` | Mow height/spacing, edge-cutting distance, main-direction angles/interval (dp_155 writers) + the rain-sensor threshold and after-rain resume delay (verified dp_150 writers) |
 | `camera.py` | `TerraMowMapCamera` — entity plumbing for the PNG map: callbacks, caching, attributes; two variants (normal + clean-mode). Delegates all drawing to a `MapRenderer` |
 | `image.py` | `MowReportImage` — the last finished session frozen as a PNG: the map with that session's coverage plus a summary ribbon, rendered once per session from the hub's snapshot |
 | `map_scene.py` | Protocol/geometry layer — pure functions coercing the `ha_map_v1` / `ha_path_v1` dicts into points, polygons and paths, simplifying polylines, and assembling a drawable scene plus render metadata. No PIL |
@@ -55,7 +55,8 @@ The 13 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
 | `map_strings.py` | Localized HUD labels baked into the rendered PNG. They cannot live in `strings.json` (hassfest rejects unknown translation categories), so this in-code table is selected by the HA UI language, with English as the complete fallback |
 | `update.py` | Read-only firmware `UpdateEntity` — real version from dp_102, `in_progress` from dp_107 `is_upgrading`, component versions from dp_129 |
 | `button.py` | Edge-trim start, reset blade timer (dp_126←0), reset base-station timer (dp_125←0) |
-| `switch.py` | Thorough-corner-cutting toggle (writes dp_155) |
+| `switch.py` | Thorough-corner-cutting toggle (writes dp_155) + the cliff/slope-detection and after-rain auto-resume toggles (verified dp_150 writers) and the defogger heater (dp_152) |
+| `light.py` | The mower's illumination lamp as an on/off light (verified dp_152 writer) |
 | `event.py` | Fires HA events on mission phase transitions (started/paused/returning/docked/completed/error) |
 | `calendar.py` | Read-only schedule calendar — full weekly slots (dp_122) when available, else the next scheduled mow (dp_138) |
 | `todo.py` | `MaintenanceTodoList` — the blade / base-station counters as a generated todo list; completing an item publishes the counter reset (dp_126 / dp_125 ← 0) |

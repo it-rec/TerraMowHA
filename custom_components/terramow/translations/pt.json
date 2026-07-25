@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Retoma automática após chuva"
+      },
+      "defogger_heating": {
+        "name": "Defogger aquecimento"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "Relatório de corte"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Iluminação"
       }
     }
   },

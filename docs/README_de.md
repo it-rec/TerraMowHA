@@ -19,6 +19,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 - **Interaktive Kartenkarte** — Vektorkarte des Rasens mit Verschieben/Zoomen für Dashboards: Live-Roboterposition (nach Aktivität eingefärbt, mit Folgemodus), Bedienelemente für Starten / Pausieren / Andocken direkt auf der Karte, Chips für Akku / Auftragsfortschritt / Restzeit, Schattierung der gemähten Fläche mit Fortschritt pro Zone, Mähpfad, Basisstation, Zonen mit Antippen-zum-Mähen, Sperrzonen und virtuelle Wände, aktive Störungen an ihrem Ort markiert sowie eine **WLAN-Heatmap** des Rasens; eine **Ansichtsschaltfläche** wechselt zwischen Beides / Weg / Fläche / WLAN. Theme-fähig, selbstregistrierend, mit UI-Editor (`custom:terramow-map-card`)
 - Taste für Kantenschnitt
 - Einstellungen aus Home Assistant: Mähhöhe, Geschwindigkeit, Bahnabstand, Messerdrehzahl, Kantenschnittabstand, Hauptrichtungsmodus und -winkel, gründliches Eckenmähen, Kantenschnittmodus für hohes Gras
+- **Beleuchtung & Defogger** (dp_152, *standardmäßig deaktiviert*) — die Lampe des Mähers als `light`-Entität und die Defogger-Heizung als Schalter, geschrieben über dieselbe verifizierte Verhandlung
 - **Schreibbare erweiterte Einstellungen** (dp_150, *standardmäßig deaktiviert*) — Schalter für Klippenerkennung, Hangerkennung und Auto-Fortsetzen nach Regen sowie Zahlenwerte für Regensensor-Schwelle und Fortsetzungs-Verzögerung. Das Schreibformat ist undokumentiert, deshalb wird jede Änderung gegen die Rückmeldung des Mähers geprüft und **schlägt sichtbar fehl**, wenn die Firmware sie ignoriert; die schreibgeschützten Diagnose-Sensoren bleiben in jedem Fall erhalten
 - Wartung: Reset-Tasten für die Zähler von Messerteller und Basisstation
 
@@ -70,6 +71,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 | Zahl | Mähhöhe, Kantenschnittabstand, Bahnabstand, Winkel für Einzelrichtung, Intervall für automatische Winkeldrehung, Winkel der ersten / zweiten Richtung. *Konfiguration, standardmäßig aus:* Regensensor-Schwelle, Fortsetzungs-Verzögerung nach Regen |
 | Schalter | Gründliches Eckenmähen. *Konfiguration, standardmäßig aus:* Klippenerkennung, Hangerkennung, Auto-Fortsetzen nach Regen |
 | Taste | Kantenschnitt, Messer-Timer zurücksetzen, Basisstations-Timer zurücksetzen |
+| Licht | Beleuchtungslampe (*standardmäßig aus*) |
 | Update | Firmware-Version |
 | Ereignis | Mäher-Ereignis (Mähen gestartet / pausiert / Rückkehr / angedockt / abgeschlossen / Fehler) |
 | Kalender | Mähzeitplan (nächster geplanter Mähvorgang) |

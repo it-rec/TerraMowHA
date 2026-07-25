@@ -83,7 +83,11 @@
       "thorough_corner_cutting": { "default": "mdi:vector-polyline" },
       "cliff_detection": { "default": "mdi:image-filter-hdr" },
       "slope_detection": { "default": "mdi:angle-acute" },
-      "after_rain_auto_resume": { "default": "mdi:weather-rainy" }
+      "after_rain_auto_resume": { "default": "mdi:weather-rainy" },
+      "defogger_heating": { "default": "mdi:car-defrost-front" }
+    },
+    "light": {
+      "illumination_light": { "default": "mdi:car-light-high" }
     }
   }
 }

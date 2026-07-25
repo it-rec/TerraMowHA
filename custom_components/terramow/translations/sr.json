@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Аутоматски наставак након кише"
+      },
+      "defogger_heating": {
+        "name": "Defogger грејање"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "Извештај о кошењу"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Осветљење"
       }
     }
   },

@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "雨後自動恢復"
+      },
+      "defogger_heating": {
+        "name": "Defogger 加熱"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "割草報告"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "照明"
       }
     }
   },

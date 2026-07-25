@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowConfigEntry
+from .const import ADVANCED_SETTINGS_DP, ENVIRONMENT_INFO_DP
 from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin, safe_write_ha_state
 
@@ -21,9 +22,13 @@ _LOGGER = logging.getLogger(__name__)
 
 @dataclass(frozen=True, kw_only=True)
 class TerraMowAdvancedSwitchEntityDescription(SwitchEntityDescription):
-    """Describes a writable dp_150 advanced setting."""
+    """Describes a writable nested setting inside a reported block."""
 
-    # Path to the boolean inside the dp_150 block, e.g.
+    # Data point carrying the setting (150 = advanced settings, 152 =
+    # environment block).
+    dp_id: int = ADVANCED_SETTINGS_DP
+
+    # Path to the boolean inside that block, e.g.
     # ("enable_cliff_detection", "value").
     path: tuple[str, ...]
 
@@ -55,6 +60,15 @@ ADVANCED_SWITCHES: tuple[TerraMowAdvancedSwitchEntityDescription, ...] = (
         entity_registry_enabled_default=False,
         path=("after_rain_stop_setting", "enable_auto_resume"),
     ),
+    # dp_152 actuator: the windscreen/camera defogger heater.
+    TerraMowAdvancedSwitchEntityDescription(
+        key="defogger_heating",
+        translation_key="defogger_heating",
+        entity_category=EntityCategory.CONFIG,
+        entity_registry_enabled_default=False,
+        dp_id=ENVIRONMENT_INFO_DP,
+        path=("is_defogger_heating",),
+    ),
 )
 
 
@@ -78,14 +92,12 @@ async def async_setup_entry(
 
 
 class AdvancedSettingSwitch(PushUpdateMixin, TerraMowEntity, SwitchEntity):
-    """Toggle for one boolean inside the dp_150 advanced settings block.
+    """Toggle for one boolean inside a reported settings block.
 
     Reads the device's own report and writes through the hub's verified
-    dp_150 negotiation, so a firmware that ignores the write surfaces an
-    error instead of a switch that flips back on the next report.
+    negotiation, so a firmware that ignores the write surfaces an error
+    instead of a switch that flips back on the next report.
     """
-
-    _push_dp_ids = (150,)
 
     entity_description: TerraMowAdvancedSwitchEntityDescription
 
@@ -98,15 +110,17 @@ class AdvancedSettingSwitch(PushUpdateMixin, TerraMowEntity, SwitchEntity):
         super().__init__(basic_data, hass)
         self.entity_description = description
         self._unique_id_suffix = f"setting_{description.key}"
+        self._push_dp_ids = (description.dp_id,)
 
     @property
     def is_on(self) -> bool | None:
         hub = self.hub
-        if not hub or not hub.advanced_settings:
+        if not hub:
             return None
-        value = hub.resolve_advanced_setting(
-            hub.advanced_settings, self.entity_description.path
-        )
+        block = hub.setting_block(self.entity_description.dp_id)
+        if not block:
+            return None
+        value = hub.resolve_setting(block, self.entity_description.path)
         return value if isinstance(value, bool) else None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -120,7 +134,11 @@ class AdvancedSettingSwitch(PushUpdateMixin, TerraMowEntity, SwitchEntity):
         if not hub:
             _LOGGER.error("Lawn mower not available")
             return
-        await hub.async_write_advanced_setting(self.entity_description.path, enabled)
+        description = self.entity_description
+        if description.dp_id == ENVIRONMENT_INFO_DP:
+            await hub.async_write_environment_setting(description.path, enabled)
+        else:
+            await hub.async_write_advanced_setting(description.path, enabled)
         safe_write_ha_state(self)
 
 

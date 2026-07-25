@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Auto-Fortsetzen nach Regen"
+      },
+      "defogger_heating": {
+        "name": "Defogger Heizung"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "Mähbericht"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Beleuchtung"
       }
     }
   },

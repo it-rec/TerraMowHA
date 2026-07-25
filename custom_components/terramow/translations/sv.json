@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Auto-återupptagning efter regn"
+      },
+      "defogger_heating": {
+        "name": "Defogger uppvärmning"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "Klipprapport"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Belysning"
       }
     }
   },

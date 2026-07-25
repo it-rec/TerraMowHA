@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Automaatne jätkamine pärast vihma"
+      },
+      "defogger_heating": {
+        "name": "Defogger küte"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "Niitmisaruanne"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Valgustus"
       }
     }
   },

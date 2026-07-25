@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Αυτόματη συνέχιση μετά τη βροχή"
+      },
+      "defogger_heating": {
+        "name": "Defogger θέρμανση"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "Αναφορά κοπής"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Φωτισμός"
       }
     }
   },

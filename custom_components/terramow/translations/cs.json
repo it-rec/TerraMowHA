@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Auto. pokračování po dešti"
+      },
+      "defogger_heating": {
+        "name": "Defogger ohřev"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "Zpráva o sečení"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Osvětlení"
       }
     }
   },

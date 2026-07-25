@@ -256,9 +256,7 @@ async def test_verification_ignores_unrelated_and_malformed_reports(
     """Only a report carrying the requested value ends the wait."""
     path = ("enable_slope_detection", "value")
 
-    task = asyncio.create_task(
-        hub._async_await_advanced_setting(path, True, timeout=5)
-    )
+    task = asyncio.create_task(hub._async_await_setting(150, path, True, timeout=5))
     await asyncio.sleep(0)  # let the wait register its callback
 
     # Drive the wait's own callback directly: delivering through the MQTT
@@ -280,8 +278,8 @@ async def test_verification_ignores_unrelated_and_malformed_reports(
 async def test_verification_times_out_without_a_matching_report(
     hub: TerraMowHub,
 ) -> None:
-    assert not await hub._async_await_advanced_setting(
-        ("enable_slope_detection", "value"), True, timeout=0.01
+    assert not await hub._async_await_setting(
+        150, ("enable_slope_detection", "value"), True, timeout=0.01
     )
 
 
@@ -317,14 +315,14 @@ async def test_write_is_rate_limited_like_every_other_command(
         ("scalar", {"hours": 0}, True),  # non-dict report, all-falsy request
     ],
 )
-def test_advanced_value_matches(reported: Any, expected: Any, matches: bool) -> None:
-    assert TerraMowHub.advanced_value_matches(reported, expected) is matches
+def test_setting_value_matches(reported: Any, expected: Any, matches: bool) -> None:
+    assert TerraMowHub.setting_value_matches(reported, expected) is matches
 
 
-def test_resolve_advanced_setting_walks_missing_nodes() -> None:
-    assert TerraMowHub.resolve_advanced_setting(REPORTED, ("nope", "value")) is None
+def test_resolve_setting_walks_missing_nodes() -> None:
+    assert TerraMowHub.resolve_setting(REPORTED, ("nope", "value")) is None
     assert (
-        TerraMowHub.resolve_advanced_setting(
+        TerraMowHub.resolve_setting(
             REPORTED, ("rain_sensor_threshold", "upper_limit", "deeper")
         )
         is None

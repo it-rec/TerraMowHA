@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Auto-hervatten na regen"
+      },
+      "defogger_heating": {
+        "name": "Defogger verwarming"
       }
     },
     "number": {
@@ -528,6 +531,11 @@
     "image": {
       "mow_report": {
         "name": "Maairapport"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Verlichting"
       }
     }
   },
