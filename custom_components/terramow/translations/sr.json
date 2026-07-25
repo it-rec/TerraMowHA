@@ -336,6 +336,9 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi сигнал"
+      },
+      "zone_last_mowed": {
+        "name": "{zone} последње кошење"
       }
     },
     "camera": {

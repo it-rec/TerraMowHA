@@ -180,3 +180,9 @@ DEFAULT_GPS_HEADING = 0.0
 # the mower has moved this far, or after this long.
 GPS_MIN_MOVE_METERS = 1.0
 GPS_MIN_INTERVAL_SECONDS = 10.0
+
+# Per-zone "last mowed" tracking. The mower's pose arrives at ~2 Hz; checking
+# which zone it stands in that often is pointless, so presence is sampled on
+# this interval. A zone's stamp is the last time the mower was observed inside
+# it — a fact the device reported, not an inferred mowing schedule.
+ZONE_PRESENCE_SAMPLE_SECONDS = 5.0

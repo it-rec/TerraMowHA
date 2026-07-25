@@ -71,7 +71,10 @@ def _feed(handler, payload: dict) -> None:
 def test_async_setup_entry_creates_all_sensors() -> None:
     hub = _hub()
     added: list = []
-    entry = SimpleNamespace(entry_id="e1", runtime_data=hub.basic_data)
+    # async_on_unload: the zone sensors hand their map subscription to it.
+    entry = SimpleNamespace(
+        entry_id="e1", runtime_data=hub.basic_data, async_on_unload=lambda unsub: None
+    )
     asyncio.run(async_setup_entry(hub.hass, entry, added.extend))
     # base + map + params + statistics + maintenance + schedule + version +
     # main-direction + power + task/mission sensors

@@ -48,9 +48,8 @@ from .map_scene import (
     ScenePathCache,
     build_scene,
     coerce_angle_radians,
+    coverage_ratios_for_zones,
     normalize_angle_radians,
-    point_in_polygon,
-    polygon_area,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -353,51 +352,19 @@ def _zone_direction_angles(map_data: dict[str, Any]) -> dict[int, Any]:
 def _zone_coverage_ratios(scene: dict[str, Any]) -> dict[int, float]:
     """Per-zone mowed fraction from the cycle coverage segments (#197).
 
-    Approximation: a segment edge counts for the zone its midpoint lies in;
-    covered area is edge length x cutting width, capped at the zone area
-    (stripe overlap and edge laps push the raw product past 100 %).
+    Thin wrapper: the maths lives in map_scene so the card and the per-zone
+    sensors cannot drift apart. The scene already carries each zone's
+    boundary as tuples, so no re-extraction is needed here.
     """
-    segments = scene["session_path_segments"]
-    if not segments:
-        return {}
-    # Precompute each edge's midpoint + length ONCE (was recomputed per zone).
-    edges: list[tuple[float, float, float]] = []
-    for segment in segments:
-        pts = [(point["x"], point["y"]) for point in segment]
-        for a, b in zip(pts, pts[1:], strict=False):
-            edges.append((
-                (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, math.dist(a, b),
-            ))
-    if not edges:
-        return {}
-    ratios: dict[int, float] = {}
-    for region in scene["regions"]:
-        for sub in region["sub_regions"]:
-            zone_id = sub["id"]
-            boundary = sub["boundary"]
-            if zone_id is None or len(boundary) < 3:
-                continue
-            area = polygon_area(boundary)
-            if area <= 0:
-                continue
-            # Cheap bounding-box reject before the O(V) point-in-polygon test:
-            # on a multi-zone lawn most edges fall outside most zones, so this
-            # turns the O(edges x zones x verts) hot loop into roughly O(edges).
-            xs = [p[0] for p in boundary]
-            ys = [p[1] for p in boundary]
-            min_x, max_x = min(xs), max(xs)
-            min_y, max_y = min(ys), max(ys)
-            covered = 0.0
-            for mx, my, length in edges:
-                if mx < min_x or mx > max_x or my < min_y or my > max_y:
-                    continue
-                if point_in_polygon((mx, my), boundary):
-                    covered += length
-            if covered > 0:
-                ratios[zone_id] = round(
-                    min(1.0, covered * CUTTING_WIDTH_MM / area), 3
-                )
-    return ratios
+    zones = [
+        (sub["id"], sub["boundary"])
+        for region in scene["regions"]
+        for sub in region["sub_regions"]
+        if sub["id"] is not None
+    ]
+    return coverage_ratios_for_zones(
+        zones, scene["session_path_segments"], CUTTING_WIDTH_MM
+    )
 
 
 def build_scene_payload(

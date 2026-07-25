@@ -30,6 +30,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 - **Störungssensor** — die aktive Störung als lesbarer Text (z. B. *Mäher steckengeblieben*, *Mäher angehoben* oder *OK*), sodass eine Benachrichtigung oder ein Sprachassistent das Problem benennen kann, ohne ein Attribut per Template auszuwerten
 - Sensor für den laufenden Auftrag (hält die aktive Mission auch über Lücken im Heartbeat hinweg) und ein Sensor für die WLAN-Signalstärke des Mähers
 - **Saison-Heatmap** — eine Kartenansicht (`Saison`), die einfärbt, wie viele *abgeschlossene Zyklen* jede Rasenstelle erreicht haben. Ein Streifen, den der Mäher jeden zweiten Lauf auslässt, sieht in einem einzelnen Zyklus unauffällig aus und wird erst durch das Stapeln sichtbar; blass heißt selten erreicht. Jeder Zyklus zählt pro Zelle einmal, egal wie oft er durchgefahren ist, bleibt über Neustarts erhalten und wird beim Kartenwechsel zurückgesetzt
+- **Pro Zone "zuletzt gemäht"** — ein Zeitstempel-Sensor je Kartenzone, gesetzt beim letzten Mal, an dem der Mäher *in* dieser Zone gemeldet wurde, mit der Abdeckung des laufenden Zyklus als Attribut. Macht "die Terrasse wurde seit zehn Tagen nicht gemäht" zum Automatisierungs-Trigger
 - Karte: Status, Fläche, Flags für erkannt / erstellbar / Sicherung läuft
 - Zeitplan: Sensor für den nächsten geplanten Start und ein schreibgeschützter **Mähzeitplan-Kalender** (der nächste Mähvorgang erscheint auf der Kalenderkarte)
 - Firmware-Update-Entität, Firmware-Version auf der Geräteseite und Sensor für die Versionskompatibilität
