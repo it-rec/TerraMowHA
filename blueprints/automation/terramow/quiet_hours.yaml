@@ -1,0 +1,148 @@
+blueprint:
+  name: TerraMow – Quiet hours
+  description: >
+    Send the mower home when quiet hours start, and let it carry on when they
+    end.
+
+    Robotic mowers are quiet, not silent, and most places have hours where
+    that distinction stops mattering to the neighbours — as well as legally
+    protected quiet periods in some countries. This docks the mower at the
+    start of the window and resumes it afterwards, but only if it was actually
+    mowing when the window began: a mower that had already finished, or that
+    you parked yourself, is left alone.
+
+    Setup: create an `input_boolean` helper and select it below. It remembers
+    that *this* automation interrupted a mow, which is the difference between
+    resuming a job and starting an unwanted one at breakfast.
+  domain: automation
+  source_url: https://github.com/it-rec/TerraMowHA/blob/main/blueprints/automation/terramow/quiet_hours.yaml
+  input:
+    mower:
+      name: Mower
+      description: The TerraMow lawn mower entity.
+      selector:
+        entity:
+          filter:
+            - integration: terramow
+              domain: lawn_mower
+    interrupted_helper:
+      name: "\"Interrupted\" helper"
+      description: >
+        An input_boolean remembering that quiet hours cut a mow short. Create
+        it first; nothing else should write to it.
+      selector:
+        entity:
+          filter:
+            - domain: input_boolean
+    quiet_start:
+      name: Quiet hours start
+      description: When the mower should head back to its dock.
+      default: "20:00:00"
+      selector:
+        time: {}
+    quiet_end:
+      name: Quiet hours end
+      description: When mowing may resume.
+      default: "08:00:00"
+      selector:
+        time: {}
+    resume_after:
+      name: Resume when quiet hours end
+      description: >
+        Send the mower back out at the end of the window if quiet hours cut
+        its job short. Turn this off to only ever dock it.
+      default: true
+      selector:
+        boolean: {}
+    weekdays:
+      name: Weekdays
+      description: Days the quiet window applies to.
+      default:
+        - mon
+        - tue
+        - wed
+        - thu
+        - fri
+        - sat
+        - sun
+      selector:
+        select:
+          multiple: true
+          options:
+            - label: Monday
+              value: mon
+            - label: Tuesday
+              value: tue
+            - label: Wednesday
+              value: wed
+            - label: Thursday
+              value: thu
+            - label: Friday
+              value: fri
+            - label: Saturday
+              value: sat
+            - label: Sunday
+              value: sun
+
+mode: queued
+max: 3
+max_exceeded: silent
+
+variables:
+  mower: !input mower
+  interrupted_helper: !input interrupted_helper
+  resume_after: !input resume_after
+
+trigger:
+  - platform: time
+    at: !input quiet_start
+    id: quiet_start
+  - platform: time
+    at: !input quiet_end
+    id: quiet_end
+
+condition:
+  - condition: time
+    weekday: !input weekdays
+
+action:
+  - choose:
+      # Quiet hours begin: dock, but only if there is something to interrupt,
+      # and record that we were the ones who did it.
+      - conditions:
+          - condition: trigger
+            id: quiet_start
+          - condition: template
+            value_template: "{{ is_state(mower, 'mowing') }}"
+        sequence:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: !input interrupted_helper
+          - service: lawn_mower.dock
+            target:
+              entity_id: !input mower
+      # Quiet hours end: resume only the job this automation interrupted.
+      - conditions:
+          - condition: trigger
+            id: quiet_end
+          - condition: template
+            value_template: "{{ resume_after }}"
+          - condition: state
+            entity_id: !input interrupted_helper
+            state: "on"
+        sequence:
+          - service: lawn_mower.start_mowing
+            target:
+              entity_id: !input mower
+          - service: input_boolean.turn_off
+            target:
+              entity_id: !input interrupted_helper
+      # Quiet hours end with resuming switched off: clear the flag anyway, so
+      # it cannot resume a days-old job the next morning.
+      - conditions:
+          - condition: trigger
+            id: quiet_end
+        sequence:
+          - service: input_boolean.turn_off
+            target:
+              entity_id: !input interrupted_helper
