@@ -42,7 +42,7 @@ from homeassistant.helpers import entity_registry as er
 
 from .const import DOMAIN
 from .error_codes import describe_error
-from .hub import WIFI_CELL_MM, TerraMowHub
+from .hub import MOW_COUNT_CELL_MM, WIFI_CELL_MM, TerraMowHub
 from .map_render import CUTTING_WIDTH_MM
 from .map_scene import (
     ScenePathCache,
@@ -58,7 +58,7 @@ _LOGGER = logging.getLogger(__name__)
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.29.0"
+CARD_VERSION = "1.30.0"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -578,6 +578,22 @@ def build_scene_payload(
                 for spot in hub.fault_hotspots
             ]
             or None
+        ),
+        # Season heatmap: how many finished cycles reached each cell. Stacking
+        # cycles is what makes a patch the mower keeps skipping visible — any
+        # single cycle looks fine. None until a cycle has finished. Rides the
+        # geometry channel on purpose: unlike the Wi-Fi grid it changes only
+        # at the end of a cycle, so a full push then costs nothing.
+        "mow_counts": (
+            {
+                "cell_mm": MOW_COUNT_CELL_MM,
+                "max": max(hub.mow_counts.values()),
+                "cells": [
+                    [gx, gy, count] for (gx, gy), count in hub.mow_counts.items()
+                ],
+            }
+            if hub.mow_counts
+            else None
         ),
     }
     # Bounds over the static geometry only — NOT the paths. A growing path

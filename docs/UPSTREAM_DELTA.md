@@ -40,8 +40,10 @@ synced point are already covered by the fork:
   mode, per-zone stripe-direction indicators, long-press for a zone's mow
   settings, trapped / maintenance / passage markers, a layer legend,
   camera-parity badges, a stale-map chip, two-finger rotate with a compass
-  reset, keyboard zone cycling, a session replay scrubber, and a card editor
-  with rotation presets and a "use current rotation" capture. It also carries a
+  reset, keyboard zone cycling, a session replay scrubber, a season heatmap
+  view (finished cycles per cell, revealing systematically missed patches),
+  and a card editor with rotation presets and a "use current rotation"
+  capture. It also carries a
   **Wi-Fi heatmap** of the lawn (self-sampled from dp_109 as the mower drives,
   gap-filled between mow passes), a **view-mode button** cycling
   Both / Path / Area / Wi-Fi with the choice remembered per entity, per-zone
