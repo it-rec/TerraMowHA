@@ -509,6 +509,11 @@
       "maintenance": {
         "name": "Huolto"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Leikkuuraportti"
+      }
     }
   },
   "services": {
