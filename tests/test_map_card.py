@@ -1228,3 +1228,87 @@ async def test_zone_coverage_recompute_is_throttled(hass: HomeAssistant) -> None
         build_scene_payload(hub)
         build_scene_payload(hub)
         assert zc.call_count == 2
+
+
+async def test_unchanged_robot_event_is_not_pushed(hass: HomeAssistant) -> None:
+    """A repeated pose report costs no WebSocket message.
+
+    The pose arrives at ~2 Hz even while the mower sits docked, and dp_108/8/113
+    report on their own schedule; without this gate every open card received two
+    identical events a second forever.
+    """
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    hub._apply_map_data(MAP_DATA)
+
+    connection = MagicMock()
+    feed = map_card._MapFeed(hass, connection, 1, hub)
+
+    pose = {"x": 1000.0, "y": 2000.0, "yaw": 0.5}
+    hub._pose = pose
+    feed._push_robot()
+    assert connection.send_message.call_count == 1
+
+    # The same pose reported again — nothing to redraw, nothing to send.
+    feed._push_robot()
+    feed._push_robot()
+    assert connection.send_message.call_count == 1
+
+    # A moved mower pushes again.
+    hub._pose = {"x": 1100.0, "y": 2000.0, "yaw": 0.5}
+    feed._push_robot()
+    assert connection.send_message.call_count == 2
+
+    # So does an unchanged pose whose HUD chips changed (battery level).
+    hub._battery_level = 42
+    feed._push_robot()
+    assert connection.send_message.call_count == 3
+
+
+async def test_geometry_digest_tracks_geometry_not_paths(
+    hass: HomeAssistant,
+) -> None:
+    """The digest ignores the streamed channels and follows everything else."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    hub._apply_map_data(MAP_DATA)
+    hub._apply_path_data(PATH_DATA)
+
+    first = build_scene_payload(hub)
+
+    # A growing path must NOT change the digest — that is what keeps a mowing
+    # tick a tail-append delta instead of a full scene push.
+    grown = dict(PATH_DATA)
+    grown["points"] = [
+        *PATH_DATA["points"],
+        {"position": {"x": 1500, "y": 1600}, "type": "PATH_POINT_TYPE_CLEANING"},
+    ]
+    hub._apply_path_data(grown)
+    second = build_scene_payload(hub)
+    assert second["current_path"] != first["current_path"]
+    assert second[map_card.GEOMETRY_REV_KEY] == first[map_card.GEOMETRY_REV_KEY]
+
+    # A changed zone name is geometry: the digest moves.
+    renamed = json.loads(json.dumps(MAP_DATA))
+    renamed["regions"][0]["sub_regions"][0]["name"] = "Back lawn"
+    hub._apply_map_data(renamed)
+    third = build_scene_payload(hub)
+    assert third[map_card.GEOMETRY_REV_KEY] != first[map_card.GEOMETRY_REV_KEY]
+
+
+async def test_geometry_digest_is_stable_across_equal_payloads(
+    hass: HomeAssistant,
+) -> None:
+    """Two builds of an unchanged scene agree, so no full push is emitted."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    hub._apply_map_data(MAP_DATA)
+    hub._apply_path_data(PATH_DATA)
+
+    assert (
+        build_scene_payload(hub)[map_card.GEOMETRY_REV_KEY]
+        == build_scene_payload(hub)[map_card.GEOMETRY_REV_KEY]
+    )

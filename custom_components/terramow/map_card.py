@@ -17,6 +17,8 @@ world-to-screen transform client-side (pan/zoom without re-fetching).
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
 import logging
 import math
 import time
@@ -71,6 +73,15 @@ CARD_RESOURCE_TYPE = "js"
 CARD_URL_PATH = "/terramow-frontend/terramow-map-card.js"
 
 WS_SUBSCRIBE_MAP = "terramow/map/subscribe"
+
+# The two payload keys that stream as tail-appends; excluded from the
+# geometry digest so a growing path is a delta, not a full scene push.
+_PATH_KEYS = ("current_path", "history_path")
+
+# Where the digest rides in the scene payload. Present on the wire too — a
+# 32-character string the card ignores — so a cached scene replayed to a new
+# subscription carries its fingerprint with it.
+GEOMETRY_REV_KEY = "geometry_rev"
 
 # Map/path/history pushes can land in a burst (one mowing tick updates all
 # three channels); collapse them into a single scene push.
@@ -550,7 +561,32 @@ def build_scene_payload(
     payload["content_bounds"] = (
         _geometry_bounds(payload, include_extent=False) or payload["bounds"]
     )
+    # Computed last, over everything above it, so _emit_scene can compare a
+    # string instead of deep-walking the geometry on the event loop.
+    payload[GEOMETRY_REV_KEY] = _geometry_digest(payload)
     return payload
+
+
+def _geometry_digest(payload: dict[str, Any]) -> str:
+    """Fingerprint the payload's non-path, non-heatmap content.
+
+    ``_emit_scene`` decides between a full scene push and a tail-append delta
+    by asking whether anything outside the two path lists and the Wi-Fi heatmap
+    changed. That used to be a deep equality check over the whole geometry —
+    every polygon of every zone — run on the event loop, once per subscribed
+    feed, on every scene build.
+
+    Computing one digest here instead moves that walk into the executor build
+    (where the payload is assembled anyway) and shares it across every feed of
+    the hub, leaving each feed a string comparison.
+    """
+    geometry = {
+        key: value
+        for key, value in payload.items()
+        if key not in _PATH_KEYS and key != "wifi_heatmap"
+    }
+    encoded = json.dumps(geometry, sort_keys=True, separators=(",", ":"))
+    return hashlib.blake2b(encoded.encode(), digest_size=16).hexdigest()
 
 
 def _geometry_bounds(
@@ -750,9 +786,14 @@ class _MapFeed:
         self._scene_timer: Any | None = None
         # Last pushed scene, split for delta detection: everything except the
         # two path lists, and the path lists themselves.
-        self._last_geometry: dict[str, Any] | None = None
+        # Digest of the last pushed geometry (see GEOMETRY_REV_KEY) rather than
+        # the geometry itself: comparing it is a string compare instead of a
+        # deep walk of every polygon on the event loop.
+        self._last_geometry_rev: str | None = None
         self._last_paths: dict[str, list[list[int]]] = {}
         self._last_wifi: dict[str, Any] | None = None
+        # Last robot/status event pushed, so unchanged repeats are dropped.
+        self._last_robot_event: dict[str, Any] | None = None
         # Scene building is CPU-heavy (polygon coverage math); it runs in an
         # executor thread. These coalesce overlapping rebuilds so a burst of
         # source callbacks never stacks up more than one pending build.
@@ -874,20 +915,16 @@ class _MapFeed:
         # Delta detection: during mowing the only thing that usually changes
         # is the path growing at the tail. Sending just the appended points
         # keeps the per-update payload tiny on large lawns.
-        paths = {
-            "current_path": payload["current_path"],
-            "history_path": payload["history_path"],
-        }
+        paths = {key: payload[key] for key in _PATH_KEYS}
         # The Wi-Fi heatmap changes on nearly every mowing tick, so it rides
         # its own delta channel (like the paths) — including it in the
         # geometry comparison would turn every append push into a full scene.
         wifi = payload.get("wifi_heatmap")
-        geometry = {
-            key: value
-            for key, value in payload.items()
-            if key not in paths and key != "wifi_heatmap"
-        }
-        if self._last_geometry == geometry:
+        # The digest was computed once, in the executor, over exactly the keys
+        # excluded here; comparing it beats deep-walking the geometry per feed
+        # on the event loop (see _geometry_digest).
+        geometry_rev = payload[GEOMETRY_REV_KEY]
+        if self._last_geometry_rev == geometry_rev:
             appends: dict[str, Any] = {}
             is_delta = True
             for key, new_points in paths.items():
@@ -914,7 +951,7 @@ class _MapFeed:
                     )
                 return  # nothing changed at all — push nothing
 
-        self._last_geometry = geometry
+        self._last_geometry_rev = geometry_rev
         self._last_paths = paths
         self._last_wifi = wifi
         self.connection.send_message(
@@ -923,16 +960,25 @@ class _MapFeed:
 
     @callback
     def _push_robot(self) -> None:
-        self.connection.send_message(
-            event_message(
-                self.msg_id,
-                {
-                    "type": "robot",
-                    "robot": build_robot_payload(self.hub),
-                    **build_status_payload(self.hub),
-                },
-            )
-        )
+        """Push the robot pose and HUD chips, skipping unchanged repeats.
+
+        The sources behind this event — the realtime pose plus dp_108/8/113 —
+        report on their own schedule regardless of whether anything moved: the
+        pose arrives at ~2 Hz even while the mower sits docked. Sending the
+        resulting event unconditionally meant every open card received two
+        WebSocket messages a second forever, each re-rendering the same pose
+        and the same chips. Only a changed event is worth a push; the camera
+        entity has always gated its pose handling the same way.
+        """
+        event = {
+            "type": "robot",
+            "robot": build_robot_payload(self.hub),
+            **build_status_payload(self.hub),
+        }
+        if event == self._last_robot_event:
+            return
+        self._last_robot_event = event
+        self.connection.send_message(event_message(self.msg_id, event))
 
 
 @websocket_command(
