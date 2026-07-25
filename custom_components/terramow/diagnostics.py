@@ -81,6 +81,9 @@ async def async_get_config_entry_diagnostics(
         },
         # Last dp_119 command acknowledgement (seq + code).
         "last_command_ack": unknown["last_command_ack"],
+        # Redelivered MQTT messages dropped per topic (the broker fanning one
+        # publish out across the overlapping "#" and specific subscriptions).
+        "duplicate_deliveries": unknown["duplicate_deliveries"],
         # App-direction data-point writes captured since the last restart —
         # the source material for documenting undocumented write formats
         # (e.g. the dp_122 schedule ADD/DELETE). Includes echoes of our own

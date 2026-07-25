@@ -17,12 +17,15 @@ world-to-screen transform client-side (pan/zoom without re-fetching).
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import json
 import logging
 import math
 import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
+from weakref import WeakKeyDictionary
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
@@ -72,6 +75,15 @@ CARD_URL_PATH = "/terramow-frontend/terramow-map-card.js"
 
 WS_SUBSCRIBE_MAP = "terramow/map/subscribe"
 
+# The two payload keys that stream as tail-appends; excluded from the
+# geometry digest so a growing path is a delta, not a full scene push.
+_PATH_KEYS = ("current_path", "history_path")
+
+# Where the digest rides in the scene payload. Present on the wire too — a
+# 32-character string the card ignores — so a cached scene replayed to a new
+# subscription carries its fingerprint with it.
+GEOMETRY_REV_KEY = "geometry_rev"
+
 # Map/path/history pushes can land in a burst (one mowing tick updates all
 # three channels); collapse them into a single scene push.
 SCENE_PUSH_DEBOUNCE = 0.2
@@ -80,28 +92,41 @@ SCENE_PUSH_DEBOUNCE = 0.2
 # for this long (path + robot still update live) so a viewed card stays cheap.
 COVERAGE_RECOMPUTE_INTERVAL = 12.0
 
-# The coverage cache is keyed per hub (not per subscription), so re-opening the
-# map dashboard — or viewing it on several devices at once — reuses the last
-# computed per-zone coverage instead of recomputing the O(edges x zones) result
-# from scratch each time. Keyed by id(hub); a reloaded hub simply gets a fresh
-# entry and the stale one (a tiny dict) is orphaned.
-_HUB_COVERAGE_CACHES: dict[int, dict[str, Any]] = {}
+# Per-hub caches shared across every card subscription of one mower.
+#
+# All three are keyed by the hub OBJECT in a WeakKeyDictionary, not by id(hub).
+# id() keys leaked: nothing ever removed an entry, so every config-entry reload
+# stranded a full scene payload (megabytes on a large lawn) for the lifetime of
+# the Home Assistant process. Worse, CPython reuses id() values once an object
+# is collected, so a freshly created hub could inherit the previous hub's cached
+# scene and make a card paint the wrong map. Weak keys fix both: an entry is
+# dropped as soon as its hub is collected, and an object key cannot be aliased.
+
+# Throttles the expensive per-zone coverage math (O(edges x zones)) so that
+# re-opening the map dashboard — or viewing it on several devices at once —
+# reuses the last computed result instead of recomputing it from scratch.
+_HUB_COVERAGE_CACHES: WeakKeyDictionary[TerraMowHub, dict[str, Any]] = (
+    WeakKeyDictionary()
+)
 
 # Last fully-built scene payload per hub. A fresh subscription (initial load, or
 # a mobile view-swipe that recreates the card element) pushes this immediately
 # so the card paints the known map at once, instead of blanking to "Waiting for
 # mower data…" while the heavy build_scene_payload runs in the executor. The
 # background rebuild that follows sends a delta (or a fresh scene) moments later.
-# Keyed by id(hub); a reloaded hub gets a fresh entry and orphans the old one.
-_HUB_SCENE_CACHES: dict[int, dict[str, Any]] = {}
+_HUB_SCENE_CACHES: WeakKeyDictionary[TerraMowHub, dict[str, Any]] = (
+    WeakKeyDictionary()
+)
 
 # In-flight scene build per hub. When several cards view the same mower, their
 # feeds get the same source callbacks at the same tick and would each run the
 # heavy build_scene_payload in the executor — identical work N times over. They
 # now share one build task per hub (each feed still emits its own delta), so N
-# simultaneous viewers cost one build, not N. Keyed by id(hub); the entry holds
-# a finished task between builds and is replaced on the next one.
-_HUB_BUILD_TASKS: dict[int, asyncio.Task[dict[str, Any]]] = {}
+# simultaneous viewers cost one build, not N. The entry holds a finished task
+# between builds and is replaced on the next one.
+_HUB_BUILD_TASKS: WeakKeyDictionary[TerraMowHub, asyncio.Task[dict[str, Any]]] = (
+    WeakKeyDictionary()
+)
 
 _DATA_SETUP_DONE = f"{DOMAIN}_map_card_setup"
 
@@ -550,7 +575,32 @@ def build_scene_payload(
     payload["content_bounds"] = (
         _geometry_bounds(payload, include_extent=False) or payload["bounds"]
     )
+    # Computed last, over everything above it, so _emit_scene can compare a
+    # string instead of deep-walking the geometry on the event loop.
+    payload[GEOMETRY_REV_KEY] = _geometry_digest(payload)
     return payload
+
+
+def _geometry_digest(payload: dict[str, Any]) -> str:
+    """Fingerprint the payload's non-path, non-heatmap content.
+
+    ``_emit_scene`` decides between a full scene push and a tail-append delta
+    by asking whether anything outside the two path lists and the Wi-Fi heatmap
+    changed. That used to be a deep equality check over the whole geometry —
+    every polygon of every zone — run on the event loop, once per subscribed
+    feed, on every scene build.
+
+    Computing one digest here instead moves that walk into the executor build
+    (where the payload is assembled anyway) and shares it across every feed of
+    the hub, leaving each feed a string comparison.
+    """
+    geometry = {
+        key: value
+        for key, value in payload.items()
+        if key not in _PATH_KEYS and key != "wifi_heatmap"
+    }
+    encoded = json.dumps(geometry, sort_keys=True, separators=(",", ":"))
+    return hashlib.blake2b(encoded.encode(), digest_size=16).hexdigest()
 
 
 def _geometry_bounds(
@@ -750,9 +800,14 @@ class _MapFeed:
         self._scene_timer: Any | None = None
         # Last pushed scene, split for delta detection: everything except the
         # two path lists, and the path lists themselves.
-        self._last_geometry: dict[str, Any] | None = None
+        # Digest of the last pushed geometry (see GEOMETRY_REV_KEY) rather than
+        # the geometry itself: comparing it is a string compare instead of a
+        # deep walk of every polygon on the event loop.
+        self._last_geometry_rev: str | None = None
         self._last_paths: dict[str, list[list[int]]] = {}
         self._last_wifi: dict[str, Any] | None = None
+        # Last robot/status event pushed, so unchanged repeats are dropped.
+        self._last_robot_event: dict[str, Any] | None = None
         # Scene building is CPU-heavy (polygon coverage math); it runs in an
         # executor thread. These coalesce overlapping rebuilds so a burst of
         # source callbacks never stacks up more than one pending build.
@@ -761,7 +816,7 @@ class _MapFeed:
         # Throttles the expensive per-zone coverage recompute across pushes, and
         # is shared per hub so re-opening the card (or another device viewing it)
         # reuses the last result instead of recomputing it from scratch.
-        self._coverage_cache = _HUB_COVERAGE_CACHES.setdefault(id(hub), {})
+        self._coverage_cache = _HUB_COVERAGE_CACHES.setdefault(hub, {})
         # Reuse path point extraction across pushes: the history path source is
         # re-fetched rarely, so re-parsing its full point list on every mowing
         # tick is wasted work (identity-keyed, so a new source dict re-parses).
@@ -784,7 +839,7 @@ class _MapFeed:
         # Paint instantly from the last known scene (if any card has rendered
         # this hub before), then schedule the authoritative rebuild which sends
         # a delta or a fresh scene once it completes.
-        cached = _HUB_SCENE_CACHES.get(id(self.hub))
+        cached = _HUB_SCENE_CACHES.get(self.hub)
         if cached is not None:
             self._emit_scene(cached)
         self._schedule_scene_build()
@@ -848,11 +903,10 @@ class _MapFeed:
         it is running await the same task instead of launching their own. Each
         still emits its own delta from the shared payload.
         """
-        key = id(self.hub)
-        task = _HUB_BUILD_TASKS.get(key)
+        task = _HUB_BUILD_TASKS.get(self.hub)
         if task is None or task.done():
             task = self.hass.async_create_task(self._run_scene_build())
-            _HUB_BUILD_TASKS[key] = task
+            _HUB_BUILD_TASKS[self.hub] = task
         return await task
 
     async def _run_scene_build(self) -> dict[str, Any]:
@@ -866,7 +920,7 @@ class _MapFeed:
         )
         # Remember the freshest full scene so the next subscription can paint it
         # immediately (see start()).
-        _HUB_SCENE_CACHES[id(self.hub)] = payload
+        _HUB_SCENE_CACHES[self.hub] = payload
         return payload
 
     @callback
@@ -874,20 +928,16 @@ class _MapFeed:
         # Delta detection: during mowing the only thing that usually changes
         # is the path growing at the tail. Sending just the appended points
         # keeps the per-update payload tiny on large lawns.
-        paths = {
-            "current_path": payload["current_path"],
-            "history_path": payload["history_path"],
-        }
+        paths = {key: payload[key] for key in _PATH_KEYS}
         # The Wi-Fi heatmap changes on nearly every mowing tick, so it rides
         # its own delta channel (like the paths) — including it in the
         # geometry comparison would turn every append push into a full scene.
         wifi = payload.get("wifi_heatmap")
-        geometry = {
-            key: value
-            for key, value in payload.items()
-            if key not in paths and key != "wifi_heatmap"
-        }
-        if self._last_geometry == geometry:
+        # The digest was computed once, in the executor, over exactly the keys
+        # excluded here; comparing it beats deep-walking the geometry per feed
+        # on the event loop (see _geometry_digest).
+        geometry_rev = payload[GEOMETRY_REV_KEY]
+        if self._last_geometry_rev == geometry_rev:
             appends: dict[str, Any] = {}
             is_delta = True
             for key, new_points in paths.items():
@@ -914,7 +964,7 @@ class _MapFeed:
                     )
                 return  # nothing changed at all — push nothing
 
-        self._last_geometry = geometry
+        self._last_geometry_rev = geometry_rev
         self._last_paths = paths
         self._last_wifi = wifi
         self.connection.send_message(
@@ -923,16 +973,25 @@ class _MapFeed:
 
     @callback
     def _push_robot(self) -> None:
-        self.connection.send_message(
-            event_message(
-                self.msg_id,
-                {
-                    "type": "robot",
-                    "robot": build_robot_payload(self.hub),
-                    **build_status_payload(self.hub),
-                },
-            )
-        )
+        """Push the robot pose and HUD chips, skipping unchanged repeats.
+
+        The sources behind this event — the realtime pose plus dp_108/8/113 —
+        report on their own schedule regardless of whether anything moved: the
+        pose arrives at ~2 Hz even while the mower sits docked. Sending the
+        resulting event unconditionally meant every open card received two
+        WebSocket messages a second forever, each re-rendering the same pose
+        and the same chips. Only a changed event is worth a push; the camera
+        entity has always gated its pose handling the same way.
+        """
+        event = {
+            "type": "robot",
+            "robot": build_robot_payload(self.hub),
+            **build_status_payload(self.hub),
+        }
+        if event == self._last_robot_event:
+            return
+        self._last_robot_event = event
+        self.connection.send_message(event_message(self.msg_id, event))
 
 
 @websocket_command(
