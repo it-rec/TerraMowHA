@@ -26,6 +26,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 - Akku: Ladestand, Ladezustand, Temperaturzustand, Ladegerät verbunden, Netzschalter
 - Auftragsfortschritt: Fläche der aktuellen Sitzung, Fortschritt (%), Dauer und Auftragstyp; Gesamtmähzeit, Auftragsanzahl und gemähte Fläche
 - Status: Mission / Untermission / Missionszustand, Betriebsmodus, Leistungsmodus, Grund für die Rückkehr zur Station, Regenerkennung, Problemanzeige, Anzeigen für Datenspeicherung und Datenkonvertierung
+- **Saison-Heatmap** — eine Kartenansicht (`Saison`), die einfärbt, wie viele *abgeschlossene Zyklen* jede Rasenstelle erreicht haben. Ein Streifen, den der Mäher jeden zweiten Lauf auslässt, sieht in einem einzelnen Zyklus unauffällig aus und wird erst durch das Stapeln sichtbar; blass heißt selten erreicht. Jeder Zyklus zählt pro Zelle einmal, egal wie oft er durchgefahren ist, bleibt über Neustarts erhalten und wird beim Kartenwechsel zurückgesetzt
 - Karte: Status, Fläche, Flags für erkannt / erstellbar / Sicherung läuft
 - Zeitplan: nächster geplanter Start
 - Firmware-Update-Entität, Firmware-Version auf der Geräteseite und Sensor für die Versionskompatibilität

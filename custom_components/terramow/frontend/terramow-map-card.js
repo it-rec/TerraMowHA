@@ -49,12 +49,12 @@ const CARD_TAG = "terramow-map-card";
 /* Keys: no_map, not_connected, start, clear, zone, zones, reset_view,
    follow, start_mowing, pause, dock, sent, missing_entity */
 const STRINGS = {
-  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", reset_rotation: "Reset to default rotation", follow: "Follow the mower", start_mowing: "Start mowing", pause: "Pause", hud_progress: "Progress", hud_eta_left: "left", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", kbd_selected: "selected", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_zone: "Mowing zone", lg_zone_pending: "Selected to mow", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area", lg_wifi: "Wi-Fi signal (green = strong)", view_mode: "View", vw_beides: "Both", vw_weg: "Path", vw_flaeche: "Area", vw_wlan: "Wi-Fi", map_refreshing: "Map refreshing…", dbg_title: "Layers received", dbg_zones: "Zones", dbg_nogo: "No-go zones", dbg_walls: "Walls", dbg_obstacles: "Obstacles", dbg_passthrough: "Pass-through", dbg_required: "Required", dbg_tunnels: "Tunnels", dbg_markers: "Markers", dbg_draw: "Draw regions", dbg_paths: "Path points" },
+  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", reset_rotation: "Reset to default rotation", follow: "Follow the mower", start_mowing: "Start mowing", pause: "Pause", hud_progress: "Progress", hud_eta_left: "left", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", kbd_selected: "selected", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_zone: "Mowing zone", lg_zone_pending: "Selected to mow", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area", lg_wifi: "Wi-Fi signal (green = strong)", view_mode: "View", vw_beides: "Both", vw_weg: "Path", vw_flaeche: "Area", vw_wlan: "Wi-Fi", vw_saison: "Season", lg_season: "Times mowed (pale = rarely)", map_refreshing: "Map refreshing…", dbg_title: "Layers received", dbg_zones: "Zones", dbg_nogo: "No-go zones", dbg_walls: "Walls", dbg_obstacles: "Obstacles", dbg_passthrough: "Pass-through", dbg_required: "Required", dbg_tunnels: "Tunnels", dbg_markers: "Markers", dbg_draw: "Draw regions", dbg_paths: "Path points" },
   bg: { no_map: "Все още няма карта", not_connected: "Изчакване на данни от косачката…", start: "Коси", clear: "Изчисти", zone: "зона", zones: "зони", reset_view: "Побери картата", follow: "Следвай косачката", start_mowing: "Започни косене", pause: "Пауза", dock: "Върни към станцията", sent: "Косенето на зони започна", missing_entity: "Задайте обект на косачка TerraMow в конфигурацията" },
   ca: { no_map: "Encara no hi ha mapa", not_connected: "Esperant dades del tallagespa…", start: "Sega", clear: "Neteja", zone: "zona", zones: "zones", reset_view: "Ajusta el mapa", follow: "Segueix el tallagespa", start_mowing: "Comença a segar", pause: "Pausa", dock: "Torna a la base", sent: "Sega per zones iniciada", missing_entity: "Configureu una entitat de tallagespa TerraMow" },
   cs: { no_map: "Mapa zatím není k dispozici", not_connected: "Čekání na data sekačky…", start: "Sekat", clear: "Vymazat", zone: "zóna", zones: "zóny", reset_view: "Přizpůsobit mapu", follow: "Sledovat sekačku", start_mowing: "Zahájit sekání", pause: "Pozastavit", dock: "Zpět na stanici", sent: "Sekání zón zahájeno", missing_entity: "Nastavte entitu sekačky TerraMow v konfiguraci karty" },
   da: { no_map: "Intet kort tilgængeligt endnu", not_connected: "Venter på data fra plæneklipperen…", start: "Klip", clear: "Ryd", zone: "zone", zones: "zoner", reset_view: "Tilpas kortet", follow: "Følg plæneklipperen", start_mowing: "Start klipning", pause: "Pause", dock: "Kør til base", sent: "Zoneklipning startet", missing_entity: "Angiv en TerraMow-plæneklipperentitet i kortets konfiguration" },
-  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", reset_rotation: "Auf Standarddrehung zurücksetzen", follow: "Dem Mäher folgen", start_mowing: "Mähen starten", pause: "Pausieren", hud_progress: "Fortschritt", hud_eta_left: "übrig", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch", kbd_selected: "ausgewählt", legend: "Legende", legend_show: "Legende anzeigen", legend_hide: "Legende ausblenden", lg_zone: "Rasenmähzone", lg_zone_pending: "Zum Mähen ausgewählt", lg_mower: "Mäherposition", lg_dock: "Ladestation", lg_order: "Mähreihenfolge", lg_custom: "Eigene Zoneneinstellungen", lg_direction: "Mährichtung", lg_stuck: "Hier steckengeblieben", lg_maint: "Wartungspunkt", lg_passage: "Durchgangspunkt", lg_nogo: "Sperrzone", lg_wall: "Virtuelle Wand", lg_coverage: "Gemähte Fläche", lg_wifi: "WLAN-Signal (grün = stark)", view_mode: "Ansicht", vw_beides: "Beides", vw_weg: "Weg", vw_flaeche: "Fläche", vw_wlan: "WLAN", map_refreshing: "Karte wird aktualisiert…", dbg_title: "Empfangene Ebenen", dbg_zones: "Zonen", dbg_nogo: "Sperrzonen", dbg_walls: "Wände", dbg_obstacles: "Hindernisse", dbg_passthrough: "Durchgänge", dbg_required: "Pflichtzonen", dbg_tunnels: "Tunnel", dbg_markers: "Markierungen", dbg_draw: "Zeichenregionen", dbg_paths: "Pfadpunkte" },
+  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", reset_rotation: "Auf Standarddrehung zurücksetzen", follow: "Dem Mäher folgen", start_mowing: "Mähen starten", pause: "Pausieren", hud_progress: "Fortschritt", hud_eta_left: "übrig", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch", kbd_selected: "ausgewählt", legend: "Legende", legend_show: "Legende anzeigen", legend_hide: "Legende ausblenden", lg_zone: "Rasenmähzone", lg_zone_pending: "Zum Mähen ausgewählt", lg_mower: "Mäherposition", lg_dock: "Ladestation", lg_order: "Mähreihenfolge", lg_custom: "Eigene Zoneneinstellungen", lg_direction: "Mährichtung", lg_stuck: "Hier steckengeblieben", lg_maint: "Wartungspunkt", lg_passage: "Durchgangspunkt", lg_nogo: "Sperrzone", lg_wall: "Virtuelle Wand", lg_coverage: "Gemähte Fläche", lg_wifi: "WLAN-Signal (grün = stark)", view_mode: "Ansicht", vw_beides: "Beides", vw_weg: "Weg", vw_flaeche: "Fläche", vw_wlan: "WLAN", vw_saison: "Saison", lg_season: "Mähhäufigkeit (blass = selten)", map_refreshing: "Karte wird aktualisiert…", dbg_title: "Empfangene Ebenen", dbg_zones: "Zonen", dbg_nogo: "Sperrzonen", dbg_walls: "Wände", dbg_obstacles: "Hindernisse", dbg_passthrough: "Durchgänge", dbg_required: "Pflichtzonen", dbg_tunnels: "Tunnel", dbg_markers: "Markierungen", dbg_draw: "Zeichenregionen", dbg_paths: "Pfadpunkte" },
   el: { no_map: "Δεν υπάρχει ακόμη χάρτης", not_connected: "Αναμονή δεδομένων χλοοκοπτικού…", start: "Κούρεμα", clear: "Καθαρισμός", zone: "ζώνη", zones: "ζώνες", reset_view: "Προσαρμογή χάρτη", follow: "Ακολούθησε το χλοοκοπτικό", start_mowing: "Έναρξη κουρέματος", pause: "Παύση", dock: "Επιστροφή στη βάση", sent: "Το κούρεμα ζωνών ξεκίνησε", missing_entity: "Ορίστε οντότητα χλοοκοπτικού TerraMow στη διαμόρφωση" },
   es: { no_map: "Aún no hay mapa disponible", not_connected: "Esperando datos del cortacésped…", start: "Cortar", clear: "Borrar", zone: "zona", zones: "zonas", reset_view: "Ajustar mapa", follow: "Seguir al cortacésped", start_mowing: "Iniciar corte", pause: "Pausar", dock: "Volver a la base", sent: "Corte por zonas iniciado", missing_entity: "Configura la entidad del cortacésped TerraMow" },
   et: { no_map: "Kaarti pole veel saadaval", not_connected: "Ootan niiduki andmeid…", start: "Niida", clear: "Tühjenda", zone: "tsoon", zones: "tsooni", reset_view: "Mahuta kaart", follow: "Jälgi niidukit", start_mowing: "Alusta niitmist", pause: "Paus", dock: "Tagasi baasi", sent: "Tsooniniitmine alustatud", missing_entity: "Määra kaardi seadetes TerraMow niiduki olem" },
@@ -211,7 +211,7 @@ const VIEW_MODE_KEY = "terramow-map-card:view:";
 /** Overlay view modes the on-map button cycles through. Each maps to a set of
  *  effective layer flags in _layers(); the button replaces needing separate
  *  dashboard views (or the show_* config flags) to switch what's drawn. */
-const VIEW_MODES = ["beides", "weg", "flaeche", "wlan"];
+const VIEW_MODES = ["beides", "weg", "flaeche", "wlan", "saison"];
 
 /** Gap-fill the sparse Wi-Fi heatmap so a single (or interrupted) mow still
  *  reads as a continuous map: an empty grid cell surrounded by at least 3 of
@@ -307,6 +307,12 @@ function legendSwatch(kind, c) {
     case "stuck":
       return svg(
         `<path d="M10,3 L17,16 H3 Z" fill="${c.markerTrapped}" stroke="${out}" stroke-width="1.2" stroke-linejoin="round"/>`
+      );
+    case "season":
+      return svg(
+        `<rect x="2" y="6" width="5" height="8" fill="hsla(140,70%,40%,.18)"/>` +
+          `<rect x="7.5" y="6" width="5" height="8" fill="hsla(140,70%,40%,.4)"/>` +
+          `<rect x="13" y="6" width="5" height="8" fill="hsla(140,70%,40%,.62)"/>`
       );
     case "maint":
       return svg(
@@ -1163,13 +1169,17 @@ class TerramowMapCard extends HTMLElement {
   _layers() {
     switch (this._viewMode) {
       case "wlan":
-        return { coverage: false, history: false, current: false, wifi: true };
+        return { coverage: false, history: false, current: false, wifi: true, season: false };
+      case "saison":
+        // The season heatmap alone: any live track drawn over it would be
+        // read as part of the pattern.
+        return { coverage: false, history: false, current: false, wifi: false, season: true };
       case "flaeche":
-        return { coverage: true, history: false, current: false, wifi: false };
+        return { coverage: true, history: false, current: false, wifi: false, season: false };
       case "weg":
-        return { coverage: false, history: true, current: true, wifi: false };
+        return { coverage: false, history: true, current: true, wifi: false, season: false };
       default: // beides
-        return { coverage: true, history: true, current: true, wifi: false };
+        return { coverage: true, history: true, current: true, wifi: false, season: false };
     }
   }
 
@@ -2071,6 +2081,13 @@ class TerramowMapCard extends HTMLElement {
       ),
       "wifi",
       "lg_wifi"
+    );
+    add(
+      Boolean(
+        L.season && scene.mow_counts && (scene.mow_counts.cells || []).length
+      ),
+      "season",
+      "lg_season"
     );
 
     const rows = entries
@@ -2994,6 +3011,22 @@ class TerramowMapCard extends HTMLElement {
         // <=20 % maps to red (hue 0), >=80 % to green (hue 120).
         const hue = Math.max(0, Math.min(120, ((pct - 20) / 60) * 120));
         ctx.fillStyle = `hsla(${hue}, 75%, 45%, ${isFill ? 0.22 : 0.34})`;
+        ctx.fillRect(gx * cell - cell / 2, gy * cell - cell / 2, cell, cell);
+      }
+    }
+
+    // Season heatmap: how many finished cycles reached each cell. Pale means
+    // rarely reached, which is the whole point -- a strip the mower keeps
+    // skipping looks fine in any single cycle and only shows up stacked.
+    const season = L.season && scene.mow_counts;
+    if (season && Array.isArray(season.cells) && season.cells.length) {
+      const cell = Number(season.cell_mm) || 500;
+      const max = Math.max(1, Number(season.max) || 1);
+      for (const [gx, gy, count] of season.cells) {
+        // Square-root ramp: the difference between one and two passes matters
+        // far more than between nine and ten.
+        const share = Math.sqrt(Math.max(0, Math.min(1, count / max)));
+        ctx.fillStyle = `hsla(140, 70%, 40%, ${(0.12 + share * 0.5).toFixed(3)})`;
         ctx.fillRect(gx * cell - cell / 2, gy * cell - cell / 2, cell, cell);
       }
     }
