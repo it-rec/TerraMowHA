@@ -157,6 +157,8 @@ type: custom:terramow-map-card
 entity: lawn_mower.terramow
 ```
 
+**Session replay**: press the replay button and the card scrubs through the track the mower actually drove this session — the mowed area filling in as it goes — with play/pause and a slider. It replays data the card already has, so it costs no extra traffic, and it deliberately excludes the previous session's history path: replaying *this* mow must not sweep in the last one.
+
 It renders the lawn as vectors (crisp at any zoom, follows your HA theme): zones, forbidden areas, virtual walls, the mowing path, the base station and the robot's live position. Drag to pan, scroll or pinch to zoom, double-tap to re-fit. **Tap one or more zones** and press the button that appears to mow exactly those zones (`terramow.start_select_region` under the hood). Options and details: see the [dashboard guide](docs/en/dashboard.md#interactive-map-card). Live map data requires firmware HA module version 3 (same as the map camera). The card is also available in the dashboard card picker as **TerraMow Map Card**, with a full UI editor — no YAML needed.
 
 ### Dashboard example

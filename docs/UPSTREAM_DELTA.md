@@ -37,7 +37,7 @@ All upstream commits after v0.3.0 are already covered by the fork:
   mode, per-zone stripe-direction indicators, long-press for a zone's mow
   settings, trapped / maintenance / passage markers, a layer legend,
   camera-parity badges, a stale-map chip, two-finger rotate with a compass
-  reset, keyboard zone cycling, and a card editor with rotation presets and a
+  reset, keyboard zone cycling, a session replay scrubber, and a card editor with rotation presets and a
   "use current rotation" capture.
 - **Repair issues** (`issues.py`): actionable dashboard cards for
   incompatible/too-old firmware (from dp_127) and for due blade (240 h) /
