@@ -19,6 +19,9 @@
       "reset_base_station_timer": { "default": "mdi:home-lightning-bolt" },
       "edge_trim": { "default": "mdi:vector-square" }
     },
+    "device_tracker": {
+      "mower_position": { "default": "mdi:map-marker" }
+    },
     "camera": {
       "map_camera": { "default": "mdi:map" },
       "map_camera_clean": { "default": "mdi:map" }

@@ -50,7 +50,10 @@
           "map_resolution": "Térkép kimeneti felbontása (px)",
           "map_theme": "Térkép témája",
           "map_show_coverage": "Lenyírt terület megjelenítése",
-          "assume_job_complete": "Minden befejezett feladat 100 %-ban késznek tekintése"
+          "assume_job_complete": "Minden befejezett feladat 100 %-ban késznek tekintése",
+          "gps_latitude": "Bázisállomás szélessége",
+          "gps_longitude": "Bázisállomás hosszúsága",
+          "gps_heading": "A térkép felső élének iránya (°)"
         },
         "data_description": {
           "map_resolution": "A térképkamera PNG kimenetének oldalhossza. A magasabb értékek élesebb képet adnak az irányítópultokba ágyazva, de minden megjelenítésnél növelik a sávszélesség- és CPU-használatot.",
@@ -503,6 +506,11 @@
     "update": {
       "firmware": {
         "name": "Firmware"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Pozíció"
       }
     }
   },

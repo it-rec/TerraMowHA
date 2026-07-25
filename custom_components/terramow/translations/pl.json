@@ -50,7 +50,10 @@
           "map_resolution": "Rozdzielczość wyjściowa mapy (px)",
           "map_theme": "Motyw mapy",
           "map_show_coverage": "Pokaż skoszoną powierzchnię",
-          "assume_job_complete": "Traktuj każde zakończone zadanie jako ukończone w 100 %"
+          "assume_job_complete": "Traktuj każde zakończone zadanie jako ukończone w 100 %",
+          "gps_latitude": "Szerokość geograficzna stacji bazowej",
+          "gps_longitude": "Długość geograficzna stacji bazowej",
+          "gps_heading": "Azymut górnej krawędzi mapy (°)"
         },
         "data_description": {
           "map_resolution": "Długość boku pliku PNG kamery mapy. Wyższe wartości dają ostrzejszy obraz na pulpitach, ale zwiększają przepustowość i obciążenie procesora przy każdym renderowaniu.",
@@ -503,6 +506,11 @@
     "update": {
       "firmware": {
         "name": "Oprogramowanie układowe"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Pozycja"
       }
     }
   },

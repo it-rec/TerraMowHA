@@ -50,7 +50,10 @@
           "map_resolution": "Kartans utdataupplösning (px)",
           "map_theme": "Karttema",
           "map_show_coverage": "Visa klippt yta",
-          "assume_job_complete": "Behandla varje avslutat jobb som 100 % slutfört"
+          "assume_job_complete": "Behandla varje avslutat jobb som 100 % slutfört",
+          "gps_latitude": "Basstationens latitud",
+          "gps_longitude": "Basstationens longitud",
+          "gps_heading": "Kompasskurs för kartans överkant (°)"
         },
         "data_description": {
           "map_resolution": "Sidlängd på kartkamerans PNG. Högre värden ger en skarpare bild i paneler men ökar bandbredd och CPU-belastning vid varje rendering.",
@@ -503,6 +506,11 @@
     "update": {
       "firmware": {
         "name": "Firmware"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Position"
       }
     }
   },

@@ -50,7 +50,10 @@
           "map_resolution": "Risoluzione di output della mappa (px)",
           "map_theme": "Tema della mappa",
           "map_show_coverage": "Mostra superficie tagliata",
-          "assume_job_complete": "Considera ogni lavoro terminato come completato al 100 %"
+          "assume_job_complete": "Considera ogni lavoro terminato come completato al 100 %",
+          "gps_latitude": "Latitudine della stazione base",
+          "gps_longitude": "Longitudine della stazione base",
+          "gps_heading": "Direzione bussola del lato superiore della mappa (°)"
         },
         "data_description": {
           "map_resolution": "Lunghezza del lato del PNG della fotocamera della mappa. Valori più alti danno un'immagine più nitida nei dashboard ma aumentano la larghezza di banda e il carico della CPU a ogni rendering.",
@@ -503,6 +506,11 @@
     "update": {
       "firmware": {
         "name": "Firmware"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Posizione"
       }
     }
   },

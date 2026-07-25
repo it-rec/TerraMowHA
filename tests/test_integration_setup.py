@@ -23,7 +23,12 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.const import CONF_HOST, CONF_PASSWORD, STATE_UNAVAILABLE
+from homeassistant.const import (
+    CONF_HOST,
+    CONF_PASSWORD,
+    STATE_UNAVAILABLE,
+    Platform,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -130,8 +135,12 @@ async def test_setup_loads_and_creates_all_platform_entities(
     for reg_entry in entries:
         per_platform[reg_entry.domain] = per_platform.get(reg_entry.domain, 0) + 1
 
-    # Every forwarded platform created at least one entity...
+    # Every forwarded platform created at least one entity — except the
+    # device tracker, which is only created once a GPS anchor is configured
+    # in the options (it has its own test).
     for platform in PLATFORMS:
+        if platform is Platform.DEVICE_TRACKER:
+            continue
         assert per_platform.get(str(platform), 0) > 0, f"no {platform} entities"
 
     # ...and the exact per-platform counts match the platform modules.

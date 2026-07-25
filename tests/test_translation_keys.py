@@ -52,6 +52,7 @@ PLATFORM_FOR_MODULE = {
     "update.py": "update",
     "event.py": "event",
     "camera.py": "camera",
+    "device_tracker.py": "device_tracker",
     "lawn_mower.py": "lawn_mower",
     "calendar.py": "calendar",
 }

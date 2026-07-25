@@ -18,10 +18,12 @@ from custom_components.terramow.config_flow import (
 )
 from custom_components.terramow.const import (
     CONF_ASSUME_JOB_COMPLETE,
+    CONF_GPS_HEADING,
     CONF_MAP_RESOLUTION,
     CONF_MAP_SHOW_COVERAGE,
     CONF_MAP_THEME,
     DEFAULT_ASSUME_JOB_COMPLETE,
+    DEFAULT_GPS_HEADING,
     DEFAULT_MAP_SHOW_COVERAGE,
     DEFAULT_MAP_THEME,
     DOMAIN,
@@ -191,6 +193,7 @@ async def test_options_flow_sets_map_resolution(hass: HomeAssistant) -> None:
         CONF_MAP_THEME: DEFAULT_MAP_THEME,
         CONF_MAP_SHOW_COVERAGE: DEFAULT_MAP_SHOW_COVERAGE,
         CONF_ASSUME_JOB_COMPLETE: DEFAULT_ASSUME_JOB_COMPLETE,
+        CONF_GPS_HEADING: DEFAULT_GPS_HEADING,
     }
 
 

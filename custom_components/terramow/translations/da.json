@@ -50,7 +50,10 @@
           "map_resolution": "Kortets outputopløsning (px)",
           "map_theme": "Korttema",
           "map_show_coverage": "Vis klippet område",
-          "assume_job_complete": "Behandl enhver afsluttet opgave som 100 % fuldført"
+          "assume_job_complete": "Behandl enhver afsluttet opgave som 100 % fuldført",
+          "gps_latitude": "Basestationens breddegrad",
+          "gps_longitude": "Basestationens længdegrad",
+          "gps_heading": "Kompaskurs for kortets overkant (°)"
         },
         "data_description": {
           "map_resolution": "Sidelængde på kortkameraets PNG. Højere værdier giver et skarpere billede i dashboards, men øger båndbredde og CPU-belastning ved hver gengivelse.",
@@ -503,6 +506,11 @@
     "update": {
       "firmware": {
         "name": "Firmware"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Position"
       }
     }
   },

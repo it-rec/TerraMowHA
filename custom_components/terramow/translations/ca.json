@@ -50,7 +50,10 @@
           "map_resolution": "Resolució de sortida del mapa (px)",
           "map_theme": "Tema del mapa",
           "map_show_coverage": "Mostra la superfície segada",
-          "assume_job_complete": "Considerar cada tasca finalitzada com a 100 % completada"
+          "assume_job_complete": "Considerar cada tasca finalitzada com a 100 % completada",
+          "gps_latitude": "Latitud de l'estació base",
+          "gps_longitude": "Longitud de l'estació base",
+          "gps_heading": "Azimut de la vora superior del mapa (°)"
         },
         "data_description": {
           "map_resolution": "Longitud del costat del PNG de la càmera del mapa. Valors més alts donen una imatge més nítida quan s'incrusta als taulers, però augmenten l'amplada de banda i la càrrega de la CPU a cada renderització.",
@@ -503,6 +506,11 @@
     "update": {
       "firmware": {
         "name": "Microprogramari"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Posició"
       }
     }
   },

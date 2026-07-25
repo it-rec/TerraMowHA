@@ -50,7 +50,10 @@
           "map_resolution": "Žemėlapio išvesties raiška (px)",
           "map_theme": "Žemėlapio tema",
           "map_show_coverage": "Rodyti nupjautą plotą",
-          "assume_job_complete": "Kiekvieną baigtą užduotį laikyti įvykdyta 100 %"
+          "assume_job_complete": "Kiekvieną baigtą užduotį laikyti įvykdyta 100 %",
+          "gps_latitude": "Bazinės stotelės platuma",
+          "gps_longitude": "Bazinės stotelės ilguma",
+          "gps_heading": "Žemėlapio viršutinio krašto azimutas (°)"
         },
         "data_description": {
           "map_resolution": "Žemėlapio kameros PNG kraštinės ilgis. Didesnės reikšmės suteikia ryškesnį vaizdą, kai jis įterpiamas į valdymo skydelius, tačiau padidina pralaidumo ir CPU apkrovą kiekvieno atvaizdavimo metu.",
@@ -503,6 +506,11 @@
     "update": {
       "firmware": {
         "name": "Programinė aparatinė įranga"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Padėtis"
       }
     }
   },

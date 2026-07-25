@@ -51,6 +51,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 **Integration quality of life**
 - Zeroconf/mDNS auto-discovery
 - Reconfigure flow (change host/IP without re-adding) and reauth flow
+- **Mower on the Home Assistant map** — set the base station's real coordinates and the compass bearing of the map's top edge in the options, and a `device_tracker` projects the mower's live pose onto GPS coordinates: zone triggers, proximity and "the mower left the property" all work. Throttled (1 m / 10 s) so a 2 Hz pose stream doesn't flood the recorder; no tracker is created until the anchor is set
 - **Repair issues** — actionable dashboard cards for incompatible firmware and for due blade / base-station maintenance
 - Diagnostics download for easy bug reports
 - Translated into 33 languages (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
@@ -72,6 +73,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 | Update | Firmware version |
 | Event | Mower event (mowing started / paused / returning / docked / completed / error) |
 | Calendar | Mowing schedule (next scheduled mow) |
+| Device tracker | Mower position as GPS coordinates (only with a configured anchor) |
 
 ### Installation
 
@@ -98,7 +100,7 @@ Devices on the local network are discovered automatically via Zeroconf — accep
 
 **Changing settings later**
 - *Reconfigure* (Settings → Devices & Services → TerraMow → Reconfigure): change the host/IP or password in place, e.g. after the mower received a new DHCP address — no need to remove and re-add the integration.
-- *Options* (Configure): tune the map camera — output resolution (higher is sharper but costs more bandwidth and CPU per render), map theme (`light`/`dark`) and whether to shade the already-mowed coverage.
+- *Options* (Configure): tune the map camera — output resolution (higher is sharper but costs more bandwidth and CPU per render), map theme (`light`/`dark`) and whether to shade the already-mowed coverage. The same screen carries the optional **GPS anchor**: the base station's latitude/longitude plus the compass bearing the top of the rendered map points to. With both coordinates set, a `device_tracker` entity appears; leave them empty and none is created.
 - If the device password changes, Home Assistant automatically starts a *reauthentication* flow.
 
 ### Requirements

@@ -50,7 +50,10 @@
           "map_resolution": "Résolution de sortie de la carte (px)",
           "map_theme": "Thème de la carte",
           "map_show_coverage": "Afficher la surface tondue",
-          "assume_job_complete": "Considérer chaque tâche terminée comme achevée à 100 %"
+          "assume_job_complete": "Considérer chaque tâche terminée comme achevée à 100 %",
+          "gps_latitude": "Latitude de la station de base",
+          "gps_longitude": "Longitude de la station de base",
+          "gps_heading": "Azimut du haut de la carte (°)"
         },
         "data_description": {
           "map_resolution": "Longueur du côté du PNG de la caméra de carte. Des valeurs plus élevées donnent une image plus nette dans les tableaux de bord mais augmentent la bande passante et la charge CPU à chaque rendu.",
@@ -503,6 +506,11 @@
     "update": {
       "firmware": {
         "name": "Micrologiciel"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Position"
       }
     }
   },

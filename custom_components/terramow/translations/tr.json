@@ -50,7 +50,10 @@
           "map_resolution": "Harita çıktı çözünürlüğü (px)",
           "map_theme": "Harita teması",
           "map_show_coverage": "Biçilen alanı göster",
-          "assume_job_complete": "Biten her işi %100 tamamlanmış say"
+          "assume_job_complete": "Biten her işi %100 tamamlanmış say",
+          "gps_latitude": "Şarj istasyonu enlemi",
+          "gps_longitude": "Şarj istasyonu boylamı",
+          "gps_heading": "Haritanın üst kenarının pusula yönü (°)"
         },
         "data_description": {
           "map_resolution": "Harita kamerası PNG çıktısının kenar uzunluğu. Daha yüksek değerler, panolara gömüldüğünde daha keskin bir görüntü sağlar ancak her işlemede bant genişliğini ve CPU kullanımını artırır.",
@@ -503,6 +506,11 @@
     "update": {
       "firmware": {
         "name": "Aygıt Yazılımı"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Konum"
       }
     }
   },

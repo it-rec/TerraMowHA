@@ -50,7 +50,10 @@
           "map_resolution": "地圖輸出解析度 (px)",
           "map_theme": "地圖主題",
           "map_show_coverage": "顯示已割區域",
-          "assume_job_complete": "將所有已結束的任務視為 100 % 完成"
+          "assume_job_complete": "將所有已結束的任務視為 100 % 完成",
+          "gps_latitude": "基站緯度",
+          "gps_longitude": "基站經度",
+          "gps_heading": "地圖上緣的羅盤方位 (°)"
         },
         "data_description": {
           "map_resolution": "地圖攝影機 PNG 的輸出邊長。數值越高，嵌入儀表板時影像越清晰，但每次繪製會佔用更多頻寬與 CPU。",
@@ -503,6 +506,11 @@
     "update": {
       "firmware": {
         "name": "韌體"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "位置"
       }
     }
   },

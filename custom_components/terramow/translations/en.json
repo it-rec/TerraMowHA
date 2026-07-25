@@ -50,7 +50,10 @@
           "map_resolution": "Map output resolution (px)",
           "map_theme": "Map theme",
           "map_show_coverage": "Show mowed coverage",
-          "assume_job_complete": "Treat every finished job as 100 % complete"
+          "assume_job_complete": "Treat every finished job as 100 % complete",
+          "gps_latitude": "Base station latitude",
+          "gps_longitude": "Base station longitude",
+          "gps_heading": "Compass bearing of the map's top edge (°)"
         },
         "data_description": {
           "map_resolution": "Output side length of the map camera PNG. Higher values give a sharper image when embedded in dashboards but increase bandwidth and CPU on each render.",
@@ -503,6 +506,11 @@
     "update": {
       "firmware": {
         "name": "Firmware"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Position"
       }
     }
   },
