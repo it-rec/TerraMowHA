@@ -26,8 +26,10 @@ from custom_components.terramow.hub import TerraMowHub
 from custom_components.terramow.todo import (
     ITEM_STRINGS,
     MaintenanceTodoList,
-    async_setup_entry as todo_setup,
     item_strings,
+)
+from custom_components.terramow.todo import (
+    async_setup_entry as todo_setup,
 )
 
 HOST = "192.0.2.10"
