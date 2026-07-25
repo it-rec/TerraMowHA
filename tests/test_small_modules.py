@@ -89,7 +89,7 @@ def test_buttons_guard_missing_lawn_mower() -> None:
         button = cls(hub.basic_data, hub.hass)
         asyncio.run(button.async_press())  # logs an error instead of raising
     mqtt.publish.assert_not_called()
-    assert len(_run_setup(switch_setup, _hub())) == 1
+    assert len(_run_setup(switch_setup, _hub())) == 4
     assert len(_run_setup(update_setup, _hub())) == 1
     assert len(_run_setup(lawn_mower_setup, _hub())) == 1
 

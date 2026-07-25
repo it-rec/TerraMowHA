@@ -475,6 +475,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Thorough Corner Cutting"
+      },
+      "cliff_detection": {
+        "name": "Cliff detection"
+      },
+      "slope_detection": {
+        "name": "Slope detection"
+      },
+      "after_rain_auto_resume": {
+        "name": "After-rain auto-resume"
       }
     },
     "number": {
@@ -498,6 +507,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Second Direction Angle"
+      },
+      "rain_sensor_threshold": {
+        "name": "Rain sensor threshold"
+      },
+      "after_rain_resume_delay": {
+        "name": "After-rain resume delay"
       }
     },
     "update": {
@@ -565,6 +580,9 @@
     },
     "schedule_write_failed": {
       "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+    },
+    "advanced_setting_write_failed": {
+      "message": "The mower did not apply the {setting} setting. Current firmware may not accept advanced-setting writes over local MQTT (attempts: {attempts})."
     }
   }
 }

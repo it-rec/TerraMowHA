@@ -475,6 +475,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Perusteellinen kulmien leikkuu"
+      },
+      "cliff_detection": {
+        "name": "Jyrkänteen tunnistus"
+      },
+      "slope_detection": {
+        "name": "Rinteen tunnistus"
+      },
+      "after_rain_auto_resume": {
+        "name": "Automaattinen jatkaminen sateen jälkeen"
       }
     },
     "number": {
@@ -498,6 +507,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Toisen suunnan kulma"
+      },
+      "rain_sensor_threshold": {
+        "name": "Sadeanturin kynnys"
+      },
+      "after_rain_resume_delay": {
+        "name": "Jatkamisen viive sateen jälkeen"
       }
     },
     "update": {
@@ -565,6 +580,9 @@
     },
     "schedule_write_failed": {
       "message": "Ruohonleikkuri ei hyväksynyt aikataulumuutosta (yritykset: {attempts}). Nykyinen TerraMow-laiteohjelmisto ei hyväksy aikataulujen kirjoittamista lähiverkon kautta – valmistajan sovellus käyttää sen sijaan Bluetoothia/pilveä. Käytä sään mukaan mukautuvan leikkuun blueprintiä ajastukseen Home Assistantista; nämä palvelut toimivat, kun laiteohjelmisto tukee paikallista kirjoitusta."
+    },
+    "advanced_setting_write_failed": {
+      "message": "Robotti ei ottanut asetusta {setting} käyttöön. Nykyinen laiteohjelmisto ei ehkä hyväksy lisäasetusten kirjoittamista paikallisen MQTT:n kautta (yritykset: {attempts})."
     }
   }
 }

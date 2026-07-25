@@ -24,6 +24,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position (activity-tinted, with follow mode), on-card start / pause / dock controls, battery & job-progress chips, optional mowed-coverage shading, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
 - Edge trim mowing button
 - Settings from Home Assistant: mowing height, speed, spacing, blade speed, edge cutting distance, main direction mode and angles, thorough corner cutting, high-grass edge trim mode
+- **Writable advanced settings** (dp_150, *disabled by default*) — cliff detection, slope detection, after-rain auto-resume switches plus rain-sensor threshold and after-rain resume delay numbers. The write format is undocumented, so each change is verified against the mower's own follow-up report and **fails loudly** if the firmware ignores it; the read-only diagnostic sensors stay available either way
 - Maintenance: reset buttons for the blade disk and base station counters
 
 **Monitoring**
@@ -66,8 +67,8 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 | Sensor | Battery level, battery state, battery temperature state, map status, map area, mow height, mow speed, operation mode, pose, total mowing time / jobs / mowed area, current session area / progress / duration / job type, remaining blade & base station time, next scheduled start, version compatibility, main direction status, power mode, back-to-station reason, mission, sub-mission, mission state. *Diagnostic:* active errors, last event, cellular RSRP / RSRQ / type, sunrise, sunset, movement / map / mowing mode, rain-sensor threshold, after-rain resume delay, map save progress |
 | Binary sensor | Charging, navigation located, firmware upgrading, power switch, problem, rain detected, map detected / buildable / backing up, saving data, data conversion in progress. *Diagnostic:* cellular enabled, defogger heating, illumination, daylight, extreme weather, cliff / slope detection, after-rain auto-resume, force single base station, force cellular network, manual-mapping relocation / takeover / boundary-closed |
 | Select | Zone select, mow speed, blade speed, main direction mode, high-grass edge trim mode |
-| Number | Mowing height, edge cutting distance, mowing spacing, single direction angle, auto-rotate angle interval, first / second direction angle |
-| Switch | Thorough corner cutting |
+| Number | Mowing height, edge cutting distance, mowing spacing, single direction angle, auto-rotate angle interval, first / second direction angle. *Config, off by default:* rain sensor threshold, after-rain resume delay |
+| Switch | Thorough corner cutting. *Config, off by default:* cliff detection, slope detection, after-rain auto-resume |
 | Button | Edge trim, reset blade timer, reset base station timer |
 | Update | Firmware version |
 | Event | Mower event (mowing started / paused / returning / docked / completed / error) |

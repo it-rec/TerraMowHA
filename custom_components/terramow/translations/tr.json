@@ -475,6 +475,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Ayrıntılı Köşe Kesimi"
+      },
+      "cliff_detection": {
+        "name": "Uçurum algılama"
+      },
+      "slope_detection": {
+        "name": "Eğim algılama"
+      },
+      "after_rain_auto_resume": {
+        "name": "Yağmur sonrası oto. devam"
       }
     },
     "number": {
@@ -498,6 +507,12 @@
       },
       "multiple_direction_angle2": {
         "name": "İkinci Yön Açısı"
+      },
+      "rain_sensor_threshold": {
+        "name": "Yağmur sensörü eşiği"
+      },
+      "after_rain_resume_delay": {
+        "name": "Yağmur sonrası devam gecikmesi"
       }
     },
     "update": {
@@ -565,6 +580,9 @@
     },
     "schedule_write_failed": {
       "message": "Çim biçme makinesi program değişikliğini kabul etmedi (deneme: {attempts}). Mevcut TerraMow donanım yazılımı yerel ağ üzerinden program yazmayı kabul etmiyor; üretici uygulaması bunun yerine Bluetooth/bulut kullanıyor. Home Assistant üzerinden programlama için hava durumuna uyarlanan biçme blueprint'ini kullanın; donanım yazılımı yerel yazmayı desteklediğinde bu servisler çalışacaktır."
+    },
+    "advanced_setting_write_failed": {
+      "message": "Çim biçme robotu {setting} ayarını uygulamadı. Mevcut ürün yazılımı yerel MQTT üzerinden gelişmiş ayar yazmayı kabul etmiyor olabilir (denemeler: {attempts})."
     }
   }
 }

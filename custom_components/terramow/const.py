@@ -95,6 +95,17 @@ COMMAND_ACK_TIMEOUT = 2.0
 # dp_122: full weekly schedule channel (GET/ADD/DELETE commands).
 SCHEDULE_DP = 122
 
+# dp_150: advanced settings block (cliff/slope detection, rain handling, ...).
+# The device reports it read-only; writing is undocumented and negotiated the
+# same way as the dp_122 schedule writes.
+ADVANCED_SETTINGS_DP = 150
+
+# How long a dp_150 write waits for the device to report the new value back.
+# The device pushes dp_150 on change, so a successful write shows up as a
+# fresh report; nothing arriving within this window means the write was
+# dropped (the firmware silently ignores payloads it cannot parse).
+ADVANCED_SETTING_VERIFY_TIMEOUT = 3.0
+
 # Service weekday tokens -> device protocol enum values (dp_122 week_days).
 WEEKDAY_TO_DEVICE = {
     "monday": "WEEK_DAY_MONDAY",

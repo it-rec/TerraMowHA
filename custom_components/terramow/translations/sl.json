@@ -475,6 +475,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Temeljita košnja kotov"
+      },
+      "cliff_detection": {
+        "name": "Zaznavanje robov"
+      },
+      "slope_detection": {
+        "name": "Zaznavanje naklona"
+      },
+      "after_rain_auto_resume": {
+        "name": "Samodejno nadaljevanje po dežju"
       }
     },
     "number": {
@@ -498,6 +507,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Kot druge smeri"
+      },
+      "rain_sensor_threshold": {
+        "name": "Prag senzorja dežja"
+      },
+      "after_rain_resume_delay": {
+        "name": "Zakasnitev nadaljevanja po dežju"
       }
     },
     "update": {
@@ -565,6 +580,9 @@
     },
     "schedule_write_failed": {
       "message": "Kosilnica ni sprejela spremembe urnika (poskusov: {attempts}). Trenutna vdelana programska oprema TerraMow ne sprejema zapisovanja urnikov prek lokalnega omrežja – aplikacija proizvajalca namesto tega uporablja Bluetooth/oblak. Za načrtovanje iz Home Assistanta uporabite načrt (blueprint) za košnjo glede na vreme; te storitve bodo delovale, ko bo vdelana programska oprema dodala podporo za lokalno zapisovanje."
+    },
+    "advanced_setting_write_failed": {
+      "message": "Kosilnica ni uporabila nastavitve {setting}. Trenutna vdelana programska oprema morda ne sprejema pisanja naprednih nastavitev prek lokalnega MQTT (poskusi: {attempts})."
     }
   }
 }

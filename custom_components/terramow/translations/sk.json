@@ -475,6 +475,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Dôkladné kosenie rohov"
+      },
+      "cliff_detection": {
+        "name": "Detekcia zrázov"
+      },
+      "slope_detection": {
+        "name": "Detekcia svahov"
+      },
+      "after_rain_auto_resume": {
+        "name": "Automatické pokračovanie po daždi"
       }
     },
     "number": {
@@ -498,6 +507,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Uhol druhého smeru"
+      },
+      "rain_sensor_threshold": {
+        "name": "Prah dažďového senzora"
+      },
+      "after_rain_resume_delay": {
+        "name": "Oneskorenie pokračovania po daždi"
       }
     },
     "update": {
@@ -565,6 +580,9 @@
     },
     "schedule_write_failed": {
       "message": "Kosačka neprijala zmenu plánu (pokusov: {attempts}). Súčasný firmvér TerraMow neumožňuje zápis plánu cez lokálnu sieť – aplikácia výrobcu namiesto toho používa Bluetooth/cloud. Na plánovanie z Home Assistant použite blueprint kosenia podľa počasia; tieto služby budú fungovať, keď firmvér doplní podporu lokálneho zápisu."
+    },
+    "advanced_setting_write_failed": {
+      "message": "Kosačka nepoužila nastavenie {setting}. Súčasný firmvér nemusí prijímať zápis pokročilých nastavení cez lokálne MQTT (pokusy: {attempts})."
     }
   }
 }

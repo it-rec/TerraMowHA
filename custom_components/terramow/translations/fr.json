@@ -475,6 +475,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Coupe minutieuse des coins"
+      },
+      "cliff_detection": {
+        "name": "Détection de vide"
+      },
+      "slope_detection": {
+        "name": "Détection de pente"
+      },
+      "after_rain_auto_resume": {
+        "name": "Reprise auto après pluie"
       }
     },
     "number": {
@@ -498,6 +507,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Angle de la seconde direction"
+      },
+      "rain_sensor_threshold": {
+        "name": "Seuil du capteur de pluie"
+      },
+      "after_rain_resume_delay": {
+        "name": "Délai de reprise après pluie"
       }
     },
     "update": {
@@ -565,6 +580,9 @@
     },
     "schedule_write_failed": {
       "message": "Le robot tondeuse n'a pas accepté la modification du planning (tentatives : {attempts}). Le micrologiciel TerraMow actuel n'accepte pas l'écriture des plannings via le réseau local — l'application du fabricant utilise le Bluetooth/le cloud à la place. Utilisez le blueprint de tonte adaptée à la météo pour planifier depuis Home Assistant ; ces services fonctionneront dès que le micrologiciel prendra en charge l'écriture locale."
+    },
+    "advanced_setting_write_failed": {
+      "message": "La tondeuse n'a pas appliqué le réglage {setting}. Le micrologiciel actuel n'accepte peut-être pas l'écriture des réglages avancés via MQTT local (tentatives : {attempts})."
     }
   }
 }

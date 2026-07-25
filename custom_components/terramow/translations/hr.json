@@ -475,6 +475,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Temeljito rezanje kutova"
+      },
+      "cliff_detection": {
+        "name": "Otkrivanje ruba"
+      },
+      "slope_detection": {
+        "name": "Otkrivanje nagiba"
+      },
+      "after_rain_auto_resume": {
+        "name": "Automatski nastavak nakon kiše"
       }
     },
     "number": {
@@ -498,6 +507,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Kut drugog smjera"
+      },
+      "rain_sensor_threshold": {
+        "name": "Prag senzora kiše"
+      },
+      "after_rain_resume_delay": {
+        "name": "Odgoda nastavka nakon kiše"
       }
     },
     "update": {
@@ -565,6 +580,9 @@
     },
     "schedule_write_failed": {
       "message": "Kosilica nije prihvatila promjenu rasporeda (pokušaja: {attempts}). Trenutni TerraMow firmver ne prihvaća zapisivanje rasporeda putem lokalne mreže – aplikacija proizvođača umjesto toga koristi Bluetooth/oblak. Za raspoređivanje iz Home Assistanta upotrijebite blueprint za košnju prilagođenu vremenu; ove će usluge raditi kada firmver dobije podršku za lokalno zapisivanje."
+    },
+    "advanced_setting_write_failed": {
+      "message": "Kosilica nije primijenila postavku {setting}. Trenutni firmver možda ne prihvaća zapisivanje naprednih postavki putem lokalnog MQTT-a (pokušaji: {attempts})."
     }
   }
 }

@@ -475,6 +475,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Rūpīga stūru pļaušana"
+      },
+      "cliff_detection": {
+        "name": "Nogāžu noteikšana"
+      },
+      "slope_detection": {
+        "name": "Slīpuma noteikšana"
+      },
+      "after_rain_auto_resume": {
+        "name": "Automātiska atsākšana pēc lietus"
       }
     },
     "number": {
@@ -498,6 +507,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Otrā virziena leņķis"
+      },
+      "rain_sensor_threshold": {
+        "name": "Lietus sensora slieksnis"
+      },
+      "after_rain_resume_delay": {
+        "name": "Atsākšanas aizkave pēc lietus"
       }
     },
     "update": {
@@ -565,6 +580,9 @@
     },
     "schedule_write_failed": {
       "message": "Zāles pļāvējs neapstiprināja grafika izmaiņas (mēģinājumi: {attempts}). Pašreizējā TerraMow programmaparatūra neatbalsta grafika ierakstīšanu vietējā tīklā – ražotāja lietotne tā vietā izmanto Bluetooth/mākoni. Plānošanai no Home Assistant izmantojiet laikapstākļiem pielāgotās pļaušanas blueprint; šie pakalpojumi darbosies, tiklīdz programmaparatūra pievienos vietējās ierakstīšanas atbalstu."
+    },
+    "advanced_setting_write_failed": {
+      "message": "Zāles pļāvējs nepiemēroja iestatījumu {setting}. Pašreizējā programmaparatūra, iespējams, nepieņem paplašināto iestatījumu rakstīšanu, izmantojot vietējo MQTT (mēģinājumi: {attempts})."
     }
   }
 }

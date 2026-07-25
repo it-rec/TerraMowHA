@@ -475,6 +475,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "구석 꼼꼼히 깎기"
+      },
+      "cliff_detection": {
+        "name": "절벽 감지"
+      },
+      "slope_detection": {
+        "name": "경사 감지"
+      },
+      "after_rain_auto_resume": {
+        "name": "비 온 후 자동 재개"
       }
     },
     "number": {
@@ -498,6 +507,12 @@
       },
       "multiple_direction_angle2": {
         "name": "두 번째 방향 각도"
+      },
+      "rain_sensor_threshold": {
+        "name": "빗물 센서 임계값"
+      },
+      "after_rain_resume_delay": {
+        "name": "비 온 후 재개 지연"
       }
     },
     "update": {
@@ -565,6 +580,9 @@
     },
     "schedule_write_failed": {
       "message": "잔디깎이가 일정 변경을 수락하지 않았습니다(시도: {attempts}). 현재 TerraMow 펌웨어는 로컬 네트워크를 통한 일정 쓰기를 지원하지 않으며, 제조사 앱은 대신 블루투스/클라우드를 사용합니다. Home Assistant에서 일정을 관리하려면 날씨 적응형 예초 블루프린트를 사용하세요. 펌웨어가 로컬 쓰기를 지원하면 이 서비스도 동작합니다."
+    },
+    "advanced_setting_write_failed": {
+      "message": "잔디깎이가 {setting} 설정을 적용하지 않았습니다. 현재 펌웨어는 로컬 MQTT를 통한 고급 설정 쓰기를 지원하지 않을 수 있습니다 (시도: {attempts})."
     }
   }
 }

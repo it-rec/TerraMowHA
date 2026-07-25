@@ -48,6 +48,11 @@ All upstream commits after v0.3.0 are already covered by the fork:
   **confirmed write**: it waits for the device's dp_119 command
   acknowledgement and raises on rejection (rejected fire-and-forget commands
   are logged; the last ack ships in diagnostics).
+- **Writable advanced settings** (dp_150): cliff/slope detection and
+  after-rain auto-resume switches plus rain-sensor threshold and resume-delay
+  numbers, with the same per-firmware payload negotiation as the schedule
+  writes — verified against the device's own follow-up report, raising
+  instead of silently succeeding when the firmware drops the write.
 - **Writable mowing schedule**: `terramow.add_schedule` / `terramow.delete_schedule`
   services (dp_122 `ADD`/`DELETE`) with per-firmware payload negotiation —
   every write is judged by its dp_119 ack and verified against a fresh `GET`.

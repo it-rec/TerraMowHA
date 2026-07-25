@@ -475,6 +475,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Corte minucioso de esquinas"
+      },
+      "cliff_detection": {
+        "name": "Detección de bordes"
+      },
+      "slope_detection": {
+        "name": "Detección de pendientes"
+      },
+      "after_rain_auto_resume": {
+        "name": "Reanudación automática tras lluvia"
       }
     },
     "number": {
@@ -498,6 +507,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Ángulo de la segunda dirección"
+      },
+      "rain_sensor_threshold": {
+        "name": "Umbral del sensor de lluvia"
+      },
+      "after_rain_resume_delay": {
+        "name": "Retraso de reanudación tras lluvia"
       }
     },
     "update": {
@@ -565,6 +580,9 @@
     },
     "schedule_write_failed": {
       "message": "El robot cortacésped no aceptó el cambio de programación (intentos: {attempts}). El firmware actual de TerraMow no acepta escrituras de programación por la red local: la aplicación del fabricante usa Bluetooth/nube. Usa el blueprint de corte adaptado al tiempo para programar desde Home Assistant; estos servicios funcionarán cuando el firmware admita la escritura local."
+    },
+    "advanced_setting_write_failed": {
+      "message": "El robot no aplicó el ajuste {setting}. Es posible que el firmware actual no acepte la escritura de ajustes avanzados por MQTT local (intentos: {attempts})."
     }
   }
 }
