@@ -62,6 +62,9 @@ jobs:
       # the tags; commits pushed directly to main produce an empty body. Build
       # the notes from the commit messages instead (subject as heading, body
       # as detail), and keep generate_release_notes for the compare link.
+      # The generated notes are appended below this body under their own
+      # "## What's Changed" heading, so this section uses a different one --
+      # naming both the same rendered as a duplicate heading up to v1.62.0.
       - name: Build release notes from commits
         env:
           TAG: ${{ steps.meta.outputs.tag }}
@@ -79,10 +82,10 @@ jobs:
             RANGE="${END}"
           fi
           {
-            echo "## What's Changed"
+            echo "## Details"
             echo
             git log --no-merges --reverse \
-              --pretty=format:'### %s%n%n%b' "${RANGE}" \
+              --pretty=format:'### %s%n%n%b%n' "${RANGE}" \
               | sed -E '/^Co-Authored-By:/d; /^Claude-Session:/d'
             echo
           } > release_notes.md
