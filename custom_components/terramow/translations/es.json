@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Firmware"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Mantenimiento"
+      }
     }
   },
   "services": {
