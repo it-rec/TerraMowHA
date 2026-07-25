@@ -164,3 +164,19 @@ DEFAULT_MAP_SHOW_COVERAGE = False
 # matching the vendor app; default off keeps the honest, counter-truthful value.
 CONF_ASSUME_JOB_COMPLETE = "assume_job_complete"
 DEFAULT_ASSUME_JOB_COMPLETE = False
+
+# Real-world anchor for the device_tracker entity. The mower reports its pose
+# only in map coordinates (millimetres, screen-style frame with +Y pointing
+# down); pinning the base station's real latitude/longitude plus the compass
+# bearing the top of the map points to turns those into GPS coordinates.
+# All three are optional — without them no device_tracker is created.
+CONF_GPS_LATITUDE = "gps_latitude"
+CONF_GPS_LONGITUDE = "gps_longitude"
+CONF_GPS_HEADING = "gps_heading"
+DEFAULT_GPS_HEADING = 0.0
+
+# The pose arrives at ~2 Hz. Writing a device_tracker state that often would
+# flood the recorder for no benefit, so a new position is published only once
+# the mower has moved this far, or after this long.
+GPS_MIN_MOVE_METERS = 1.0
+GPS_MIN_INTERVAL_SECONDS = 10.0

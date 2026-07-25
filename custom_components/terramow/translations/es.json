@@ -50,7 +50,10 @@
           "map_resolution": "Resolución de salida del mapa (px)",
           "map_theme": "Tema del mapa",
           "map_show_coverage": "Mostrar superficie cortada",
-          "assume_job_complete": "Tratar cada trabajo finalizado como 100 % completado"
+          "assume_job_complete": "Tratar cada trabajo finalizado como 100 % completado",
+          "gps_latitude": "Latitud de la estación base",
+          "gps_longitude": "Longitud de la estación base",
+          "gps_heading": "Rumbo de la parte superior del mapa (°)"
         },
         "data_description": {
           "map_resolution": "Longitud del lado del PNG de la cámara del mapa. Valores más altos dan una imagen más nítida en los paneles, pero aumentan el ancho de banda y la CPU en cada renderizado.",
@@ -513,6 +516,11 @@
     "image": {
       "mow_report": {
         "name": "Informe de corte"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Posición"
       }
     }
   },

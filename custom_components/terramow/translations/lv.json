@@ -50,7 +50,10 @@
           "map_resolution": "Kartes izvades izšķirtspēja (px)",
           "map_theme": "Kartes tēma",
           "map_show_coverage": "Rādīt nopļauto laukumu",
-          "assume_job_complete": "Uzskatīt katru pabeigtu uzdevumu par 100 % izpildītu"
+          "assume_job_complete": "Uzskatīt katru pabeigtu uzdevumu par 100 % izpildītu",
+          "gps_latitude": "Bāzes stacijas platums",
+          "gps_longitude": "Bāzes stacijas garums",
+          "gps_heading": "Kartes augšmalas azimuts (°)"
         },
         "data_description": {
           "map_resolution": "Kartes kameras PNG attēla malas garums. Lielākas vērtības nodrošina asāku attēlu, iegulstot to informācijas paneļos, bet palielina joslas platumu un CPU noslodzi katrā renderēšanas reizē.",
@@ -513,6 +516,11 @@
     "image": {
       "mow_report": {
         "name": "Pļaušanas pārskats"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Pozīcija"
       }
     }
   },

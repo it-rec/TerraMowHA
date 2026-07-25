@@ -50,7 +50,10 @@
           "map_resolution": "Izlazna razlučivost karte (px)",
           "map_theme": "Tema karte",
           "map_show_coverage": "Prikaži pokošenu površinu",
-          "assume_job_complete": "Svaki završeni zadatak smatraj 100 % dovršenim"
+          "assume_job_complete": "Svaki završeni zadatak smatraj 100 % dovršenim",
+          "gps_latitude": "Zemljopisna širina bazne stanice",
+          "gps_longitude": "Zemljopisna dužina bazne stanice",
+          "gps_heading": "Azimut gornjeg ruba karte (°)"
         },
         "data_description": {
           "map_resolution": "Duljina stranice izlazne PNG slike kamere karte. Veće vrijednosti daju oštriju sliku pri ugradnji u nadzorne ploče, ali povećavaju propusnost i opterećenje CPU-a pri svakom iscrtavanju.",
@@ -513,6 +516,11 @@
     "image": {
       "mow_report": {
         "name": "Izvješće o košnji"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Položaj"
       }
     }
   },

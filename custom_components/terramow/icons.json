@@ -25,6 +25,9 @@
     "image": {
       "mow_report": { "default": "mdi:file-image-outline" }
     },
+    "device_tracker": {
+      "mower_position": { "default": "mdi:map-marker" }
+    },
     "camera": {
       "map_camera": { "default": "mdi:map" },
       "map_camera_clean": { "default": "mdi:map" }

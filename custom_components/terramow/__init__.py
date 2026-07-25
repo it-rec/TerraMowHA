@@ -82,7 +82,7 @@ DELETE_SCHEDULE_SCHEMA = vol.Schema(
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.LAWN_MOWER, Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SELECT, Platform.NUMBER, Platform.CAMERA, Platform.IMAGE, Platform.UPDATE, Platform.BUTTON, Platform.SWITCH, Platform.EVENT, Platform.CALENDAR, Platform.TODO]
+PLATFORMS: list[Platform] = [Platform.LAWN_MOWER, Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SELECT, Platform.NUMBER, Platform.CAMERA, Platform.IMAGE, Platform.UPDATE, Platform.BUTTON, Platform.SWITCH, Platform.DEVICE_TRACKER, Platform.EVENT, Platform.CALENDAR, Platform.TODO]
 
 @dataclass
 class TerraMowBasicData:

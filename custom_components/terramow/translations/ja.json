@@ -50,7 +50,10 @@
           "map_resolution": "マップ出力解像度 (px)",
           "map_theme": "マップのテーマ",
           "map_show_coverage": "刈り取り済みの範囲を表示",
-          "assume_job_complete": "終了したジョブをすべて 100 % 完了として扱う"
+          "assume_job_complete": "終了したジョブをすべて 100 % 完了として扱う",
+          "gps_latitude": "充電ステーションの緯度",
+          "gps_longitude": "充電ステーションの経度",
+          "gps_heading": "地図上端の方位角 (°)"
         },
         "data_description": {
           "map_resolution": "マップカメラ PNG の出力辺の長さです。値を大きくするとダッシュボードに埋め込んだ際の画像が鮮明になりますが、レンダリングごとの帯域幅と CPU 負荷が増加します。",
@@ -513,6 +516,11 @@
     "image": {
       "mow_report": {
         "name": "芝刈りレポート"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "位置"
       }
     }
   },

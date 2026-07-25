@@ -50,7 +50,10 @@
           "map_resolution": "地图输出分辨率 (px)",
           "map_theme": "地图主题",
           "map_show_coverage": "显示已割区域",
-          "assume_job_complete": "将所有已结束的任务视为 100 % 完成"
+          "assume_job_complete": "将所有已结束的任务视为 100 % 完成",
+          "gps_latitude": "基站纬度",
+          "gps_longitude": "基站经度",
+          "gps_heading": "地图上边缘的罗盘方位 (°)"
         },
         "data_description": {
           "map_resolution": "地图相机 PNG 的输出边长。更高的值在仪表板嵌入时画面更清晰，但每次渲染会占用更多带宽和 CPU。",
@@ -513,6 +516,11 @@
     "image": {
       "mow_report": {
         "name": "割草报告"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "位置"
       }
     }
   },

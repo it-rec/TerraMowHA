@@ -50,7 +50,10 @@
           "map_resolution": "Rezoluția de ieșire a hărții (px)",
           "map_theme": "Tema hărții",
           "map_show_coverage": "Afișează suprafața tunsă",
-          "assume_job_complete": "Tratează orice lucrare finalizată ca fiind 100 % completă"
+          "assume_job_complete": "Tratează orice lucrare finalizată ca fiind 100 % completă",
+          "gps_latitude": "Latitudinea stației de bază",
+          "gps_longitude": "Longitudinea stației de bază",
+          "gps_heading": "Azimutul marginii superioare a hărții (°)"
         },
         "data_description": {
           "map_resolution": "Lungimea laturii imaginii PNG generate de camera hărții. Valorile mai mari oferă o imagine mai clară atunci când este încorporată în tablouri de bord, dar cresc lățimea de bandă și utilizarea CPU la fiecare randare.",
@@ -513,6 +516,11 @@
     "image": {
       "mow_report": {
         "name": "Raport de tuns"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Poziție"
       }
     }
   },
