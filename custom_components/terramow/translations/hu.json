@@ -509,6 +509,11 @@
       "maintenance": {
         "name": "Karbantartás"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Nyírási jelentés"
+      }
     }
   },
   "services": {

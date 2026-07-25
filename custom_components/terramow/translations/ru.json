@@ -509,6 +509,11 @@
       "maintenance": {
         "name": "Обслуживание"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Отчёт о покосе"
+      }
     }
   },
   "services": {

@@ -509,6 +509,11 @@
       "maintenance": {
         "name": "Manutenzione"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Rapporto di taglio"
+      }
     }
   },
   "services": {

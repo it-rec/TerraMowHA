@@ -23,6 +23,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 
 **Überwachung**
 - Live-Kartenkamera mit Mähpfad, Roboterposition und Basisstation (plus eine reine Kartenkamera für Dashboards, Auflösung über die Optionen konfigurierbar)
+- **Mähbericht-Bild** — ein eingefrorenes Bild der *zuletzt beendeten* Sitzung: der Rasen mit deren Mähspur plus ein Band mit den zugehörigen Zahlen (Fläche, Dauer, Ausgang). Ideal als Anhang einer "Mähen fertig"-Benachrichtigung — ein Live-Kamerabild wenige Minuten später zeigt bereits eine leere Karte, weil das Gerät Pfad und Zähler am Sitzungsende löscht
 - Akku: Ladestand, Ladezustand, Temperaturzustand, Ladegerät verbunden, Netzschalter
 - Auftragsfortschritt: Fläche der aktuellen Sitzung, Fortschritt (%), Dauer und Auftragstyp; Gesamtmähzeit, Auftragsanzahl und gemähte Fläche
 - Status: Mission / Untermission / Missionszustand, Betriebsmodus, Leistungsmodus, Grund für die Rückkehr zur Station, Regenerkennung, Problemanzeige, Anzeigen für Datenspeicherung und Datenkonvertierung
@@ -61,6 +62,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 | --- | --- |
 | Rasenmäher | Steuerung für Starten / Pausieren / Andocken mit Live-Aktivität |
 | Kamera | Karte mit Pfad, Roboter und Basisstation; reine Kartenvariante |
+| Bild | Mähbericht der zuletzt beendeten Sitzung (Fläche / Dauer / Ausgang als Attribute) |
 | Sensor | Akkustand, Akkuzustand, Akkutemperaturzustand, Kartenstatus, Kartenfläche, Mähhöhe, Mähgeschwindigkeit, Betriebsmodus, Position, Gesamtmähzeit / Aufträge / gemähte Fläche, Fläche / Fortschritt / Dauer / Auftragstyp der aktuellen Sitzung, laufender Auftrag, Störung, verbleibende Zeit für Messer und Basisstation, nächster geplanter Start, Versionskompatibilität, Hauptrichtungsstatus, Leistungsmodus, Grund für die Rückkehr zur Station, Mission, Untermission, Missionszustand. *Diagnose:* aktive Fehler, letztes Ereignis, WLAN-Signal, Mobilfunk RSRP / RSRQ / Typ, Sonnenaufgang, Sonnenuntergang, Bewegungs- / Karten- / Mähmodus, Schwellwert des Regensensors, Verzögerung der Fortsetzung nach Regen, Kartenspeicher-Fortschritt |
 | Binärsensor | Wird geladen, Navigation lokalisiert, Firmware-Aktualisierung läuft, Netzschalter, Problem, Regen erkannt, Karte erkannt / erstellbar / Sicherung läuft, Daten werden gespeichert, Datenkonvertierung läuft. *Diagnose:* Mobilfunk aktiviert, Beschlagheizung, Beleuchtung, Tageslicht, Extremwetter, Absturz- / Neigungserkennung, automatische Fortsetzung nach Regen, einzelne Basisstation erzwingen, Mobilfunknetz erzwingen, manuelle Kartierung Neupositionierung / Übernahme / Grenze geschlossen, Zustandsflag 134 (nicht dekodiert) |
 | Auswahl | Zonenauswahl, Mähgeschwindigkeit, Messerdrehzahl, Hauptrichtungsmodus, Kantenschnittmodus für hohes Gras |

@@ -579,6 +579,8 @@ class TerraMowHub:
         # held until the next session starts. Drives the session sensors'
         # completion/reset behaviour (issues #204/#207).
         self._session_outcome: str | None = None
+        # Snapshot of the last finished mow session (mow-report image).
+        self._last_mow_report: dict[str, Any] | None = None
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
         # Bounded per-dp change history (epoch, payload) for undocumented dps, so
@@ -895,6 +897,52 @@ class TerraMowHub:
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_113: %s", payload)
 
+    def _capture_mow_report(self, outcome: str) -> None:
+        """Snapshot the session that just ended, for the mow-report image.
+
+        Derived state (see the AGENTS.md contract): every field is copied from
+        what the device reported for *this* session — the dp_113 counters plus
+        the mow track already folded into the cycle coverage — at the moment
+        the session ends. Nothing is synthesized, and nothing is read later:
+        the device zeroes its counters right after, and the next session
+        resets the coverage, so a lazily-read report would describe one
+        session with another's geometry.
+
+        Reset boundary: replaced by the next session's report and dropped on
+        reload. It is deliberately not persisted — the report describes what
+        this Home Assistant run observed, and a restored one could not be
+        told apart from a live capture.
+        """
+        work = self._current_work_data if isinstance(self._current_work_data, dict) else {}
+
+        def _number(key: str) -> float | None:
+            try:
+                value = work.get(key)
+                return None if value is None else float(value)
+            except (TypeError, ValueError):
+                return None
+
+        # clean_area/total_area are in units of 0.1 m² (same as the sensors).
+        area = _number("clean_area")
+        total = _number("total_area")
+        self._last_mow_report = {
+            "outcome": outcome,
+            "finished_at": dt_util.utcnow(),
+            "map_id": self._map_data.get("id"),
+            "area_m2": None if area is None else round(area / 10, 1),
+            "total_area_m2": None if total is None else round(total / 10, 1),
+            "duration_min": _number("work_duration"),
+            "job_type": work.get("type") or None,
+            # The finished cycle's mow track: copied, because the next session
+            # start clears the live coverage.
+            "coverage_segments": [list(segment) for segment in self._coverage_segments],
+        }
+
+    @property
+    def last_mow_report(self) -> dict[str, Any] | None:
+        """Snapshot of the last mow session, or None before one ended."""
+        return self._last_mow_report
+
     @staticmethod
     def _work_counters_positive(work: dict[str, Any]) -> bool:
         """Whether the dp_113 session counters show work done this session."""
@@ -931,6 +979,9 @@ class TerraMowHub:
             "releasing the active-job latch"
         )
         self._session_outcome = "aborted"
+        # Capture the report while the coverage still holds this session's
+        # track — the lines below drop it.
+        self._capture_mow_report("aborted")
         self._active_mow_mission = None
         self._active_mow_idle_since = None
         self._session_path_segments = []
@@ -1599,6 +1650,9 @@ class TerraMowHub:
                     if self.mission_state == MissionState.MISSION_STATE_COMPLETE
                     else "aborted"
                 )
+                # Snapshot the finished session before the device clears its
+                # counters and the next session resets the coverage.
+                self._capture_mow_report(self._session_outcome)
             self._active_mow_mission = None
             self._active_mow_idle_since = None
             # Fold the final leg into the cycle coverage before the device
