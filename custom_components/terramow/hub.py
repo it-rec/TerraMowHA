@@ -22,6 +22,7 @@ import threading
 import time
 from collections import Counter, OrderedDict, deque
 from collections.abc import Callable
+from datetime import timedelta
 from enum import Enum
 from typing import TYPE_CHECKING, Any
 
@@ -196,6 +197,15 @@ MAX_FAULT_HOTSPOTS = 60
 FAULT_HOTSPOT_MERGE_MM = 500.0
 FAULT_STORE_VERSION = 1
 FAULT_SAVE_DELAY = 10.0  # seconds
+
+# Wear-forecast anchors: one (timestamp, counter value) pair per maintenance
+# counter, kept on disk so the observation window survives restarts.
+WEAR_STORE_VERSION = 1
+WEAR_SAVE_DELAY = 30.0  # seconds
+# A forecast is only offered once the anchor is this old AND the counter has
+# actually advanced — extrapolating from a few minutes of a device that mows
+# for two hours a week would be a guess dressed up as a date.
+WEAR_MIN_WINDOW_SECONDS = 24 * 3600.0
 WIFI_MAP_SAVE_DELAY = 30.0  # seconds
 
 
@@ -528,6 +538,11 @@ class TerraMowHub:
         self._mow_counts: dict[tuple[int, int], int] = {}
         self._mow_count_store: Store[dict[str, Any]] | None = None
         self._mow_count_map_id: Any = None
+        # Counter key -> (ISO timestamp, counter value) observed then. The
+        # oldest surviving sample per counter; the wear forecast is the line
+        # through it and the current reading.
+        self._wear_anchors: dict[str, tuple[str, int]] = {}
+        self._wear_store: Store[dict[str, Any]] | None = None
         self._pose: dict[str, Any] = {}  # Stores the real-time pose
         # One meta-fetch channel per HTTP-backed resource; each bundles the
         # seq/etag/retry/pending bookkeeping for its meta topic.
@@ -1015,6 +1030,7 @@ class TerraMowHub:
         try:
             data = json.loads(payload)
             self._base_station_time = data
+            self._note_counter_sample("base_station", data)
             _LOGGER.debug("Base station time updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_125: %s", payload)
@@ -1030,6 +1046,7 @@ class TerraMowHub:
         try:
             data = json.loads(payload)
             self._blade_time = data
+            self._note_counter_sample("blade", data)
             _LOGGER.debug("Blade time updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_126: %s", payload)
@@ -2850,6 +2867,114 @@ class TerraMowHub:
     def zone_last_seen(self) -> dict[int, str]:
         """Zone id -> ISO timestamp of the last pose seen inside that zone."""
         return self._zone_last_seen
+
+    # --- wear forecast ----------------------------------------------------
+    #
+    # The maintenance counters say how much of a service interval is used, not
+    # when it will be up: the blade counter runs on operating time, so turning
+    # it into a date needs a mowing rate. Rather than assume one, the rate is
+    # measured — the oldest surviving (time, counter) sample per counter is
+    # kept, and the forecast is the straight line through it and the current
+    # reading. No samples, no forecast.
+
+    def _note_counter_sample(self, key: str, payload: Any) -> None:
+        """Feed a raw dp_125/dp_126 payload into the wear anchors."""
+        if not isinstance(payload, dict):
+            return
+        value = payload.get("int_value")
+        if isinstance(value, bool) or not isinstance(value, int):
+            return
+        self.note_wear_sample(key, value)
+
+    def note_wear_sample(self, key: str, used_minutes: int) -> None:
+        """Record a maintenance counter reading for the wear forecast.
+
+        The anchor is replaced when the counter goes *backwards*, which is
+        what a reset looks like — extrapolating across a reset would produce
+        a date from a rate that never happened.
+        """
+        anchor = self._wear_anchors.get(key)
+        if anchor is not None and used_minutes >= anchor[1]:
+            return
+        self._wear_anchors[key] = (dt_util.utcnow().isoformat(), used_minutes)
+        self._schedule_wear_save()
+
+    def wear_forecast(self, key: str, used_minutes: int, cycle_minutes: int) -> Any:
+        """When the counter is projected to reach its service interval.
+
+        Returns a timezone-aware datetime, or None while there is not enough
+        observation to say anything honest: no anchor, too short a window, a
+        counter that has not moved, or one already past its interval (the
+        answer there is "now", which the maintenance entities already say).
+        """
+        anchor = self._wear_anchors.get(key)
+        if anchor is None:
+            return None
+        anchored_at = dt_util.parse_datetime(anchor[0])
+        if anchored_at is None:
+            return None
+        now = dt_util.utcnow()
+        elapsed = (now - anchored_at).total_seconds()
+        advanced = used_minutes - anchor[1]
+        if elapsed < WEAR_MIN_WINDOW_SECONDS or advanced <= 0:
+            return None
+        remaining = cycle_minutes - used_minutes
+        if remaining <= 0:
+            return None
+        # Counter minutes per elapsed second, then the seconds still to go.
+        seconds_left = remaining * (elapsed / advanced)
+        return now + timedelta(seconds=seconds_left)
+
+    def wear_window(self, key: str) -> dict[str, Any] | None:
+        """The observation the forecast rests on, for the entity attributes."""
+        anchor = self._wear_anchors.get(key)
+        if anchor is None:
+            return None
+        return {"observed_since": anchor[0], "observed_from_minutes": anchor[1]}
+
+    def _get_wear_store(self) -> Store[dict[str, Any]]:
+        """Lazily create the disk store for the wear anchors."""
+        if self._wear_store is None:
+            self._wear_store = Store(
+                self.hass, WEAR_STORE_VERSION, f"terramow.wear_{self.host}"
+            )
+        return self._wear_store
+
+    def _wear_save_data(self) -> dict[str, Any]:
+        """Snapshot the anchors for the debounced disk write."""
+        return {
+            "anchors": {
+                key: [stamp, value] for key, (stamp, value) in self._wear_anchors.items()
+            }
+        }
+
+    def _schedule_wear_save(self) -> None:
+        """Persist the anchors soon (debounced; loop-only callers)."""
+        self._get_wear_store().async_delay_save(self._wear_save_data, WEAR_SAVE_DELAY)
+
+    async def async_restore_wear_anchors(self) -> None:
+        """Load the anchors a previous run persisted.
+
+        Without this the observation window would restart on every reload and
+        the forecast would never mature past its minimum window.
+        """
+        try:
+            data = await self._get_wear_store().async_load()
+        except Exception as err:  # corrupt store must never block setup
+            _LOGGER.warning("Could not load persisted wear anchors: %s", err)
+            return
+        anchors = (data or {}).get("anchors")
+        if not isinstance(anchors, dict):
+            return
+        for key, value in anchors.items():
+            if (
+                isinstance(value, (list, tuple))
+                and len(value) == 2
+                and isinstance(value[0], str)
+                and isinstance(value[1], int)
+                and not isinstance(value[1], bool)
+            ):
+                self._wear_anchors[str(key)] = (value[0], value[1])
 
     def _get_wifi_map_store(self) -> Store[dict[str, Any]]:
         """Lazily create the disk store for the Wi-Fi heatmap cells."""

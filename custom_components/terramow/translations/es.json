@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} último corte"
+      },
+      "blade_service_forecast": {
+        "name": "Mantenimiento de cuchillas previsto"
+      },
+      "base_station_service_forecast": {
+        "name": "Mantenimiento de la estación previsto"
       }
     },
     "camera": {

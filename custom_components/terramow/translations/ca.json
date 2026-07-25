@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} darrera sega"
+      },
+      "blade_service_forecast": {
+        "name": "Manteniment de fulles previst"
+      },
+      "base_station_service_forecast": {
+        "name": "Manteniment de l'estació previst"
       }
     },
     "camera": {

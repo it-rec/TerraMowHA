@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} останнє кошіння"
+      },
+      "blade_service_forecast": {
+        "name": "Обслуговування ножів"
+      },
+      "base_station_service_forecast": {
+        "name": "Обслуговування базової станції"
       }
     },
     "camera": {

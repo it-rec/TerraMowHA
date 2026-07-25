@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} paskutinį kartą pjauta"
+      },
+      "blade_service_forecast": {
+        "name": "Peilių priežiūra"
+      },
+      "base_station_service_forecast": {
+        "name": "Bazinės stotelės priežiūra"
       }
     },
     "camera": {

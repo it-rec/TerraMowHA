@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} tuns ultima dată"
+      },
+      "blade_service_forecast": {
+        "name": "Service lame estimat"
+      },
+      "base_station_service_forecast": {
+        "name": "Service stație estimat"
       }
     },
     "camera": {

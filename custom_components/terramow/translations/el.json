@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} τελευταία κοπή"
+      },
+      "blade_service_forecast": {
+        "name": "Συντήρηση λεπίδων"
+      },
+      "base_station_service_forecast": {
+        "name": "Συντήρηση σταθμού βάσης"
       }
     },
     "camera": {

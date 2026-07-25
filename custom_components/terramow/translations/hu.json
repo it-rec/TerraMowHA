@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} utoljára nyírva"
+      },
+      "blade_service_forecast": {
+        "name": "Késkarbantartás esedékes"
+      },
+      "base_station_service_forecast": {
+        "name": "Bázisállomás karbantartása esedékes"
       }
     },
     "camera": {

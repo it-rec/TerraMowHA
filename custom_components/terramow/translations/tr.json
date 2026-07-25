@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} son biçme"
+      },
+      "blade_service_forecast": {
+        "name": "Bıçak bakımı zamanı"
+      },
+      "base_station_service_forecast": {
+        "name": "Şarj istasyonu bakımı zamanı"
       }
     },
     "camera": {

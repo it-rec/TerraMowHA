@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} 上次割草"
+      },
+      "blade_service_forecast": {
+        "name": "刀片保养预计"
+      },
+      "base_station_service_forecast": {
+        "name": "基站保养预计"
       }
     },
     "camera": {

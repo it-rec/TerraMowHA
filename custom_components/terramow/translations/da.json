@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} sidst klippet"
+      },
+      "blade_service_forecast": {
+        "name": "Knivservice forfalder"
+      },
+      "base_station_service_forecast": {
+        "name": "Basestationsservice forfalder"
       }
     },
     "camera": {

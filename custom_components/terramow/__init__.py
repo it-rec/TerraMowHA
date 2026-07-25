@@ -303,6 +303,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     await hub.async_restore_wifi_map()
     await hub.async_restore_fault_hotspots()
     await hub.async_restore_mow_counts()
+    await hub.async_restore_wear_anchors()
     hub.start()
 
     try:
