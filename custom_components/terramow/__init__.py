@@ -302,6 +302,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     # The self-sampled Wi-Fi heatmap likewise survives restarts (issue #200).
     await hub.async_restore_wifi_map()
     await hub.async_restore_fault_hotspots()
+    await hub.async_restore_mow_counts()
     hub.start()
 
     try:

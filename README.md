@@ -34,6 +34,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - Status: mission / sub-mission / mission state, operation mode, power mode, back-to-station reason, rain detection, problem indicator, saving-data and data-conversion indicators
 - **Fault sensor** — the active fault as readable text (e.g. *Mower stuck*, *Mower lifted*, or *OK*), so a notification or voice assistant can say what is wrong without templating an attribute
 - Active-job sensor (the running mission, held across mid-session heartbeat gaps) and a mower-side Wi-Fi signal sensor
+- **Season heatmap** — a map-card view (`Season`) shading how many *finished cycles* have reached each patch of lawn. A strip the mower skips every second run looks fine in any single cycle and only shows up once the cycles are stacked; pale means rarely reached. Each cycle counts once per cell however often it drove through, persists across restarts and resets with the map
 - Map: status, area, detected / buildable / backing-up flags
 - Schedule: next-scheduled-start sensor and a read-only **mowing-schedule calendar** (the next mow appears on the calendar card)
 - Firmware update entity, firmware version on the device page, and version compatibility sensor
