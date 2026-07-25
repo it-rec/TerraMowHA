@@ -336,6 +336,9 @@
       },
       "wifi_signal": {
         "name": "Sinal Wi-Fi"
+      },
+      "zone_last_mowed": {
+        "name": "{zone} último corte"
       }
     },
     "camera": {

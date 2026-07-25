@@ -336,6 +336,9 @@
       },
       "wifi_signal": {
         "name": "Signál Wi-Fi"
+      },
+      "zone_last_mowed": {
+        "name": "{zone} naposledy pokosené"
       }
     },
     "camera": {

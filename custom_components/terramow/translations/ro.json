@@ -336,6 +336,9 @@
       },
       "wifi_signal": {
         "name": "Semnal Wi-Fi"
+      },
+      "zone_last_mowed": {
+        "name": "{zone} tuns ultima dată"
       }
     },
     "camera": {

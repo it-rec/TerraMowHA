@@ -336,6 +336,9 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi信号強度"
+      },
+      "zone_last_mowed": {
+        "name": "{zone} 最終刈り取り"
       }
     },
     "camera": {

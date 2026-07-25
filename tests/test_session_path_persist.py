@@ -63,6 +63,7 @@ def test_save_data_snapshots_segments_and_map() -> None:
         "segments": [SEGMENT],
         "coverage_segments": [],
         "coverage_cycle_done": False,
+        "zone_last_seen": {},
     }
 
 

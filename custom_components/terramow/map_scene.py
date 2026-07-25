@@ -582,6 +582,84 @@ class _BoundsAccumulator:
         return (self.min_x, self.min_y, self.max_x, self.max_y)
 
 
+def coverage_ratios_for_zones(
+    zones: list[tuple[int, list[tuple[float, float]]]],
+    segments: list[list[dict[str, Any]]],
+    cutting_width_mm: float,
+) -> dict[int, float]:
+    """Per-zone mowed fraction from mow-track segments (#197).
+
+    Approximation: a segment edge counts for the zone its midpoint lies in;
+    covered area is edge length x cutting width, capped at the zone area
+    (stripe overlap and edge laps push the raw product past 100 %).
+
+    Shared by the map card (which passes the zones it already built for the
+    scene) and the per-zone sensors (which pass the raw map regions), so the
+    number a user sees on the card and in an entity cannot drift apart.
+    """
+    if not segments or not zones:
+        return {}
+    # Precompute each edge's midpoint + length ONCE (was recomputed per zone).
+    edges: list[tuple[float, float, float]] = []
+    for segment in segments:
+        pts = [(point["x"], point["y"]) for point in segment]
+        for a, b in zip(pts, pts[1:], strict=False):
+            edges.append((
+                (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, math.dist(a, b),
+            ))
+    if not edges:
+        return {}
+    ratios: dict[int, float] = {}
+    for zone_id, boundary in zones:
+        if len(boundary) < 3:
+            continue
+        area = polygon_area(boundary)
+        if area <= 0:
+            continue
+        # Cheap bounding-box reject before the O(V) point-in-polygon test:
+        # on a multi-zone lawn most edges fall outside most zones, so this
+        # turns the O(edges x zones x verts) hot loop into roughly O(edges).
+        xs = [p[0] for p in boundary]
+        ys = [p[1] for p in boundary]
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+        covered = 0.0
+        for mx, my, length in edges:
+            if mx < min_x or mx > max_x or my < min_y or my > max_y:
+                continue
+            if point_in_polygon((mx, my), boundary):
+                covered += length
+        if covered > 0:
+            ratios[zone_id] = round(min(1.0, covered * cutting_width_mm / area), 3)
+    return ratios
+
+
+def zone_boundaries_from_map(
+    map_data: dict[str, Any],
+) -> list[tuple[int, list[tuple[float, float]]]]:
+    """Extract (zone id, boundary) pairs straight from a raw map payload."""
+    zones: list[tuple[int, list[tuple[float, float]]]] = []
+    for region in map_data.get("regions") or []:
+        if not isinstance(region, dict):
+            continue
+        for sub in region.get("sub_regions") or []:
+            if not isinstance(sub, dict):
+                continue
+            zone_id = sub.get("id")
+            if not isinstance(zone_id, int) or isinstance(zone_id, bool):
+                continue
+            boundary = [
+                (float(point["x"]), float(point["y"]))
+                for point in sub.get("boundary") or []
+                if isinstance(point, dict)
+                and isinstance(point.get("x"), (int, float))
+                and isinstance(point.get("y"), (int, float))
+            ]
+            if len(boundary) >= 3:
+                zones.append((zone_id, boundary))
+    return zones
+
+
 def _polygon_centroid(points: list[tuple[float, float]]) -> tuple[float, float] | None:
     """Compute a simple centroid."""
     if not points:

@@ -46,6 +46,7 @@ only creates an entity when a GPS anchor is configured in the options.
 | `lawn_mower.py` | `LawnMowerEntity` — maps hub mission state to `LawnMowerActivity`, forwards start/pause/dock |
 | `sensor.py` | ~25 sensors (battery, statistics, session, maintenance, mission enums, pose, version) + imports map sensors |
 | `map_sensor.py` | Map-derived sensors (`map_status`, `map_area`, `clean_mode`); added by the `sensor` platform, not its own platform |
+| `zone_sensor.py` | One "last mowed" timestamp sensor per map sub-region, created from the map callback (zones only exist once the map arrives); also added by the `sensor` platform |
 | `binary_sensor.py` | Charging, navigation-located, upgrading, power switch, problem, rain, map-status and task-status binary sensors |
 | `select.py` | Zone select, mow-speed, blade-speed, main-direction mode, high-grass edge-trim mode |
 | `number.py` | Mow height/spacing, edge-cutting distance, main-direction angles/interval (all dp_155 writers) |
