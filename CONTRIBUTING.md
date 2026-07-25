@@ -131,8 +131,12 @@ strict typing, etc.).
 ## Map card resource registration
 
 The interactive map card's Lovelace resource type is version-sensitive on
-the Home Assistant side (classic `js` is deprecated and broken on
-HA 2026.7+; see issue #140). When touching `map_card.py` resource
+the Home Assistant side. The card registers itself as a classic `js`
+resource, not an ES `module`: `js` is deprecated but still functional and
+re-executes on every page load, while a cached `module` is not
+re-evaluated and can leave the custom element undefined ("Configuration
+error", issue #140). See `CARD_RESOURCE_TYPE` in `map_card.py`.
+When touching `map_card.py` resource
 registration or the card's loading behaviour, verify on the **latest**
 HA Core release that the card renders on a normal page load with only the
 auto-registered resource — no manual import, at most one hard refresh.

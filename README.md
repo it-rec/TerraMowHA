@@ -21,7 +21,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - Lawn mower entity: start, pause and dock
 - Zone mowing: zone select entity and `terramow.start_select_region` service
 - **Schedule editing** — `terramow.add_schedule` / `terramow.delete_schedule` services write weekly mowing slots to the mower with read-back verification. *Note:* current retail firmware does not yet accept schedule writes over local MQTT (the vendor app uses Bluetooth/cloud) — until firmware adds it, use the **weather-adaptive mowing blueprint** for HA-side scheduling
-- **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position (activity-tinted, with follow mode), on-card start / pause / dock controls, battery & job-progress chips, optional mowed-coverage shading, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
+- **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position (activity-tinted, with follow mode), on-card start / pause / dock controls, battery / job-progress / ETA chips, mowed-coverage shading with per-zone progress, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls, active faults pinned on the map, and a **Wi-Fi heatmap** of the lawn; a **view-mode button** cycles Both / Path / Area / Wi-Fi. Theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
 - Edge trim mowing button
 - Settings from Home Assistant: mowing height, speed, spacing, blade speed, edge cutting distance, main direction mode and angles, thorough corner cutting, high-grass edge trim mode
 - Maintenance: reset buttons for the blade disk and base station counters
@@ -31,13 +31,15 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - Battery: level, charging state, temperature state, charger connected, power switch
 - Job progress: current session area, progress (%), duration and job type; lifetime mowing time, job count and mowed area
 - Status: mission / sub-mission / mission state, operation mode, power mode, back-to-station reason, rain detection, problem indicator, saving-data and data-conversion indicators
+- **Fault sensor** — the active fault as readable text (e.g. *Mower stuck*, *Mower lifted*, or *OK*), so a notification or voice assistant can say what is wrong without templating an attribute
+- Active-job sensor (the running mission, held across mid-session heartbeat gaps) and a mower-side Wi-Fi signal sensor
 - Map: status, area, detected / buildable / backing-up flags
 - Schedule: next-scheduled-start sensor and a read-only **mowing-schedule calendar** (the next mow appears on the calendar card)
 - Firmware update entity, firmware version on the device page, and version compatibility sensor
 - All entities update instantly on device pushes — no polling delay
 
 **Advanced diagnostics** (reverse-engineered data points — mostly in the *Diagnostic* entity category, many disabled by default; see [unofficial data-point notes](docs/en/developers/data_point_unofficial.md))
-- Errors & events: active-error count (with the raw error list as an attribute) and last-event code
+- Errors & events: active-error count (with the raw error list as an attribute) and last-event code. Known error codes are resolved to readable text through a community-sourced catalog (`error_codes.py`), which also decodes the mower's latest-error code (dp_115)
 - Cellular / 4G: modem enabled, signal strength (RSRP / RSRQ), connection type, and a *force cellular network* readout
 - Environment: device-reported sunrise / sunset, daylight state, defogger heating, illumination light, and an extreme-weather warning (with an optional info URL)
 - Safety & advanced settings: cliff-detection and slope-detection state, rain-sensor threshold, after-rain auto-resume and resume-delay, and a *force single base station* readout
@@ -63,8 +65,8 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 | --- | --- |
 | Lawn mower | Start / pause / dock control with live activity |
 | Camera | Map with path, robot and base station; clean map-only variant |
-| Sensor | Battery level, battery state, battery temperature state, map status, map area, mow height, mow speed, operation mode, pose, total mowing time / jobs / mowed area, current session area / progress / duration / job type, remaining blade & base station time, next scheduled start, version compatibility, main direction status, power mode, back-to-station reason, mission, sub-mission, mission state. *Diagnostic:* active errors, last event, cellular RSRP / RSRQ / type, sunrise, sunset, movement / map / mowing mode, rain-sensor threshold, after-rain resume delay, map save progress |
-| Binary sensor | Charging, navigation located, firmware upgrading, power switch, problem, rain detected, map detected / buildable / backing up, saving data, data conversion in progress. *Diagnostic:* cellular enabled, defogger heating, illumination, daylight, extreme weather, cliff / slope detection, after-rain auto-resume, force single base station, force cellular network, manual-mapping relocation / takeover / boundary-closed |
+| Sensor | Battery level, battery state, battery temperature state, map status, map area, mow height, mow speed, operation mode, pose, total mowing time / jobs / mowed area, current session area / progress / duration / job type, active job, fault, remaining blade & base station time, next scheduled start, version compatibility, main direction status, power mode, back-to-station reason, mission, sub-mission, mission state. *Diagnostic:* active errors, last event, Wi-Fi signal, cellular RSRP / RSRQ / type, sunrise, sunset, movement / map / mowing mode, rain-sensor threshold, after-rain resume delay, map save progress |
+| Binary sensor | Charging, navigation located, firmware upgrading, power switch, problem, rain detected, map detected / buildable / backing up, saving data, data conversion in progress. *Diagnostic:* cellular enabled, defogger heating, illumination, daylight, extreme weather, cliff / slope detection, after-rain auto-resume, force single base station, force cellular network, manual-mapping relocation / takeover / boundary-closed, state flag 134 (undecoded) |
 | Select | Zone select, mow speed, blade speed, main direction mode, high-grass edge trim mode |
 | Number | Mowing height, edge cutting distance, mowing spacing, single direction angle, auto-rotate angle interval, first / second direction angle |
 | Switch | Thorough corner cutting |
@@ -80,7 +82,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 #### Method 1: HACS (Recommended)
 1. Make sure [HACS](https://hacs.xyz/) is installed
 2. Use the button above to add to HACS
-3. Go to HACS → Integrations → + → Search for "TerraMow"
+3. Open HACS, search for "TerraMow" and select it
 4. Install and restart Home Assistant
 
 #### Method 2: Manual Installation
@@ -98,12 +100,16 @@ Devices on the local network are discovered automatically via Zeroconf — accep
 
 **Changing settings later**
 - *Reconfigure* (Settings → Devices & Services → TerraMow → Reconfigure): change the host/IP or password in place, e.g. after the mower received a new DHCP address — no need to remove and re-add the integration.
-- *Options* (Configure): tune the map camera — output resolution (higher is sharper but costs more bandwidth and CPU per render), map theme (`light`/`dark`) and whether to shade the already-mowed coverage.
+- *Options* (Configure):
+  - **Map output resolution** — higher is sharper but costs more bandwidth and CPU per render.
+  - **Map theme** — `light` or `dark`.
+  - **Show mowed coverage** — shade the already-mowed area beneath the path line.
+  - **Treat every finished job as 100 % complete** — some firmware ends a finished job without emitting a completion signal, so the session progress never snaps to 100 % even though the lawn is done (it reads as "aborted"). Turn this on to treat any finished job as complete, matching the vendor app; leave it off to keep the honest counter value. *Default: off.*
 - If the device password changes, Home Assistant automatically starts a *reauthentication* flow.
 
 ### Requirements
 
-- Home Assistant 2024.6.0 or later (tested with 2025.1.1)
+- Home Assistant 2024.6.0 or later (CI validates against the current HA Core release)
 - TerraMow firmware version 6.6.0 or later
 - TerraMow APP version 1.6.0 or later
 - Live map and mowing path require firmware HA module version 3; on version 2 (e.g. S800) everything else works and the version compatibility sensor reports it
@@ -157,7 +163,18 @@ type: custom:terramow-map-card
 entity: lawn_mower.terramow
 ```
 
-It renders the lawn as vectors (crisp at any zoom, follows your HA theme): zones, forbidden areas, virtual walls, the mowing path, the base station and the robot's live position. Drag to pan, scroll or pinch to zoom, double-tap to re-fit. **Tap one or more zones** and press the button that appears to mow exactly those zones (`terramow.start_select_region` under the hood). Options and details: see the [dashboard guide](docs/en/dashboard.md#interactive-map-card). Live map data requires firmware HA module version 3 (same as the map camera). The card is also available in the dashboard card picker as **TerraMow Map Card**, with a full UI editor — no YAML needed.
+It renders the lawn as vectors (crisp at any zoom, follows your HA theme): zones, forbidden areas, virtual walls, the mowing path, the base station and the robot's live position. Drag to pan, scroll or pinch to zoom, double-tap to re-fit. **Tap one or more zones** and press the button that appears to mow exactly those zones (`terramow.start_select_region` under the hood).
+
+A **view-mode button** cycles what the card overlays on the lawn:
+
+| Mode | Shows |
+| --- | --- |
+| **Both** | mowed coverage *and* the mowing path (default when coverage is on) |
+| **Path** | the current and previous job's path only |
+| **Area** | the mowed-coverage shading only, with per-zone progress |
+| **Wi-Fi** | a **Wi-Fi heatmap** of the lawn, sampled by the mower as it mows (green = strong). Gaps between mow passes are interpolated from neighbouring samples; ground the mower never covered stays blank |
+
+The chosen mode is remembered per entity in the browser. Options and details: see the [dashboard guide](docs/en/dashboard.md#interactive-map-card). Live map data requires firmware HA module version 3 (same as the map camera). The card is also available in the dashboard card picker as **TerraMow Map Card**, with a full UI editor — no YAML needed.
 
 ### Dashboard example
 
