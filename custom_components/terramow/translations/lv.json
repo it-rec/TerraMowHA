@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Programmaparatūra"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Apkope"
+      }
     }
   },
   "services": {

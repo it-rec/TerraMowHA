@@ -25,6 +25,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - Edge trim mowing button
 - Settings from Home Assistant: mowing height, speed, spacing, blade speed, edge cutting distance, main direction mode and angles, thorough corner cutting, high-grass edge trim mode
 - Maintenance: reset buttons for the blade disk and base station counters
+- **Maintenance todo list** — a `todo` entity that lists exactly the chores the device's own counters report as due (blade disc, base station) and resets the matching counter when you tick one off. Empty when there is nothing to do
 
 **Monitoring**
 - Live map camera with mowing path, robot pose and base station (plus a clean map-only camera for dashboards, resolution configurable via options)
@@ -72,6 +73,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 | Update | Firmware version |
 | Event | Mower event (mowing started / paused / returning / docked / completed / error) |
 | Calendar | Mowing schedule (next scheduled mow) |
+| Todo | Maintenance list (blade disc, base station) — completing an item resets its counter |
 
 ### Installation
 
