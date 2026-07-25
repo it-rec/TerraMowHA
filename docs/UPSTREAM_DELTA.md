@@ -66,7 +66,9 @@ synced point are already covered by the fork:
 - **Light platform** (`light.py`): the mower's illumination lamp as an
   on/off light, plus the defogger heater as a switch, both writing dp_152
   through the shared verified negotiation (no merged-block candidate there —
-  dp_152 also carries device-computed state).
+  dp_152 also carries device-computed state). Field-tested on a V1000: that
+  firmware drops these writes too, so both entities ship disabled by default —
+  see the dp_152 notes.
 - **Writable advanced settings** (dp_150): cliff/slope detection and
   after-rain auto-resume switches plus rain-sensor threshold and resume-delay
   numbers, with the same per-firmware payload negotiation as the schedule
