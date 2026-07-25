@@ -40,12 +40,13 @@ synced point are already covered by the fork:
   mode, per-zone stripe-direction indicators, long-press for a zone's mow
   settings, trapped / maintenance / passage markers, a layer legend,
   camera-parity badges, a stale-map chip, two-finger rotate with a compass
-  reset, keyboard zone cycling, and a card editor with rotation presets and a
-  "use current rotation" capture. It also carries a **Wi-Fi heatmap** of the
-  lawn (self-sampled from dp_109 as the mower drives, gap-filled between mow
-  passes), a **view-mode button** cycling Both / Path / Area / Wi-Fi with the
-  choice remembered per entity, per-zone progress shading from the cycle
-  coverage, an ETA chip, and active faults pinned where they were reported.
+  reset, keyboard zone cycling, a session replay scrubber, and a card editor
+  with rotation presets and a "use current rotation" capture. It also carries a
+  **Wi-Fi heatmap** of the lawn (self-sampled from dp_109 as the mower drives,
+  gap-filled between mow passes), a **view-mode button** cycling
+  Both / Path / Area / Wi-Fi with the choice remembered per entity, per-zone
+  progress shading from the cycle coverage, an ETA chip, and active faults
+  pinned where they were reported.
 - **Repair issues** (`issues.py`): actionable dashboard cards for
   incompatible/too-old firmware (from dp_127) and for due blade (240 h) /
   base-station (30 day) maintenance (from dp_126 / dp_125), which clear

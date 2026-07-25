@@ -23,6 +23,7 @@
  *   zone_selection: true       # tap (or arrow-key) zones to start a selective mow
  *   show_hud: true             # status chips (state, battery, progress)
  *   show_markers: true         # trapped / maintenance / passage markers
+ *   show_replay: true          # session replay scrubber button
  *   show_direction: true       # mowing stripe-direction arrow per region
  *   zone_info: true            # long-press a zone for its mow settings
  *   show_layer_counts: false   # debug: list received layer counts in the legend
@@ -49,12 +50,12 @@ const CARD_TAG = "terramow-map-card";
 /* Keys: no_map, not_connected, start, clear, zone, zones, reset_view,
    follow, start_mowing, pause, dock, sent, missing_entity */
 const STRINGS = {
-  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", reset_rotation: "Reset to default rotation", follow: "Follow the mower", start_mowing: "Start mowing", pause: "Pause", hud_progress: "Progress", hud_eta_left: "left", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", kbd_selected: "selected", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_zone: "Mowing zone", lg_zone_pending: "Selected to mow", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area", lg_wifi: "Wi-Fi signal (green = strong)", view_mode: "View", vw_beides: "Both", vw_weg: "Path", vw_flaeche: "Area", vw_wlan: "Wi-Fi", map_refreshing: "Map refreshing…", dbg_title: "Layers received", dbg_zones: "Zones", dbg_nogo: "No-go zones", dbg_walls: "Walls", dbg_obstacles: "Obstacles", dbg_passthrough: "Pass-through", dbg_required: "Required", dbg_tunnels: "Tunnels", dbg_markers: "Markers", dbg_draw: "Draw regions", dbg_paths: "Path points" },
+  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", reset_rotation: "Reset to default rotation", follow: "Follow the mower", replay: "Replay this session", replay_play: "Play the replay", start_mowing: "Start mowing", pause: "Pause", hud_progress: "Progress", hud_eta_left: "left", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", kbd_selected: "selected", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_zone: "Mowing zone", lg_zone_pending: "Selected to mow", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area", lg_wifi: "Wi-Fi signal (green = strong)", view_mode: "View", vw_beides: "Both", vw_weg: "Path", vw_flaeche: "Area", vw_wlan: "Wi-Fi", map_refreshing: "Map refreshing…", dbg_title: "Layers received", dbg_zones: "Zones", dbg_nogo: "No-go zones", dbg_walls: "Walls", dbg_obstacles: "Obstacles", dbg_passthrough: "Pass-through", dbg_required: "Required", dbg_tunnels: "Tunnels", dbg_markers: "Markers", dbg_draw: "Draw regions", dbg_paths: "Path points" },
   bg: { no_map: "Все още няма карта", not_connected: "Изчакване на данни от косачката…", start: "Коси", clear: "Изчисти", zone: "зона", zones: "зони", reset_view: "Побери картата", follow: "Следвай косачката", start_mowing: "Започни косене", pause: "Пауза", dock: "Върни към станцията", sent: "Косенето на зони започна", missing_entity: "Задайте обект на косачка TerraMow в конфигурацията" },
   ca: { no_map: "Encara no hi ha mapa", not_connected: "Esperant dades del tallagespa…", start: "Sega", clear: "Neteja", zone: "zona", zones: "zones", reset_view: "Ajusta el mapa", follow: "Segueix el tallagespa", start_mowing: "Comença a segar", pause: "Pausa", dock: "Torna a la base", sent: "Sega per zones iniciada", missing_entity: "Configureu una entitat de tallagespa TerraMow" },
   cs: { no_map: "Mapa zatím není k dispozici", not_connected: "Čekání na data sekačky…", start: "Sekat", clear: "Vymazat", zone: "zóna", zones: "zóny", reset_view: "Přizpůsobit mapu", follow: "Sledovat sekačku", start_mowing: "Zahájit sekání", pause: "Pozastavit", dock: "Zpět na stanici", sent: "Sekání zón zahájeno", missing_entity: "Nastavte entitu sekačky TerraMow v konfiguraci karty" },
   da: { no_map: "Intet kort tilgængeligt endnu", not_connected: "Venter på data fra plæneklipperen…", start: "Klip", clear: "Ryd", zone: "zone", zones: "zoner", reset_view: "Tilpas kortet", follow: "Følg plæneklipperen", start_mowing: "Start klipning", pause: "Pause", dock: "Kør til base", sent: "Zoneklipning startet", missing_entity: "Angiv en TerraMow-plæneklipperentitet i kortets konfiguration" },
-  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", reset_rotation: "Auf Standarddrehung zurücksetzen", follow: "Dem Mäher folgen", start_mowing: "Mähen starten", pause: "Pausieren", hud_progress: "Fortschritt", hud_eta_left: "übrig", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch", kbd_selected: "ausgewählt", legend: "Legende", legend_show: "Legende anzeigen", legend_hide: "Legende ausblenden", lg_zone: "Rasenmähzone", lg_zone_pending: "Zum Mähen ausgewählt", lg_mower: "Mäherposition", lg_dock: "Ladestation", lg_order: "Mähreihenfolge", lg_custom: "Eigene Zoneneinstellungen", lg_direction: "Mährichtung", lg_stuck: "Hier steckengeblieben", lg_maint: "Wartungspunkt", lg_passage: "Durchgangspunkt", lg_nogo: "Sperrzone", lg_wall: "Virtuelle Wand", lg_coverage: "Gemähte Fläche", lg_wifi: "WLAN-Signal (grün = stark)", view_mode: "Ansicht", vw_beides: "Beides", vw_weg: "Weg", vw_flaeche: "Fläche", vw_wlan: "WLAN", map_refreshing: "Karte wird aktualisiert…", dbg_title: "Empfangene Ebenen", dbg_zones: "Zonen", dbg_nogo: "Sperrzonen", dbg_walls: "Wände", dbg_obstacles: "Hindernisse", dbg_passthrough: "Durchgänge", dbg_required: "Pflichtzonen", dbg_tunnels: "Tunnel", dbg_markers: "Markierungen", dbg_draw: "Zeichenregionen", dbg_paths: "Pfadpunkte" },
+  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", reset_rotation: "Auf Standarddrehung zurücksetzen", follow: "Dem Mäher folgen", replay: "Diese Sitzung abspielen", replay_play: "Wiedergabe starten", start_mowing: "Mähen starten", pause: "Pausieren", hud_progress: "Fortschritt", hud_eta_left: "übrig", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch", kbd_selected: "ausgewählt", legend: "Legende", legend_show: "Legende anzeigen", legend_hide: "Legende ausblenden", lg_zone: "Rasenmähzone", lg_zone_pending: "Zum Mähen ausgewählt", lg_mower: "Mäherposition", lg_dock: "Ladestation", lg_order: "Mähreihenfolge", lg_custom: "Eigene Zoneneinstellungen", lg_direction: "Mährichtung", lg_stuck: "Hier steckengeblieben", lg_maint: "Wartungspunkt", lg_passage: "Durchgangspunkt", lg_nogo: "Sperrzone", lg_wall: "Virtuelle Wand", lg_coverage: "Gemähte Fläche", lg_wifi: "WLAN-Signal (grün = stark)", view_mode: "Ansicht", vw_beides: "Beides", vw_weg: "Weg", vw_flaeche: "Fläche", vw_wlan: "WLAN", map_refreshing: "Karte wird aktualisiert…", dbg_title: "Empfangene Ebenen", dbg_zones: "Zonen", dbg_nogo: "Sperrzonen", dbg_walls: "Wände", dbg_obstacles: "Hindernisse", dbg_passthrough: "Durchgänge", dbg_required: "Pflichtzonen", dbg_tunnels: "Tunnel", dbg_markers: "Markierungen", dbg_draw: "Zeichenregionen", dbg_paths: "Pfadpunkte" },
   el: { no_map: "Δεν υπάρχει ακόμη χάρτης", not_connected: "Αναμονή δεδομένων χλοοκοπτικού…", start: "Κούρεμα", clear: "Καθαρισμός", zone: "ζώνη", zones: "ζώνες", reset_view: "Προσαρμογή χάρτη", follow: "Ακολούθησε το χλοοκοπτικό", start_mowing: "Έναρξη κουρέματος", pause: "Παύση", dock: "Επιστροφή στη βάση", sent: "Το κούρεμα ζωνών ξεκίνησε", missing_entity: "Ορίστε οντότητα χλοοκοπτικού TerraMow στη διαμόρφωση" },
   es: { no_map: "Aún no hay mapa disponible", not_connected: "Esperando datos del cortacésped…", start: "Cortar", clear: "Borrar", zone: "zona", zones: "zonas", reset_view: "Ajustar mapa", follow: "Seguir al cortacésped", start_mowing: "Iniciar corte", pause: "Pausar", dock: "Volver a la base", sent: "Corte por zonas iniciado", missing_entity: "Configura la entidad del cortacésped TerraMow" },
   et: { no_map: "Kaarti pole veel saadaval", not_connected: "Ootan niiduki andmeid…", start: "Niida", clear: "Tühjenda", zone: "tsoon", zones: "tsooni", reset_view: "Mahuta kaart", follow: "Jälgi niidukit", start_mowing: "Alusta niitmist", pause: "Paus", dock: "Tagasi baasi", sent: "Tsooniniitmine alustatud", missing_entity: "Määra kaardi seadetes TerraMow niiduki olem" },
@@ -125,10 +126,15 @@ function pluralWord(hass, count, oneKey, otherKey) {
 
 /* ---------------------------------------------------------------- icons */
 
+// How long a full replay takes to watch, regardless of the track's length.
+const REPLAY_SECONDS = 12;
+
 const ICONS = {
   layers:
     "M12,16L19.36,10.27L21,9L12,2L3,9L4.63,10.27L12,16M12,18.54L4.62,12.81L3,14.07L12,21.07L21,14.07L19.37,12.81L12,18.54Z",
   play: "M8,5.14V19.14L19,12.14L8,5.14Z",
+  replay:
+    "M12,5V1L7,6L12,11V7A6,6 0 0,1 18,13A6,6 0 0,1 12,19A6,6 0 0,1 6,13H4A8,8 0 0,0 12,21A8,8 0 0,0 20,13A8,8 0 0,0 12,5Z",
   pause: "M14,19H18V5H14M6,19H10V5H6V19Z",
   dock: "M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z",
   fit: "M9.5,13.09L10.92,14.5L6.41,19H10V21H3V14H5V17.59L9.5,13.09M10.91,9.5L9.5,10.91L5,6.41V10H3V3H10V5H6.41L10.91,9.5M14.5,13.09L19,17.59V14H21V21H14V19H17.59L13.08,14.5L14.5,13.09M13.09,9.5L17.59,5H14V3H21V10H19V6.41L14.5,10.91L13.09,9.5Z",
@@ -472,6 +478,9 @@ class TerramowMapCard extends HTMLElement {
     this._lastFrameTs = 0;
     this._lastEntityState = null;
     this._staticCache = null; // {canvas, sig, view}
+    // Session replay: index is a point count into the session track, so the
+    // path layer can be clipped to "as far as the mower had got".
+    this._replay = { active: false, playing: false, index: 0, timer: null };
     this._pathCache = null; // {canvas, sig, view}
     this._layerView = null; // view the offscreen layers were rasterized at
     this._viewMode = null; // overlay mode (VIEW_MODES); set from storage/config
@@ -503,6 +512,7 @@ class TerramowMapCard extends HTMLElement {
       show_hud: true,
       show_controls: true,
       show_markers: true,
+      show_replay: true,
       show_direction: true,
       zone_info: true,
       show_layer_counts: false,
@@ -609,6 +619,8 @@ class TerramowMapCard extends HTMLElement {
 
   disconnectedCallback() {
     document.removeEventListener("visibilitychange", this._onVisibility);
+    // A replay left running would keep ticking on a card nobody is looking at.
+    this._setReplayPlaying(false);
     this._teardownSubscription();
   }
 
@@ -754,6 +766,7 @@ class TerramowMapCard extends HTMLElement {
       }
     }
     this._updateActionBar();
+    this._updateReplayBtn();
   }
 
   /* --------------------------------------------------------------- DOM */
@@ -935,6 +948,28 @@ class TerramowMapCard extends HTMLElement {
         margin-top: 6px; font-size: 11px;
         color: var(--secondary-text-color, #727272);
       }
+      .replay {
+        position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 8px; z-index: 3;
+        padding: 4px 10px 4px 4px; border-radius: 20px;
+        background: var(--card-background-color, #fff);
+        border: 1px solid var(--divider-color, rgba(0,0,0,.12));
+        box-shadow: 0 2px 10px rgba(0,0,0,.22);
+        max-width: min(90%, 320px);
+      }
+      .replay .rp-play {
+        display: flex; align-items: center; justify-content: center;
+        width: 30px; height: 30px; flex: none; padding: 0;
+        border: none; border-radius: 50%; cursor: pointer;
+        background: var(--primary-color, #03a9f4);
+        color: var(--text-primary-color, #fff);
+      }
+      .replay .rp-play svg { width: 18px; height: 18px; }
+      .replay input[type="range"] { flex: 1; min-width: 90px; accent-color: var(--primary-color, #03a9f4); }
+      .replay .rp-label {
+        font-size: 12px; min-width: 34px; text-align: right;
+        color: var(--secondary-text-color, #727272); font-variant-numeric: tabular-nums;
+      }
       .legend-btn {
         position: absolute; left: 8px; bottom: 32px; z-index: 3;
       }
@@ -1037,11 +1072,21 @@ class TerramowMapCard extends HTMLElement {
     this._compassBtn.querySelector("svg").style.transition = "transform .15s";
     // Overlay view toggle (path / area / both / Wi-Fi) — one tap cycles what's
     // drawn, so a single card replaces separate dashboard views.
+    // Session replay: scrub through the track the mower actually drove this
+    // session. Purely a view of data the card already has — no extra traffic.
+    this._replayBtn = this._roundButton(ICONS.replay, () => this._toggleReplay());
+    this._replayBtn.style.display = "none";
     this._modeBtn = this._roundButton(ICONS.layers, () => this._cycleViewMode());
     this._modeBtn.classList.add("mode");
     this._initViewMode();
     this._updateModeBtn();
-    side.append(this._modeBtn, this._fitBtn, this._followBtn, this._compassBtn);
+    side.append(
+      this._modeBtn,
+      this._replayBtn,
+      this._fitBtn,
+      this._followBtn,
+      this._compassBtn
+    );
     wrap.appendChild(side);
 
     // bottom-right: contextual mow controls
@@ -1081,6 +1126,34 @@ class TerramowMapCard extends HTMLElement {
     this._legendBtn.title = legendLabel;
     this._legendBtn.setAttribute("aria-label", legendLabel);
     wrap.appendChild(this._legendBtn);
+
+    // bottom-centre: the replay scrubber, shown only while replay is on
+    this._replayBar = document.createElement("div");
+    this._replayBar.className = "replay";
+    this._replayBar.style.display = "none";
+    this._replayPlayBtn = document.createElement("button");
+    this._replayPlayBtn.className = "rp-play";
+    this._replayPlayBtn.addEventListener("click", () =>
+      this._setReplayPlaying(!this._replay.playing)
+    );
+    this._replaySlider = document.createElement("input");
+    this._replaySlider.type = "range";
+    this._replaySlider.min = "0";
+    this._replaySlider.step = "1";
+    this._replaySlider.addEventListener("input", () => {
+      // Dragging takes over from playback: the user is steering now.
+      this._setReplayPlaying(false);
+      this._replay.index = Number(this._replaySlider.value);
+      this._requestDraw();
+    });
+    this._replayLabel = document.createElement("span");
+    this._replayLabel.className = "rp-label";
+    this._replayBar.append(
+      this._replayPlayBtn,
+      this._replaySlider,
+      this._replayLabel
+    );
+    wrap.appendChild(this._replayBar);
 
     this._msg = document.createElement("div");
     this._msg.className = "msg";
@@ -1171,6 +1244,139 @@ class TerramowMapCard extends HTMLElement {
       default: // beides
         return { coverage: true, history: true, current: true, wifi: false };
     }
+  }
+
+  /**
+   * The track the mower drove this session, in the order it drove it:
+   * the legs archived before a mid-session dock, then the live path.
+   * The previous session's history path is deliberately excluded — replaying
+   * "this mow" must not sweep in the last one.
+   */
+  _replayRuns() {
+    const scene = this._scene;
+    if (!scene) {
+      return [];
+    }
+    const runs = [];
+    for (const segment of scene.session_paths || []) {
+      if (Array.isArray(segment) && segment.length) {
+        runs.push(segment);
+      }
+    }
+    if (Array.isArray(scene.current_path) && scene.current_path.length) {
+      runs.push(scene.current_path);
+    }
+    return runs;
+  }
+
+  _replayTotal() {
+    return this._replayRuns().reduce((sum, run) => sum + run.length, 0);
+  }
+
+  /** The runs truncated to the first `upto` points overall. */
+  _clipRuns(runs, upto) {
+    const clipped = [];
+    let left = upto;
+    for (const run of runs) {
+      if (left <= 0) {
+        break;
+      }
+      clipped.push(left >= run.length ? run : run.slice(0, left));
+      left -= run.length;
+    }
+    return clipped;
+  }
+
+  /** Show the replay button only when there is a track worth replaying. */
+  _updateReplayBtn() {
+    if (!this._replayBtn) {
+      return;
+    }
+    const available = Boolean(this._config.show_replay) && this._replayTotal() > 1;
+    this._replayBtn.style.display = available ? "" : "none";
+    if (!available && this._replay.active) {
+      this._exitReplay();
+    }
+    const label = localize(this._hass, "replay");
+    this._replayBtn.title = label;
+    this._replayBtn.setAttribute("aria-label", label);
+    this._replayBtn.setAttribute("aria-pressed", String(this._replay.active));
+    this._replayBtn.classList.toggle("active", this._replay.active);
+  }
+
+  _toggleReplay() {
+    if (this._replay.active) {
+      this._exitReplay();
+      return;
+    }
+    this._replay.active = true;
+    this._replay.index = 0;
+    // Following the live robot while scrubbing the past would fight the user
+    // for the viewport.
+    this._setFollow(false);
+    this._replayBar.style.display = "";
+    this._updateReplayBar();
+    this._setReplayPlaying(true);
+    this._updateReplayBtn();
+    this._requestDraw();
+  }
+
+  _exitReplay() {
+    this._setReplayPlaying(false);
+    this._replay.active = false;
+    if (this._replayBar) {
+      this._replayBar.style.display = "none";
+    }
+    if (this._replayBtn) {
+      this._replayBtn.classList.remove("active");
+      this._replayBtn.setAttribute("aria-pressed", "false");
+    }
+    this._requestDraw();
+  }
+
+  _setReplayPlaying(playing) {
+    if (this._replay.timer) {
+      clearInterval(this._replay.timer);
+      this._replay.timer = null;
+    }
+    this._replay.playing = Boolean(playing) && this._replay.active;
+    if (this._replay.playing) {
+      const total = this._replayTotal();
+      // Fixed wall-clock duration: a long mow should not take longer to
+      // watch than a short one, so the step scales with the track length.
+      const step = Math.max(1, Math.ceil(total / (REPLAY_SECONDS * 20)));
+      if (this._replay.index >= total) {
+        this._replay.index = 0; // pressing play at the end starts over
+      }
+      this._replay.timer = setInterval(() => {
+        this._replay.index = Math.min(total, this._replay.index + step);
+        if (this._replay.index >= total) {
+          this._setReplayPlaying(false);
+        }
+        this._updateReplayBar();
+        this._requestDraw();
+      }, 50);
+    }
+    if (this._replayPlayBtn) {
+      this._replayPlayBtn.innerHTML = svgIcon(
+        this._replay.playing ? ICONS.pause : ICONS.play
+      );
+      const label = localize(this._hass, this._replay.playing ? "pause" : "replay_play");
+      this._replayPlayBtn.title = label;
+      this._replayPlayBtn.setAttribute("aria-label", label);
+    }
+    this._updateReplayBar();
+  }
+
+  _updateReplayBar() {
+    if (!this._replayBar || !this._replay.active) {
+      return;
+    }
+    const total = this._replayTotal();
+    this._replaySlider.max = String(total);
+    this._replaySlider.value = String(Math.min(this._replay.index, total));
+    const percent = total > 0 ? Math.round((this._replay.index / total) * 100) : 0;
+    this._replayLabel.textContent = `${percent}%`;
   }
 
   _updateModeBtn() {
@@ -2473,6 +2679,9 @@ class TerramowMapCard extends HTMLElement {
       sizeSig,
       themeSig,
       this._viewMode,
+      // Scrubbing redraws only the path layer: the geometry underneath it
+      // does not change while the track is clipped.
+      this._replay.active ? this._replay.index : "live",
     ].join("§");
 
     const needStatic =
@@ -3034,9 +3243,23 @@ class TerramowMapCard extends HTMLElement {
     // Tracks mowed earlier in the running session, before a mid-session
     // recharge dock (the firmware clears the realtime path on dock, issue
     // #214). One polyline per segment — never joined across the dock gap.
-    const sessionPaths = Array.isArray(scene.session_paths)
+    let sessionPaths = Array.isArray(scene.session_paths)
       ? scene.session_paths
       : [];
+    let currentPath = scene.current_path;
+    let historyPath = scene.history_path;
+    if (this._replay.active) {
+      // Replay draws the session as far as the mower had got: the archived
+      // legs and the live path clipped to one running point count, and no
+      // history path at all (that is the *previous* mow).
+      const clipped = this._clipRuns(this._replayRuns(), this._replay.index);
+      const liveIndex = (scene.session_paths || []).filter(
+        (run) => Array.isArray(run) && run.length
+      ).length;
+      sessionPaths = clipped.slice(0, liveIndex);
+      currentPath = clipped[liveIndex] || [];
+      historyPath = [];
+    }
     if (L.coverage) {
       const spacing = Number(scene.mow_params && scene.mow_params.mow_spacing);
       const width =
@@ -3044,11 +3267,11 @@ class TerramowMapCard extends HTMLElement {
       for (const segment of sessionPaths) {
         strokePath(segment, colors.coverage, width);
       }
-      strokePath(scene.history_path, colors.coverage, width);
-      strokePath(scene.current_path, colors.coverage, width);
+      strokePath(historyPath, colors.coverage, width);
+      strokePath(currentPath, colors.coverage, width);
     }
     if (L.history) {
-      strokePath(scene.history_path, colors.historyPath, 1.6 / view.scale);
+      strokePath(historyPath, colors.historyPath, 1.6 / view.scale);
     }
     if (L.current) {
       if (sessionPaths.length) {
@@ -3060,7 +3283,7 @@ class TerramowMapCard extends HTMLElement {
         }
         ctx.globalAlpha = 1;
       }
-      strokePath(scene.current_path, colors.currentPath, 2.2 / view.scale);
+      strokePath(currentPath, colors.currentPath, 2.2 / view.scale);
     }
   }
 
@@ -3326,6 +3549,11 @@ class TerramowMapCardEditor extends HTMLElement {
       {
         name: "show_markers",
         label: "Show trapped / maintenance markers",
+        selector: { boolean: {} },
+      },
+      {
+        name: "show_replay",
+        label: "Show the session replay button",
         selector: { boolean: {} },
       },
       {
