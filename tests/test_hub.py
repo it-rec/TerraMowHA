@@ -388,6 +388,8 @@ def test_dp_callback_dispatch_and_unknown_dp_logging() -> None:
     previous_level = logger.level
     try:
         logger.setLevel(logging.DEBUG)
+        # A later republish of the same payload, not a broker redelivery.
+        hub._last_delivery.clear()
         hub.on_mqtt_message(None, None, unknown)
         logger.setLevel(logging.INFO)
         hub.on_mqtt_message(None, None, unknown)  # slice skipped, no log

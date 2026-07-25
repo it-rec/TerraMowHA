@@ -19,7 +19,7 @@ import random
 import re
 import threading
 import time
-from collections import deque
+from collections import Counter, OrderedDict, deque
 from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING, Any
@@ -173,6 +173,29 @@ WIFI_EMA_ALPHA = 0.4
 MAX_WIFI_CELLS = 4000
 WIFI_MAP_STORE_VERSION = 1
 WIFI_MAP_SAVE_DELAY = 30.0  # seconds
+
+
+# Overlapping-subscription duplicate suppression.
+#
+# _async_on_connected subscribes "#" (broker-wide discovery: the mower's
+# internal commander acks on topics outside the documented namespace) *in
+# addition to* the specific filters — "data_point/+/robot", the map/path meta
+# topics, the pose topic and so on. MQTT 3.1.1 §3.3.5 leaves it to the server
+# whether a publish matching several of a client's subscriptions is delivered
+# once or once per subscription, and the common brokers (mosquitto among them)
+# deliver one copy per matching subscription. Every documented topic therefore
+# arrives twice: two JSON parses, two callback fan-outs, two state writes per
+# entity, and the ~2 Hz pose effectively handled at 4 Hz.
+#
+# The copies come out of one broker flush microseconds apart, whereas the
+# fastest topic the device republishes at all is the pose at 2 Hz (500 ms). A
+# byte-identical payload repeating on the same topic within this window is
+# therefore a redelivery and not new information, and is dropped. The window
+# sits an order of magnitude away from both figures on purpose.
+MQTT_DUPLICATE_WINDOW = 0.2
+# Bound on the per-topic memory of the check. The "#" subscription can surface
+# arbitrarily many topics, so the map is an LRU rather than an unbounded dict.
+MQTT_DUPLICATE_TRACKED_TOPICS = 256
 
 
 def _decompress_and_parse(raw: bytes) -> Any:
@@ -563,6 +586,11 @@ class TerraMowHub:
         # Messages seen on topics outside the documented namespace (via the
         # "#" discovery subscription): (epoch, topic, payload) — bounded.
         self._unknown_topic_captures: deque[tuple[float, str, str]] = deque(maxlen=50)
+        # Overlapping-subscription duplicate suppression: last (payload,
+        # monotonic time) per topic, plus a per-topic count of what was
+        # dropped. See _is_duplicate_delivery.
+        self._last_delivery: OrderedDict[str, tuple[str, float]] = OrderedDict()
+        self._duplicate_deliveries: Counter[str] = Counter()
 
         self.cmd_seq = random.randint(0, 0xFFFFFFFF)  # Generate a random command sequence number
         # get_cmd_seq is reachable from the event loop and from executor
@@ -605,6 +633,12 @@ class TerraMowHub:
             "last_command_ack": dict(self._last_command_ack),
             "app_dp_captures": list(self._app_dp_captures),
             "unknown_topic_captures": list(self._unknown_topic_captures),
+            # Redeliveries dropped per topic since the last restart. Non-zero
+            # means the broker really does fan one publish out across the
+            # overlapping "#" and specific subscriptions — the evidence behind
+            # MQTT_DUPLICATE_WINDOW. All-zero means it deduplicates itself and
+            # the check is costing nothing.
+            "duplicate_deliveries": dict(self._duplicate_deliveries),
         }
 
     def register_state_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
@@ -1861,6 +1895,36 @@ class TerraMowHub:
         except OSError as err:
             _LOGGER.debug("Failed to persist unknown-dp log: %s", err)
 
+    def _is_duplicate_delivery(self, topic: str, payload: str) -> bool:
+        """Whether this message is a redelivery of the one just handled.
+
+        The broker hands us one copy per matching subscription, and "#" makes
+        every documented topic match twice (see MQTT_DUPLICATE_WINDOW). The
+        copies arrive in a single flush, so an identical payload repeating on
+        the same topic inside the window carries no new information and is
+        dropped; anything slower than the window — including the device
+        genuinely republishing an unchanged value — passes through untouched.
+        """
+        now = time.monotonic()
+        previous = self._last_delivery.get(topic)
+        if (
+            previous is not None
+            and previous[0] == payload
+            and now - previous[1] < MQTT_DUPLICATE_WINDOW
+        ):
+            # Do NOT refresh the timestamp: a topic republishing the same
+            # payload faster than the window must not be suppressed forever.
+            self._duplicate_deliveries[topic] += 1
+            return True
+        self._last_delivery[topic] = (payload, now)
+        self._last_delivery.move_to_end(topic)
+        while len(self._last_delivery) > MQTT_DUPLICATE_TRACKED_TOPICS:
+            evicted, _ = self._last_delivery.popitem(last=False)
+            # Keep the counter's keys a subset of the tracked topics so the
+            # "#" subscription cannot grow it without bound either.
+            self._duplicate_deliveries.pop(evicted, None)
+        return False
+
     def on_mqtt_message(self, _client: Any, _userdata: Any, msg: Any) -> None:
         """Handle one received MQTT message (paho-style signature kept)."""
         topic = msg.topic
@@ -1872,6 +1936,10 @@ class TerraMowHub:
             # would then wedge the connection in a reconnect/redeliver cycle.
             # Drop the message instead.
             _LOGGER.warning("Ignoring undecodable MQTT payload on topic %s", topic)
+            return
+
+        if self._is_duplicate_delivery(topic, payload):
+            _LOGGER.debug("Dropping duplicate delivery on topic %s", topic)
             return
 
         if topic != POSE_TOPIC:
