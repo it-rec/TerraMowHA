@@ -387,9 +387,14 @@ def test_dp_callback_dispatch_and_unknown_dp_logging() -> None:
     logger = logging.getLogger("custom_components.terramow.hub")
     previous_level = logger.level
     try:
+        # Each delivery models the device republishing the same payload later,
+        # not the broker redelivering one publish, so clear the duplicate
+        # suppression memory before each (see MQTT_DUPLICATE_WINDOW).
         logger.setLevel(logging.DEBUG)
+        hub._last_delivery.clear()
         hub.on_mqtt_message(None, None, unknown)
         logger.setLevel(logging.INFO)
+        hub._last_delivery.clear()
         hub.on_mqtt_message(None, None, unknown)  # slice skipped, no log
     finally:
         logger.setLevel(previous_level)

@@ -519,6 +519,11 @@
       "firmware": {
         "name": "펌웨어"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "유지보수"
+      }
     }
   },
   "services": {

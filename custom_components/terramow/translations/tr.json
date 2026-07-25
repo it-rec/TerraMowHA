@@ -519,6 +519,11 @@
       "firmware": {
         "name": "Aygıt Yazılımı"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Bakım"
+      }
     }
   },
   "services": {

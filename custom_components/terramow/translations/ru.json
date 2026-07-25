@@ -519,6 +519,11 @@
       "firmware": {
         "name": "Прошивка"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Обслуживание"
+      }
     }
   },
   "services": {

@@ -519,6 +519,11 @@
       "firmware": {
         "name": "Firmvér"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Údržba"
+      }
     }
   },
   "services": {

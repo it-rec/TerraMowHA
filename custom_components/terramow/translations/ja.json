@@ -519,6 +519,11 @@
       "firmware": {
         "name": "ファームウェア"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "メンテナンス"
+      }
     }
   },
   "services": {

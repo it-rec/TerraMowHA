@@ -47,7 +47,7 @@ def _hub() -> TerraMowHub:
 
 def test_coordinate_transformer_scales_and_centers() -> None:
     transformer = CoordinateTransformer(
-        [(0.0, 0.0), (10.0, 10.0)], rect=(0, 0, 120, 120), padding=10
+        (0.0, 0.0, 10.0, 10.0), rect=(0, 0, 120, 120), padding=10
     )
     assert transformer.to_pixel(0.0, 0.0) == (10, 10)
     assert transformer.to_pixel(10.0, 10.0) == (110, 110)
@@ -55,7 +55,7 @@ def test_coordinate_transformer_scales_and_centers() -> None:
 
 
 def test_coordinate_transformer_without_points_is_identity_plus_padding() -> None:
-    transformer = CoordinateTransformer([], rect=(0, 0, 100, 100), padding=8)
+    transformer = CoordinateTransformer(None, rect=(0, 0, 100, 100), padding=8)
     assert transformer.to_pixel(0.0, 0.0) == (8, 8)
 
 

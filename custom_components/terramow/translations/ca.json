@@ -519,6 +519,11 @@
       "firmware": {
         "name": "Microprogramari"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Manteniment"
+      }
     }
   },
   "services": {

@@ -519,6 +519,11 @@
       "firmware": {
         "name": "Firmware"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Underhåll"
+      }
     }
   },
   "services": {
