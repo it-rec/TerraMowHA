@@ -512,6 +512,11 @@
       "maintenance": {
         "name": "Одржавање"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Извештај о кошењу"
+      }
     }
   },
   "services": {

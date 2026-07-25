@@ -512,6 +512,11 @@
       "maintenance": {
         "name": "Priežiūra"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Pjovimo ataskaita"
+      }
     }
   },
   "services": {

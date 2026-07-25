@@ -29,11 +29,13 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 
 **Monitoring**
 - Live map camera with mowing path, robot pose and base station (plus a clean map-only camera for dashboards, resolution configurable via options)
+- **Mow report image** — a frozen picture of the *last finished* session: the lawn with that session's mow track shaded in, plus a ribbon carrying its own numbers (area, duration, how it ended). Attach it to a "mowing finished" notification — a live camera frame taken minutes later already shows an empty map, because the device clears its path and counters at session end
 - Battery: level, charging state, temperature state, charger connected, power switch
 - Job progress: current session area, progress (%), duration and job type; lifetime mowing time, job count and mowed area
 - Status: mission / sub-mission / mission state, operation mode, power mode, back-to-station reason, rain detection, problem indicator, saving-data and data-conversion indicators
 - **Fault sensor** — the active fault as readable text (e.g. *Mower stuck*, *Mower lifted*, or *OK*), so a notification or voice assistant can say what is wrong without templating an attribute
 - Active-job sensor (the running mission, held across mid-session heartbeat gaps) and a mower-side Wi-Fi signal sensor
+- **Season heatmap** — a map-card view (`Season`) shading how many *finished cycles* have reached each patch of lawn. A strip the mower skips every second run looks fine in any single cycle and only shows up once the cycles are stacked; pale means rarely reached. Each cycle counts once per cell however often it drove through, persists across restarts and resets with the map
 - Map: status, area, detected / buildable / backing-up flags
 - **Per-zone "last mowed"** — one timestamp sensor per map zone, stamped with the last time the mower was reported *inside* that zone, with the running cycle's coverage as an attribute. Makes "the terrace hasn't been mowed in ten days" an automation trigger instead of something you notice by eye
 - Schedule: next-scheduled-start sensor and a read-only **mowing-schedule calendar** (the next mow appears on the calendar card)
@@ -70,6 +72,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 | --- | --- |
 | Lawn mower | Start / pause / dock control with live activity |
 | Camera | Map with path, robot and base station; clean map-only variant |
+| Image | Mow report of the last finished session (area / duration / outcome as attributes) |
 | Sensor | Battery level, battery state, battery temperature state, map status, map area, mow height, mow speed, operation mode, pose, total mowing time / jobs / mowed area, current session area / progress / duration / job type, active job, fault, per-zone last-mowed timestamps, remaining blade & base station time, next scheduled start, version compatibility, main direction status, power mode, back-to-station reason, mission, sub-mission, mission state. *Diagnostic:* active errors, last event, Wi-Fi signal, cellular RSRP / RSRQ / type, sunrise, sunset, movement / map / mowing mode, rain-sensor threshold, after-rain resume delay, map save progress |
 | Binary sensor | Charging, navigation located, firmware upgrading, power switch, problem, rain detected, map detected / buildable / backing up, saving data, data conversion in progress. *Diagnostic:* cellular enabled, defogger heating, illumination, daylight, extreme weather, cliff / slope detection, after-rain auto-resume, force single base station, force cellular network, manual-mapping relocation / takeover / boundary-closed, state flag 134 (undecoded) |
 | Select | Zone select, mow speed, blade speed, main direction mode, high-grass edge trim mode |

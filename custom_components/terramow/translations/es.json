@@ -512,6 +512,11 @@
       "maintenance": {
         "name": "Mantenimiento"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Informe de corte"
+      }
     }
   },
   "services": {

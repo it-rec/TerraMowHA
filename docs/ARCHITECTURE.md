@@ -25,9 +25,9 @@ read/command surfaces over that hub. Because the device pushes state, entities
 refresh reactively (via callbacks) rather than by polling — every platform sets
 `PARALLEL_UPDATES = 0`.
 
-The 12 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
-`binary_sensor`, `select`, `number`, `camera`, `update`, `button`, `switch`,
-`event`, `calendar`, `todo`.
+The 13 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
+`binary_sensor`, `select`, `number`, `camera`, `image`, `update`, `button`,
+`switch`, `event`, `calendar`, `todo`.
 
 ## 2. Component map
 
@@ -50,6 +50,7 @@ The 12 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
 | `select.py` | Zone select, mow-speed, blade-speed, main-direction mode, high-grass edge-trim mode |
 | `number.py` | Mow height/spacing, edge-cutting distance, main-direction angles/interval (all dp_155 writers) |
 | `camera.py` | `TerraMowMapCamera` — entity plumbing for the PNG map: callbacks, caching, attributes; two variants (normal + clean-mode). Delegates all drawing to a `MapRenderer` |
+| `image.py` | `MowReportImage` — the last finished session frozen as a PNG: the map with that session's coverage plus a summary ribbon, rendered once per session from the hub's snapshot |
 | `map_scene.py` | Protocol/geometry layer — pure functions coercing the `ha_map_v1` / `ha_path_v1` dicts into points, polygons and paths, simplifying polylines, and assembling a drawable scene plus render metadata. No PIL |
 | `map_render.py` | PIL layer — theme palettes, layout constants, font/placeholder caches and the `MapRenderer` that draws a `map_scene` scene into the final PNG. No HA plumbing |
 | `map_strings.py` | Localized HUD labels baked into the rendered PNG. They cannot live in `strings.json` (hassfest rejects unknown translation categories), so this in-code table is selected by the HA UI language, with English as the complete fallback |
