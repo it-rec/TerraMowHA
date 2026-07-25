@@ -333,6 +333,9 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi sinyali"
+      },
+      "zone_last_mowed": {
+        "name": "{zone} son biçme"
       }
     },
     "camera": {

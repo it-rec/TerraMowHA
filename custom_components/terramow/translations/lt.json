@@ -333,6 +333,9 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi signalas"
+      },
+      "zone_last_mowed": {
+        "name": "{zone} paskutinį kartą pjauta"
       }
     },
     "camera": {

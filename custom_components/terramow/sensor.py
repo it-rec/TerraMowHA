@@ -1241,6 +1241,7 @@ async def async_setup_entry(
         TerraMowMapAreaSensor,
         TerraMowMapStatusSensor,
     )
+    from .zone_sensor import async_setup_zone_sensors
 
     # Build the list of sensor entities
     entities: list[SensorEntity] = [
@@ -1266,3 +1267,7 @@ async def async_setup_entry(
     )
 
     async_add_entities(entities)
+
+    # Zones only exist once the mower has sent its map, so those sensors are
+    # created from the map callback rather than here.
+    async_setup_zone_sensors(hass, basic_data, async_add_entities)

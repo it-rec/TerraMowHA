@@ -164,3 +164,9 @@ DEFAULT_MAP_SHOW_COVERAGE = False
 # matching the vendor app; default off keeps the honest, counter-truthful value.
 CONF_ASSUME_JOB_COMPLETE = "assume_job_complete"
 DEFAULT_ASSUME_JOB_COMPLETE = False
+
+# Per-zone "last mowed" tracking. The mower's pose arrives at ~2 Hz; checking
+# which zone it stands in that often is pointless, so presence is sampled on
+# this interval. A zone's stamp is the last time the mower was observed inside
+# it — a fact the device reported, not an inferred mowing schedule.
+ZONE_PRESENCE_SAMPLE_SECONDS = 5.0

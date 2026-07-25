@@ -333,6 +333,9 @@
       },
       "wifi_signal": {
         "name": "Сигнал Wi-Fi"
+      },
+      "zone_last_mowed": {
+        "name": "{zone} останнє кошіння"
       }
     },
     "camera": {

@@ -26,6 +26,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 - Akku: Ladestand, Ladezustand, Temperaturzustand, Ladegerät verbunden, Netzschalter
 - Auftragsfortschritt: Fläche der aktuellen Sitzung, Fortschritt (%), Dauer und Auftragstyp; Gesamtmähzeit, Auftragsanzahl und gemähte Fläche
 - Status: Mission / Untermission / Missionszustand, Betriebsmodus, Leistungsmodus, Grund für die Rückkehr zur Station, Regenerkennung, Problemanzeige, Anzeigen für Datenspeicherung und Datenkonvertierung
+- **Pro Zone "zuletzt gemäht"** — ein Zeitstempel-Sensor je Kartenzone, gesetzt beim letzten Mal, an dem der Mäher *in* dieser Zone gemeldet wurde, mit der Abdeckung des laufenden Zyklus als Attribut. Macht "die Terrasse wurde seit zehn Tagen nicht gemäht" zum Automatisierungs-Trigger
 - Karte: Status, Fläche, Flags für erkannt / erstellbar / Sicherung läuft
 - Zeitplan: nächster geplanter Start
 - Firmware-Update-Entität, Firmware-Version auf der Geräteseite und Sensor für die Versionskompatibilität

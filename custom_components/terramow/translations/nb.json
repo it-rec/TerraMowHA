@@ -333,6 +333,9 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi-signal"
+      },
+      "zone_last_mowed": {
+        "name": "{zone} sist klippet"
       }
     },
     "camera": {

@@ -33,6 +33,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
 
 from .const import (
     APP_DP_TOPIC_FILTER,
@@ -52,6 +53,7 @@ from .const import (
     PATH_META_TOPIC,
     POSE_TOPIC,
     SCHEDULE_DP,
+    ZONE_PRESENCE_SAMPLE_SECONDS,
     CompatibilityStatus,
 )
 from .issues import (
@@ -59,7 +61,11 @@ from .issues import (
     async_sync_blade_maintenance_issue,
     async_sync_compatibility_issue,
 )
-from .map_scene import extract_cleaning_path_runs, simplify_path_pixels
+from .map_scene import (
+    extract_cleaning_path_runs,
+    point_in_polygon,
+    simplify_path_pixels,
+)
 
 if TYPE_CHECKING:
     from . import TerraMowBasicData
@@ -463,6 +469,9 @@ class TerraMowHub:
         # Cycle-level mowed coverage (issue #202): superset of the session
         # segments, kept across sessions until the cycle ends (see above).
         self._coverage_segments: list[list[dict[str, Any]]] = []
+        # Zone id -> ISO timestamp of the last pose observed inside that zone.
+        self._zone_last_seen: dict[int, str] = {}
+        self._zone_sampled_at: float | None = None
         self._coverage_cycle_done = False
         # Self-sampled Wi-Fi heatmap (issue #200): grid cell -> EMA signal %.
         self._wifi_cells: dict[tuple[int, int], float] = {}
@@ -1900,7 +1909,8 @@ class TerraMowHub:
                 # batch is being dispatched. The Wi-Fi sampler rides the same
                 # loop hop so heatmap sampling adds no extra wakeup.
                 self._dispatch_batch(
-                    [self._sample_wifi_cell, *self.pose_callbacks], pose
+                    [self._sample_wifi_cell, self._sample_zone_presence, *self.pose_callbacks],
+                    pose,
                 )
             except json.JSONDecodeError:
                 _LOGGER.error("Failed to parse pose JSON: %s", payload[:200])
@@ -2189,6 +2199,9 @@ class TerraMowHub:
                 self._session_path_segments = []
                 self._coverage_segments = []
                 self._coverage_cycle_done = False
+                # Zone ids are per map: keeping the stamps would date zones
+                # that no longer exist.
+                self._zone_last_seen = {}
                 self._schedule_session_path_save()
             self._restored_map_id = None
         old_map_id = self._map_data.get("id")
@@ -2202,6 +2215,18 @@ class TerraMowHub:
             self._session_path_segments = []
             self._coverage_segments = []
             self._coverage_cycle_done = False
+            self._schedule_session_path_save()
+        # Zone "last mowed" stamps are keyed by the map's own zone ids, so on
+        # a different map they would date zones that no longer exist. Checked
+        # independently of the tracks above: the stamps outlive them, so a
+        # map change with no archived segments must still clear them.
+        if (
+            self._zone_last_seen
+            and old_map_id is not None
+            and incoming_id is not None
+            and incoming_id != old_map_id
+        ):
+            self._zone_last_seen = {}
             self._schedule_session_path_save()
         # Wi-Fi heatmap cells are map-frame coordinates: on a different map
         # they would paint signal readings over unrelated geometry (#200).
@@ -2357,6 +2382,67 @@ class TerraMowHub:
         self._wifi_map_rev += 1
         self._schedule_wifi_map_save()
 
+    def _sample_zone_presence(self, pose: dict[str, Any]) -> None:
+        """Stamp the zone the mower is standing in right now.
+
+        Derived state (see the AGENTS.md contract): the value is the last time
+        the device reported a pose inside a zone's boundary — an observation,
+        not an inferred mowing schedule. Sampled on an interval because the
+        pose arrives at ~2 Hz and the answer cannot change that fast.
+
+        Reset boundaries: a stamp belongs to the map it was taken on and is
+        dropped when the map changes (see _apply_map_data); nothing is
+        stamped while the mower sits in its dock outside every zone.
+        """
+        if not isinstance(pose, dict):
+            return
+        now = time.monotonic()
+        sampled_at = self._zone_sampled_at
+        if sampled_at is not None and now - sampled_at < ZONE_PRESENCE_SAMPLE_SECONDS:
+            return
+        x = pose.get("x")
+        y = pose.get("y")
+        if (
+            not isinstance(x, (int, float))
+            or not isinstance(y, (int, float))
+            or isinstance(x, bool)
+            or isinstance(y, bool)
+        ):
+            return
+        self._zone_sampled_at = now
+        zone_id = self._zone_at(float(x), float(y))
+        if zone_id is None:
+            return
+        self._zone_last_seen[zone_id] = dt_util.utcnow().isoformat()
+        self._schedule_session_path_save()
+
+    def _zone_at(self, x: float, y: float) -> int | None:
+        """The id of the sub-region containing a map point, if any."""
+        for region in self._map_data.get("regions") or []:
+            if not isinstance(region, dict):
+                continue
+            for sub in region.get("sub_regions") or []:
+                if not isinstance(sub, dict):
+                    continue
+                zone_id = sub.get("id")
+                boundary = [
+                    (point.get("x"), point.get("y"))
+                    for point in sub.get("boundary") or []
+                    if isinstance(point, dict)
+                ]
+                if not isinstance(zone_id, int) or len(boundary) < 3:
+                    continue
+                if any(px is None or py is None for px, py in boundary):
+                    continue
+                if point_in_polygon((x, y), boundary):  # type: ignore[arg-type]
+                    return zone_id
+        return None
+
+    @property
+    def zone_last_seen(self) -> dict[int, str]:
+        """Zone id -> ISO timestamp of the last pose seen inside that zone."""
+        return self._zone_last_seen
+
     def _get_wifi_map_store(self) -> Store[dict[str, Any]]:
         """Lazily create the disk store for the Wi-Fi heatmap cells."""
         if self._wifi_map_store is None:
@@ -2427,6 +2513,9 @@ class TerraMowHub:
             "segments": self._session_path_segments,
             "coverage_segments": self._coverage_segments,
             "coverage_cycle_done": self._coverage_cycle_done,
+            "zone_last_seen": {
+                str(zone_id): stamp for zone_id, stamp in self._zone_last_seen.items()
+            },
         }
 
     def _schedule_session_path_save(self) -> None:
@@ -2456,6 +2545,17 @@ class TerraMowHub:
             self._coverage_cycle_done = bool(
                 (data or {}).get("coverage_cycle_done")
             )
+            self._restored_map_id = (data or {}).get("map_id")
+        stamps = (data or {}).get("zone_last_seen")
+        if isinstance(stamps, dict):
+            # Restored, not live: the stamps are only kept while the device
+            # still serves the map they were taken on — _apply_map_data drops
+            # them otherwise (AGENTS.md rule 6).
+            self._zone_last_seen = {
+                int(zone_id): stamp
+                for zone_id, stamp in stamps.items()
+                if str(zone_id).lstrip("-").isdigit() and isinstance(stamp, str)
+            }
             self._restored_map_id = (data or {}).get("map_id")
         segments = (data or {}).get("segments")
         if isinstance(segments, list) and segments:

@@ -333,6 +333,9 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi 信号"
+      },
+      "zone_last_mowed": {
+        "name": "{zone} 上次割草"
       }
     },
     "camera": {

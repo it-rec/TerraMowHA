@@ -333,6 +333,9 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi jel"
+      },
+      "zone_last_mowed": {
+        "name": "{zone} utoljára nyírva"
       }
     },
     "camera": {

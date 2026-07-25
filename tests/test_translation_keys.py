@@ -44,6 +44,7 @@ COMPONENT_DIR = Path(__file__).parents[1] / "custom_components" / "terramow"
 PLATFORM_FOR_MODULE = {
     "sensor.py": "sensor",
     "map_sensor.py": "sensor",
+    "zone_sensor.py": "sensor",
     "binary_sensor.py": "binary_sensor",
     "select.py": "select",
     "number.py": "number",

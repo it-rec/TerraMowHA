@@ -333,6 +333,9 @@
       },
       "wifi_signal": {
         "name": "Signal Wi-Fi"
+      },
+      "zone_last_mowed": {
+        "name": "{zone} dernière tonte"
       }
     },
     "camera": {

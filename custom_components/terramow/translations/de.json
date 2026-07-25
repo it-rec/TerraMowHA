@@ -333,6 +333,9 @@
       },
       "wifi_signal": {
         "name": "WLAN-Signal"
+      },
+      "zone_last_mowed": {
+        "name": "{zone} zuletzt gemäht"
       }
     },
     "camera": {
