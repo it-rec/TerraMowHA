@@ -524,6 +524,11 @@
       "maintenance": {
         "name": "Onderhoud"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Maairapport"
+      }
     }
   },
   "services": {

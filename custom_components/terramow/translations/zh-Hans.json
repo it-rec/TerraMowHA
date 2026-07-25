@@ -524,6 +524,11 @@
       "maintenance": {
         "name": "维护"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "割草报告"
+      }
     }
   },
   "services": {

@@ -524,6 +524,11 @@
       "maintenance": {
         "name": "Apkope"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Pļaušanas pārskats"
+      }
     }
   },
   "services": {

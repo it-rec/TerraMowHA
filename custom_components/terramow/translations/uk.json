@@ -524,6 +524,11 @@
       "maintenance": {
         "name": "Обслуговування"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Звіт про кошіння"
+      }
     }
   },
   "services": {

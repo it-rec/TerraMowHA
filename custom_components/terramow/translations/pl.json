@@ -524,6 +524,11 @@
       "maintenance": {
         "name": "Konserwacja"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Raport koszenia"
+      }
     }
   },
   "services": {

@@ -524,6 +524,11 @@
       "maintenance": {
         "name": "Hooldus"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Niitmisaruanne"
+      }
     }
   },
   "services": {

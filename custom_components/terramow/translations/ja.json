@@ -524,6 +524,11 @@
       "maintenance": {
         "name": "メンテナンス"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "芝刈りレポート"
+      }
     }
   },
   "services": {
