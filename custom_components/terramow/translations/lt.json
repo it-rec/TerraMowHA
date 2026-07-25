@@ -528,6 +528,11 @@
         "name": "Priežiūra"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Pjovimo ataskaita"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Apšvietimas"

@@ -528,6 +528,11 @@
         "name": "유지보수"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "예초 리포트"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "조명"

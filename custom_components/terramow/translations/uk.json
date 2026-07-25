@@ -528,6 +528,11 @@
         "name": "Обслуговування"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Звіт про кошіння"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Освітлення"

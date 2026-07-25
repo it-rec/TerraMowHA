@@ -528,6 +528,11 @@
         "name": "Entretien"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Rapport de tonte"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Éclairage"

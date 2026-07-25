@@ -528,6 +528,11 @@
         "name": "Hooldus"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Niitmisaruanne"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Valgustus"

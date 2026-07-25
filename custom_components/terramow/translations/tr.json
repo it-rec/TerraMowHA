@@ -528,6 +528,11 @@
         "name": "Bakım"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Biçme raporu"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Aydınlatma"

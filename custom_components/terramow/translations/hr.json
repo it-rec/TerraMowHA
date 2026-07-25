@@ -528,6 +528,11 @@
         "name": "Održavanje"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Izvješće o košnji"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Rasvjeta"

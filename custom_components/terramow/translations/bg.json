@@ -528,6 +528,11 @@
         "name": "Поддръжка"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Отчет за косене"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Осветление"

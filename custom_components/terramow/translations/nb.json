@@ -528,6 +528,11 @@
         "name": "Vedlikehold"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Klipperapport"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Belysning"

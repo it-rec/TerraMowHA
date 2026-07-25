@@ -528,6 +528,11 @@
         "name": "Huolto"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Leikkuuraportti"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Valaistus"

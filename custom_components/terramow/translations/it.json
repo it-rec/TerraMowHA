@@ -528,6 +528,11 @@
         "name": "Manutenzione"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Rapporto di taglio"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Illuminazione"

@@ -528,6 +528,11 @@
         "name": "Údržba"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Správa o kosení"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Osvetlenie"

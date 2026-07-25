@@ -528,6 +528,11 @@
         "name": "Underhåll"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Klipprapport"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Belysning"

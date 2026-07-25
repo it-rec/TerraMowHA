@@ -528,6 +528,11 @@
         "name": "Konserwacja"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Raport koszenia"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Oświetlenie"

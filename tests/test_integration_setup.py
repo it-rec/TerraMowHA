@@ -138,6 +138,7 @@ async def test_setup_loads_and_creates_all_platform_entities(
     assert per_platform == {
         "lawn_mower": 1,
         "camera": 2,
+        "image": 1,
         "update": 1,
         "button": 3,
         # 1 mow-param switch + 3 writable dp_150 advanced settings

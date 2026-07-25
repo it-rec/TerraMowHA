@@ -528,6 +528,11 @@
         "name": "Maintenance"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Mow report"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Illumination"

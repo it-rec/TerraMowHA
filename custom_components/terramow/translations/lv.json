@@ -528,6 +528,11 @@
         "name": "Apkope"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Pļaušanas pārskats"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Apgaismojums"

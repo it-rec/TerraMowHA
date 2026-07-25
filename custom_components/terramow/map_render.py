@@ -12,6 +12,7 @@ from __future__ import annotations
 import io
 import math
 from dataclasses import dataclass, replace
+from datetime import datetime
 from functools import lru_cache
 from typing import Any
 
@@ -1661,3 +1662,100 @@ class MapRenderer:
             )
             draw.text((chip_x + 10, chip_y + 6), chip, fill=self._palette.text_subtle, font=chip_font)
             chip_x += chip_width + 10
+
+
+def _format_duration(minutes: float | None) -> str:
+    """Render a minute count as ``1 h 45 min`` / ``45 min`` / ``—``."""
+    if minutes is None or minutes < 0:
+        return "—"
+    total = int(round(minutes))
+    hours, rest = divmod(total, 60)
+    return f"{hours} h {rest} min" if hours else f"{rest} min"
+
+
+def render_mow_report(
+    scene: dict[str, Any],
+    map_data: dict[str, Any],
+    *,
+    report: dict[str, Any],
+    theme: str,
+    language: str | None,
+    output_resolution: int,
+    finished_local: datetime,
+) -> bytes:
+    """Render the frozen report of a finished mow session.
+
+    Draws the same map the camera draws — with the session's mow track shaded
+    as coverage — and replaces the live "Updated HH:MM" stamp with a ribbon
+    carrying the session's own numbers. Every value comes from the report
+    snapshot, so the picture and the figures describe the same session even
+    when the device has long since reset its counters.
+    """
+    renderer = MapRenderer(
+        theme=theme,
+        language=language,
+        clean_mode=False,
+        show_coverage=True,
+        output_resolution=output_resolution,
+    )
+    stamp = finished_local.strftime("%Y-%m-%d %H:%M")
+    image, _transformer = renderer.render_static(scene, map_data, stamp)
+    _draw_report_ribbon(image, renderer, report, stamp)
+
+    if output_resolution != IMAGE_WIDTH:
+        image = image.resize(
+            (output_resolution, output_resolution), Image.Resampling.LANCZOS
+        )
+    buffer = io.BytesIO()
+    image.convert("RGB").save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def _draw_report_ribbon(
+    image: Image.Image,
+    renderer: MapRenderer,
+    report: dict[str, Any],
+    stamp: str,
+) -> None:
+    """Draw the session summary ribbon across the top of the map card."""
+    palette = renderer._palette
+    draw = ImageDraw.Draw(image, "RGBA")
+    left, top, right, _bottom = MAP_RECT
+    height = 92
+    draw.rounded_rectangle(
+        (left, top, right, top + height),
+        radius=MAP_RADIUS,
+        fill=palette.card_bg,
+        outline=palette.card_border,
+    )
+
+    completed = report.get("outcome") == "completed"
+    title = renderer._t("report_completed" if completed else "report_aborted")
+    title_font = _load_font(22, bold=True)
+    label_font = _load_font(13)
+    value_font = _load_font(18, bold=True)
+
+    draw.text((left + 22, top + 16), title, fill=palette.text, font=title_font)
+    stamp_box = draw.textbbox((0, 0), stamp, font=label_font)
+    draw.text(
+        (right - 22 - int(stamp_box[2] - stamp_box[0]), top + 22),
+        stamp,
+        fill=palette.text_muted,
+        font=label_font,
+    )
+
+    area = report.get("area_m2")
+    total = report.get("total_area_m2")
+    area_text = "—" if area is None else f"{area:g} m²"
+    if area is not None and total:
+        area_text = f"{area:g} / {total:g} m²"
+    metrics = [
+        (renderer._t("report_mowed"), area_text),
+        (renderer._t("report_duration"), _format_duration(report.get("duration_min"))),
+        (renderer._t("report_job"), _truncate(_enum_label(report.get("job_type")), 18)),
+    ]
+    column_width = (right - left - 44) / len(metrics)
+    for index, (label, value) in enumerate(metrics):
+        x = left + 22 + index * column_width
+        draw.text((x, top + 48), label, fill=palette.text_muted, font=label_font)
+        draw.text((x, top + 64), value, fill=palette.text, font=value_font)

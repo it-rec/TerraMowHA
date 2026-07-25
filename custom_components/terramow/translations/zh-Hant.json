@@ -528,6 +528,11 @@
         "name": "維護"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "割草報告"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "照明"

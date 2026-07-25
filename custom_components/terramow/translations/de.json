@@ -528,6 +528,11 @@
         "name": "Wartung"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Mähbericht"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Beleuchtung"

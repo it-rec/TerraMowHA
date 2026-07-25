@@ -528,6 +528,11 @@
         "name": "Údržba"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Zpráva o sečení"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Osvětlení"

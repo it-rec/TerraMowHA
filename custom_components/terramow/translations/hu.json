@@ -528,6 +528,11 @@
         "name": "Karbantartás"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Nyírási jelentés"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Világítás"

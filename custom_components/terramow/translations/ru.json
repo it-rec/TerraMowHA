@@ -528,6 +528,11 @@
         "name": "Обслуживание"
       }
     },
+    "image": {
+      "mow_report": {
+        "name": "Отчёт о покосе"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Освещение"
