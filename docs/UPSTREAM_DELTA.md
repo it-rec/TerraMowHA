@@ -75,6 +75,8 @@ synced point are already covered by the fork:
   theme, mowed-coverage shading, and treating any finished job as 100 %
   complete for firmware that never emits a completion signal).
 - **Firmware update entity** and version-compatibility sensor.
+- **Assist intent** (`intent.py`): "mow the front lawn" resolved against the
+  mower's own zone names, with ready-made sentence files for en/de.
 - **Automation blueprints** and a **dashboard guide**.
 - **Full localization** across 33 languages.
 
