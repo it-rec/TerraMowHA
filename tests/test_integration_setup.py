@@ -144,6 +144,7 @@ async def test_setup_loads_and_creates_all_platform_entities(
         "switch": 1,
         "event": 1,
         "calendar": 1,
+        "todo": 1,
         "select": 5,
         "number": 7,
         "binary_sensor": len(BINARY_SENSORS),

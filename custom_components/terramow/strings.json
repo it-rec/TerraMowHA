@@ -505,6 +505,11 @@
         "name": "Firmware"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Maintenance"
+      }
+    },
     "image": {
       "mow_report": {
         "name": "Mow report"

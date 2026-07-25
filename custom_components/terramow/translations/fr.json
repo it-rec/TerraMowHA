@@ -505,6 +505,11 @@
         "name": "Micrologiciel"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Entretien"
+      }
+    },
     "image": {
       "mow_report": {
         "name": "Rapport de tonte"

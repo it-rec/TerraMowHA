@@ -396,8 +396,9 @@ def test_build_scene_carries_session_segments() -> None:
     assert scene["rendered_layers"].index("session_path") < scene[
         "rendered_layers"
     ].index("path")
-    # the segment participates in the scene's point cloud
-    assert (1000.0, 0.0) in scene["all_points"]
+    # the segment participates in the scene's fit bounds
+    assert scene["bounds"] is not None
+    assert scene["bounds"][2] >= 1000.0
 
     metadata = build_render_metadata(scene, MAP_DATA, {}, {})
     assert metadata["session_path_summary"] == {

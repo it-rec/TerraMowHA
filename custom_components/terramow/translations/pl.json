@@ -505,6 +505,11 @@
         "name": "Oprogramowanie układowe"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Konserwacja"
+      }
+    },
     "image": {
       "mow_report": {
         "name": "Raport koszenia"

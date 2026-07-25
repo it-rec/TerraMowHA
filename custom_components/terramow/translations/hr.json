@@ -505,6 +505,11 @@
         "name": "Firmver"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Održavanje"
+      }
+    },
     "image": {
       "mow_report": {
         "name": "Izvješće o košnji"

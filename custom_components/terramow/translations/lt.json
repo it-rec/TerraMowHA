@@ -505,6 +505,11 @@
         "name": "Programinė aparatinė įranga"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Priežiūra"
+      }
+    },
     "image": {
       "mow_report": {
         "name": "Pjovimo ataskaita"

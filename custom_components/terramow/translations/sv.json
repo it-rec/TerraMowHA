@@ -505,6 +505,11 @@
         "name": "Firmware"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Underhåll"
+      }
+    },
     "image": {
       "mow_report": {
         "name": "Klipprapport"

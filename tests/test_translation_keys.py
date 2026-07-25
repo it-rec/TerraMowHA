@@ -55,6 +55,7 @@ PLATFORM_FOR_MODULE = {
     "image.py": "image",
     "lawn_mower.py": "lawn_mower",
     "calendar.py": "calendar",
+    "todo.py": "todo",
 }
 
 # Modules whose translation keys refer to HomeAssistantError exceptions.

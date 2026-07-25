@@ -27,7 +27,7 @@ refresh reactively (via callbacks) rather than by polling — every platform set
 
 The 12 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
 `binary_sensor`, `select`, `number`, `camera`, `image`, `update`, `button`,
-`switch`, `event`, `calendar`.
+`switch`, `event`, `calendar`, `todo`.
 
 ## 2. Component map
 
@@ -37,23 +37,28 @@ The 12 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
 | `hub.py` | `TerraMowHub` — owns the aiomqtt connection task, all dp caches, map/path HTTP fetching, command helpers, enums (`Mission`, `SubMission`, `MissionState`, …) |
 | `entity.py` | `TerraMowEntity` base — shared `device_info`, `unique_id` scheme, default `available` |
 | `entity_utils.py` | Thread-safe state helpers (`safe_write_ha_state`, `safe_schedule_update_ha_state`) and `PushUpdateMixin` |
-| `config_flow.py` | User/zeroconf/reauth/reconfigure flows, options (map resolution, theme, coverage), `validate_input`, `CannotConnect`/`InvalidAuth` |
+| `config_flow.py` | User/zeroconf/reauth/reconfigure flows, options (map resolution, theme, coverage, assume-job-complete), `validate_input`, `CannotConnect`/`InvalidAuth` |
 | `const.py` | `DOMAIN`, MQTT constants, topic names, version thresholds, enum-token helpers (`to_ha_enum_state`/`to_device_enum`), map-resolution options |
 | `diagnostics.py` | Redacted config-entry diagnostics dump (compatibility, device, cached state) |
 | `issues.py` | Repair issues: firmware compatibility + blade/base-station maintenance |
+| `error_codes.py` | Community-sourced error-code catalog (`describe_error`) turning device fault codes into readable text; backs the **Fault** sensor and the card's fault pins |
 | `lawn_mower.py` | `LawnMowerEntity` — maps hub mission state to `LawnMowerActivity`, forwards start/pause/dock |
 | `sensor.py` | ~25 sensors (battery, statistics, session, maintenance, mission enums, pose, version) + imports map sensors |
 | `map_sensor.py` | Map-derived sensors (`map_status`, `map_area`, `clean_mode`); added by the `sensor` platform, not its own platform |
 | `binary_sensor.py` | Charging, navigation-located, upgrading, power switch, problem, rain, map-status and task-status binary sensors |
 | `select.py` | Zone select, mow-speed, blade-speed, main-direction mode, high-grass edge-trim mode |
 | `number.py` | Mow height/spacing, edge-cutting distance, main-direction angles/interval (all dp_155 writers) |
-| `camera.py` | `TerraMowMapCamera` — renders map + path + history + live pose into a PNG scene; two variants (normal + clean-mode) |
+| `camera.py` | `TerraMowMapCamera` — entity plumbing for the PNG map: callbacks, caching, attributes; two variants (normal + clean-mode). Delegates all drawing to a `MapRenderer` |
 | `image.py` | `MowReportImage` — the last finished session frozen as a PNG: the map with that session's coverage plus a summary ribbon, rendered once per session from the hub's snapshot |
+| `map_scene.py` | Protocol/geometry layer — pure functions coercing the `ha_map_v1` / `ha_path_v1` dicts into points, polygons and paths, simplifying polylines, and assembling a drawable scene plus render metadata. No PIL |
+| `map_render.py` | PIL layer — theme palettes, layout constants, font/placeholder caches and the `MapRenderer` that draws a `map_scene` scene into the final PNG. No HA plumbing |
+| `map_strings.py` | Localized HUD labels baked into the rendered PNG. They cannot live in `strings.json` (hassfest rejects unknown translation categories), so this in-code table is selected by the HA UI language, with English as the complete fallback |
 | `update.py` | Read-only firmware `UpdateEntity` — real version from dp_102, `in_progress` from dp_107 `is_upgrading`, component versions from dp_129 |
 | `button.py` | Edge-trim start, reset blade timer (dp_126←0), reset base-station timer (dp_125←0) |
 | `switch.py` | Thorough-corner-cutting toggle (writes dp_155) |
 | `event.py` | Fires HA events on mission phase transitions (started/paused/returning/docked/completed/error) |
 | `calendar.py` | Read-only schedule calendar — full weekly slots (dp_122) when available, else the next scheduled mow (dp_138) |
+| `todo.py` | `MaintenanceTodoList` — the blade / base-station counters as a generated todo list; completing an item publishes the counter reset (dp_126 / dp_125 ← 0) |
 | `map_card.py` | Interactive map card backend: serves `frontend/terramow-map-card.js` (auto-loaded via `frontend.add_extra_js_url`) and the `terramow/map/subscribe` WebSocket feed pushing the `build_scene` geometry + display robot pose to subscribed cards |
 | `frontend/terramow-map-card.js` | The Lovelace card: canvas vector renderer (pan/zoom/fit, theme-aware), live robot marker, tap-to-mow zone selection calling `terramow.start_select_region` |
 
@@ -228,7 +233,8 @@ properties (mostly through `PushUpdateMixin._push_dp_ids`).
 | 108 | in | `on_battery_status` | `battery_status` | battery state/temperature sensors, charging + power-switch binary sensors, camera (battery-connected) | Battery status payload |
 | 109 | in | `on_wifi_signal` | `wifi_signal` | **Wi-Fi signal** sensor | *Unofficial* — mower-side Wi-Fi signal % (~= 2·(dBm+100)); see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 113 | in | `on_current_work_data` | `current_work_data` | current-session area/time/progress + job-type sensors | Current mowing-session work data |
-| 116 | in | `on_error_list` | `error_list` | Active-errors sensor | *Unofficial* — active-error list; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
+| 115 | in | `on_active_error_code` | `active_error_code` | Fault sensor (via `active_error_codes` + `error_codes.describe_error`) | *Unofficial* — latest-error code, mirroring the newest dp_116 entry exactly as dp_114 mirrors the dp_123 event log; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
+| 116 | in | `on_error_list` | `error_list` | Active-errors sensor, **Fault** sensor (readable text via `error_codes.py`) | *Unofficial* — active-error list; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 117 | in | `on_map_status` | `map_status` | `map_status` sensor, map-detected/buildable/backing-up binary sensors | Map status flags |
 | 118 | in | `on_map_save_progress` | `map_save_progress` | Map-save-progress sensor (diagnostic, disabled by default); also refreshes the sub-mission/state sensors so a completed save can decay their stale `SAVING_MAP`/`RUNNING` to idle (issue #142) | *Unofficial* — map-save/upload progress 0–100 %; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
 | 119 | in | `on_command_ack` | `last_command_ack` | confirmed commands (`async_publish_with_ack`); rejection warnings | *Unofficial* — per-command ack channel (`seq` + `code`); the `start_select_region` service awaits it; see [`data_point_unofficial.md`](./en/developers/data_point_unofficial.md) |
@@ -312,6 +318,27 @@ pose) off-thread. A `CoordinateTransformer` maps device coordinates into the
 output canvas; output resolution comes from the `map_resolution` option. Two
 entities are created: the normal camera and an opt-in borderless "clean-mode"
 variant (`entity_registry_enabled_default = False`).
+
+### 7.1 Cost control
+
+Rendering a mow live is the integration's hottest path — a single mowing tick
+touches map, path and pose — so several layers exist purely to keep a viewed
+dashboard cheap. Change them only with the corresponding perf test in mind.
+
+| Guard | Where | Effect |
+| --- | --- | --- |
+| `SCENE_PUSH_DEBOUNCE` (0.2 s) | `map_card.py` | Map/path/history pushes arriving in a burst collapse into one scene push |
+| `_HUB_SCENE_CACHES` | `map_card.py` | One scene build is shared by every card/feed on the same hub instead of rebuilt per subscriber |
+| Path-extraction cache | `map_card.py` | The live feed reuses the extracted path geometry across pushes rather than re-walking the protocol dicts |
+| `COVERAGE_RECOMPUTE_INTERVAL` (12 s), `_HUB_COVERAGE_CACHES` | `map_card.py` | The per-zone mowed-% is O(edges × zones); it is recomputed at most this often while path and robot keep updating live |
+| `STATIC_REBUILD_MIN_INTERVAL` (10 s) | `camera.py` | A streaming live view re-does the supersampled static base at most this often; an unviewed camera does no work at all (lazy render) |
+| `COVERAGE_MAX_POINTS_PER_SEGMENT` (48) | `hub.py` | The persistent coverage store coarse-simplifies and caps each segment, so a long mow's cycle coverage stays small enough to keep across restarts |
+
+**Persistence.** Cycle-level mowed coverage and archived session mow paths are
+stored so they survive a Home Assistant restart and a mid-session recharge
+dock — the card and camera show the whole cycle, not just the current leg.
+The mow path is split into **runs**, so a transit between two mowed strips does
+not draw a phantom diagonal across the lawn.
 
 ## 8. Repair issues (`issues.py`)
 

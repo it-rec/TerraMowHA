@@ -236,10 +236,19 @@ class CoordinateTransformer:
 
     def __init__(
         self,
-        points: list[tuple[float, float]],
+        bounds: tuple[float, float, float, float] | None,
         rect: tuple[int, int, int, int],
         padding: int = MAP_PADDING,
     ) -> None:
+        """Fit the scene's bounding box into ``rect``.
+
+        ``bounds`` is ``(min_x, min_y, max_x, max_y)`` in map units, or None
+        when the scene has no geometry at all. It used to be the scene's full
+        point list, which the fit only ever reduced to these four numbers;
+        ``map_scene.build_scene`` now accumulates the box directly (see
+        ``_BoundsAccumulator``) instead of materializing and deduplicating
+        every path point on each rebuild.
+        """
         self.left, self.top, self.right, self.bottom = rect
         self.padding = padding
         self._usable_width = max(1.0, float(self.right - self.left - 2 * padding))
@@ -248,13 +257,10 @@ class CoordinateTransformer:
         self._offset_x = float(self.left + padding)
         self._offset_y = float(self.top + padding)
 
-        if not points:
+        if bounds is None:
             return
 
-        xs = [point[0] for point in points]
-        ys = [point[1] for point in points]
-        min_x, max_x = min(xs), max(xs)
-        min_y, max_y = min(ys), max(ys)
+        min_x, min_y, max_x, max_y = bounds
 
         range_x = max(1.0, max_x - min_x)
         range_y = max(1.0, max_y - min_y)
@@ -481,7 +487,7 @@ class MapRenderer:
         if not self._clean_mode:
             self._draw_background(image)
 
-        if scene["all_points"]:
+        if scene["bounds"] is not None:
             # The scene geometry is drawn onto a supersampled transparent
             # canvas and downsampled onto the card, anti-aliasing polygon and
             # path edges. Widths/marker sizes are scaled via self._s() while
@@ -499,7 +505,7 @@ class MapRenderer:
             )
             self._scene_scale = ss
             self._transformer = CoordinateTransformer(
-                scene["all_points"],
+                scene["bounds"],
                 (
                     fit_rect[0] * ss,
                     fit_rect[1] * ss,
@@ -549,7 +555,7 @@ class MapRenderer:
             # canvas pixels; both transformers describe the same fit because
             # every rect/padding input scales linearly with ss.
             self._transformer = CoordinateTransformer(
-                scene["all_points"],
+                scene["bounds"],
                 fit_rect,
                 padding=padding,
             )

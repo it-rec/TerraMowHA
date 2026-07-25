@@ -505,6 +505,11 @@
         "name": "Firmvér"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Údržba"
+      }
+    },
     "image": {
       "mow_report": {
         "name": "Správa o kosení"

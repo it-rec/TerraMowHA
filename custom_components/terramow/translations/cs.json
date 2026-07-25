@@ -505,6 +505,11 @@
         "name": "Firmware"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Údržba"
+      }
+    },
     "image": {
       "mow_report": {
         "name": "Zpráva o sečení"

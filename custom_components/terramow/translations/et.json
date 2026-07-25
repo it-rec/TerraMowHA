@@ -505,6 +505,11 @@
         "name": "Püsivara"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Hooldus"
+      }
+    },
     "image": {
       "mow_report": {
         "name": "Niitmisaruanne"

@@ -505,6 +505,11 @@
         "name": "Firmware"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Întreținere"
+      }
+    },
     "image": {
       "mow_report": {
         "name": "Raport de tuns"

@@ -505,6 +505,11 @@
         "name": "Laiteohjelmisto"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Huolto"
+      }
+    },
     "image": {
       "mow_report": {
         "name": "Leikkuuraportti"

@@ -505,6 +505,11 @@
         "name": "Фърмуер"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Поддръжка"
+      }
+    },
     "image": {
       "mow_report": {
         "name": "Отчет за косене"
