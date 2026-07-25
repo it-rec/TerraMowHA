@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} laatst gemaaid"
+      },
+      "blade_service_forecast": {
+        "name": "Messenonderhoud verwacht"
+      },
+      "base_station_service_forecast": {
+        "name": "Onderhoud basisstation verwacht"
       }
     },
     "camera": {

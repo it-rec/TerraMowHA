@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} dernière tonte"
+      },
+      "blade_service_forecast": {
+        "name": "Entretien des lames prévu"
+      },
+      "base_station_service_forecast": {
+        "name": "Entretien de la station prévu"
       }
     },
     "camera": {

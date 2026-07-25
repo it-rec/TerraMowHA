@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} последње кошење"
+      },
+      "blade_service_forecast": {
+        "name": "Сервис ножева"
+      },
+      "base_station_service_forecast": {
+        "name": "Сервис базне станице"
       }
     },
     "camera": {

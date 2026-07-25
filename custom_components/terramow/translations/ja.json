@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} 最終刈り取り"
+      },
+      "blade_service_forecast": {
+        "name": "ブレード整備予定"
+      },
+      "base_station_service_forecast": {
+        "name": "充電ステーション整備予定"
       }
     },
     "camera": {

@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} viimati niidetud"
+      },
+      "blade_service_forecast": {
+        "name": "Tera hooldus"
+      },
+      "base_station_service_forecast": {
+        "name": "Baasjaama hooldus"
       }
     },
     "camera": {

@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} pēdējoreiz pļauts"
+      },
+      "blade_service_forecast": {
+        "name": "Asmeņu apkope"
+      },
+      "base_station_service_forecast": {
+        "name": "Bāzes stacijas apkope"
       }
     },
     "camera": {

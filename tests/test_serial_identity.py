@@ -199,6 +199,9 @@ async def test_setup_uses_serial_as_device_uid(hass: HomeAssistant) -> None:
         async def async_restore_mow_counts(self) -> None:
             pass
 
+        async def async_restore_wear_anchors(self) -> None:
+            pass
+
     with (
         patch("custom_components.terramow.validate_input", return_value={}),
         patch("custom_components.terramow.TerraMowHub", _FakeHub),

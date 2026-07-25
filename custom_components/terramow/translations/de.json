@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} zuletzt gemäht"
+      },
+      "blade_service_forecast": {
+        "name": "Messerwartung fällig"
+      },
+      "base_station_service_forecast": {
+        "name": "Basisstationswartung fällig"
       }
     },
     "camera": {

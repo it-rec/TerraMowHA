@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} ostatnio koszone"
+      },
+      "blade_service_forecast": {
+        "name": "Serwis noży przewidywany"
+      },
+      "base_station_service_forecast": {
+        "name": "Serwis stacji bazowej przewidywany"
       }
     },
     "camera": {

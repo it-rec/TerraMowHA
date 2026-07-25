@@ -33,6 +33,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 - **Pro Zone "zuletzt gemäht"** — ein Zeitstempel-Sensor je Kartenzone, gesetzt beim letzten Mal, an dem der Mäher *in* dieser Zone gemeldet wurde, mit der Abdeckung des laufenden Zyklus als Attribut. Macht "die Terrasse wurde seit zehn Tagen nicht gemäht" zum Automatisierungs-Trigger
 - Karte: Status, Fläche, Flags für erkannt / erstellbar / Sicherung läuft
 - Zeitplan: Sensor für den nächsten geplanten Start und ein schreibgeschützter **Mähzeitplan-Kalender** (der nächste Mähvorgang erscheint auf der Kalenderkarte)
+- **Wartungsprognosen** — zwei Zeitstempel-Sensoren, die vorhersagen, wann Messer- und Basisstationszähler ihr Wartungsintervall erreichen. Die Rate wird aus den Meldungen des Geräts *gemessen*, nicht angenommen; bis mindestens ein Tag beobachtet wurde und der Zähler sich bewegt hat, bleiben die Sensoren `unbekannt`
 - Firmware-Update-Entität, Firmware-Version auf der Geräteseite und Sensor für die Versionskompatibilität
 - Alle Entitäten werden bei Geräte-Pushes sofort aktualisiert — keine Polling-Verzögerung
 

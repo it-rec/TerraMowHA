@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} viimeksi leikattu"
+      },
+      "blade_service_forecast": {
+        "name": "Terähuolto erääntyy"
+      },
+      "base_station_service_forecast": {
+        "name": "Tukiaseman huolto erääntyy"
       }
     },
     "camera": {

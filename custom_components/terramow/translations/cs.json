@@ -339,6 +339,12 @@
       },
       "zone_last_mowed": {
         "name": "{zone} naposledy posečeno"
+      },
+      "blade_service_forecast": {
+        "name": "Servis nožů očekáván"
+      },
+      "base_station_service_forecast": {
+        "name": "Servis základny očekáván"
       }
     },
     "camera": {
