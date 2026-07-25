@@ -146,9 +146,9 @@ async def test_setup_loads_and_creates_all_platform_entities(
         "select": 5,
         "number": 7,
         "binary_sensor": len(BINARY_SENSORS),
-        # 7 hand-written sensors (battery, pose, 3 map, mow speed,
-        # version compatibility) + the description table.
-        "sensor": 7 + len(SENSORS),
+        # 9 hand-written sensors (battery, pose, 3 map, mow speed, version
+        # compatibility, 2 wear forecasts) + the description table.
+        "sensor": 9 + len(SENSORS),
     }
 
     # The integration-level service is registered while an entry is loaded.

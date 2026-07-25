@@ -333,6 +333,12 @@
       },
       "wifi_signal": {
         "name": "WLAN-Signal"
+      },
+      "blade_service_forecast": {
+        "name": "Messerwartung fällig"
+      },
+      "base_station_service_forecast": {
+        "name": "Basisstationswartung fällig"
       }
     },
     "camera": {

@@ -333,6 +333,12 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi signalas"
+      },
+      "blade_service_forecast": {
+        "name": "Peilių priežiūra"
+      },
+      "base_station_service_forecast": {
+        "name": "Bazinės stotelės priežiūra"
       }
     },
     "camera": {

@@ -333,6 +333,12 @@
       },
       "wifi_signal": {
         "name": "Segnale Wi-Fi"
+      },
+      "blade_service_forecast": {
+        "name": "Manutenzione lame prevista"
+      },
+      "base_station_service_forecast": {
+        "name": "Manutenzione stazione prevista"
       }
     },
     "camera": {

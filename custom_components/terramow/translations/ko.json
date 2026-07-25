@@ -333,6 +333,12 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi 신호"
+      },
+      "blade_service_forecast": {
+        "name": "블레이드 정비 예정"
+      },
+      "base_station_service_forecast": {
+        "name": "충전 스테이션 정비 예정"
       }
     },
     "camera": {

@@ -333,6 +333,12 @@
       },
       "wifi_signal": {
         "name": "Wifi-signaal"
+      },
+      "blade_service_forecast": {
+        "name": "Messenonderhoud verwacht"
+      },
+      "base_station_service_forecast": {
+        "name": "Onderhoud basisstation verwacht"
       }
     },
     "camera": {

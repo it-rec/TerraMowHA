@@ -333,6 +333,12 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi信号強度"
+      },
+      "blade_service_forecast": {
+        "name": "ブレード整備予定"
+      },
+      "base_station_service_forecast": {
+        "name": "充電ステーション整備予定"
       }
     },
     "camera": {

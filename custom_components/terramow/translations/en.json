@@ -333,6 +333,12 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi signal"
+      },
+      "blade_service_forecast": {
+        "name": "Blade service due"
+      },
+      "base_station_service_forecast": {
+        "name": "Base station service due"
       }
     },
     "camera": {

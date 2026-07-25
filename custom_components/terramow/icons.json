@@ -56,6 +56,8 @@
       "current_job_type": { "default": "mdi:format-list-bulleted-type" },
       "remaining_blade_time": { "default": "mdi:saw-blade" },
       "remaining_base_station_time": { "default": "mdi:home-clock" },
+      "blade_service_forecast": { "default": "mdi:saw-blade" },
+      "base_station_service_forecast": { "default": "mdi:home-clock" },
       "mow_height": { "default": "mdi:arrow-up-down" },
       "mow_speed": { "default": "mdi:speedometer" },
       "next_scheduled_start": { "default": "mdi:calendar-clock" },

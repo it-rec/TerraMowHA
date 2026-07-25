@@ -28,6 +28,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 - Status: Mission / Untermission / Missionszustand, Betriebsmodus, Leistungsmodus, Grund für die Rückkehr zur Station, Regenerkennung, Problemanzeige, Anzeigen für Datenspeicherung und Datenkonvertierung
 - Karte: Status, Fläche, Flags für erkannt / erstellbar / Sicherung läuft
 - Zeitplan: nächster geplanter Start
+- **Wartungsprognosen** — zwei Zeitstempel-Sensoren, die vorhersagen, wann Messer- und Basisstationszähler ihr Wartungsintervall erreichen. Die Rate wird aus den Meldungen des Geräts *gemessen*, nicht angenommen; bis mindestens ein Tag beobachtet wurde und der Zähler sich bewegt hat, bleiben die Sensoren `unbekannt`
 - Firmware-Update-Entität, Firmware-Version auf der Geräteseite und Sensor für die Versionskompatibilität
 - Alle Entitäten werden bei Geräte-Pushes sofort aktualisiert — keine Polling-Verzögerung
 

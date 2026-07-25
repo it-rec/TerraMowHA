@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, cast
 
 from homeassistant.components.sensor import (
@@ -1167,6 +1168,87 @@ class VersionCompatibilitySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         return attributes
 
 
+class WearForecastSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
+    """When a maintenance counter is projected to reach its interval.
+
+    Derived state (see the AGENTS.md contract): the *rate* is measured, not
+    assumed. The hub keeps the oldest surviving (time, counter) sample and
+    this is the straight line through it and the current reading, so the
+    forecast is built only from readings the device actually sent.
+
+    It stays ``unknown`` until there is something honest to say — no anchor
+    yet, less than a day of observation, a counter that has not moved, or one
+    already past its interval — rather than showing a date extrapolated from
+    a few minutes of a mower that runs two hours a week. The observation
+    window rides along as attributes so the number can be judged.
+    """
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    # Subclasses fill these in.
+    _counter_key: str = ""
+    _counter_attribute: str = ""
+    _cycle_minutes: int = 0
+
+    def _used_minutes(self) -> int | None:
+        hub = self.hub
+        if hub is None:
+            return None
+        data = getattr(hub, self._counter_attribute, None)
+        if not isinstance(data, dict):
+            return None
+        value = data.get("int_value")
+        if isinstance(value, bool) or not isinstance(value, int):
+            return None
+        return value
+
+    @property
+    def native_value(self) -> datetime | None:
+        hub = self.hub
+        used = self._used_minutes()
+        if hub is None or used is None:
+            return None
+        forecast = hub.wear_forecast(self._counter_key, used, self._cycle_minutes)
+        return forecast if isinstance(forecast, datetime) else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        hub = self.hub
+        if hub is None:
+            return {}
+        window = hub.wear_window(self._counter_key) or {}
+        return {
+            "used_minutes": self._used_minutes(),
+            "recommended_cycle": self._cycle_minutes,
+            **window,
+        }
+
+
+class BladeWearForecastSensor(WearForecastSensor):
+    """Projected service date for the blade disc (dp_126)."""
+
+    _attr_translation_key = "blade_service_forecast"
+    _push_dp_ids = (126,)
+
+    _unique_id_suffix = "blade_service_forecast"
+    _counter_key = "blade"
+    _counter_attribute = "blade_time"
+    _cycle_minutes = BLADE_MAINTENANCE_CYCLE_MINUTES
+
+
+class BaseStationWearForecastSensor(WearForecastSensor):
+    """Projected service date for the base station (dp_125)."""
+
+    _attr_translation_key = "base_station_service_forecast"
+    _push_dp_ids = (125,)
+
+    _unique_id_suffix = "base_station_service_forecast"
+    _counter_key = "base_station"
+    _counter_attribute = "base_station_time"
+    _cycle_minutes = BASE_STATION_MAINTENANCE_CYCLE_MINUTES
+
+
 class TerraMowPoseSensor(TerraMowEntity, SensorEntity):
     """Real-time pose sensor (2 Hz)."""
 
@@ -1258,6 +1340,10 @@ async def async_setup_entry(
 
         # Version compatibility sensor (historical unique_id format)
         VersionCompatibilitySensor(basic_data, hass),
+
+        # Measured-rate service forecasts for the maintenance counters
+        BladeWearForecastSensor(basic_data, hass),
+        BaseStationWearForecastSensor(basic_data, hass),
     ]
 
     # Description-driven sensors

@@ -333,6 +333,12 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi signāls"
+      },
+      "blade_service_forecast": {
+        "name": "Asmeņu apkope"
+      },
+      "base_station_service_forecast": {
+        "name": "Bāzes stacijas apkope"
       }
     },
     "camera": {

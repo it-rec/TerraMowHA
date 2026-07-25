@@ -333,6 +333,12 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi-signal"
+      },
+      "blade_service_forecast": {
+        "name": "Knivservice förfaller"
+      },
+      "base_station_service_forecast": {
+        "name": "Basstationsservice förfaller"
       }
     },
     "camera": {

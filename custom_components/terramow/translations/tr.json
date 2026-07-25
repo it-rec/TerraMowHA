@@ -333,6 +333,12 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi sinyali"
+      },
+      "blade_service_forecast": {
+        "name": "Bıçak bakımı zamanı"
+      },
+      "base_station_service_forecast": {
+        "name": "Şarj istasyonu bakımı zamanı"
       }
     },
     "camera": {

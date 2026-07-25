@@ -333,6 +333,12 @@
       },
       "wifi_signal": {
         "name": "Signál Wi-Fi"
+      },
+      "blade_service_forecast": {
+        "name": "Servis nožov očakávaný"
+      },
+      "base_station_service_forecast": {
+        "name": "Servis základne očakávaný"
       }
     },
     "camera": {

@@ -333,6 +333,12 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi-signaali"
+      },
+      "blade_service_forecast": {
+        "name": "Terähuolto erääntyy"
+      },
+      "base_station_service_forecast": {
+        "name": "Tukiaseman huolto erääntyy"
       }
     },
     "camera": {

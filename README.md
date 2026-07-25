@@ -33,6 +33,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - Status: mission / sub-mission / mission state, operation mode, power mode, back-to-station reason, rain detection, problem indicator, saving-data and data-conversion indicators
 - Map: status, area, detected / buildable / backing-up flags
 - Schedule: next-scheduled-start sensor and a read-only **mowing-schedule calendar** (the next mow appears on the calendar card)
+- **Service forecasts** — two timestamp sensors projecting when the blade and base-station counters will reach their service interval. The rate is *measured* from the device's own readings, not assumed, so the sensors stay `unknown` until there is at least a day of observation and the counter has actually moved
 - Firmware update entity, firmware version on the device page, and version compatibility sensor
 - All entities update instantly on device pushes — no polling delay
 
@@ -63,7 +64,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 | --- | --- |
 | Lawn mower | Start / pause / dock control with live activity |
 | Camera | Map with path, robot and base station; clean map-only variant |
-| Sensor | Battery level, battery state, battery temperature state, map status, map area, mow height, mow speed, operation mode, pose, total mowing time / jobs / mowed area, current session area / progress / duration / job type, remaining blade & base station time, next scheduled start, version compatibility, main direction status, power mode, back-to-station reason, mission, sub-mission, mission state. *Diagnostic:* active errors, last event, cellular RSRP / RSRQ / type, sunrise, sunset, movement / map / mowing mode, rain-sensor threshold, after-rain resume delay, map save progress |
+| Sensor | Battery level, battery state, battery temperature state, map status, map area, mow height, mow speed, operation mode, pose, total mowing time / jobs / mowed area, current session area / progress / duration / job type, remaining blade & base station time, blade / base-station service forecasts, next scheduled start, version compatibility, main direction status, power mode, back-to-station reason, mission, sub-mission, mission state. *Diagnostic:* active errors, last event, cellular RSRP / RSRQ / type, sunrise, sunset, movement / map / mowing mode, rain-sensor threshold, after-rain resume delay, map save progress |
 | Binary sensor | Charging, navigation located, firmware upgrading, power switch, problem, rain detected, map detected / buildable / backing up, saving data, data conversion in progress. *Diagnostic:* cellular enabled, defogger heating, illumination, daylight, extreme weather, cliff / slope detection, after-rain auto-resume, force single base station, force cellular network, manual-mapping relocation / takeover / boundary-closed |
 | Select | Zone select, mow speed, blade speed, main direction mode, high-grass edge trim mode |
 | Number | Mowing height, edge cutting distance, mowing spacing, single direction angle, auto-rotate angle interval, first / second direction angle |

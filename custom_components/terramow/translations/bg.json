@@ -333,6 +333,12 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi сигнал"
+      },
+      "blade_service_forecast": {
+        "name": "Обслужване на ножовете"
+      },
+      "base_station_service_forecast": {
+        "name": "Обслужване на базовата станция"
       }
     },
     "camera": {

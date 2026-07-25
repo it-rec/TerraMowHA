@@ -333,6 +333,12 @@
       },
       "wifi_signal": {
         "name": "Wi-Fi jel"
+      },
+      "blade_service_forecast": {
+        "name": "Késkarbantartás esedékes"
+      },
+      "base_station_service_forecast": {
+        "name": "Bázisállomás karbantartása esedékes"
       }
     },
     "camera": {
