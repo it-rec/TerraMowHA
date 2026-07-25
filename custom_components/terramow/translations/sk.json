@@ -508,6 +508,11 @@
         "name": "Firmvér"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Údržba"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "Poloha"

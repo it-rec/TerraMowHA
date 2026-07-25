@@ -508,6 +508,11 @@
         "name": "Oprogramowanie układowe"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Konserwacja"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "Pozycja"

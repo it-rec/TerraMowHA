@@ -508,6 +508,11 @@
         "name": "Firmware"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Onderhoud"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "Positie"

@@ -508,6 +508,11 @@
         "name": "Aygıt Yazılımı"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Bakım"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "Konum"

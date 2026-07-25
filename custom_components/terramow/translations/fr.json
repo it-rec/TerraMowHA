@@ -508,6 +508,11 @@
         "name": "Micrologiciel"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Entretien"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "Position"

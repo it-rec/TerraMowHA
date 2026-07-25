@@ -381,8 +381,11 @@ async def test_refresh_ignores_noise_payloads(hass: HomeAssistant) -> None:
     good = json.dumps(
         {"cmd_type": "SCHEDULE_CMD_TYPE_GET", "schedule_list": {"items": []}}
     ).encode()
-    # delivered twice back-to-back: the second hits the future-done guard
+    # delivered twice: the second hits the future-done guard. Clear the
+    # duplicate-suppression memory in between so this models the device
+    # answering twice rather than the broker redelivering one publish.
     _reply(good)
+    hub._last_delivery.clear()
     _reply(good)
     assert await task == {"items": []}
 

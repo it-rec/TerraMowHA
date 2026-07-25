@@ -508,6 +508,11 @@
         "name": "Прошивка"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Обслуговування"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "Положення"

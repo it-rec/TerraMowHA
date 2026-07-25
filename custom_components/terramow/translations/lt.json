@@ -508,6 +508,11 @@
         "name": "Programinė aparatinė įranga"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Priežiūra"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "Padėtis"

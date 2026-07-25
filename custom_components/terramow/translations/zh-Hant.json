@@ -508,6 +508,11 @@
         "name": "韌體"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "維護"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "位置"

@@ -508,6 +508,11 @@
         "name": "Püsivara"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Hooldus"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "Asukoht"

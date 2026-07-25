@@ -508,6 +508,11 @@
         "name": "Programmaparatūra"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Apkope"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "Pozīcija"

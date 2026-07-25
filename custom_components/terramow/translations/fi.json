@@ -508,6 +508,11 @@
         "name": "Laiteohjelmisto"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Huolto"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "Sijainti"

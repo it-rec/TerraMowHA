@@ -508,6 +508,11 @@
         "name": "固件"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "维护"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "位置"

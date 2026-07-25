@@ -508,6 +508,11 @@
         "name": "Υλικολογισμικό"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Συντήρηση"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "Θέση"

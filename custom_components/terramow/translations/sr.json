@@ -508,6 +508,11 @@
         "name": "Фирмвер"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Одржавање"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "Положај"

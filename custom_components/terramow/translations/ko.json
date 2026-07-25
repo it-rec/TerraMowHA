@@ -508,6 +508,11 @@
         "name": "펌웨어"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "유지보수"
+      }
+    },
     "device_tracker": {
       "mower_position": {
         "name": "위치"
