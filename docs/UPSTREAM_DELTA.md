@@ -47,6 +47,10 @@ synced point are already covered by the fork:
   Both / Path / Area / Wi-Fi with the choice remembered per entity, per-zone
   progress shading from the cycle coverage, an ETA chip, and active faults
   pinned where they were reported.
+- **Fault hotspots**: each new dp_116 error code is paired with the pose the
+  mower reported at that moment and accumulated into a persisted, map-scoped
+  set of problem spots (repeats merged with a count), drawn as a map-card
+  layer — information neither the app nor the cloud offers.
 - **Repair issues** (`issues.py`): actionable dashboard cards for
   incompatible/too-old firmware (from dp_127) and for due blade (240 h) /
   base-station (30 day) maintenance (from dp_126 / dp_125), which clear
