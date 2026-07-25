@@ -523,6 +523,11 @@
         "name": "ファームウェア"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "メンテナンス"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "照明"

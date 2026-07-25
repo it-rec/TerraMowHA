@@ -523,6 +523,11 @@
         "name": "Fastvare"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Vedlikehold"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Belysning"

@@ -523,6 +523,11 @@
         "name": "Micrologiciel"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Entretien"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Éclairage"

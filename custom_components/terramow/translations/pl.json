@@ -523,6 +523,11 @@
         "name": "Oprogramowanie układowe"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Konserwacja"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Oświetlenie"

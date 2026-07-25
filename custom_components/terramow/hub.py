@@ -14,12 +14,13 @@ import contextlib
 import gzip
 import json
 import logging
+import math
 import os
 import random
 import re
 import threading
 import time
-from collections import deque
+from collections import Counter, OrderedDict, deque
 from collections.abc import Callable
 from enum import Enum
 from typing import TYPE_CHECKING, Any
@@ -33,6 +34,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
 
 from .const import (
     ADVANCED_SETTING_VERIFY_TIMEOUT,
@@ -175,7 +177,39 @@ WIFI_CELL_MM = 1500
 WIFI_EMA_ALPHA = 0.4
 MAX_WIFI_CELLS = 4000
 WIFI_MAP_STORE_VERSION = 1
+
+# Fault hotspots: where the mower was standing when a fault appeared. Bounded
+# so a season of faults cannot grow without limit, and coarse enough that
+# repeated stalls at the same obstacle collapse into one marker instead of a
+# smear of near-identical points.
+MAX_FAULT_HOTSPOTS = 60
+FAULT_HOTSPOT_MERGE_MM = 500.0
+FAULT_STORE_VERSION = 1
+FAULT_SAVE_DELAY = 10.0  # seconds
 WIFI_MAP_SAVE_DELAY = 30.0  # seconds
+
+
+# Overlapping-subscription duplicate suppression.
+#
+# _async_on_connected subscribes "#" (broker-wide discovery: the mower's
+# internal commander acks on topics outside the documented namespace) *in
+# addition to* the specific filters — "data_point/+/robot", the map/path meta
+# topics, the pose topic and so on. MQTT 3.1.1 §3.3.5 leaves it to the server
+# whether a publish matching several of a client's subscriptions is delivered
+# once or once per subscription, and the common brokers (mosquitto among them)
+# deliver one copy per matching subscription. Every documented topic therefore
+# arrives twice: two JSON parses, two callback fan-outs, two state writes per
+# entity, and the ~2 Hz pose effectively handled at 4 Hz.
+#
+# The copies come out of one broker flush microseconds apart, whereas the
+# fastest topic the device republishes at all is the pose at 2 Hz (500 ms). A
+# byte-identical payload repeating on the same topic within this window is
+# therefore a redelivery and not new information, and is dropped. The window
+# sits an order of magnitude away from both figures on purpose.
+MQTT_DUPLICATE_WINDOW = 0.2
+# Bound on the per-topic memory of the check. The "#" subscription can surface
+# arbitrarily many topics, so the map is an LRU rather than an unbounded dict.
+MQTT_DUPLICATE_TRACKED_TOPICS = 256
 
 
 def _decompress_and_parse(raw: bytes) -> Any:
@@ -472,6 +506,11 @@ class TerraMowHub:
         self._wifi_map_id: Any = None  # map the cells belong to
         self._wifi_map_rev = 0  # bumped on visible cell changes
         self._wifi_map_store: Store[dict[str, Any]] | None = None
+        # Where faults happened: {x, y, code, count, last_seen} in map-frame
+        # millimetres, accumulated across sessions.
+        self._fault_hotspots: list[dict[str, Any]] = []
+        self._fault_store: Store[dict[str, Any]] | None = None
+        self._fault_map_id: Any = None
         self._pose: dict[str, Any] = {}  # Stores the real-time pose
         # One meta-fetch channel per HTTP-backed resource; each bundles the
         # seq/etag/retry/pending bookkeeping for its meta topic.
@@ -570,6 +609,11 @@ class TerraMowHub:
         # Messages seen on topics outside the documented namespace (via the
         # "#" discovery subscription): (epoch, topic, payload) — bounded.
         self._unknown_topic_captures: deque[tuple[float, str, str]] = deque(maxlen=50)
+        # Overlapping-subscription duplicate suppression: last (payload,
+        # monotonic time) per topic, plus a per-topic count of what was
+        # dropped. See _is_duplicate_delivery.
+        self._last_delivery: OrderedDict[str, tuple[str, float]] = OrderedDict()
+        self._duplicate_deliveries: Counter[str] = Counter()
 
         self.cmd_seq = random.randint(0, 0xFFFFFFFF)  # Generate a random command sequence number
         # get_cmd_seq is reachable from the event loop and from executor
@@ -612,6 +656,12 @@ class TerraMowHub:
             "last_command_ack": dict(self._last_command_ack),
             "app_dp_captures": list(self._app_dp_captures),
             "unknown_topic_captures": list(self._unknown_topic_captures),
+            # Redeliveries dropped per topic since the last restart. Non-zero
+            # means the broker really does fan one publish out across the
+            # overlapping "#" and specific subscriptions — the evidence behind
+            # MQTT_DUPLICATE_WINDOW. All-zero means it deduplicates itself and
+            # the check is costing nothing.
+            "duplicate_deliveries": dict(self._duplicate_deliveries),
         }
 
     def register_state_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
@@ -1014,6 +1064,7 @@ class TerraMowHub:
             errors = data.get("error_list")
             if isinstance(errors, list):
                 changed = errors != self._error_list
+                self._record_fault_hotspots(errors)
                 self._error_list = errors
                 # dp_116 does not flow through on_mission_status, so notify the
                 # mower / event entities here too: a fault that shows up only in
@@ -2096,6 +2147,36 @@ class TerraMowHub:
         except OSError as err:
             _LOGGER.debug("Failed to persist unknown-dp log: %s", err)
 
+    def _is_duplicate_delivery(self, topic: str, payload: str) -> bool:
+        """Whether this message is a redelivery of the one just handled.
+
+        The broker hands us one copy per matching subscription, and "#" makes
+        every documented topic match twice (see MQTT_DUPLICATE_WINDOW). The
+        copies arrive in a single flush, so an identical payload repeating on
+        the same topic inside the window carries no new information and is
+        dropped; anything slower than the window — including the device
+        genuinely republishing an unchanged value — passes through untouched.
+        """
+        now = time.monotonic()
+        previous = self._last_delivery.get(topic)
+        if (
+            previous is not None
+            and previous[0] == payload
+            and now - previous[1] < MQTT_DUPLICATE_WINDOW
+        ):
+            # Do NOT refresh the timestamp: a topic republishing the same
+            # payload faster than the window must not be suppressed forever.
+            self._duplicate_deliveries[topic] += 1
+            return True
+        self._last_delivery[topic] = (payload, now)
+        self._last_delivery.move_to_end(topic)
+        while len(self._last_delivery) > MQTT_DUPLICATE_TRACKED_TOPICS:
+            evicted, _ = self._last_delivery.popitem(last=False)
+            # Keep the counter's keys a subset of the tracked topics so the
+            # "#" subscription cannot grow it without bound either.
+            self._duplicate_deliveries.pop(evicted, None)
+        return False
+
     def on_mqtt_message(self, _client: Any, _userdata: Any, msg: Any) -> None:
         """Handle one received MQTT message (paho-style signature kept)."""
         topic = msg.topic
@@ -2107,6 +2188,10 @@ class TerraMowHub:
             # would then wedge the connection in a reconnect/redeliver cycle.
             # Drop the message instead.
             _LOGGER.warning("Ignoring undecodable MQTT payload on topic %s", topic)
+            return
+
+        if self._is_duplicate_delivery(topic, payload):
+            _LOGGER.debug("Dropping duplicate delivery on topic %s", topic)
             return
 
         if topic != POSE_TOPIC:
@@ -2449,8 +2534,19 @@ class TerraMowHub:
             self._wifi_cells = {}
             self._wifi_map_rev += 1
             self._schedule_wifi_map_save()
+        # Fault hotspots are map-frame coordinates too: on a different map
+        # they would mark spots that do not exist there (#200's policy).
+        if (
+            self._fault_hotspots
+            and self._fault_map_id is not None
+            and incoming_id is not None
+            and incoming_id != self._fault_map_id
+        ):
+            self._fault_hotspots = []
+            self._schedule_fault_save()
         if incoming_id is not None:
             self._wifi_map_id = incoming_id
+            self._fault_map_id = incoming_id
         self._map_data = data
         map_info = self._build_map_info_from_map_data(data)
         if map_info is not None:
@@ -2591,6 +2687,130 @@ class TerraMowHub:
                 del self._wifi_cells[key]
         self._wifi_map_rev += 1
         self._schedule_wifi_map_save()
+
+    # --- fault hotspots ---------------------------------------------------
+    #
+    # A stuck mower is reported as an error code and nothing else: the app
+    # tells you it happened, never where. But the pose stream says where the
+    # mower was standing at that moment, and pairing the two turns a season of
+    # faults into a map of the spots that actually cause them — the tree root,
+    # the soft patch by the pond, the gap it always wedges itself into.
+
+    def _record_fault_hotspots(self, errors: list[Any]) -> None:
+        """Stamp the current pose for every error code that is newly present.
+
+        Derived state (see the AGENTS.md contract): both halves are device
+        reports — the dp_116 error list and the pose it was standing at.
+        Only *newly appeared* codes are recorded, so a fault that persists for
+        minutes leaves one marker rather than one per push.
+
+        Reset boundaries: bounded to MAX_FAULT_HOTSPOTS (oldest dropped), and
+        cleared when the device serves a different map, since the coordinates
+        are map-frame.
+        """
+        previous = {
+            entry.get("code")
+            for entry in self._error_list
+            if isinstance(entry, dict)
+        }
+        x = self._pose.get("x")
+        y = self._pose.get("y")
+        if (
+            not isinstance(x, (int, float))
+            or not isinstance(y, (int, float))
+            or isinstance(x, bool)
+            or isinstance(y, bool)
+        ):
+            return  # no pose yet: a fault with no location is not a hotspot
+        touched = False
+        for entry in errors:
+            if not isinstance(entry, dict):
+                continue
+            code = entry.get("code")
+            if code in previous:
+                continue
+            touched = True
+            self._merge_fault_hotspot(float(x), float(y), code)
+        if touched:
+            self._fault_map_id = self._map_data.get("id")
+            del self._fault_hotspots[:-MAX_FAULT_HOTSPOTS]
+            self._schedule_fault_save()
+
+    def _merge_fault_hotspot(self, x: float, y: float, code: Any) -> None:
+        """Fold a fault into a nearby hotspot of the same code, or add one.
+
+        Merging is the point: three stalls within half a metre of the same
+        root are one problem spot, and drawing them as three markers would
+        hide exactly the repetition worth seeing.
+        """
+        for hotspot in self._fault_hotspots:
+            if hotspot["code"] != code:
+                continue
+            if math.dist((hotspot["x"], hotspot["y"]), (x, y)) <= FAULT_HOTSPOT_MERGE_MM:
+                hotspot["count"] += 1
+                hotspot["last_seen"] = dt_util.utcnow().isoformat()
+                # Move to the running mean so the marker settles on the spot.
+                weight = hotspot["count"]
+                hotspot["x"] += (x - hotspot["x"]) / weight
+                hotspot["y"] += (y - hotspot["y"]) / weight
+                return
+        self._fault_hotspots.append(
+            {
+                "x": x,
+                "y": y,
+                "code": code,
+                "count": 1,
+                "last_seen": dt_util.utcnow().isoformat(),
+            }
+        )
+
+    @property
+    def fault_hotspots(self) -> list[dict[str, Any]]:
+        """Recorded fault locations in map-frame millimetres."""
+        return self._fault_hotspots
+
+    def _get_fault_store(self) -> Store[dict[str, Any]]:
+        """Lazily create the disk store for the fault hotspots."""
+        if self._fault_store is None:
+            self._fault_store = Store(
+                self.hass, FAULT_STORE_VERSION, f"terramow.faults_{self.host}"
+            )
+        return self._fault_store
+
+    def _fault_save_data(self) -> dict[str, Any]:
+        """Snapshot the hotspots for the debounced disk write."""
+        return {"map_id": self._fault_map_id, "hotspots": self._fault_hotspots}
+
+    def _schedule_fault_save(self) -> None:
+        """Persist the hotspots soon (debounced; loop-only callers)."""
+        self._get_fault_store().async_delay_save(
+            self._fault_save_data, FAULT_SAVE_DELAY
+        )
+
+    async def async_restore_fault_hotspots(self) -> None:
+        """Load the hotspots a previous run persisted.
+
+        The whole value is in the accumulation across a season, so these
+        outlive restarts by design; a map change clears them in
+        _apply_map_data (same policy as the Wi-Fi cells).
+        """
+        try:
+            data = await self._get_fault_store().async_load()
+        except Exception as err:  # corrupt store must never block setup
+            _LOGGER.warning("Could not load persisted fault hotspots: %s", err)
+            return
+        hotspots = (data or {}).get("hotspots")
+        if not isinstance(hotspots, list):
+            return
+        restored = [
+            entry
+            for entry in hotspots
+            if isinstance(entry, dict)
+            and isinstance(entry.get("x"), (int, float))
+            and isinstance(entry.get("y"), (int, float))
+        ]
+        self._fault_hotspots = restored[-MAX_FAULT_HOTSPOTS:]
+        self._fault_map_id = (data or {}).get("map_id")
 
     def _get_wifi_map_store(self) -> Store[dict[str, Any]]:
         """Lazily create the disk store for the Wi-Fi heatmap cells."""

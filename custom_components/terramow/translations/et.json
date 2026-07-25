@@ -523,6 +523,11 @@
         "name": "Püsivara"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Hooldus"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Valgustus"

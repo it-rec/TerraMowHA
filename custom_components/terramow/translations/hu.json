@@ -523,6 +523,11 @@
         "name": "Firmware"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Karbantartás"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Világítás"

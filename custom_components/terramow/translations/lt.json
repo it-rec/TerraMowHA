@@ -523,6 +523,11 @@
         "name": "Programinė aparatinė įranga"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Priežiūra"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Apšvietimas"

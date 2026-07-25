@@ -341,6 +341,9 @@ def test_unknown_dp_history_records_changes_and_dedupes() -> None:
     topic = "data_point/109/robot"
     # repeated identical payloads collapse to a single history entry
     hub.on_mqtt_message(None, None, _msg(topic, '{"int_value":54}'))
+    # A later device republish of the same value, not a broker redelivery:
+    # clear the duplicate-suppression memory so this reaches the handler.
+    hub._last_delivery.clear()
     hub.on_mqtt_message(None, None, _msg(topic, '{"int_value":54}'))
     history = hub._unknown_dp_history[109]
     assert [p for _, p in history] == ['{"int_value":54}']

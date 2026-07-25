@@ -523,6 +523,11 @@
         "name": "Firmver"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Održavanje"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Rasvjeta"

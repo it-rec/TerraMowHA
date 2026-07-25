@@ -146,6 +146,7 @@ async def test_setup_loads_and_creates_all_platform_entities(
         "light": 1,
         "event": 1,
         "calendar": 1,
+        "todo": 1,
         "select": 5,
         # 7 dp_155 controls + 2 writable dp_150 advanced settings.
         "number": 9,

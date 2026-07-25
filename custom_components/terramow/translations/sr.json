@@ -523,6 +523,11 @@
         "name": "Фирмвер"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Одржавање"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Осветљење"

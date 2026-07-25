@@ -523,6 +523,11 @@
         "name": "Прошивка"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Обслуживание"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Освещение"

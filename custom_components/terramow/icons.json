@@ -3,6 +3,9 @@
     "event": {
       "mower_event": { "default": "mdi:robot-mower" }
     },
+    "todo": {
+      "maintenance": { "default": "mdi:wrench-clock" }
+    },
     "calendar": {
       "schedule": { "default": "mdi:calendar-clock" }
     },

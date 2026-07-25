@@ -1,0 +1,138 @@
+blueprint:
+  name: TerraMow – Pause while someone is in the garden
+  description: >
+    Pause the mower when the garden is in use, resume when it has been clear
+    for a while.
+
+    The mower's own sensors stop it from driving into a person, but "does not
+    run people over" and "is not underfoot while the children are out" are
+    different bars. Any trigger that means *the garden is busy* works: a door
+    or gate contact, a motion or presence sensor, a camera's person detection,
+    or a person entity coming home.
+
+    Resuming waits for a clear-for period, so someone stepping in and out does
+    not have the mower stopping and starting every minute.
+
+    Setup: create an `input_boolean` helper and select it below. It remembers
+    that *this* automation paused the mow, so the mower is not restarted after
+    a pause you triggered yourself.
+  domain: automation
+  source_url: https://github.com/it-rec/TerraMowHA/blob/main/blueprints/automation/terramow/presence_pause.yaml
+  input:
+    mower:
+      name: Mower
+      description: The TerraMow lawn mower entity.
+      selector:
+        entity:
+          filter:
+            - integration: terramow
+              domain: lawn_mower
+    presence_entities:
+      name: Garden-busy triggers
+      description: >
+        One or more entities that turn on (or become "home"/"open"/"detected")
+        while the garden is in use.
+      selector:
+        entity:
+          multiple: true
+    paused_helper:
+      name: "\"Paused by presence\" helper"
+      description: >
+        An input_boolean remembering that this automation paused the mow.
+        Create it first; nothing else should write to it.
+      selector:
+        entity:
+          filter:
+            - domain: input_boolean
+    clear_for:
+      name: Resume after clear for
+      description: >
+        How long the garden must stay clear before mowing resumes. Short
+        values make the mower twitchy; a couple of minutes is usually right.
+      default:
+        minutes: 3
+      selector:
+        duration: {}
+    resume_after:
+      name: Resume automatically
+      description: >
+        Send the mower back out once the garden is clear. Turn this off to
+        only ever pause it.
+      default: true
+      selector:
+        boolean: {}
+
+mode: queued
+max: 5
+max_exceeded: silent
+
+variables:
+  mower: !input mower
+  paused_helper: !input paused_helper
+  resume_after: !input resume_after
+  presence_entities: !input presence_entities
+  busy_states:
+    - "on"
+    - "home"
+    - "open"
+    - "detected"
+
+trigger:
+  # Any of the trigger entities becoming active: "on", "home", "open" and
+  # "detected" all count, so contacts, presence and person entities can be
+  # mixed without extra configuration.
+  - platform: state
+    entity_id: !input presence_entities
+    to:
+      - "on"
+      - "home"
+      - "open"
+      - "detected"
+    id: busy
+  # All of them inactive for the clear-for period.
+  - platform: state
+    entity_id: !input presence_entities
+    to:
+      - "off"
+      - "not_home"
+      - "closed"
+      - "clear"
+    for: !input clear_for
+    id: clear
+
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: busy
+          - condition: template
+            value_template: "{{ is_state(mower, 'mowing') }}"
+        sequence:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: !input paused_helper
+          - service: lawn_mower.pause
+            target:
+              entity_id: !input mower
+      - conditions:
+          - condition: trigger
+            id: clear
+          - condition: template
+            value_template: "{{ resume_after }}"
+          - condition: state
+            entity_id: !input paused_helper
+            state: "on"
+          # Every trigger entity has to be clear, not just the one that fired:
+          # with a gate contact and a motion sensor configured, the gate
+          # closing must not resume mowing while motion is still detected.
+          - condition: template
+            value_template: >
+              {{ presence_entities | map('states') | select('in', busy_states)
+                 | list | count == 0 }}
+        sequence:
+          - service: lawn_mower.start_mowing
+            target:
+              entity_id: !input mower
+          - service: input_boolean.turn_off
+            target:
+              entity_id: !input paused_helper

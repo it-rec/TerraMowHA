@@ -523,6 +523,11 @@
         "name": "Фърмуер"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Поддръжка"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Осветление"

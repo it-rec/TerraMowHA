@@ -523,6 +523,11 @@
         "name": "Microprogramari"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Manteniment"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Il·luminació"

@@ -523,6 +523,11 @@
         "name": "Programmaparatūra"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Apkope"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Apgaismojums"

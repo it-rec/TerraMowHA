@@ -523,6 +523,11 @@
         "name": "Firmware"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Underhåll"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Belysning"

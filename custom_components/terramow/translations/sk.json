@@ -523,6 +523,11 @@
         "name": "Firmvér"
       }
     },
+    "todo": {
+      "maintenance": {
+        "name": "Údržba"
+      }
+    },
     "light": {
       "illumination_light": {
         "name": "Osvetlenie"

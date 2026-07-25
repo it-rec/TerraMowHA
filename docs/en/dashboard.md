@@ -40,6 +40,18 @@ the robot marker moves without image reloads.
   on the mower while it works; panning or zooming releases it. The
   marker is tinted by activity (mowing green, returning blue, paused
   orange, error red) and pulses gently while mowing.
+- **Long-press a zone** to show that zone's mow settings (cut height,
+  speed, stripe spacing, blade speed, edge cutting, direction, mow order)
+  and whether they are the zone's own or the global ones.
+- **Two-finger rotate** turns the map; the **compass button** resets it to
+  the configured `rotation`. Set `rotate_gesture: false` to lock it.
+- **Keyboard**: with the card focused, the arrow keys cycle through zones
+  and Enter selects — the same selection the tap gesture builds.
+- The **legend button** lists the feature types actually present on your
+  map, so an unfamiliar colour or marker can be looked up on the spot.
+- **Active faults** are pinned on the map where the mower reported them
+  (with the fault text from the error-code catalog), so a stuck or lifted
+  mower is located at a glance rather than only named in a sensor.
 
 **Options**
 
@@ -47,14 +59,36 @@ the robot marker moves without image reloads.
 | --- | --- | --- |
 | `entity` | *required* | Any TerraMow entity; the lawn mower entity is the natural choice |
 | `show_controls` | `true` | Contextual start / pause / dock buttons on the card |
-| `zone_selection` | `true` | Tap zones to start a selective mow |
+| `zone_selection` | `true` | Tap (or arrow-key) zones to start a selective mow |
 | `show_coverage` | `false` | Shade the mowed swath at the true cutting width |
-| `show_current_path` | `true` | Draw the running job's mowing path |
+| `show_wifi` | `false` | Wi-Fi heatmap overlay, sampled by the mower as it mows (green = strong) |
+| `show_current_path` | `true` | Draw the running job's mowing path, including the track from before a mid-session recharge dock |
 | `show_history_path` | `true` | Draw the previous job's path (faded) |
-| `show_hud` | `true` | Status chips (state, battery, job progress, map) |
-| `rotation` | `0` | Rotate the map view (degrees) |
+| `show_hud` | `true` | Status chips (state, battery, job progress, ETA, map) |
+| `show_markers` | `true` | Trapped / maintenance / passage markers |
+| `show_direction` | `true` | Mowing stripe-direction arrow per region |
+| `zone_info` | `true` | Long-press a zone to show its mow settings |
+| `show_layer_counts` | `false` | Debug: list the received layer counts in the legend |
+| `rotate_gesture` | `true` | Two-finger rotate the map (the compass button resets) |
+| `rotation` | `0` | Default map rotation in degrees; the compass button resets to this value |
 | `fit_height` | `420` | Card canvas height in pixels |
 | `fit_padding` | `0.95` | Fraction of the card the lawn fills on fit-to-view (`0.5`–`1.0`); higher zooms in tighter |
+
+**View modes**
+
+A button in the card header cycles which overlay is drawn — **Both**
+(coverage + path), **Path**, **Area** (coverage only, with per-zone
+progress) and **Wi-Fi** (the heatmap). The `show_coverage` /
+`show_current_path` / `show_history_path` / `show_wifi` flags above seed
+the *initial* mode, so a card that used them to pick its look keeps that
+look; afterwards the button wins and the choice is remembered per entity
+in the browser's local storage.
+
+The Wi-Fi heatmap is self-sampled: the mower reports its own signal
+strength (dp_109) as it drives, and the card bins those samples onto the
+lawn. Holes between mow passes are gap-filled from neighbouring cells, but
+ground the mower has never covered stays blank — the card never invents
+unmeasured signal. Run a full mow before reading it as complete.
 
 Fit-to-view frames the lawn itself — the drawn zones, no-go areas and
 station — not the wider scanned area, so a small lawn on a large map fills
@@ -73,8 +107,13 @@ automatically while the tab is hidden.
 - Headless / custom setups (or YAML resource mode, which the integration
   cannot write to) can still use the card by adding
   `/terramow-frontend/terramow-map-card.js` manually as a dashboard
-  resource of type *JavaScript Module* (`module` — the `js` type is
-  deprecated and no longer executes on HA 2026.7+).
+  resource. Use the same type the integration registers for itself —
+  **`js`** (*JavaScript file*), not `module`. `js` is deprecated on the
+  Home Assistant side but still functional, and it is the type that loads
+  reliably: a `module` served from the browser cache is not re-evaluated,
+  so the custom element can stay undefined and the card shows a permanent
+  "Configuration error" (issue #140). See `CARD_RESOURCE_TYPE` in
+  `map_card.py` for the full rationale.
 - Right after the very first install, one hard refresh (Ctrl+Shift+R)
   may be needed so the browser picks up the freshly registered resource.
 
@@ -177,10 +216,10 @@ The exact entity ids on your installation may differ — Home Assistant
 derives them from the device name and can be checked (or renamed) in the
 entity settings.
 
-## Map camera options
+## Integration options
 
-Settings → Devices & Services → TerraMow → **Configure** exposes options that
-control how the map camera renders:
+Settings → Devices & Services → TerraMow → **Configure** exposes the
+integration's options. Most of them control how the map camera renders:
 
 - **Map output resolution** — output side length of the PNG. Higher values look
   sharper on large dashboards but cost more bandwidth and CPU per render.
@@ -189,6 +228,16 @@ control how the map camera renders:
 - **Show mowed coverage** — shades the already-mowed area at the real cutting
   width underneath the path line, so it is easy to see which parts of the lawn
   still need work.
+
+One option affects the session sensors rather than the map:
+
+- **Treat every finished job as 100 % complete** — some firmware ends a
+  finished job without emitting a completion signal, so
+  `sensor.terramow_current_session_progress` never snaps to 100 % even when the
+  lawn is done, and the job reads as aborted. Turn this on to treat any
+  finished job as complete (100 %), matching the vendor app — useful if you
+  trigger automations on the progress gauge reaching 100. Leave it off to keep
+  the honest, counter-truthful value. *Default: off.*
 
 The map geometry is rendered supersampled and downsampled, so polygon and path
 edges are anti-aliased, and the robot and station icons are drawn true to scale
