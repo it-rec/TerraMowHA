@@ -39,6 +39,10 @@ All upstream commits after v0.3.0 are already covered by the fork:
   camera-parity badges, a stale-map chip, two-finger rotate with a compass
   reset, keyboard zone cycling, and a card editor with rotation presets and a
   "use current rotation" capture.
+- **Fault hotspots**: each new dp_116 error code is paired with the pose the
+  mower reported at that moment and accumulated into a persisted, map-scoped
+  set of problem spots (repeats merged with a count), drawn as a map-card
+  layer — information neither the app nor the cloud offers.
 - **Repair issues** (`issues.py`): actionable dashboard cards for
   incompatible/too-old firmware (from dp_127) and for due blade (240 h) /
   base-station (30 day) maintenance (from dp_126 / dp_125), which clear

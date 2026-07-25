@@ -55,7 +55,7 @@ _LOGGER = logging.getLogger(__name__)
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.27.0"
+CARD_VERSION = "1.28.0"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -536,6 +536,23 @@ def build_scene_payload(
             }
             if hub.wifi_map_cells
             else None
+        ),
+        # Where faults happened (issue #171 follow-up): the pose the mower
+        # reported when each error code appeared, merged per spot so repeat
+        # offenders read as one marker with a count. None until the first
+        # fault is recorded.
+        "fault_hotspots": (
+            [
+                {
+                    "x": round(spot["x"], 1),
+                    "y": round(spot["y"], 1),
+                    "code": spot["code"],
+                    "count": spot["count"],
+                    "last_seen": spot["last_seen"],
+                }
+                for spot in hub.fault_hotspots
+            ]
+            or None
         ),
     }
     # Bounds over the static geometry only — NOT the paths. A growing path

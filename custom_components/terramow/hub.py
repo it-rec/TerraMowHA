@@ -14,6 +14,7 @@ import contextlib
 import gzip
 import json
 import logging
+import math
 import os
 import random
 import re
@@ -33,6 +34,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
 
 from .const import (
     APP_DP_TOPIC_FILTER,
@@ -172,6 +174,15 @@ WIFI_CELL_MM = 1500
 WIFI_EMA_ALPHA = 0.4
 MAX_WIFI_CELLS = 4000
 WIFI_MAP_STORE_VERSION = 1
+
+# Fault hotspots: where the mower was standing when a fault appeared. Bounded
+# so a season of faults cannot grow without limit, and coarse enough that
+# repeated stalls at the same obstacle collapse into one marker instead of a
+# smear of near-identical points.
+MAX_FAULT_HOTSPOTS = 60
+FAULT_HOTSPOT_MERGE_MM = 500.0
+FAULT_STORE_VERSION = 1
+FAULT_SAVE_DELAY = 10.0  # seconds
 WIFI_MAP_SAVE_DELAY = 30.0  # seconds
 
 
@@ -469,6 +480,11 @@ class TerraMowHub:
         self._wifi_map_id: Any = None  # map the cells belong to
         self._wifi_map_rev = 0  # bumped on visible cell changes
         self._wifi_map_store: Store[dict[str, Any]] | None = None
+        # Where faults happened: {x, y, code, count, last_seen} in map-frame
+        # millimetres, accumulated across sessions.
+        self._fault_hotspots: list[dict[str, Any]] = []
+        self._fault_store: Store[dict[str, Any]] | None = None
+        self._fault_map_id: Any = None
         self._pose: dict[str, Any] = {}  # Stores the real-time pose
         # One meta-fetch channel per HTTP-backed resource; each bundles the
         # seq/etag/retry/pending bookkeeping for its meta topic.
@@ -1007,6 +1023,7 @@ class TerraMowHub:
             errors = data.get("error_list")
             if isinstance(errors, list):
                 changed = errors != self._error_list
+                self._record_fault_hotspots(errors)
                 self._error_list = errors
                 # dp_116 does not flow through on_mission_status, so notify the
                 # mower / event entities here too: a fault that shows up only in
@@ -2214,8 +2231,19 @@ class TerraMowHub:
             self._wifi_cells = {}
             self._wifi_map_rev += 1
             self._schedule_wifi_map_save()
+        # Fault hotspots are map-frame coordinates too: on a different map
+        # they would mark spots that do not exist there (#200's policy).
+        if (
+            self._fault_hotspots
+            and self._fault_map_id is not None
+            and incoming_id is not None
+            and incoming_id != self._fault_map_id
+        ):
+            self._fault_hotspots = []
+            self._schedule_fault_save()
         if incoming_id is not None:
             self._wifi_map_id = incoming_id
+            self._fault_map_id = incoming_id
         self._map_data = data
         map_info = self._build_map_info_from_map_data(data)
         if map_info is not None:
@@ -2356,6 +2384,130 @@ class TerraMowHub:
                 del self._wifi_cells[key]
         self._wifi_map_rev += 1
         self._schedule_wifi_map_save()
+
+    # --- fault hotspots ---------------------------------------------------
+    #
+    # A stuck mower is reported as an error code and nothing else: the app
+    # tells you it happened, never where. But the pose stream says where the
+    # mower was standing at that moment, and pairing the two turns a season of
+    # faults into a map of the spots that actually cause them — the tree root,
+    # the soft patch by the pond, the gap it always wedges itself into.
+
+    def _record_fault_hotspots(self, errors: list[Any]) -> None:
+        """Stamp the current pose for every error code that is newly present.
+
+        Derived state (see the AGENTS.md contract): both halves are device
+        reports — the dp_116 error list and the pose it was standing at.
+        Only *newly appeared* codes are recorded, so a fault that persists for
+        minutes leaves one marker rather than one per push.
+
+        Reset boundaries: bounded to MAX_FAULT_HOTSPOTS (oldest dropped), and
+        cleared when the device serves a different map, since the coordinates
+        are map-frame.
+        """
+        previous = {
+            entry.get("code")
+            for entry in self._error_list
+            if isinstance(entry, dict)
+        }
+        x = self._pose.get("x")
+        y = self._pose.get("y")
+        if (
+            not isinstance(x, (int, float))
+            or not isinstance(y, (int, float))
+            or isinstance(x, bool)
+            or isinstance(y, bool)
+        ):
+            return  # no pose yet: a fault with no location is not a hotspot
+        touched = False
+        for entry in errors:
+            if not isinstance(entry, dict):
+                continue
+            code = entry.get("code")
+            if code in previous:
+                continue
+            touched = True
+            self._merge_fault_hotspot(float(x), float(y), code)
+        if touched:
+            self._fault_map_id = self._map_data.get("id")
+            del self._fault_hotspots[:-MAX_FAULT_HOTSPOTS]
+            self._schedule_fault_save()
+
+    def _merge_fault_hotspot(self, x: float, y: float, code: Any) -> None:
+        """Fold a fault into a nearby hotspot of the same code, or add one.
+
+        Merging is the point: three stalls within half a metre of the same
+        root are one problem spot, and drawing them as three markers would
+        hide exactly the repetition worth seeing.
+        """
+        for hotspot in self._fault_hotspots:
+            if hotspot["code"] != code:
+                continue
+            if math.dist((hotspot["x"], hotspot["y"]), (x, y)) <= FAULT_HOTSPOT_MERGE_MM:
+                hotspot["count"] += 1
+                hotspot["last_seen"] = dt_util.utcnow().isoformat()
+                # Move to the running mean so the marker settles on the spot.
+                weight = hotspot["count"]
+                hotspot["x"] += (x - hotspot["x"]) / weight
+                hotspot["y"] += (y - hotspot["y"]) / weight
+                return
+        self._fault_hotspots.append(
+            {
+                "x": x,
+                "y": y,
+                "code": code,
+                "count": 1,
+                "last_seen": dt_util.utcnow().isoformat(),
+            }
+        )
+
+    @property
+    def fault_hotspots(self) -> list[dict[str, Any]]:
+        """Recorded fault locations in map-frame millimetres."""
+        return self._fault_hotspots
+
+    def _get_fault_store(self) -> Store[dict[str, Any]]:
+        """Lazily create the disk store for the fault hotspots."""
+        if self._fault_store is None:
+            self._fault_store = Store(
+                self.hass, FAULT_STORE_VERSION, f"terramow.faults_{self.host}"
+            )
+        return self._fault_store
+
+    def _fault_save_data(self) -> dict[str, Any]:
+        """Snapshot the hotspots for the debounced disk write."""
+        return {"map_id": self._fault_map_id, "hotspots": self._fault_hotspots}
+
+    def _schedule_fault_save(self) -> None:
+        """Persist the hotspots soon (debounced; loop-only callers)."""
+        self._get_fault_store().async_delay_save(
+            self._fault_save_data, FAULT_SAVE_DELAY
+        )
+
+    async def async_restore_fault_hotspots(self) -> None:
+        """Load the hotspots a previous run persisted.
+
+        The whole value is in the accumulation across a season, so these
+        outlive restarts by design; a map change clears them in
+        _apply_map_data (same policy as the Wi-Fi cells).
+        """
+        try:
+            data = await self._get_fault_store().async_load()
+        except Exception as err:  # corrupt store must never block setup
+            _LOGGER.warning("Could not load persisted fault hotspots: %s", err)
+            return
+        hotspots = (data or {}).get("hotspots")
+        if not isinstance(hotspots, list):
+            return
+        restored = [
+            entry
+            for entry in hotspots
+            if isinstance(entry, dict)
+            and isinstance(entry.get("x"), (int, float))
+            and isinstance(entry.get("y"), (int, float))
+        ]
+        self._fault_hotspots = restored[-MAX_FAULT_HOTSPOTS:]
+        self._fault_map_id = (data or {}).get("map_id")
 
     def _get_wifi_map_store(self) -> Store[dict[str, Any]]:
         """Lazily create the disk store for the Wi-Fi heatmap cells."""
