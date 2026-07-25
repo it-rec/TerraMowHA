@@ -176,6 +176,8 @@ A **view-mode button** cycles what the card overlays on the lawn:
 | **Area** | the mowed-coverage shading only, with per-zone progress |
 | **Wi-Fi** | a **Wi-Fi heatmap** of the lawn, sampled by the mower as it mows (green = strong). Gaps between mow passes are interpolated from neighbouring samples; ground the mower never covered stays blank |
 
+**Session replay**: press the replay button and the card scrubs through the track the mower actually drove this session — the mowed area filling in as it goes — with play/pause and a slider. It replays data the card already has, so it costs no extra traffic, and it deliberately excludes the previous session's history path: replaying *this* mow must not sweep in the last one.
+
 The chosen mode is remembered per entity in the browser. Options and details: see the [dashboard guide](docs/en/dashboard.md#interactive-map-card). Live map data requires firmware HA module version 3 (same as the map camera). The card is also available in the dashboard card picker as **TerraMow Map Card**, with a full UI editor — no YAML needed.
 
 ### Dashboard example
