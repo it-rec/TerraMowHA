@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Fastvare"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Vedlikehold"
+      }
     }
   },
   "services": {

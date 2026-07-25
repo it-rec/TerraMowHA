@@ -25,6 +25,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - Edge trim mowing button
 - Settings from Home Assistant: mowing height, speed, spacing, blade speed, edge cutting distance, main direction mode and angles, thorough corner cutting, high-grass edge trim mode
 - Maintenance: reset buttons for the blade disk and base station counters
+- **Maintenance todo list** — a `todo` entity that lists exactly the chores the device's own counters report as due (blade disc, base station) and resets the matching counter when you tick one off. Empty when there is nothing to do
 
 **Monitoring**
 - Live map camera with mowing path, robot pose and base station (plus a clean map-only camera for dashboards, resolution configurable via options)
@@ -74,6 +75,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 | Update | Firmware version |
 | Event | Mower event (mowing started / paused / returning / docked / completed / error) |
 | Calendar | Mowing schedule (next scheduled mow) |
+| Todo | Maintenance list (blade disc, base station) — completing an item resets its counter |
 
 ### Installation
 
@@ -192,6 +194,13 @@ One-click importable blueprints for the most common notifications — each just 
   [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fit-rec%2FTerraMowHA%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fterramow%2Frain_returned_notification.yaml)
 - **Mowing finished** — when a mowing job completes
   [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fit-rec%2FTerraMowHA%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fterramow%2Fmowing_finished_notification.yaml)
+
+- **Growth-adaptive mowing** — mow when the grass has actually grown — accumulates growing degree days from your weather entity and starts a mow once enough have built up
+  [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fit-rec%2FTerraMowHA%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fterramow%2Fgrowth_adaptive_mowing.yaml)
+- **Quiet hours** — dock the mower when quiet hours begin and resume afterwards, but only the job the window actually interrupted
+  [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fit-rec%2FTerraMowHA%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fterramow%2Fquiet_hours.yaml)
+- **Pause while someone is in the garden** — pause on a gate contact, motion or person entity and resume once the garden has been clear for a while
+  [![Import blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fit-rec%2FTerraMowHA%2Fblob%2Fmain%2Fblueprints%2Fautomation%2Fterramow%2Fpresence_pause.yaml)
 
 **Using the event entity directly** — the mower event entity is the most flexible trigger. Its `event_type` attribute is one of `mowing_started`, `paused`, `returning`, `docked`, `mowing_completed`, `error`, and it carries the raw `mission`, `sub_mission`, `state`, `back_to_station_reason` and `has_error` fields:
 

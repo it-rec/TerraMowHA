@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Vdelana programska oprema"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Vzdrževanje"
+      }
     }
   },
   "services": {

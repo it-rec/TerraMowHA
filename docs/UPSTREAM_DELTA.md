@@ -24,6 +24,7 @@ synced point are already covered by the fork:
 | Platform | What it adds |
 |---|---|
 | **Event** (`event.py`) | A mower event entity firing `mowing_started`, `paused`, `returning`, `docked`, `mowing_completed`, `error`, each with the raw mission fields as attributes. Lets automations react to transitions without polling. |
+| **Todo** (`todo.py`) | A maintenance list generated from the blade / base-station counters: an item exists while the device reports the interval as reached, and completing it resets that counter on the mower. |
 | **Calendar** (`calendar.py`) | A read-only mowing-schedule calendar: the full weekly schedule when dp_122 is available, otherwise the dp_138 next scheduled mow, with active/upcoming/next-day and past-midnight handling. |
 | Camera | A second, default-disabled *clean* map-only camera for dashboards, plus a configurable output resolution. |
 | Sensor | A default-disabled pose sensor, a **Wi-Fi signal** sensor (dp_109, mower-side strength in percent), a session-level **Active Job** sensor that reports the running mission across mid-session heartbeat gaps, and a **Fault** sensor carrying the active fault as readable text (dp_116/dp_115 resolved through the `error_codes.py` catalog). |
