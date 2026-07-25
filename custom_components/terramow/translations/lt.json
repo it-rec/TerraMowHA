@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Automatinis tęsimas po lietaus"
+      },
+      "defogger_heating": {
+        "name": "Defogger šildymas"
       }
     },
     "number": {
@@ -518,6 +521,11 @@
     "update": {
       "firmware": {
         "name": "Programinė aparatinė įranga"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Apšvietimas"
       }
     }
   },

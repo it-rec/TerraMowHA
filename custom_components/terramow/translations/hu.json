@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Automatikus folytatás eső után"
+      },
+      "defogger_heating": {
+        "name": "Defogger fűtés"
       }
     },
     "number": {
@@ -518,6 +521,11 @@
     "update": {
       "firmware": {
         "name": "Firmware"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Világítás"
       }
     }
   },

@@ -48,6 +48,7 @@ PLATFORM_FOR_MODULE = {
     "select.py": "select",
     "number.py": "number",
     "switch.py": "switch",
+    "light.py": "light",
     "button.py": "button",
     "update.py": "update",
     "event.py": "event",

@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Αυτόματη συνέχιση μετά τη βροχή"
+      },
+      "defogger_heating": {
+        "name": "Defogger θέρμανση"
       }
     },
     "number": {
@@ -518,6 +521,11 @@
     "update": {
       "firmware": {
         "name": "Υλικολογισμικό"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Φωτισμός"
       }
     }
   },

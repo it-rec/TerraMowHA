@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Automatické pokračovanie po daždi"
+      },
+      "defogger_heating": {
+        "name": "Defogger ohrev"
       }
     },
     "number": {
@@ -518,6 +521,11 @@
     "update": {
       "firmware": {
         "name": "Firmvér"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Osvetlenie"
       }
     }
   },

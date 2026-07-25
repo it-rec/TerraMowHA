@@ -660,7 +660,7 @@ class TerraMowAdvancedSettingNumber(PushUpdateMixin, TerraMowEntity, NumberEntit
         hub = self.hub
         if not hub or not hub.advanced_settings:
             return None
-        return hub.resolve_advanced_setting(hub.advanced_settings, self._path)
+        return hub.resolve_setting(hub.advanced_settings, self._path)
 
     def _clamp_native(self, value: float) -> float:
         """Clamp a device-reported value into the entity's declared range."""

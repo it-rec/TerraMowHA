@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "雨後自動恢復"
+      },
+      "defogger_heating": {
+        "name": "Defogger 加熱"
       }
     },
     "number": {
@@ -518,6 +521,11 @@
     "update": {
       "firmware": {
         "name": "韌體"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "照明"
       }
     }
   },

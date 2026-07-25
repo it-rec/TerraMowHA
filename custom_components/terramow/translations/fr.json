@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Reprise auto après pluie"
+      },
+      "defogger_heating": {
+        "name": "Defogger chauffage"
       }
     },
     "number": {
@@ -518,6 +521,11 @@
     "update": {
       "firmware": {
         "name": "Micrologiciel"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Éclairage"
       }
     }
   },

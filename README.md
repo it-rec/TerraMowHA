@@ -24,6 +24,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position (activity-tinted, with follow mode), on-card start / pause / dock controls, battery & job-progress chips, optional mowed-coverage shading, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
 - Edge trim mowing button
 - Settings from Home Assistant: mowing height, speed, spacing, blade speed, edge cutting distance, main direction mode and angles, thorough corner cutting, high-grass edge trim mode
+- **Illumination light & defogger** (dp_152, *disabled by default*) — the mower's lamp as a `light` entity and the defogger heater as a switch, written through the same verified negotiation
 - **Writable advanced settings** (dp_150, *disabled by default*) — cliff detection, slope detection, after-rain auto-resume switches plus rain-sensor threshold and after-rain resume delay numbers. The write format is undocumented, so each change is verified against the mower's own follow-up report and **fails loudly** if the firmware ignores it; the read-only diagnostic sensors stay available either way
 - Maintenance: reset buttons for the blade disk and base station counters
 
@@ -70,6 +71,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 | Number | Mowing height, edge cutting distance, mowing spacing, single direction angle, auto-rotate angle interval, first / second direction angle. *Config, off by default:* rain sensor threshold, after-rain resume delay |
 | Switch | Thorough corner cutting. *Config, off by default:* cliff detection, slope detection, after-rain auto-resume |
 | Button | Edge trim, reset blade timer, reset base station timer |
+| Light | Illumination lamp (*off by default*) |
 | Update | Firmware version |
 | Event | Mower event (mowing started / paused / returning / docked / completed / error) |
 | Calendar | Mowing schedule (next scheduled mow) |

@@ -48,6 +48,10 @@ All upstream commits after v0.3.0 are already covered by the fork:
   **confirmed write**: it waits for the device's dp_119 command
   acknowledgement and raises on rejection (rejected fire-and-forget commands
   are logged; the last ack ships in diagnostics).
+- **Light platform** (`light.py`): the mower's illumination lamp as an
+  on/off light, plus the defogger heater as a switch, both writing dp_152
+  through the shared verified negotiation (no merged-block candidate there —
+  dp_152 also carries device-computed state).
 - **Writable advanced settings** (dp_150): cliff/slope detection and
   after-rain auto-resume switches plus rain-sensor threshold and resume-delay
   numbers, with the same per-firmware payload negotiation as the schedule

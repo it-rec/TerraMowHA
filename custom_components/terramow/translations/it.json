@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Ripresa automatica dopo pioggia"
+      },
+      "defogger_heating": {
+        "name": "Defogger riscaldamento"
       }
     },
     "number": {
@@ -518,6 +521,11 @@
     "update": {
       "firmware": {
         "name": "Firmware"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Illuminazione"
       }
     }
   },

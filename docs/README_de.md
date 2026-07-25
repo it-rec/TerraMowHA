@@ -19,6 +19,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 - **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position (activity-tinted, with follow mode), on-card start / pause / dock controls, battery & job-progress chips, optional mowed-coverage shading, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls; theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
 - Taste für Kantenschnitt
 - Einstellungen aus Home Assistant: Mähhöhe, Geschwindigkeit, Bahnabstand, Messerdrehzahl, Kantenschnittabstand, Hauptrichtungsmodus und -winkel, gründliches Eckenmähen, Kantenschnittmodus für hohes Gras
+- **Beleuchtung & Defogger** (dp_152, *standardmäßig deaktiviert*) — die Lampe des Mähers als `light`-Entität und die Defogger-Heizung als Schalter, geschrieben über dieselbe verifizierte Verhandlung
 - **Schreibbare erweiterte Einstellungen** (dp_150, *standardmäßig deaktiviert*) — Schalter für Klippenerkennung, Hangerkennung und Auto-Fortsetzen nach Regen sowie Zahlenwerte für Regensensor-Schwelle und Fortsetzungs-Verzögerung. Das Schreibformat ist undokumentiert, deshalb wird jede Änderung gegen die Rückmeldung des Mähers geprüft und **schlägt sichtbar fehl**, wenn die Firmware sie ignoriert; die schreibgeschützten Diagnose-Sensoren bleiben in jedem Fall erhalten
 - Wartung: Reset-Tasten für die Zähler von Messerteller und Basisstation
 
@@ -51,6 +52,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 | Zahl | Mähhöhe, Kantenschnittabstand, Bahnabstand, Winkel für Einzelrichtung, Intervall für automatische Winkeldrehung, Winkel der ersten / zweiten Richtung. *Konfiguration, standardmäßig aus:* Regensensor-Schwelle, Fortsetzungs-Verzögerung nach Regen |
 | Schalter | Gründliches Eckenmähen. *Konfiguration, standardmäßig aus:* Klippenerkennung, Hangerkennung, Auto-Fortsetzen nach Regen |
 | Taste | Kantenschnitt, Messer-Timer zurücksetzen, Basisstations-Timer zurücksetzen |
+| Licht | Beleuchtungslampe (*standardmäßig aus*) |
 | Update | Firmware-Version |
 
 ### Installation

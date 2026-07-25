@@ -43,6 +43,7 @@ from .const import (
     COMPATIBILITY_INFO_DP,
     CONF_SERIAL,
     DOMAIN,
+    ENVIRONMENT_INFO_DP,
     MAP_INFO_TOPIC,
     MAP_META_TOPIC,
     MODEL_NAME_TOPIC,
@@ -562,10 +563,10 @@ class TerraMowHub:
         # The dp_122 write payload shape proven to work on this device, once
         # a schedule write has succeeded (see async_add_schedule).
         self._schedule_write_field: str | None = None
-        # The dp_150 write payload shape proven to work on this device, once
-        # an advanced-setting write has succeeded (see
-        # async_write_advanced_setting).
-        self._advanced_write_field: str | None = None
+        # Per data point, the write payload shape proven to work on this
+        # device once a settings write has succeeded (see
+        # async_write_device_setting).
+        self._setting_write_field: dict[int, str] = {}
         # Messages seen on topics outside the documented namespace (via the
         # "#" discovery subscription): (epoch, topic, payload) — bounded.
         self._unknown_topic_captures: deque[tuple[float, str, str]] = deque(maxlen=50)
@@ -1450,25 +1451,32 @@ class TerraMowHub:
         if isinstance(data, dict):
             self._advanced_settings = data
 
-    # --- dp_150 advanced-setting writes -----------------------------------
+    # --- device-setting writes (dp_150, dp_152) ---------------------------
     #
-    # The device reports dp_150 but no write format is documented. As with the
-    # dp_122 schedule writes, the firmware silently drops payloads it cannot
-    # parse and does not ack this integration's commands, so a missing ack and
-    # an unknown field shape are indistinguishable. The only reliable judge is
-    # the device's own follow-up report: dp_150 is pushed whenever a setting
-    # changes, so a write counts as successful exactly when the mower reports
-    # the requested value back within ADVANCED_SETTING_VERIFY_TIMEOUT.
+    # The device reports these blocks but no write format is documented. As
+    # with the dp_122 schedule writes, the firmware silently drops payloads it
+    # cannot parse and does not ack this integration's commands, so a missing
+    # ack and an unknown field shape are indistinguishable. The only reliable
+    # judge is the device's own follow-up report: both blocks are pushed
+    # whenever a setting changes, so a write counts as successful exactly when
+    # the mower reports the requested value back within
+    # ADVANCED_SETTING_VERIFY_TIMEOUT.
 
     @staticmethod
-    def resolve_advanced_setting(settings: dict[str, Any], path: tuple[str, ...]) -> Any:
-        """Resolve a nested dp_150 value by path; None when absent."""
-        node: Any = settings
+    def resolve_setting(block: dict[str, Any], path: tuple[str, ...]) -> Any:
+        """Resolve a nested value inside a reported block; None when absent."""
+        node: Any = block
         for key in path:
             if not isinstance(node, dict):
                 return None
             node = node.get(key)
         return node
+
+    def setting_block(self, dp_id: int) -> dict[str, Any]:
+        """The most recent report of a writable settings data point."""
+        if dp_id == ENVIRONMENT_INFO_DP:
+            return self._environment_info
+        return self._advanced_settings
 
     @staticmethod
     def _nest(path: tuple[str, ...], value: Any) -> dict[str, Any]:
@@ -1478,28 +1486,39 @@ class TerraMowHub:
             fragment = {key: fragment}
         return dict(fragment)
 
-    def _advanced_setting_candidates(
-        self, path: tuple[str, ...], value: Any
+    def _setting_candidates(
+        self,
+        dp_id: int,
+        path: tuple[str, ...],
+        value: Any,
+        *,
+        allow_merged: bool,
+        wrapper_key: str,
     ) -> list[tuple[str, dict[str, Any]]]:
-        """Candidate dp_150 write payloads, least destructive first.
+        """Candidate write payloads for a settings block, safest first.
 
-        ``merged`` echoes the whole reported block with the one field
+        ``merged_block`` echoes the whole reported block with the one field
         replaced, so it is correct whether the firmware treats the message as
-        a full replacement or as a partial update. The narrower shapes follow
-        for firmware that rejects unknown/extra fields.
+        a full replacement or as a partial update. It is only offered for
+        blocks that are settings all the way through (dp_150); a block that
+        mixes settings with device-computed state (dp_152 carries sunrise,
+        sunset and the manual-mapping flags) must not be echoed back as a
+        write, so ``allow_merged`` is False there. The narrower shapes follow
+        for firmware that rejects unknown or extra fields.
         """
         nested = self._nest(path, value)
-        merged = self._deep_merge(self._advanced_settings, nested)
-        candidates: list[tuple[str, dict[str, Any]]] = [
-            ("merged_block", merged),
-            ("nested_field", nested),
-        ]
+        candidates: list[tuple[str, dict[str, Any]]] = []
+        if allow_merged:
+            candidates.append(
+                ("merged_block", self._deep_merge(self.setting_block(dp_id), nested))
+            )
+        candidates.append(("nested_field", nested))
         # A leaf named "value" is the device's own scalar wrapper; the flat
         # form drops it (``{"enable_cliff_detection": true}``).
         if len(path) > 1 and path[-1] == "value":
             candidates.append(("flat_field", self._nest(path[:-1], value)))
-        candidates.append(("wrapped_field", {"advanced_setting": nested}))
-        preferred = self._advanced_write_field
+        candidates.append(("wrapped_field", {wrapper_key: nested}))
+        preferred = self._setting_write_field.get(dp_id)
         if preferred is not None:
             candidates.sort(key=lambda candidate: candidate[0] != preferred)
         return candidates
@@ -1519,8 +1538,8 @@ class TerraMowHub:
         return merged
 
     @classmethod
-    def advanced_value_matches(cls, reported: Any, expected: Any) -> bool:
-        """Whether a reported dp_150 value satisfies the requested one.
+    def setting_value_matches(cls, reported: Any, expected: Any) -> bool:
+        """Whether a reported setting value satisfies the requested one.
 
         Protobuf-JSON may omit a field sitting at its default, so a missing
         report satisfies a falsy request. Composite values (the hours/minutes
@@ -1529,15 +1548,16 @@ class TerraMowHub:
         if isinstance(expected, dict):
             node = reported if isinstance(reported, dict) else {}
             return all(
-                cls.advanced_value_matches(node.get(key), sub_value)
+                cls.setting_value_matches(node.get(key), sub_value)
                 for key, sub_value in expected.items()
             )
         if reported is None:
             return not expected
         return bool(reported == expected)
 
-    async def _async_await_advanced_setting(
+    async def _async_await_setting(
         self,
+        dp_id: int,
         path: tuple[str, ...],
         value: Any,
         timeout: float | None = None,
@@ -1548,8 +1568,10 @@ class TerraMowHub:
         device's report may have overtaken the ack wait, and a write that asks
         for the value already in effect is trivially satisfied.
         """
-        cached = self.resolve_advanced_setting(self._advanced_settings, path)
-        if self._advanced_settings and self.advanced_value_matches(cached, value):
+        block = self.setting_block(dp_id)
+        if block and self.setting_value_matches(
+            self.resolve_setting(block, path), value
+        ):
             return True
         if timeout is None:
             timeout = ADVANCED_SETTING_VERIFY_TIMEOUT
@@ -1565,12 +1587,10 @@ class TerraMowHub:
                 return
             if not isinstance(data, dict):
                 return
-            if self.advanced_value_matches(
-                self.resolve_advanced_setting(data, path), value
-            ):
+            if self.setting_value_matches(self.resolve_setting(data, path), value):
                 future.set_result(True)
 
-        unsub = self.register_callback(ADVANCED_SETTINGS_DP, _on_settings)
+        unsub = self.register_callback(dp_id, _on_settings)
         try:
             return await asyncio.wait_for(future, timeout)
         except TimeoutError:
@@ -1578,36 +1598,45 @@ class TerraMowHub:
         finally:
             unsub()
 
-    async def async_write_advanced_setting(
-        self, path: tuple[str, ...], value: Any
+    async def async_write_device_setting(
+        self,
+        dp_id: int,
+        path: tuple[str, ...],
+        value: Any,
+        *,
+        allow_merged: bool,
+        wrapper_key: str,
     ) -> None:
-        """Write one dp_150 advanced setting, verified by the device's report.
+        """Write one nested setting, verified by the device's own report.
 
         Raises a translated ``HomeAssistantError`` when no candidate payload
         made the mower report the requested value — which on firmware that
-        does not expose dp_150 writes is the expected outcome, and is what the
+        does not expose these writes is the expected outcome, and is what the
         error message says.
         """
         self._ensure_command_allowed()
         attempts: list[str] = []
-        for label, fragment in self._advanced_setting_candidates(path, value):
+        candidates = self._setting_candidates(
+            dp_id, path, value, allow_merged=allow_merged, wrapper_key=wrapper_key
+        )
+        for label, fragment in candidates:
             command: dict[str, Any] = {"seq": self.get_cmd_seq(), **fragment}
-            code = await self._async_wait_ack(
-                ADVANCED_SETTINGS_DP, command, COMMAND_ACK_TIMEOUT
-            )
+            code = await self._async_wait_ack(dp_id, command, COMMAND_ACK_TIMEOUT)
             attempts.append(f"{label}={code}")
             if code is not None and code != 0:
                 continue  # clean rejection — try the next shape
-            if await self._async_await_advanced_setting(path, value):
+            if await self._async_await_setting(dp_id, path, value):
                 _LOGGER.info(
-                    "dp_150 write of %s succeeded with the %s payload shape",
+                    "dp_%s write of %s succeeded with the %s payload shape",
+                    dp_id,
                     ".".join(path),
                     label,
                 )
-                self._advanced_write_field = label
+                self._setting_write_field[dp_id] = label
                 return
         _LOGGER.warning(
-            "dp_150 write of %s to %r was not confirmed by the device (%s)",
+            "dp_%s write of %s to %r was not confirmed by the device (%s)",
+            dp_id,
             ".".join(path),
             value,
             ", ".join(attempts),
@@ -1619,6 +1648,35 @@ class TerraMowHub:
                 "setting": ".".join(path),
                 "attempts": ", ".join(attempts),
             },
+        )
+
+    async def async_write_advanced_setting(
+        self, path: tuple[str, ...], value: Any
+    ) -> None:
+        """Write one dp_150 advanced setting (settings-only block)."""
+        await self.async_write_device_setting(
+            ADVANCED_SETTINGS_DP,
+            path,
+            value,
+            allow_merged=True,
+            wrapper_key="advanced_setting",
+        )
+
+    async def async_write_environment_setting(
+        self, path: tuple[str, ...], value: Any
+    ) -> None:
+        """Write one dp_152 environment setting (illumination, defogger).
+
+        No merged-block candidate: dp_152 also carries device-computed state
+        (sunrise, sunset, the manual-mapping flags), which must not be echoed
+        back to the mower as a write.
+        """
+        await self.async_write_device_setting(
+            ENVIRONMENT_INFO_DP,
+            path,
+            value,
+            allow_merged=False,
+            wrapper_key="environment_setting",
         )
 
     async def on_battery_status(self, payload: str) -> None:

@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Yağmur sonrası oto. devam"
+      },
+      "defogger_heating": {
+        "name": "Defogger ısıtma"
       }
     },
     "number": {
@@ -518,6 +521,11 @@
     "update": {
       "firmware": {
         "name": "Aygıt Yazılımı"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Aydınlatma"
       }
     }
   },

@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Automatski nastavak nakon kiše"
+      },
+      "defogger_heating": {
+        "name": "Defogger grijanje"
       }
     },
     "number": {
@@ -518,6 +521,11 @@
     "update": {
       "firmware": {
         "name": "Firmver"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Rasvjeta"
       }
     }
   },

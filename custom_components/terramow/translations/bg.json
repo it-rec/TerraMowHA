@@ -484,6 +484,9 @@
       },
       "after_rain_auto_resume": {
         "name": "Авт. възобновяване след дъжд"
+      },
+      "defogger_heating": {
+        "name": "Defogger отопление"
       }
     },
     "number": {
@@ -518,6 +521,11 @@
     "update": {
       "firmware": {
         "name": "Фърмуер"
+      }
+    },
+    "light": {
+      "illumination_light": {
+        "name": "Осветление"
       }
     }
   },
