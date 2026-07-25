@@ -55,6 +55,8 @@ All upstream commits after v0.3.0 are already covered by the fork:
   (`_mqtt._tcp.local.`, `terramow*`), and an **options flow** (map resolution,
   theme, mowed-coverage shading).
 - **Firmware update entity** and version-compatibility sensor.
+- **Assist intent** (`intent.py`): "mow the front lawn" resolved against the
+  mower's own zone names, with ready-made sentence files for en/de.
 - **Automation blueprints** and a **dashboard guide**.
 - **Full localization** across 33 languages.
 

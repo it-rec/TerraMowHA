@@ -1,0 +1,12 @@
+language: en
+intents:
+  TerraMowMowZone:
+    data:
+      - sentences:
+          - "mow [the] {zone}"
+          - "mow [the] {zone} (zone|area)"
+          - "start mowing [the] {zone}"
+          - "cut [the] {zone}"
+lists:
+  zone:
+    wildcard: true
