@@ -57,6 +57,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 **Events & automation**
 - **Mower event entity** — fires a discrete event on every notable transition (`mowing_started`, `paused`, `returning`, `docked`, `mowing_completed`, `error`), each carrying the raw mission fields, so automations react to *happenings* without polling activity state
 - One-click automation blueprints (see below)
+- **Assist voice control for zones** — an intent that resolves a spoken zone name against the mower's own map and starts a selective mow ("mow the front lawn"). Matching forgives case, punctuation and accents, but never guesses: an unknown or ambiguous name is answered with the list of zones instead. Copy the ready-made sentences from [`docs/custom_sentences/`](docs/custom_sentences) into your `config/custom_sentences/<language>/` folder
 
 **Integration quality of life**
 - Zeroconf/mDNS auto-discovery

@@ -37,6 +37,7 @@ from .const import (
 )
 from .const import DOMAIN as DOMAIN
 from .hub import TerraMowHub
+from .intent import async_setup_intents
 from .issues import async_clear_compatibility_issue, async_clear_maintenance_issues
 from .map_card import async_setup_map_card
 
@@ -407,6 +408,9 @@ def _async_register_services(hass: HomeAssistant) -> None:
         handle_delete_schedule,
         schema=DELETE_SCHEDULE_SCHEMA,
     )
+    # Assist intents live alongside the services: both are integration-level
+    # and both are registered exactly once.
+    hass.async_create_task(async_setup_intents(hass))
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> bool:

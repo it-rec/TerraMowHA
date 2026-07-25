@@ -62,6 +62,7 @@ only creates an entity when a GPS anchor is configured in the options.
 | `event.py` | Fires HA events on mission phase transitions (started/paused/returning/docked/completed/error) |
 | `calendar.py` | Read-only schedule calendar — full weekly slots (dp_122) when available, else the next scheduled mow (dp_138) |
 | `todo.py` | `MaintenanceTodoList` — the blade / base-station counters as a generated todo list; completing an item publishes the counter reset (dp_126 / dp_125 ← 0) |
+| `intent.py` | The Assist `TerraMowMowZone` intent: folds a spoken zone name (case/accents/punctuation) against the map's sub-region names and starts a selective mow; refuses on unknown or ambiguous names |
 | `map_card.py` | Interactive map card backend: serves `frontend/terramow-map-card.js` (auto-loaded via `frontend.add_extra_js_url`) and the `terramow/map/subscribe` WebSocket feed pushing the `build_scene` geometry + display robot pose to subscribed cards |
 | `frontend/terramow-map-card.js` | The Lovelace card: canvas vector renderer (pan/zoom/fit, theme-aware), live robot marker, tap-to-mow zone selection calling `terramow.start_select_region` |
 

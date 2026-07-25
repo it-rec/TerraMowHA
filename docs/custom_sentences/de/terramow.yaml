@@ -1,0 +1,12 @@
+language: de
+intents:
+  TerraMowMowZone:
+    data:
+      - sentences:
+          - "mähe [den|die|das] {zone}"
+          - "mäh [den|die|das] {zone}"
+          - "mähe [die] (Zone|Fläche) {zone}"
+          - "starte [das] Mähen (im|in der|auf dem|auf der) {zone}"
+lists:
+  zone:
+    wildcard: true
