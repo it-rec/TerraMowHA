@@ -9,8 +9,10 @@ the payload builders.
 from __future__ import annotations
 
 import asyncio
+import gc
 import json
 import math
+import weakref
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -35,8 +37,11 @@ from custom_components.terramow.map_card import (
 
 @pytest.fixture(autouse=True)
 def _clear_hub_caches() -> Any:
-    """Reset the module-level per-hub caches so id(hub) reuse between tests
-    can't leak a stale scene/coverage entry into a fresh subscription."""
+    """Reset the module-level per-hub caches between tests.
+
+    The caches are weak-keyed, so a collected hub drops its entry on its own;
+    this only keeps tests deterministic while a test still holds its hub alive
+    in a local variable."""
     map_card._HUB_SCENE_CACHES.clear()
     map_card._HUB_COVERAGE_CACHES.clear()
     map_card._HUB_BUILD_TASKS.clear()
@@ -699,7 +704,7 @@ async def test_resubscribe_pushes_cached_scene_immediately(
     )
     assert (await client1.receive_json())["success"]
     await hass.async_block_till_done()
-    assert id(hub) in map_card._HUB_SCENE_CACHES
+    assert hub in map_card._HUB_SCENE_CACHES
 
     # Second subscription: the very first event is the cached scene, emitted
     # synchronously from start() before any executor rebuild runs.
@@ -756,7 +761,7 @@ async def test_shared_scene_build_dedupes_across_feeds(
     )
     assert calls["n"] == 1  # one build shared by both feeds
     assert payload_a is payload_b
-    assert map_card._HUB_SCENE_CACHES[id(hub)] is payload_a
+    assert map_card._HUB_SCENE_CACHES[hub] is payload_a
 
     # The previous task has finished, so a later request builds afresh.
     await feed_a._shared_scene_build()
@@ -1228,3 +1233,37 @@ async def test_zone_coverage_recompute_is_throttled(hass: HomeAssistant) -> None
         build_scene_payload(hub)
         build_scene_payload(hub)
         assert zc.call_count == 2
+
+
+async def test_hub_caches_are_released_with_their_hub(hass: HomeAssistant) -> None:
+    """A collected hub takes its cache entries with it.
+
+    The per-hub caches used to be keyed by ``id(hub)`` and were never pruned,
+    so every config-entry reload stranded a full scene payload for the lifetime
+    of the process — and, because CPython reuses id() values, a new hub could
+    inherit the previous hub's cached scene. Weak keys make the entries live
+    exactly as long as the hub does.
+    """
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    hub._apply_map_data(MAP_DATA)
+
+    # Populate all three caches for this hub.
+    feed = map_card._MapFeed(hass, MagicMock(), 1, hub)
+    map_card._HUB_SCENE_CACHES[hub] = build_scene_payload(hub, feed._coverage_cache)
+    assert hub in map_card._HUB_SCENE_CACHES
+    assert hub in map_card._HUB_COVERAGE_CACHES
+
+    hub_ref = weakref.ref(hub)
+    await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+    # Home Assistant clears entry.runtime_data on unload; drop the references
+    # this test still holds and collect.
+    del hub, feed
+    gc.collect()
+
+    assert hub_ref() is None, "the hub itself outlived the config entry"
+    assert len(map_card._HUB_SCENE_CACHES) == 0
+    assert len(map_card._HUB_COVERAGE_CACHES) == 0

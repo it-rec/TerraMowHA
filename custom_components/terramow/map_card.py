@@ -23,6 +23,7 @@ import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
+from weakref import WeakKeyDictionary
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
@@ -80,28 +81,41 @@ SCENE_PUSH_DEBOUNCE = 0.2
 # for this long (path + robot still update live) so a viewed card stays cheap.
 COVERAGE_RECOMPUTE_INTERVAL = 12.0
 
-# The coverage cache is keyed per hub (not per subscription), so re-opening the
-# map dashboard — or viewing it on several devices at once — reuses the last
-# computed per-zone coverage instead of recomputing the O(edges x zones) result
-# from scratch each time. Keyed by id(hub); a reloaded hub simply gets a fresh
-# entry and the stale one (a tiny dict) is orphaned.
-_HUB_COVERAGE_CACHES: dict[int, dict[str, Any]] = {}
+# Per-hub caches shared across every card subscription of one mower.
+#
+# All three are keyed by the hub OBJECT in a WeakKeyDictionary, not by id(hub).
+# id() keys leaked: nothing ever removed an entry, so every config-entry reload
+# stranded a full scene payload (megabytes on a large lawn) for the lifetime of
+# the Home Assistant process. Worse, CPython reuses id() values once an object
+# is collected, so a freshly created hub could inherit the previous hub's cached
+# scene and make a card paint the wrong map. Weak keys fix both: an entry is
+# dropped as soon as its hub is collected, and an object key cannot be aliased.
+
+# Throttles the expensive per-zone coverage math (O(edges x zones)) so that
+# re-opening the map dashboard — or viewing it on several devices at once —
+# reuses the last computed result instead of recomputing it from scratch.
+_HUB_COVERAGE_CACHES: WeakKeyDictionary[TerraMowHub, dict[str, Any]] = (
+    WeakKeyDictionary()
+)
 
 # Last fully-built scene payload per hub. A fresh subscription (initial load, or
 # a mobile view-swipe that recreates the card element) pushes this immediately
 # so the card paints the known map at once, instead of blanking to "Waiting for
 # mower data…" while the heavy build_scene_payload runs in the executor. The
 # background rebuild that follows sends a delta (or a fresh scene) moments later.
-# Keyed by id(hub); a reloaded hub gets a fresh entry and orphans the old one.
-_HUB_SCENE_CACHES: dict[int, dict[str, Any]] = {}
+_HUB_SCENE_CACHES: WeakKeyDictionary[TerraMowHub, dict[str, Any]] = (
+    WeakKeyDictionary()
+)
 
 # In-flight scene build per hub. When several cards view the same mower, their
 # feeds get the same source callbacks at the same tick and would each run the
 # heavy build_scene_payload in the executor — identical work N times over. They
 # now share one build task per hub (each feed still emits its own delta), so N
-# simultaneous viewers cost one build, not N. Keyed by id(hub); the entry holds
-# a finished task between builds and is replaced on the next one.
-_HUB_BUILD_TASKS: dict[int, asyncio.Task[dict[str, Any]]] = {}
+# simultaneous viewers cost one build, not N. The entry holds a finished task
+# between builds and is replaced on the next one.
+_HUB_BUILD_TASKS: WeakKeyDictionary[TerraMowHub, asyncio.Task[dict[str, Any]]] = (
+    WeakKeyDictionary()
+)
 
 _DATA_SETUP_DONE = f"{DOMAIN}_map_card_setup"
 
@@ -761,7 +775,7 @@ class _MapFeed:
         # Throttles the expensive per-zone coverage recompute across pushes, and
         # is shared per hub so re-opening the card (or another device viewing it)
         # reuses the last result instead of recomputing it from scratch.
-        self._coverage_cache = _HUB_COVERAGE_CACHES.setdefault(id(hub), {})
+        self._coverage_cache = _HUB_COVERAGE_CACHES.setdefault(hub, {})
         # Reuse path point extraction across pushes: the history path source is
         # re-fetched rarely, so re-parsing its full point list on every mowing
         # tick is wasted work (identity-keyed, so a new source dict re-parses).
@@ -784,7 +798,7 @@ class _MapFeed:
         # Paint instantly from the last known scene (if any card has rendered
         # this hub before), then schedule the authoritative rebuild which sends
         # a delta or a fresh scene once it completes.
-        cached = _HUB_SCENE_CACHES.get(id(self.hub))
+        cached = _HUB_SCENE_CACHES.get(self.hub)
         if cached is not None:
             self._emit_scene(cached)
         self._schedule_scene_build()
@@ -848,11 +862,10 @@ class _MapFeed:
         it is running await the same task instead of launching their own. Each
         still emits its own delta from the shared payload.
         """
-        key = id(self.hub)
-        task = _HUB_BUILD_TASKS.get(key)
+        task = _HUB_BUILD_TASKS.get(self.hub)
         if task is None or task.done():
             task = self.hass.async_create_task(self._run_scene_build())
-            _HUB_BUILD_TASKS[key] = task
+            _HUB_BUILD_TASKS[self.hub] = task
         return await task
 
     async def _run_scene_build(self) -> dict[str, Any]:
@@ -866,7 +879,7 @@ class _MapFeed:
         )
         # Remember the freshest full scene so the next subscription can paint it
         # immediately (see start()).
-        _HUB_SCENE_CACHES[id(self.hub)] = payload
+        _HUB_SCENE_CACHES[self.hub] = payload
         return payload
 
     @callback
