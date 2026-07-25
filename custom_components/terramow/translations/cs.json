@@ -50,7 +50,10 @@
           "map_resolution": "Výstupní rozlišení mapy (px)",
           "map_theme": "Motiv mapy",
           "map_show_coverage": "Zobrazit posečenou plochu",
-          "assume_job_complete": "Považovat každou dokončenou úlohu za 100% dokončenou"
+          "assume_job_complete": "Považovat každou dokončenou úlohu za 100% dokončenou",
+          "gps_latitude": "Zeměpisná šířka základny",
+          "gps_longitude": "Zeměpisná délka základny",
+          "gps_heading": "Azimut horního okraje mapy (°)"
         },
         "data_description": {
           "map_resolution": "Délka strany PNG obrázku mapové kamery. Vyšší hodnoty poskytují ostřejší obraz v ovládacích panelech, ale zvyšují šířku pásma a zatížení procesoru při každém vykreslení.",
@@ -513,6 +516,11 @@
     "image": {
       "mow_report": {
         "name": "Zpráva o sečení"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Poloha"
       }
     }
   },

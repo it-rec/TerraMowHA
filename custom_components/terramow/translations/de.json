@@ -50,7 +50,10 @@
           "map_resolution": "Karten-Ausgabeauflösung (px)",
           "map_theme": "Karten-Farbschema",
           "map_show_coverage": "Gemähte Fläche anzeigen",
-          "assume_job_complete": "Jeden beendeten Auftrag als 100 % abgeschlossen behandeln"
+          "assume_job_complete": "Jeden beendeten Auftrag als 100 % abgeschlossen behandeln",
+          "gps_latitude": "Breitengrad der Basisstation",
+          "gps_longitude": "Längengrad der Basisstation",
+          "gps_heading": "Kompasspeilung der Kartenoberkante (°)"
         },
         "data_description": {
           "map_resolution": "Seitenlänge des Karten-PNGs. Höhere Werte ergeben ein schärferes Bild beim Einbetten in Dashboards, erhöhen aber Bandbreite und CPU-Last pro Render-Zyklus.",
@@ -513,6 +516,11 @@
     "image": {
       "mow_report": {
         "name": "Mähbericht"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Position"
       }
     }
   },

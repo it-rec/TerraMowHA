@@ -50,7 +50,10 @@
           "map_resolution": "Kartets utdataoppløsning (px)",
           "map_theme": "Karttema",
           "map_show_coverage": "Vis klippet område",
-          "assume_job_complete": "Behandle enhver fullført jobb som 100 % ferdig"
+          "assume_job_complete": "Behandle enhver fullført jobb som 100 % ferdig",
+          "gps_latitude": "Basestasjonens breddegrad",
+          "gps_longitude": "Basestasjonens lengdegrad",
+          "gps_heading": "Kompasskurs for kartets overkant (°)"
         },
         "data_description": {
           "map_resolution": "Sidelengde på kartkameraets PNG. Høyere verdier gir et skarpere bilde i dashbord, men øker båndbredde og CPU-belastning ved hver gjengivelse.",
@@ -513,6 +516,11 @@
     "image": {
       "mow_report": {
         "name": "Klipperapport"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Posisjon"
       }
     }
   },

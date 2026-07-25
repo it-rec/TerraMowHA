@@ -50,7 +50,10 @@
           "map_resolution": "Izhodna ločljivost zemljevida (px)",
           "map_theme": "Tema zemljevida",
           "map_show_coverage": "Prikaži pokošeno površino",
-          "assume_job_complete": "Vsako končano opravilo obravnavaj kot 100 % dokončano"
+          "assume_job_complete": "Vsako končano opravilo obravnavaj kot 100 % dokončano",
+          "gps_latitude": "Zemljepisna širina bazne postaje",
+          "gps_longitude": "Zemljepisna dolžina bazne postaje",
+          "gps_heading": "Azimut zgornjega roba zemljevida (°)"
         },
         "data_description": {
           "map_resolution": "Dolžina stranice izhodne slike PNG kamere zemljevida. Višje vrednosti dajejo ostrejšo sliko pri vdelavi v nadzorne plošče, vendar povečajo porabo pasovne širine in obremenitev CPU pri vsakem izrisu.",
@@ -513,6 +516,11 @@
     "image": {
       "mow_report": {
         "name": "Poročilo o košnji"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Položaj"
       }
     }
   },

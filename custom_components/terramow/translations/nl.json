@@ -50,7 +50,10 @@
           "map_resolution": "Uitvoerresolutie van de kaart (px)",
           "map_theme": "Kaartthema",
           "map_show_coverage": "Gemaaid oppervlak tonen",
-          "assume_job_complete": "Elke voltooide taak als 100 % afgerond beschouwen"
+          "assume_job_complete": "Elke voltooide taak als 100 % afgerond beschouwen",
+          "gps_latitude": "Breedtegraad basisstation",
+          "gps_longitude": "Lengtegraad basisstation",
+          "gps_heading": "Kompaskoers van de bovenkant van de kaart (°)"
         },
         "data_description": {
           "map_resolution": "Zijlengte van de PNG van de kaartcamera. Hogere waarden geven een scherper beeld in dashboards, maar verhogen de bandbreedte en CPU-belasting per render.",
@@ -513,6 +516,11 @@
     "image": {
       "mow_report": {
         "name": "Maairapport"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Positie"
       }
     }
   },

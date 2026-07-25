@@ -50,7 +50,10 @@
           "map_resolution": "지도 출력 해상도 (px)",
           "map_theme": "지도 테마",
           "map_show_coverage": "예초 완료 영역 표시",
-          "assume_job_complete": "완료된 모든 작업을 100 % 완료로 처리"
+          "assume_job_complete": "완료된 모든 작업을 100 % 완료로 처리",
+          "gps_latitude": "충전 스테이션 위도",
+          "gps_longitude": "충전 스테이션 경도",
+          "gps_heading": "지도 상단의 방위각 (°)"
         },
         "data_description": {
           "map_resolution": "지도 카메라 PNG의 출력 변 길이입니다. 값이 높을수록 대시보드에 삽입할 때 이미지가 더 선명해지지만, 렌더링할 때마다 대역폭과 CPU 사용량이 증가합니다.",
@@ -513,6 +516,11 @@
     "image": {
       "mow_report": {
         "name": "예초 리포트"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "위치"
       }
     }
   },

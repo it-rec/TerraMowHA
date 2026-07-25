@@ -59,6 +59,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 **Integration quality of life**
 - Zeroconf/mDNS auto-discovery
 - Reconfigure flow (change host/IP without re-adding) and reauth flow
+- **Mower on the Home Assistant map** — set the base station's real coordinates and the compass bearing of the map's top edge in the options, and a `device_tracker` projects the mower's live pose onto GPS coordinates: zone triggers, proximity and "the mower left the property" all work. Throttled (1 m / 10 s) so a 2 Hz pose stream doesn't flood the recorder; no tracker is created until the anchor is set
 - **Repair issues** — actionable dashboard cards for incompatible firmware and for due blade / base-station maintenance
 - Diagnostics download for easy bug reports
 - Translated into 33 languages (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
@@ -82,6 +83,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 | Event | Mower event (mowing started / paused / returning / docked / completed / error) |
 | Calendar | Mowing schedule (next scheduled mow) |
 | Todo | Maintenance list (blade disc, base station) — completing an item resets its counter |
+| Device tracker | Mower position as GPS coordinates (only with a configured anchor) |
 
 ### Installation
 
@@ -113,6 +115,7 @@ Devices on the local network are discovered automatically via Zeroconf — accep
   - **Map theme** — `light` or `dark`.
   - **Show mowed coverage** — shade the already-mowed area beneath the path line.
   - **Treat every finished job as 100 % complete** — some firmware ends a finished job without emitting a completion signal, so the session progress never snaps to 100 % even though the lawn is done (it reads as "aborted"). Turn this on to treat any finished job as complete, matching the vendor app; leave it off to keep the honest counter value. *Default: off.*
+  - **GPS anchor** — the base station's latitude/longitude plus the compass bearing the top of the rendered map points to. With both coordinates set, a `device_tracker` entity projecting the live pose onto GPS appears; leave them empty and none is created.
 - If the device password changes, Home Assistant automatically starts a *reauthentication* flow.
 
 ### Requirements

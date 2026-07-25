@@ -27,11 +27,15 @@ if TYPE_CHECKING:
 
 from .const import (
     CONF_ASSUME_JOB_COMPLETE,
+    CONF_GPS_HEADING,
+    CONF_GPS_LATITUDE,
+    CONF_GPS_LONGITUDE,
     CONF_MAP_RESOLUTION,
     CONF_MAP_SHOW_COVERAGE,
     CONF_MAP_THEME,
     CONF_SERIAL,
     DEFAULT_ASSUME_JOB_COMPLETE,
+    DEFAULT_GPS_HEADING,
     DEFAULT_MAP_RESOLUTION,
     DEFAULT_MAP_SHOW_COVERAGE,
     DEFAULT_MAP_THEME,
@@ -358,6 +362,24 @@ class TerraMowOptionsFlow(OptionsFlow):
                         CONF_ASSUME_JOB_COMPLETE, DEFAULT_ASSUME_JOB_COMPLETE
                     ),
                 ): bool,
+                # Real-world anchor for the device_tracker. Optional and
+                # paired: without both coordinates no tracker is created.
+                vol.Optional(
+                    CONF_GPS_LATITUDE,
+                    description={
+                        "suggested_value": options.get(CONF_GPS_LATITUDE)
+                    },
+                ): vol.All(vol.Coerce(float), vol.Range(min=-90, max=90)),
+                vol.Optional(
+                    CONF_GPS_LONGITUDE,
+                    description={
+                        "suggested_value": options.get(CONF_GPS_LONGITUDE)
+                    },
+                ): vol.All(vol.Coerce(float), vol.Range(min=-180, max=180)),
+                vol.Required(
+                    CONF_GPS_HEADING,
+                    default=options.get(CONF_GPS_HEADING, DEFAULT_GPS_HEADING),
+                ): vol.All(vol.Coerce(float), vol.Range(min=0, max=360)),
             }
         )
         return self.async_show_form(step_id="init", data_schema=schema)

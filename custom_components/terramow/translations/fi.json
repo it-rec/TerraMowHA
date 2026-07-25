@@ -50,7 +50,10 @@
           "map_resolution": "Kartan tulostustarkkuus (px)",
           "map_theme": "Kartan teema",
           "map_show_coverage": "Näytä leikattu alue",
-          "assume_job_complete": "Käsittele jokainen päättynyt työ 100 % valmiina"
+          "assume_job_complete": "Käsittele jokainen päättynyt työ 100 % valmiina",
+          "gps_latitude": "Tukiaseman leveysaste",
+          "gps_longitude": "Tukiaseman pituusaste",
+          "gps_heading": "Kartan yläreunan kompassisuunta (°)"
         },
         "data_description": {
           "map_resolution": "Karttakameran PNG-kuvan sivun pituus. Suuremmat arvot antavat terävämmän kuvan kojelaudoissa, mutta lisäävät kaistanleveyttä ja suorittimen kuormitusta jokaisella renderöinnillä.",
@@ -513,6 +516,11 @@
     "image": {
       "mow_report": {
         "name": "Leikkuuraportti"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Sijainti"
       }
     }
   },

@@ -50,7 +50,10 @@
           "map_resolution": "Kaardi väljundi eraldusvõime (px)",
           "map_theme": "Kaardi teema",
           "map_show_coverage": "Näita niidetud ala",
-          "assume_job_complete": "Käsitle iga lõpetatud tööd 100 % valminuna"
+          "assume_job_complete": "Käsitle iga lõpetatud tööd 100 % valminuna",
+          "gps_latitude": "Baasjaama laiuskraad",
+          "gps_longitude": "Baasjaama pikkuskraad",
+          "gps_heading": "Kaardi ülaserva kompassisuund (°)"
         },
         "data_description": {
           "map_resolution": "Kaardikaamera PNG väljundi külje pikkus. Suuremad väärtused annavad armatuurlaudadele manustamisel teravama pildi, kuid suurendavad ribalaiust ja CPU koormust igal renderdamisel.",
@@ -513,6 +516,11 @@
     "image": {
       "mow_report": {
         "name": "Niitmisaruanne"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Asukoht"
       }
     }
   },
