@@ -507,6 +507,11 @@
       "firmware": {
         "name": "Micrologiciel"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Entretien"
+      }
     }
   },
   "services": {

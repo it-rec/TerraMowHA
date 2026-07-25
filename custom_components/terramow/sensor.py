@@ -1270,4 +1270,4 @@ async def async_setup_entry(
 
     # Zones only exist once the mower has sent its map, so those sensors are
     # created from the map callback rather than here.
-    async_setup_zone_sensors(hass, basic_data, async_add_entities)
+    async_setup_zone_sensors(config_entry, hass, basic_data, async_add_entities)

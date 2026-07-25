@@ -507,6 +507,11 @@
       "firmware": {
         "name": "Фърмуер"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Поддръжка"
+      }
     }
   },
   "services": {

@@ -9,7 +9,9 @@ At the time of writing, upstream's latest tag is **v0.3.0**; this fork is on the
 retained — plus the additions below.
 
 **Last synced with upstream:** commit `045d789` (2026-06-18, upstream `main`).
-All upstream commits after v0.3.0 are already covered by the fork:
+As of the v1.62.0 doc pass this sync check had not been repeated — re-verify
+against upstream `main` before the next release. All upstream commits up to the
+synced point are already covered by the fork:
 
 | Upstream commit | Where the fork has it |
 |---|---|
@@ -22,9 +24,10 @@ All upstream commits after v0.3.0 are already covered by the fork:
 | Platform | What it adds |
 |---|---|
 | **Event** (`event.py`) | A mower event entity firing `mowing_started`, `paused`, `returning`, `docked`, `mowing_completed`, `error`, each with the raw mission fields as attributes. Lets automations react to transitions without polling. |
+| **Todo** (`todo.py`) | A maintenance list generated from the blade / base-station counters: an item exists while the device reports the interval as reached, and completing it resets that counter on the mower. |
 | **Calendar** (`calendar.py`) | A read-only mowing-schedule calendar: the full weekly schedule when dp_122 is available, otherwise the dp_138 next scheduled mow, with active/upcoming/next-day and past-midnight handling. |
 | Camera | A second, default-disabled *clean* map-only camera for dashboards, plus a configurable output resolution. |
-| Sensor | Per-zone **last mowed** timestamps (one entity per map sub-region, stamped from poses observed inside the boundary, with the cycle coverage as an attribute), a default-disabled pose sensor, a **Wi-Fi signal** sensor (dp_109, mower-side strength in percent), and a session-level **Active Job** sensor that reports the running mission across mid-session heartbeat gaps. |
+| Sensor | Per-zone **last mowed** timestamps (one entity per map sub-region, stamped from poses observed inside the boundary, with the cycle coverage as an attribute), a default-disabled pose sensor, a **Wi-Fi signal** sensor (dp_109, mower-side strength in percent), a session-level **Active Job** sensor that reports the running mission across mid-session heartbeat gaps, and a **Fault** sensor carrying the active fault as readable text (dp_116/dp_115 resolved through the `error_codes.py` catalog). |
 
 ## New user-facing capabilities
 
@@ -37,8 +40,17 @@ All upstream commits after v0.3.0 are already covered by the fork:
   mode, per-zone stripe-direction indicators, long-press for a zone's mow
   settings, trapped / maintenance / passage markers, a layer legend,
   camera-parity badges, a stale-map chip, two-finger rotate with a compass
-  reset, keyboard zone cycling, and a card editor with rotation presets and a
-  "use current rotation" capture.
+  reset, keyboard zone cycling, a session replay scrubber, and a card editor
+  with rotation presets and a "use current rotation" capture. It also carries a
+  **Wi-Fi heatmap** of the lawn (self-sampled from dp_109 as the mower drives,
+  gap-filled between mow passes), a **view-mode button** cycling
+  Both / Path / Area / Wi-Fi with the choice remembered per entity, per-zone
+  progress shading from the cycle coverage, an ETA chip, and active faults
+  pinned where they were reported.
+- **Fault hotspots**: each new dp_116 error code is paired with the pose the
+  mower reported at that moment and accumulated into a persisted, map-scoped
+  set of problem spots (repeats merged with a count), drawn as a map-card
+  layer — information neither the app nor the cloud offers.
 - **Repair issues** (`issues.py`): actionable dashboard cards for
   incompatible/too-old firmware (from dp_127) and for due blade (240 h) /
   base-station (30 day) maintenance (from dp_126 / dp_125), which clear
@@ -51,9 +63,13 @@ All upstream commits after v0.3.0 are already covered by the fork:
 - **Writable mowing schedule**: `terramow.add_schedule` / `terramow.delete_schedule`
   services (dp_122 `ADD`/`DELETE`) with per-firmware payload negotiation —
   every write is judged by its dp_119 ack and verified against a fresh `GET`.
+- **Community-sourced error-code catalog** (`error_codes.py`): device fault
+  codes are resolved to readable text for the Fault sensor and the card's fault
+  pins, and the undocumented dp_115 latest-error code is decoded.
 - **Reauthentication** and **reconfigure** flows, **Zeroconf/mDNS discovery**
   (`_mqtt._tcp.local.`, `terramow*`), and an **options flow** (map resolution,
-  theme, mowed-coverage shading).
+  theme, mowed-coverage shading, and treating any finished job as 100 %
+  complete for firmware that never emits a completion signal).
 - **Firmware update entity** and version-compatibility sensor.
 - **Automation blueprints** and a **dashboard guide**.
 - **Full localization** across 33 languages.
@@ -118,3 +134,38 @@ All upstream commits after v0.3.0 are already covered by the fork:
 - **v1.30.0** — session-level Active Job sensor (follow-up to #142).
 - **v1.31.0** — map card keyboard zone cycling.
 - **v1.32.0** — card editor rotation presets and "use current rotation" capture.
+- **v1.42.0** — the event entity's `has_error` attribute mirrors the combined
+  fault signal (#171).
+- **v1.43.0** — unknown-dp changes persisted to a restart-proof JSONL log while
+  debug logging is on.
+- **v1.44.0** — the session's mowed path stays visible across a mid-session
+  recharge dock.
+- **v1.45.0** — session sensors snap to 100 % on completion and reset once the
+  job is over (#204, #207).
+- **v1.46.0** — archived session mow paths persisted across HA restarts;
+  dp_103/104/120 acks and the dp_114 event-code mirror documented.
+- **v1.47.0** — the active-job latch releases on a manual job end; ETA chip in
+  the map HUD.
+- **v1.48.0** — persistent cycle-level mowed coverage derived from the mow tracks.
+- **v1.49.0** — map card per-zone progress shading from the cycle coverage.
+- **v1.50.0** — lazy camera render and throttled zone coverage; the dp_103
+  draw-region finding documented (no local draw-region mode).
+- **v1.51.0** — smoother map pan/zoom and instant load on (re)subscribe.
+- **v1.52.0** — community-sourced error-code catalog; dp_115 latest-error code
+  decoded.
+- **v1.53.0** — map card Wi-Fi heatmap and view-mode toggle with no-flicker
+  mounts; mission status chip localized via entity translations; the mow path
+  split into runs so no phantom diagonal bridges a transit.
+- **v1.54.0** — coverage store slimmed (coarse simplify plus point cap).
+- **v1.55.0** — path-extraction cache for the live map feed.
+- **v1.56.0** — one scene build shared across a hub's feeds.
+- **v1.57.0** — the camera's live-view static rebuild throttled, so streaming a
+  mow stays cheap.
+- **v1.58.0** — the dock and mower stand out against the mowed area on the card.
+- **v1.59.0** — active faults shown on the map; error 909 catalogued.
+- **v1.60.0** — **Fault** sensor carrying the active fault as readable text.
+- **v1.61.0** — option to treat any finished job as 100 % complete.
+- **v1.62.0** — missing and untranslated strings completed in all locales.
+
+> Entries for v1.33.0–v1.41.0 are consolidated into the fork's squashed
+> pre-v1.41 history and are not itemized here.

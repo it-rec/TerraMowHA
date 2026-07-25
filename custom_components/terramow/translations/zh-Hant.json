@@ -507,6 +507,11 @@
       "firmware": {
         "name": "韌體"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "維護"
+      }
     }
   },
   "services": {

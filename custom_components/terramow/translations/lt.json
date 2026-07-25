@@ -507,6 +507,11 @@
       "firmware": {
         "name": "Programinė aparatinė įranga"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Priežiūra"
+      }
     }
   },
   "services": {

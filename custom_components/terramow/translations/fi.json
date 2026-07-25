@@ -507,6 +507,11 @@
       "firmware": {
         "name": "Laiteohjelmisto"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Huolto"
+      }
     }
   },
   "services": {

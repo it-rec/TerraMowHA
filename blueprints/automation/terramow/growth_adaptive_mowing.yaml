@@ -1,0 +1,165 @@
+blueprint:
+  name: TerraMow – Growth-adaptive mowing (growing degree days)
+  description: >
+    Mow when the grass has actually grown, not when the calendar says so.
+
+    Each day this adds the day's growing degree days (GDD) to a helper and
+    starts a mow once enough have accumulated, then resets the helper. Grass
+    growth tracks warmth far better than it tracks weekdays: in a cold May the
+    mower waits, in a warm June it runs more often — without you touching the
+    schedule.
+
+    GDD for a day is `((max + min) / 2) - base`, floored at zero. The base
+    temperature is the point below which cool-season grasses barely grow;
+    10 °C is the usual figure, and roughly 50 GDD accumulate to one mow's
+    worth of growth. Both are inputs — tune them to your lawn over a season.
+
+    Setup: create an `input_number` helper (min 0, max 1000, step 0.1) and
+    select it below. It holds the accumulated GDD and is the only state this
+    automation keeps.
+  domain: automation
+  source_url: https://github.com/it-rec/TerraMowHA/blob/main/blueprints/automation/terramow/growth_adaptive_mowing.yaml
+  input:
+    mower:
+      name: Mower
+      description: The TerraMow lawn mower entity.
+      selector:
+        entity:
+          filter:
+            - integration: terramow
+              domain: lawn_mower
+    weather_entity:
+      name: Weather
+      description: >
+        Weather entity providing a daily forecast; the day's high and low
+        drive the calculation.
+      selector:
+        entity:
+          filter:
+            - domain: weather
+    gdd_helper:
+      name: Accumulated GDD helper
+      description: >
+        An input_number that stores the accumulated growing degree days.
+        Create it first (min 0, max 1000, step 0.1).
+      selector:
+        entity:
+          filter:
+            - domain: input_number
+    base_temperature:
+      name: Base temperature (°C)
+      description: >
+        Below this daily mean, growth is counted as zero. 10 °C suits
+        cool-season grasses; warm-season lawns sit higher.
+      default: 10
+      selector:
+        number:
+          min: 0
+          max: 20
+          step: 0.5
+          unit_of_measurement: "°C"
+    gdd_threshold:
+      name: GDD needed for a mow
+      description: >
+        Accumulated growing degree days that trigger a mow. Lower means more
+        frequent mowing. Start at 50 and adjust after a few weeks.
+      default: 50
+      selector:
+        number:
+          min: 10
+          max: 300
+          step: 5
+    evaluation_time:
+      name: Daily evaluation time
+      description: When to add the day's growth and decide whether to mow.
+      default: "10:00:00"
+      selector:
+        time: {}
+    rain_sensor:
+      name: Rain detected sensor (optional)
+      description: >
+        The TerraMow "Rain detected" binary sensor. While it is wet the mow is
+        postponed — the accumulated GDD are kept, so it runs on the next dry
+        evaluation instead of being lost.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - integration: terramow
+              domain: binary_sensor
+    region_ids:
+      name: Zone IDs (optional)
+      description: >
+        Mow only these zone IDs instead of the whole lawn. Leave empty for a
+        full mow.
+      default: []
+      selector:
+        object: {}
+
+mode: single
+max_exceeded: silent
+
+variables:
+  gdd_helper: !input gdd_helper
+  base_temperature: !input base_temperature
+  gdd_threshold: !input gdd_threshold
+  rain_sensor: !input rain_sensor
+  region_ids: !input region_ids
+  mower: !input mower
+  weather_entity: !input weather_entity
+
+trigger:
+  - platform: time
+    at: !input evaluation_time
+
+action:
+  # Today's high and low, from the daily forecast.
+  - service: weather.get_forecasts
+    target:
+      entity_id: !input weather_entity
+    data:
+      type: daily
+    response_variable: forecast
+  - variables:
+      today: >
+        {{ (forecast[weather_entity]['forecast'] | default([]))[:1] }}
+      day_gdd: >
+        {% if today | count == 0 %}
+          0
+        {% else %}
+          {% set high = today[0].temperature | float(0) %}
+          {% set low = today[0].templow | float(high) %}
+          {{ [((high + low) / 2) - (base_temperature | float), 0] | max }}
+        {% endif %}
+      accumulated: >
+        {{ (states(gdd_helper) | float(0)) + (day_gdd | float(0)) }}
+  # Bank the day's growth even when we do not mow, so a rained-out day is
+  # postponed rather than lost.
+  - service: input_number.set_value
+    target:
+      entity_id: !input gdd_helper
+    data:
+      value: "{{ [accumulated, 1000] | min | round(1) }}"
+  - condition: template
+    value_template: "{{ accumulated >= (gdd_threshold | float) }}"
+  - condition: template
+    value_template: "{{ rain_sensor == '' or is_state(rain_sensor, 'off') }}"
+  # Only a mow that actually started clears the accumulated growth.
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ region_ids | count > 0 }}"
+        sequence:
+          - service: terramow.start_select_region
+            data:
+              entity_id: "{{ mower }}"
+              region_ids: "{{ region_ids }}"
+    default:
+      - service: lawn_mower.start_mowing
+        target:
+          entity_id: !input mower
+  - service: input_number.set_value
+    target:
+      entity_id: !input gdd_helper
+    data:
+      value: 0

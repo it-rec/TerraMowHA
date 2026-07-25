@@ -190,7 +190,7 @@ def test_zone_records_names_fall_back() -> None:
 
 async def test_sensors_are_created_from_the_map(hub: TerraMowHub) -> None:
     added: list[Any] = []
-    async_setup_zone_sensors(hub.hass, hub.basic_data, added.extend)
+    async_setup_zone_sensors(_entry(), hub.hass, hub.basic_data, added.extend)
     await hub.hass.async_block_till_done()
 
     # register_map_callback replays the cached map, but only once map_info is
@@ -209,23 +209,49 @@ async def test_sensors_are_not_duplicated_on_a_map_refresh(
     hub: TerraMowHub,
 ) -> None:
     added: list[Any] = []
-    async_setup_zone_sensors(hub.hass, hub.basic_data, added.extend)
+    async_setup_zone_sensors(_entry(), hub.hass, hub.basic_data, added.extend)
     for callback in list(hub.map_callbacks):
         await callback(MAP_DATA)
         await callback(MAP_DATA)
     assert len(added) == 2
 
 
+async def test_no_sensors_are_added_once_the_entry_is_unloading(
+    hub: TerraMowHub,
+) -> None:
+    """The map callback is a task, so it can land mid-unload.
+
+    Entities added then are never tracked for removal, and their pose
+    subscriptions would keep the whole hub alive past the config entry.
+    """
+    unloads: list[Any] = []
+    entry = SimpleNamespace(async_on_unload=unloads.append)
+    added: list[Any] = []
+    async_setup_zone_sensors(entry, hub.hass, hub.basic_data, added.extend)
+
+    for callback in unloads:  # what Home Assistant runs on unload
+        callback()
+    for callback in list(hub.map_callbacks):
+        await callback(MAP_DATA)
+
+    assert added == [], "a zone sensor was added while unloading"
+
+
 async def test_setup_without_a_hub_registers_nothing(hass: HomeAssistant) -> None:
     basic_data = TerraMowBasicData(host=HOST, password="secret")
     added: list[Any] = []
-    async_setup_zone_sensors(hass, basic_data, added.extend)
+    async_setup_zone_sensors(_entry(), hass, basic_data, added.extend)
     assert added == []
 
 
 # ---------------------------------------------------------------------------
 # entity behaviour
 # ---------------------------------------------------------------------------
+
+
+def _entry() -> Any:
+    """Stand-in config entry: the setup only uses async_on_unload."""
+    return SimpleNamespace(async_on_unload=lambda unsub: None)
 
 
 def _sensor(hub: TerraMowHub, zone_id: int = 1) -> ZoneLastMowedSensor:

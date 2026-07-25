@@ -26,6 +26,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
+from . import TerraMowConfigEntry
 from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin, safe_write_ha_state
 from .map_render import CUTTING_WIDTH_MM
@@ -61,17 +62,34 @@ def zone_records(map_info: dict[str, Any]) -> list[tuple[int, str]]:
 
 
 def async_setup_zone_sensors(
+    config_entry: TerraMowConfigEntry,
     hass: HomeAssistant,
     basic_data: TerraMowBasicData,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Create a zone sensor per sub-region, now and whenever the map changes."""
+    """Create a zone sensor per sub-region, now and whenever the map changes.
+
+    The map subscription is handed to ``config_entry.async_on_unload``: the
+    callback closes over ``basic_data``, which reaches the hub, so a
+    subscription surviving an unload would keep the whole hub alive.
+    """
     lawn_mower = basic_data.lawn_mower
     if lawn_mower is None:
         return
     known: set[int] = set()
+    # The map callback is dispatched as a task, so it can land after the entry
+    # has begun unloading. Entities added then are never tracked for removal,
+    # and their pose subscriptions would keep the whole hub alive — so the
+    # window is closed explicitly rather than left to the race.
+    active = True
+
+    def _stop() -> None:
+        nonlocal active
+        active = False
 
     async def _on_map(map_info: dict[str, Any]) -> None:
+        if not active:
+            return
         fresh = [
             ZoneLastMowedSensor(basic_data, hass, zone_id, name)
             for zone_id, name in zone_records(map_info)
@@ -85,7 +103,8 @@ def async_setup_zone_sensors(
 
     # The hub replays the cached map to a fresh callback, so a map that
     # arrived before this platform was set up still creates its sensors.
-    lawn_mower.register_map_callback(_on_map)
+    config_entry.async_on_unload(lawn_mower.register_map_callback(_on_map))
+    config_entry.async_on_unload(_stop)
 
 
 class ZoneLastMowedSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
