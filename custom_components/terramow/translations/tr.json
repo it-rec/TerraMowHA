@@ -515,6 +515,11 @@
       "maintenance": {
         "name": "Bakım"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Biçme raporu"
+      }
     }
   },
   "services": {

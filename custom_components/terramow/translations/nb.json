@@ -515,6 +515,11 @@
       "maintenance": {
         "name": "Vedlikehold"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Klipperapport"
+      }
     }
   },
   "services": {

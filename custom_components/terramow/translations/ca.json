@@ -515,6 +515,11 @@
       "maintenance": {
         "name": "Manteniment"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Informe de sega"
+      }
     }
   },
   "services": {

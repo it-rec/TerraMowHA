@@ -82,7 +82,7 @@ DELETE_SCHEDULE_SCHEMA = vol.Schema(
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.LAWN_MOWER, Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SELECT, Platform.NUMBER, Platform.CAMERA, Platform.UPDATE, Platform.BUTTON, Platform.SWITCH, Platform.EVENT, Platform.CALENDAR, Platform.TODO]
+PLATFORMS: list[Platform] = [Platform.LAWN_MOWER, Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SELECT, Platform.NUMBER, Platform.CAMERA, Platform.IMAGE, Platform.UPDATE, Platform.BUTTON, Platform.SWITCH, Platform.EVENT, Platform.CALENDAR, Platform.TODO]
 
 @dataclass
 class TerraMowBasicData:
@@ -302,6 +302,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     # The self-sampled Wi-Fi heatmap likewise survives restarts (issue #200).
     await hub.async_restore_wifi_map()
     await hub.async_restore_fault_hotspots()
+    await hub.async_restore_mow_counts()
     await hub.async_restore_wear_anchors()
     hub.start()
 

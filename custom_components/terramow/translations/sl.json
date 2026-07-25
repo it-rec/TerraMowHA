@@ -515,6 +515,11 @@
       "maintenance": {
         "name": "Vzdrževanje"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Poročilo o košnji"
+      }
     }
   },
   "services": {

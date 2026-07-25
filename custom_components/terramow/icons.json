@@ -22,6 +22,9 @@
       "reset_base_station_timer": { "default": "mdi:home-lightning-bolt" },
       "edge_trim": { "default": "mdi:vector-square" }
     },
+    "image": {
+      "mow_report": { "default": "mdi:file-image-outline" }
+    },
     "camera": {
       "map_camera": { "default": "mdi:map" },
       "map_camera_clean": { "default": "mdi:map" }

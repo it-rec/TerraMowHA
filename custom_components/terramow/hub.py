@@ -174,6 +174,14 @@ def _slim_coverage_segment(
 WIFI_CELL_MM = 1500
 WIFI_EMA_ALPHA = 0.4
 MAX_WIFI_CELLS = 4000
+
+# Season heatmap: how many finished cycles have covered each patch of lawn.
+# Finer than the Wi-Fi grid because the point is spotting a strip the mower
+# keeps skipping, which is narrower than a signal gradient.
+MOW_COUNT_CELL_MM = 500
+MAX_MOW_COUNT_CELLS = 12000
+MOW_COUNT_STORE_VERSION = 1
+MOW_COUNT_SAVE_DELAY = 15.0  # seconds
 WIFI_MAP_STORE_VERSION = 1
 
 # Fault hotspots: where the mower was standing when a fault appeared. Bounded
@@ -517,6 +525,10 @@ class TerraMowHub:
         self._fault_hotspots: list[dict[str, Any]] = []
         self._fault_store: Store[dict[str, Any]] | None = None
         self._fault_map_id: Any = None
+        # Grid cell -> how many finished cycles covered it (season heatmap).
+        self._mow_counts: dict[tuple[int, int], int] = {}
+        self._mow_count_store: Store[dict[str, Any]] | None = None
+        self._mow_count_map_id: Any = None
         # Counter key -> (ISO timestamp, counter value) observed then. The
         # oldest surviving sample per counter; the wear forecast is the line
         # through it and the current reading.
@@ -581,6 +593,8 @@ class TerraMowHub:
         # held until the next session starts. Drives the session sensors'
         # completion/reset behaviour (issues #204/#207).
         self._session_outcome: str | None = None
+        # Snapshot of the last finished mow session (mow-report image).
+        self._last_mow_report: dict[str, Any] | None = None
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
         self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
         # Bounded per-dp change history (epoch, payload) for undocumented dps, so
@@ -897,6 +911,52 @@ class TerraMowHub:
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_113: %s", payload)
 
+    def _capture_mow_report(self, outcome: str) -> None:
+        """Snapshot the session that just ended, for the mow-report image.
+
+        Derived state (see the AGENTS.md contract): every field is copied from
+        what the device reported for *this* session — the dp_113 counters plus
+        the mow track already folded into the cycle coverage — at the moment
+        the session ends. Nothing is synthesized, and nothing is read later:
+        the device zeroes its counters right after, and the next session
+        resets the coverage, so a lazily-read report would describe one
+        session with another's geometry.
+
+        Reset boundary: replaced by the next session's report and dropped on
+        reload. It is deliberately not persisted — the report describes what
+        this Home Assistant run observed, and a restored one could not be
+        told apart from a live capture.
+        """
+        work = self._current_work_data if isinstance(self._current_work_data, dict) else {}
+
+        def _number(key: str) -> float | None:
+            try:
+                value = work.get(key)
+                return None if value is None else float(value)
+            except (TypeError, ValueError):
+                return None
+
+        # clean_area/total_area are in units of 0.1 m² (same as the sensors).
+        area = _number("clean_area")
+        total = _number("total_area")
+        self._last_mow_report = {
+            "outcome": outcome,
+            "finished_at": dt_util.utcnow(),
+            "map_id": self._map_data.get("id"),
+            "area_m2": None if area is None else round(area / 10, 1),
+            "total_area_m2": None if total is None else round(total / 10, 1),
+            "duration_min": _number("work_duration"),
+            "job_type": work.get("type") or None,
+            # The finished cycle's mow track: copied, because the next session
+            # start clears the live coverage.
+            "coverage_segments": [list(segment) for segment in self._coverage_segments],
+        }
+
+    @property
+    def last_mow_report(self) -> dict[str, Any] | None:
+        """Snapshot of the last mow session, or None before one ended."""
+        return self._last_mow_report
+
     @staticmethod
     def _work_counters_positive(work: dict[str, Any]) -> bool:
         """Whether the dp_113 session counters show work done this session."""
@@ -933,6 +993,9 @@ class TerraMowHub:
             "releasing the active-job latch"
         )
         self._session_outcome = "aborted"
+        # Capture the report while the coverage still holds this session's
+        # track — the lines below drop it.
+        self._capture_mow_report("aborted")
         self._active_mow_mission = None
         self._active_mow_idle_since = None
         self._session_path_segments = []
@@ -1603,12 +1666,18 @@ class TerraMowHub:
                     if self.mission_state == MissionState.MISSION_STATE_COMPLETE
                     else "aborted"
                 )
+                # Snapshot the finished session before the device clears its
+                # counters and the next session resets the coverage.
+                self._capture_mow_report(self._session_outcome)
             self._active_mow_mission = None
             self._active_mow_idle_since = None
             # Fold the final leg into the cycle coverage before the device
             # clears the realtime path; a COMPLETE marks the cycle done so
             # the coverage resets when the next session starts (issue #202).
             self._harvest_current_path_into_coverage()
+            # Stack this cycle into the season counts before the next session
+            # clears the coverage it was built from.
+            self._harvest_cycle_into_mow_counts()
             self._coverage_cycle_done = (
                 self.mission_state == MissionState.MISSION_STATE_COMPLETE
             )
@@ -2325,9 +2394,20 @@ class TerraMowHub:
         ):
             self._fault_hotspots = []
             self._schedule_fault_save()
+        # Season counts are map-frame too: on a different map they would
+        # colour patches that do not exist there (#200's policy).
+        if (
+            self._mow_counts
+            and self._mow_count_map_id is not None
+            and incoming_id is not None
+            and incoming_id != self._mow_count_map_id
+        ):
+            self._mow_counts = {}
+            self._schedule_mow_count_save()
         if incoming_id is not None:
             self._wifi_map_id = incoming_id
             self._fault_map_id = incoming_id
+            self._mow_count_map_id = incoming_id
         self._map_data = data
         map_info = self._build_map_info_from_map_data(data)
         if map_info is not None:
@@ -2699,6 +2779,109 @@ class TerraMowHub:
                 and not isinstance(value[1], bool)
             ):
                 self._wear_anchors[str(key)] = (value[0], value[1])
+
+    # --- season heatmap ---------------------------------------------------
+    #
+    # The coverage layer answers "did this cycle cover the lawn". Over a
+    # season the more useful question is "which patches does it keep missing"
+    # — a strip the mower skips every second run looks fine in any single
+    # cycle and only shows up when the cycles are stacked.
+
+    def _harvest_cycle_into_mow_counts(self) -> None:
+        """Fold the finished cycle's track into the season counts.
+
+        Each cell the cycle touched is incremented by exactly one, however
+        many times the mower drove through it: the number means "cycles that
+        reached here", which is what makes a pale patch mean something.
+
+        Called when a cycle ends, from the same frame that finalises the
+        coverage — after that the next session clears it.
+        """
+        touched: set[tuple[int, int]] = set()
+        for segment in self._coverage_segments:
+            for point in segment:
+                x = point.get("x")
+                y = point.get("y")
+                if (
+                    isinstance(x, (int, float))
+                    and isinstance(y, (int, float))
+                    and not isinstance(x, bool)
+                    and not isinstance(y, bool)
+                ):
+                    touched.add(
+                        (
+                            round(x / MOW_COUNT_CELL_MM),
+                            round(y / MOW_COUNT_CELL_MM),
+                        )
+                    )
+        if not touched:
+            return
+        for cell in touched:
+            self._mow_counts[cell] = self._mow_counts.get(cell, 0) + 1
+        if len(self._mow_counts) > MAX_MOW_COUNT_CELLS:
+            # Bound the grid: drop the oldest-inserted cells (dict order).
+            for key in list(self._mow_counts)[
+                : len(self._mow_counts) - MAX_MOW_COUNT_CELLS
+            ]:
+                del self._mow_counts[key]
+        self._mow_count_map_id = self._map_data.get("id")
+        self._schedule_mow_count_save()
+
+    @property
+    def mow_counts(self) -> dict[tuple[int, int], int]:
+        """Grid cell -> number of finished cycles that covered it."""
+        return self._mow_counts
+
+    def _get_mow_count_store(self) -> Store[dict[str, Any]]:
+        """Lazily create the disk store for the season heatmap."""
+        if self._mow_count_store is None:
+            self._mow_count_store = Store(
+                self.hass,
+                MOW_COUNT_STORE_VERSION,
+                f"terramow.mow_counts_{self.host}",
+            )
+        return self._mow_count_store
+
+    def _mow_count_save_data(self) -> dict[str, Any]:
+        """Snapshot the counts for the debounced disk write."""
+        return {
+            "map_id": self._mow_count_map_id,
+            "cells": {
+                f"{gx},{gy}": count for (gx, gy), count in self._mow_counts.items()
+            },
+        }
+
+    def _schedule_mow_count_save(self) -> None:
+        """Persist the counts soon (debounced; loop-only callers)."""
+        self._get_mow_count_store().async_delay_save(
+            self._mow_count_save_data, MOW_COUNT_SAVE_DELAY
+        )
+
+    async def async_restore_mow_counts(self) -> None:
+        """Load the season counts a previous run persisted.
+
+        A season's worth of cycles is the entire point, so these outlive
+        restarts by design; a map change clears them in _apply_map_data.
+        """
+        try:
+            data = await self._get_mow_count_store().async_load()
+        except Exception as err:  # corrupt store must never block setup
+            _LOGGER.warning("Could not load persisted mow counts: %s", err)
+            return
+        cells = (data or {}).get("cells")
+        if not isinstance(cells, dict):
+            return
+        restored: dict[tuple[int, int], int] = {}
+        for key, value in cells.items():
+            try:
+                gx_str, gy_str = str(key).split(",")
+                count = int(value)
+            except (ValueError, TypeError):
+                continue
+            if count > 0:
+                restored[(int(gx_str), int(gy_str))] = count
+        self._mow_counts = restored
+        self._mow_count_map_id = (data or {}).get("map_id")
 
     def _get_wifi_map_store(self) -> Store[dict[str, Any]]:
         """Lazily create the disk store for the Wi-Fi heatmap cells."""

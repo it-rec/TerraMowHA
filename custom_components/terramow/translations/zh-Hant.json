@@ -515,6 +515,11 @@
       "maintenance": {
         "name": "維護"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "割草報告"
+      }
     }
   },
   "services": {
