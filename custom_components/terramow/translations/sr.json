@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Фирмвер"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Одржавање"
+      }
     }
   },
   "services": {

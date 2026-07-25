@@ -537,6 +537,51 @@ def point_in_polygon(
     return inside
 
 
+class _BoundsAccumulator:
+    """Running axis-aligned bounding box over a stream of points.
+
+    ``build_scene`` used to collect every scene point — including each of the
+    tens of thousands of path points of a long mow — into one list and run it
+    through :func:`_dedupe_points` before handing it to the renderer's
+    ``CoordinateTransformer``, which only ever reads the extremes. The dedupe
+    cost two ``int(round())`` calls plus a set insert per point (~12 ms per
+    rebuild at 20 000 points, ~43 ms at 60 000, several times that on a small
+    HA host) and the transformer then walked the result four more times.
+    Folding each point into the running extremes instead is a single pass and
+    yields the same box: deduplication can never change a min or a max.
+    """
+
+    __slots__ = ("max_x", "max_y", "min_x", "min_y")
+
+    def __init__(self) -> None:
+        self.min_x = math.inf
+        self.min_y = math.inf
+        self.max_x = -math.inf
+        self.max_y = -math.inf
+
+    def add(self, x: float, y: float) -> None:
+        """Fold a single point into the box."""
+        if x < self.min_x:
+            self.min_x = x
+        if x > self.max_x:
+            self.max_x = x
+        if y < self.min_y:
+            self.min_y = y
+        if y > self.max_y:
+            self.max_y = y
+
+    def extend(self, points: list[tuple[float, float]]) -> None:
+        """Fold a list of ``(x, y)`` tuples into the box."""
+        for x, y in points:
+            self.add(x, y)
+
+    def result(self) -> tuple[float, float, float, float] | None:
+        """The box as ``(min_x, min_y, max_x, max_y)``, or None when empty."""
+        if self.min_x > self.max_x:
+            return None
+        return (self.min_x, self.min_y, self.max_x, self.max_y)
+
+
 def _polygon_centroid(points: list[tuple[float, float]]) -> tuple[float, float] | None:
     """Compute a simple centroid."""
     if not points:
@@ -941,13 +986,13 @@ def build_scene(
         "move_target_point": None,
     }
 
-    all_points: list[tuple[float, float]] = []
-    all_points.extend(scene["map_extent"])
+    bounds = _BoundsAccumulator()
+    bounds.extend(scene["map_extent"])
 
     if scene["origin"] is not None:
-        all_points.append(scene["origin"])
+        bounds.add(*scene["origin"])
     if scene["station_pose"] is not None:
-        all_points.append((scene["station_pose"]["x"], scene["station_pose"]["y"]))
+        bounds.add(scene["station_pose"]["x"], scene["station_pose"]["y"])
 
     for region in map_data.get("regions", []):
         if not isinstance(region, dict):
@@ -960,19 +1005,19 @@ def build_scene(
             "sub_regions": [],
             "edge_lines": [],
         }
-        all_points.extend(region_boundary)
+        bounds.extend(region_boundary)
 
         for edge_segment in region.get("edge_segments", []):
             edge_line = _line_points(edge_segment)
             if len(edge_line) >= 2:
                 region_record["edge_lines"].append(edge_line)
-                all_points.extend(edge_line)
+                bounds.extend(edge_line)
 
         for obstacle in region.get("obstacles", []):
             obstacle_polygons = _extract_polygons(obstacle)
             for polygon in obstacle_polygons:
                 scene["obstacles"].append(polygon)
-                all_points.extend(polygon)
+                bounds.extend(polygon)
 
         for sub_region in region.get("sub_regions", []):
             if not isinstance(sub_region, dict):
@@ -983,7 +1028,7 @@ def build_scene(
                 points = _polygon_points(inner)
                 if len(points) >= 3:
                     inner_boundaries.append(points)
-                    all_points.extend(points)
+                    bounds.extend(points)
 
             edge_lines: list[list[tuple[float, float]]] = []
             for key in ("edge_segments", "boudary_polyline_descriptions"):
@@ -991,7 +1036,7 @@ def build_scene(
                     points = _line_points(edge_segment)
                     if len(points) >= 2:
                         edge_lines.append(points)
-                        all_points.extend(points)
+                        bounds.extend(points)
 
             center = point_tuple(sub_region.get("center"))
             if center is None and sub_boundary:
@@ -1013,9 +1058,9 @@ def build_scene(
                     "edge_lines": edge_lines,
                 }
             )
-            all_points.extend(sub_boundary)
+            bounds.extend(sub_boundary)
             if center is not None:
-                all_points.append(center)
+                bounds.add(*center)
 
         scene["regions"].append(region_record)
 
@@ -1023,17 +1068,17 @@ def build_scene(
         for item in map_data.get(key, []):
             for polygon in _extract_polygons(item):
                 scene[key].append(polygon)
-                all_points.extend(polygon)
+                bounds.extend(polygon)
 
     for obstacle in map_data.get("obstacles", []):
         for polygon in _extract_polygons(obstacle):
             scene["obstacles"].append(polygon)
-            all_points.extend(polygon)
+            bounds.extend(polygon)
 
     for wall in map_data.get("virtual_walls", []):
         for line in _extract_polylines(wall):
             scene["virtual_walls"].append(line)
-            all_points.extend(line)
+            bounds.extend(line)
 
     for key in ("cross_boundary_tunnels", "virtual_cross_boundary_tunnels"):
         for item in map_data.get(key, []):
@@ -1041,9 +1086,9 @@ def build_scene(
             polylines = _extract_polylines(item)
             scene[key].append({"polygons": polygons, "polylines": polylines})
             for polygon in polygons:
-                all_points.extend(polygon)
+                bounds.extend(polygon)
             for polyline in polylines:
-                all_points.extend(polyline)
+                bounds.extend(polyline)
 
     if isinstance(clean_info, dict):
         draw_region = clean_info.get("draw_region", {})
@@ -1052,20 +1097,22 @@ def build_scene(
                 points = _polygon_points(polygon)
                 if len(points) >= 3:
                     scene["draw_region_polygons"].append(points)
-                    all_points.extend(points)
+                    bounds.extend(points)
         move_to_target = clean_info.get("move_to_target_point", {})
         if isinstance(move_to_target, dict):
             scene["move_target_point"] = point_tuple(move_to_target.get("target_point"))
             if scene["move_target_point"] is not None:
-                all_points.append(scene["move_target_point"])
+                bounds.add(*scene["move_target_point"])
 
     for path_point in scene["path_points"]:
-        all_points.append((path_point["x"], path_point["y"]))
+        bounds.add(path_point["x"], path_point["y"])
     for segment in scene["session_path_segments"]:
         for path_point in segment:
-            all_points.append((path_point["x"], path_point["y"]))
+            bounds.add(path_point["x"], path_point["y"])
 
-    scene["all_points"] = _dedupe_points(all_points)
+    # The renderer fits the scene to this box; see _BoundsAccumulator for why
+    # it replaced the fully materialized (and deduplicated) point list.
+    scene["bounds"] = bounds.result()
     scene["scene_counts"] = {
         "regions": len(scene["regions"]),
         "sub_regions": sum(len(region["sub_regions"]) for region in scene["regions"]),
