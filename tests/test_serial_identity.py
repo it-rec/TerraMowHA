@@ -193,6 +193,9 @@ async def test_setup_uses_serial_as_device_uid(hass: HomeAssistant) -> None:
         async def async_restore_wifi_map(self) -> None:
             pass
 
+        async def async_restore_fault_hotspots(self) -> None:
+            pass
+
         async def async_restore_wear_anchors(self) -> None:
             pass
 

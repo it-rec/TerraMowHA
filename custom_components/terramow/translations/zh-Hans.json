@@ -510,6 +510,11 @@
       "firmware": {
         "name": "固件"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "维护"
+      }
     }
   },
   "services": {

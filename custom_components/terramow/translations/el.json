@@ -510,6 +510,11 @@
       "firmware": {
         "name": "Υλικολογισμικό"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Συντήρηση"
+      }
     }
   },
   "services": {

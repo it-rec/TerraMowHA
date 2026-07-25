@@ -510,6 +510,11 @@
       "firmware": {
         "name": "Firmver"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Održavanje"
+      }
     }
   },
   "services": {

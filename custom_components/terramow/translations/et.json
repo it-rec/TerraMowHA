@@ -510,6 +510,11 @@
       "firmware": {
         "name": "Püsivara"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Hooldus"
+      }
     }
   },
   "services": {

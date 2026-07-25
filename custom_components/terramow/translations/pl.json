@@ -510,6 +510,11 @@
       "firmware": {
         "name": "Oprogramowanie układowe"
       }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Konserwacja"
+      }
     }
   },
   "services": {
