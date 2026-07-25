@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Υλικολογισμικό"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Αναφορά κοπής"
+      }
     }
   },
   "services": {

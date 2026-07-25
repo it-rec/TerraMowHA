@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Micrologiciel"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Rapport de tonte"
+      }
     }
   },
   "services": {

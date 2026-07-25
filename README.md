@@ -28,6 +28,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 
 **Monitoring**
 - Live map camera with mowing path, robot pose and base station (plus a clean map-only camera for dashboards, resolution configurable via options)
+- **Mow report image** — a frozen picture of the *last finished* session: the lawn with that session's mow track shaded in, plus a ribbon carrying its own numbers (area, duration, how it ended). Attach it to a "mowing finished" notification — a live camera frame taken minutes later already shows an empty map, because the device clears its path and counters at session end
 - Battery: level, charging state, temperature state, charger connected, power switch
 - Job progress: current session area, progress (%), duration and job type; lifetime mowing time, job count and mowed area
 - Status: mission / sub-mission / mission state, operation mode, power mode, back-to-station reason, rain detection, problem indicator, saving-data and data-conversion indicators
@@ -63,6 +64,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 | --- | --- |
 | Lawn mower | Start / pause / dock control with live activity |
 | Camera | Map with path, robot and base station; clean map-only variant |
+| Image | Mow report of the last finished session (area / duration / outcome as attributes) |
 | Sensor | Battery level, battery state, battery temperature state, map status, map area, mow height, mow speed, operation mode, pose, total mowing time / jobs / mowed area, current session area / progress / duration / job type, remaining blade & base station time, next scheduled start, version compatibility, main direction status, power mode, back-to-station reason, mission, sub-mission, mission state. *Diagnostic:* active errors, last event, cellular RSRP / RSRQ / type, sunrise, sunset, movement / map / mowing mode, rain-sensor threshold, after-rain resume delay, map save progress |
 | Binary sensor | Charging, navigation located, firmware upgrading, power switch, problem, rain detected, map detected / buildable / backing up, saving data, data conversion in progress. *Diagnostic:* cellular enabled, defogger heating, illumination, daylight, extreme weather, cliff / slope detection, after-rain auto-resume, force single base station, force cellular network, manual-mapping relocation / takeover / boundary-closed |
 | Select | Zone select, mow speed, blade speed, main direction mode, high-grass edge trim mode |

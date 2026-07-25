@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Vdelana programska oprema"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Poročilo o košnji"
+      }
     }
   },
   "services": {

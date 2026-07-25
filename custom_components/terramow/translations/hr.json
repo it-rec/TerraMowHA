@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Firmver"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Izvješće o košnji"
+      }
     }
   },
   "services": {

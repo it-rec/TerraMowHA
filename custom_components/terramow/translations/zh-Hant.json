@@ -504,6 +504,11 @@
       "firmware": {
         "name": "韌體"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "割草報告"
+      }
     }
   },
   "services": {

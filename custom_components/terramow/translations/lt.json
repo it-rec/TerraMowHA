@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Programinė aparatinė įranga"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Pjovimo ataskaita"
+      }
     }
   },
   "services": {

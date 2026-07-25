@@ -25,9 +25,9 @@ read/command surfaces over that hub. Because the device pushes state, entities
 refresh reactively (via callbacks) rather than by polling — every platform sets
 `PARALLEL_UPDATES = 0`.
 
-The 11 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
-`binary_sensor`, `select`, `number`, `camera`, `update`, `button`, `switch`,
-`event`, `calendar`.
+The 12 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
+`binary_sensor`, `select`, `number`, `camera`, `image`, `update`, `button`,
+`switch`, `event`, `calendar`.
 
 ## 2. Component map
 
@@ -48,6 +48,7 @@ The 11 platforms (`__init__.PLATFORMS`): `lawn_mower`, `sensor`,
 | `select.py` | Zone select, mow-speed, blade-speed, main-direction mode, high-grass edge-trim mode |
 | `number.py` | Mow height/spacing, edge-cutting distance, main-direction angles/interval (all dp_155 writers) |
 | `camera.py` | `TerraMowMapCamera` — renders map + path + history + live pose into a PNG scene; two variants (normal + clean-mode) |
+| `image.py` | `MowReportImage` — the last finished session frozen as a PNG: the map with that session's coverage plus a summary ribbon, rendered once per session from the hub's snapshot |
 | `update.py` | Read-only firmware `UpdateEntity` — real version from dp_102, `in_progress` from dp_107 `is_upgrading`, component versions from dp_129 |
 | `button.py` | Edge-trim start, reset blade timer (dp_126←0), reset base-station timer (dp_125←0) |
 | `switch.py` | Thorough-corner-cutting toggle (writes dp_155) |

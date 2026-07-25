@@ -504,6 +504,11 @@
       "firmware": {
         "name": "ファームウェア"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "芝刈りレポート"
+      }
     }
   },
   "services": {

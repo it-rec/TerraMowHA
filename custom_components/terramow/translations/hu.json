@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Firmware"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Nyírási jelentés"
+      }
     }
   },
   "services": {

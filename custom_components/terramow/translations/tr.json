@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Aygıt Yazılımı"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Biçme raporu"
+      }
     }
   },
   "services": {

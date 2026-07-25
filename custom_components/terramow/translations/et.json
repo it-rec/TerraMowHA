@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Püsivara"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Niitmisaruanne"
+      }
     }
   },
   "services": {

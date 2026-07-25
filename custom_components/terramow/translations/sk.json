@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Firmvér"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Správa o kosení"
+      }
     }
   },
   "services": {

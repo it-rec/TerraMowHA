@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Firmware"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Zpráva o sečení"
+      }
     }
   },
   "services": {

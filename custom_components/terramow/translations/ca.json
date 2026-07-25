@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Microprogramari"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Informe de sega"
+      }
     }
   },
   "services": {

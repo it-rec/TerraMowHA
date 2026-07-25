@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Programmaparatūra"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Pļaušanas pārskats"
+      }
     }
   },
   "services": {

@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Laiteohjelmisto"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Leikkuuraportti"
+      }
     }
   },
   "services": {

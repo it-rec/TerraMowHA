@@ -504,6 +504,11 @@
       "firmware": {
         "name": "Фърмуер"
       }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Отчет за косене"
+      }
     }
   },
   "services": {
