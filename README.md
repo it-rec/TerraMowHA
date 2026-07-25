@@ -39,6 +39,9 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - Firmware update entity, firmware version on the device page, and version compatibility sensor
 - All entities update instantly on device pushes — no polling delay
 
+**Problem hotspots**
+- The mower reports *that* a fault happened, never *where*. Pairing each new dp_116 error code with the pose the mower reported at that moment builds a map of the spots that actually cause trouble — the tree root, the soft patch, the gap it wedges itself into. Repeat faults at one spot merge into a single marker carrying the count, so the repetition is the thing you see. Shown as a map-card layer (`show_hotspots`), persisted across restarts and cleared when the map changes
+
 **Advanced diagnostics** (reverse-engineered data points — mostly in the *Diagnostic* entity category, many disabled by default; see [unofficial data-point notes](docs/en/developers/data_point_unofficial.md))
 - Errors & events: active-error count (with the raw error list as an attribute) and last-event code. Known error codes are resolved to readable text through a community-sourced catalog (`error_codes.py`), which also decodes the mower's latest-error code (dp_115)
 - Cellular / 4G: modem enabled, signal strength (RSRP / RSRQ), connection type, and a *force cellular network* readout
