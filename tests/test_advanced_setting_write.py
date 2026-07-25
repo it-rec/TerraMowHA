@@ -256,26 +256,25 @@ async def test_verification_ignores_unrelated_and_malformed_reports(
     """Only a report carrying the requested value ends the wait."""
     path = ("enable_slope_detection", "value")
 
-    async def _noise() -> None:
-        await asyncio.sleep(0)
-        for payload in ("not json", '["list"]', json.dumps({"other": 1})):
-            msg = SimpleNamespace(
-                topic="data_point/150/robot", payload=payload.encode()
-            )
-            hub.on_mqtt_message(None, None, msg)
-        await asyncio.sleep(0)
-        match = SimpleNamespace(
-            topic="data_point/150/robot",
-            payload=json.dumps({"enable_slope_detection": {"value": True}}).encode(),
-        )
-        # Twice in the same turn: the second report finds the wait already
-        # resolved and must not blow up on the settled future.
-        hub.on_mqtt_message(None, None, match)
-        hub.on_mqtt_message(None, None, match)
+    task = asyncio.create_task(
+        hub._async_await_advanced_setting(path, True, timeout=5)
+    )
+    await asyncio.sleep(0)  # let the wait register its callback
 
-    noise = asyncio.create_task(_noise())
-    assert await hub._async_await_advanced_setting(path, True, timeout=5)
-    await noise
+    # Drive the wait's own callback directly: delivering through the MQTT
+    # dispatcher would leave the ordering to the scheduler, and this test is
+    # about what each payload does, not about when it arrives.
+    on_settings = hub.callbacks[150][-1]
+    for payload in ("not json", '["list"]', json.dumps({"other": 1})):
+        await on_settings(payload)
+    assert not task.done()
+
+    match = json.dumps({"enable_slope_detection": {"value": True}})
+    await on_settings(match)
+    # A second report finds the wait already settled and must not raise.
+    await on_settings(match)
+
+    assert await task
 
 
 async def test_verification_times_out_without_a_matching_report(
