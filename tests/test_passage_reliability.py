@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
+
+import custom_components.terramow.passage_reliability as passage_reliability
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.hub import TerraMowHub
 from custom_components.terramow.passage_reliability import (
@@ -65,6 +68,57 @@ def test_graph_is_deterministic_and_keeps_disconnected_zones() -> None:
     assert _distance_to_segment((3, 4), (0, 0), (0, 0)) == 5
 
 
+def test_graph_rejects_incomplete_and_unverifiable_geometry() -> None:
+    map_data = _map()
+    sub_regions = map_data["regions"][0]["sub_regions"]
+    sub_regions.extend(
+        [
+            {"id": "not-a-zone", "boundary": _poly((0, 0), (1, 0), (1, 1))},
+            {"id": 4, "boundary": _poly((0, 0), (1, 0))},
+        ]
+    )
+    map_data["cross_boundary_tunnels"].extend(
+        [
+            {"line": _poly((500, 500))},
+            {"line": _poly((500, 500), (750, 500))},
+            {"line": _poly((500, 500), (6000, 500))},
+        ]
+    )
+
+    graph = build_passage_graph(map_data)
+
+    assert len(graph) == 1
+    assert graph[0]["zones"] == [1, 2]
+
+
+def test_graph_rejects_short_normalized_lines(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        passage_reliability,
+        "build_scene",
+        lambda *_args: {
+            "regions": [],
+            "cross_boundary_tunnels": [{"polylines": [[(0.0, 0.0)]]}],
+            "virtual_cross_boundary_tunnels": [],
+        },
+    )
+
+    assert build_passage_graph({}) == []
+
+
+def test_near_edge_checks_every_reported_segment() -> None:
+    map_data = _map()
+    map_data["cross_boundary_tunnels"] = [
+        {"line": _poly((500, 500), (1500, 1500), (2500, 500))}
+    ]
+    tracker = PassageReliabilityTracker()
+    tracker.set_map(map_data)
+
+    assert tracker._near_edges((2400, 600)) == {tracker.edges[0]["id"]}
+    assert tracker._near_edges((10000, 10000)) == set()
+
+
 def test_success_retreat_fault_and_conservative_classification() -> None:
     tracker = PassageReliabilityTracker()
     tracker.set_map(_map())
@@ -95,6 +149,8 @@ def test_success_retreat_fault_and_conservative_classification() -> None:
 def test_sparse_and_ambiguous_evidence_is_not_assigned() -> None:
     tracker = PassageReliabilityTracker()
     tracker.set_map(_map())
+    tracker.observe_pose(point=(500, 500), now=-2, zone_id=1)
+    tracker.observe_pose(point=(2500, 500), now=-1, zone_id=2)
     tracker.observe_pose(point=(500, 500), now=0, zone_id=1)
     tracker.observe_pose(point=(1500, 500), now=20, zone_id=None)
     tracker.observe_pose(point=(2500, 500), now=21, zone_id=2)
@@ -104,6 +160,17 @@ def test_sparse_and_ambiguous_evidence_is_not_assigned() -> None:
     ambiguous.set_map(_map(duplicate=True))
     ambiguous.observe_fault((1500, 500), 1)
     assert ambiguous.stats == {}
+
+
+def test_overlong_continuous_traversal_is_not_assigned() -> None:
+    tracker = PassageReliabilityTracker()
+    tracker.set_map(_map())
+    tracker.observe_pose(point=(500, 500), now=0, zone_id=1)
+    for now in range(1, 122, 10):
+        tracker.observe_pose(point=(1500, 500), now=now, zone_id=None)
+    tracker.observe_pose(point=(2500, 500), now=122, zone_id=2)
+
+    assert tracker.stats == {}
 
 
 def test_healthy_expiry_restore_revalidation_and_map_reset() -> None:
