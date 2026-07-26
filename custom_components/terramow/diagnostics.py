@@ -119,6 +119,7 @@ async def async_get_config_entry_diagnostics(
         "blade_time": lawn_mower.blade_time,
         "schedule_data": lawn_mower.schedule_data,
         "passage_reliability": lawn_mower.passage_reliability,
+        "safety_breaches": lawn_mower.safety_breach_state,
     }
 
     return diagnostics

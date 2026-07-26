@@ -306,6 +306,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     await hub.async_restore_mow_counts()
     await hub.async_restore_wear_anchors()
     await hub.async_restore_passage_reliability()
+    await hub.async_restore_safety_history()
     hub.start()
 
     try:
