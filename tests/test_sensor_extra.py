@@ -53,8 +53,9 @@ def test_battery_sensor_attributes_and_missing_branches() -> None:
     hub = _hub()
     sensor = BatterySensor(hub.basic_data, hub.hass)
 
-    # no dp_108 payload yet -> falsy battery_status -> empty attributes
-    assert sensor.extra_state_attributes == {}
+    # no dp_108 payload yet -> only the always-present measured-health block
+    attrs = sensor.extra_state_attributes
+    assert set(attrs) == {"health"}
 
     _feed(hub.on_battery_status, {
         "state": "BATTERY_STATE_CHARGING",

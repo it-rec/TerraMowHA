@@ -123,6 +123,7 @@ async def async_get_config_entry_diagnostics(
         # Digests and changed layer names only; the private lawn geometry
         # baseline itself stays in local storage and is not exported.
         "map_integrity": lawn_mower.map_integrity_state,
+        "battery_health": lawn_mower.battery_health_metrics,
     }
 
     return diagnostics
