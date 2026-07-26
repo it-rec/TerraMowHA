@@ -230,16 +230,15 @@ async def test_hub_feeds_persists_restores_and_resets_aggregates() -> None:
     hub._global_params = {"mow_speed_type": "medium"}
     hub.mission = Mission.MISSION_GLOBAL_CLEAN
     with patch("custom_components.terramow.hub.dt_util.utcnow") as now:
-        now.return_value.timestamp.side_effect = [
-            2_000_000_000,
-            2_000_000_000,
-            2_000_000_600,
-            2_000_000_600,
-        ]
+        # a controllable clock: other trackers hooked into the same dp
+        # handlers may sample the time too, so a finite list would exhaust
+        clock = {"now": 2_000_000_000}
+        now.return_value.timestamp.side_effect = lambda: clock["now"]
         await hub.on_battery_level('{"int_value": 100}')
         await hub.on_current_work_data(
             json.dumps({"clean_area": 0, "work_duration": 0})
         )
+        clock["now"] = 2_000_000_600
         await hub.on_battery_level('{"int_value": 90}')
         await hub.on_current_work_data(
             json.dumps({"clean_area": 100, "work_duration": 600})

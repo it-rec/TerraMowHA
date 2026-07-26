@@ -75,6 +75,7 @@ from .map_scene import (
     point_in_polygon,
     simplify_path_pixels,
 )
+from .mission_preflight import MissionPreflightTracker, zone_geometry_signature
 from .passage_reliability import PassageReliabilityTracker
 
 if TYPE_CHECKING:
@@ -232,6 +233,8 @@ SAFETY_WARNING_TIMEOUT = 10 * 60.0
 MAP_INTEGRITY_STORE_VERSION = 1
 BATTERY_HEALTH_STORE_VERSION = 1
 BATTERY_HEALTH_SAVE_DELAY = 30.0
+PREFLIGHT_STORE_VERSION = 1
+PREFLIGHT_SAVE_DELAY = 30.0
 
 
 # Overlapping-subscription duplicate suppression.
@@ -600,6 +603,8 @@ class TerraMowHub:
         self._map_integrity_state: dict[str, Any] = {"status": "unknown"}
         self._battery_health = BatteryHealthTracker()
         self._battery_health_store: Store[dict[str, Any]] | None = None
+        self._mission_preflight = MissionPreflightTracker()
+        self._preflight_store: Store[dict[str, Any]] | None = None
         self._pose: dict[str, Any] = {}  # Stores the real-time pose
         # One meta-fetch channel per HTTP-backed resource; each bundles the
         # seq/etag/retry/pending bookkeeping for its meta topic.
@@ -969,6 +974,7 @@ class TerraMowHub:
             data = json.loads(payload)
             self._current_work_data = data
             self._observe_battery_health()
+            self._observe_mission_preflight()
             if self._restored_session_paths is not None:
                 # First counters after a restart decide the fate of the
                 # persisted session path segments (issue #239).
@@ -1135,6 +1141,7 @@ class TerraMowHub:
         if isinstance(value, int) and not isinstance(value, bool):
             self._battery_level = value
             self._observe_battery_health()
+            self._observe_mission_preflight()
 
     async def on_device_info(self, payload: str) -> None:
         """Handle device/network info updates (dp_102).
@@ -1651,6 +1658,7 @@ class TerraMowHub:
             data = json.loads(payload)
             self._battery_status = data
             self._observe_battery_health()
+            self._observe_mission_preflight()
             _LOGGER.debug("Battery status updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_108: %s", payload)
@@ -1792,6 +1800,60 @@ class TerraMowHub:
 
         self._observe_battery_health()
         self._notify_state_listeners()
+        self._observe_mission_preflight()
+
+    def _preflight_charger_connected(self) -> bool:
+        """Return the charger state exactly as dp_108 reports it."""
+        return self._battery_status.get("charger_connected") is True
+
+    def _observe_mission_preflight(self) -> None:
+        """Update an integration-started selective job from current raw state."""
+        active = self._mission_preflight.active
+        ids = active.get("region_ids") if active is not None else None
+        geometry = (
+            zone_geometry_signature(self._map_data, ids)
+            if isinstance(ids, list)
+            else None
+        )
+        before = len(self._mission_preflight.records)
+        self._mission_preflight.observe(
+            battery_level=self._battery_level,
+            charger_connected=self._preflight_charger_connected(),
+            completed=self.mission_state == MissionState.MISSION_STATE_COMPLETE,
+            aborted=self.mission_state == MissionState.MISSION_STATE_ABORT,
+            work=self._current_work_data,
+            map_id=self._map_data.get("id"),
+            geometry=geometry,
+            settings=self._global_params,
+            now=dt_util.utcnow().timestamp(),
+        )
+        if len(self._mission_preflight.records) != before:
+            self._schedule_preflight_save()
+
+    def _get_preflight_store(self) -> Store[dict[str, Any]]:
+        """Lazily create the completed-preflight-observation store."""
+        if self._preflight_store is None:
+            self._preflight_store = Store(
+                self.hass,
+                PREFLIGHT_STORE_VERSION,
+                f"terramow.mission_preflight_{self.host}",
+            )
+        return self._preflight_store
+
+    def _schedule_preflight_save(self) -> None:
+        """Persist completed aggregate observations only."""
+        self._get_preflight_store().async_delay_save(
+            self._mission_preflight.dump, PREFLIGHT_SAVE_DELAY
+        )
+
+    async def async_restore_mission_preflight(self) -> None:
+        """Restore completed observations, pending live-map revalidation."""
+        try:
+            data = await self._get_preflight_store().async_load()
+        except Exception as err:
+            _LOGGER.warning("Could not load mission-preflight history: %s", err)
+            return
+        self._mission_preflight.restore(data, dt_util.utcnow().timestamp())
 
     def _observe_battery_health(self) -> None:
         """Coalesce current dp_8/107/108/113 state into aggregate windows."""
@@ -2563,6 +2625,16 @@ class TerraMowHub:
         self._evaluate_map_integrity(data)
         self._map_data = data
         self._passage_reliability.set_map(data)
+        if self._mission_preflight.source == "restored":
+            for record in self._mission_preflight.records:
+                ids = record.get("region_ids")
+                if (
+                    record.get("map_id") == incoming_id
+                    and isinstance(ids, list)
+                    and zone_geometry_signature(data, ids) == record.get("geometry")
+                ):
+                    self._mission_preflight.revalidate()
+                    break
         map_info = self._build_map_info_from_map_data(data)
         if map_info is not None:
             self._update_map_info(map_info)
@@ -4027,6 +4099,31 @@ class TerraMowHub:
         return self._environment_info
 
     @property
+    def mission_preflight_catalog(self) -> dict[str, dict[str, Any]]:
+        """Estimates for observed exact zone sets on the current live map."""
+        groups = {
+            tuple(record["region_ids"])
+            for record in self._mission_preflight.records
+            if isinstance(record.get("region_ids"), list)
+        }
+        result: dict[str, dict[str, Any]] = {}
+        now = dt_util.now()
+        for group in sorted(groups):
+            ids = list(group)
+            result[",".join(str(region_id) for region_id in ids)] = (
+                self._mission_preflight.estimate(
+                    region_ids=ids,
+                    map_id=self._map_data.get("id"),
+                    geometry=zone_geometry_signature(self._map_data, ids),
+                    settings=self._global_params,
+                    battery_level=self._battery_level,
+                    sunset=self._environment_info.get("sunset"),
+                    now=now,
+                )
+            )
+        return result
+
+    @property
     def weather_info(self) -> dict[str, Any]:
         """Get the extreme-weather warning info (dp_157, undocumented)."""
         return self._weather_info
@@ -4374,6 +4471,15 @@ class TerraMowHub:
         _LOGGER.info("START SELECT REGION CLEAN (confirmed): regions=%s", region_ids)
         await self.async_publish_with_ack(
             103, self._build_select_region_command(region_ids)
+        )
+        self._mission_preflight.begin(
+            region_ids=region_ids,
+            map_id=self._map_data.get("id"),
+            geometry=zone_geometry_signature(self._map_data, region_ids),
+            settings=self._global_params,
+            battery_level=self._battery_level,
+            charger_connected=self._preflight_charger_connected(),
+            now=dt_util.utcnow().timestamp(),
         )
 
     def _start_edge_trim(self) -> None:

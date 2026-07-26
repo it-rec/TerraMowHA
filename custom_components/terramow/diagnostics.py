@@ -124,6 +124,7 @@ async def async_get_config_entry_diagnostics(
         # baseline itself stays in local storage and is not exported.
         "map_integrity": lawn_mower.map_integrity_state,
         "battery_health": lawn_mower.battery_health_metrics,
+        "mission_preflight": lawn_mower.mission_preflight_catalog,
     }
 
     return diagnostics

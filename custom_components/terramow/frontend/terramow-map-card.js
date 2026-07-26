@@ -51,7 +51,7 @@ const CARD_TAG = "terramow-map-card";
 /* Keys: no_map, not_connected, start, clear, zone, zones, reset_view,
    follow, start_mowing, pause, dock, sent, missing_entity */
 const STRINGS = {
-  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", reset_rotation: "Reset to default rotation", follow: "Follow the mower", replay: "Replay this session", replay_play: "Play the replay", start_mowing: "Start mowing", pause: "Pause", hud_progress: "Progress", hud_eta_left: "left", dock: "Return to dock", sent: "Zone mowing started", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", kbd_selected: "selected", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_zone: "Mowing zone", lg_zone_pending: "Selected to mow", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_hotspot: "Fault happened here (repeat count)", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area", lg_wifi: "Wi-Fi signal (green = strong)", view_mode: "View", vw_beides: "Both", vw_weg: "Path", vw_flaeche: "Area", vw_wlan: "Wi-Fi", vw_saison: "Season", lg_season: "Times mowed (pale = rarely)", map_refreshing: "Map refreshing…", dbg_title: "Layers received", dbg_zones: "Zones", dbg_nogo: "No-go zones", dbg_walls: "Walls", dbg_obstacles: "Obstacles", dbg_passthrough: "Pass-through", dbg_required: "Required", dbg_tunnels: "Tunnels", dbg_markers: "Markers", dbg_draw: "Draw regions", dbg_paths: "Path points" },
+  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", reset_rotation: "Reset to default rotation", follow: "Follow the mower", replay: "Replay this session", replay_play: "Play the replay", start_mowing: "Start mowing", pause: "Pause", hud_progress: "Progress", hud_eta_left: "left", dock: "Return to dock", sent: "Zone mowing started", preflight_none: "Not enough comparable history", preflight_estimate: "Estimate", preflight_battery: "battery", preflight_recharges: "recharges", preflight_daylight: "may finish after sunset", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", kbd_selected: "selected", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_zone: "Mowing zone", lg_zone_pending: "Selected to mow", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_hotspot: "Fault happened here (repeat count)", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area", lg_wifi: "Wi-Fi signal (green = strong)", view_mode: "View", vw_beides: "Both", vw_weg: "Path", vw_flaeche: "Area", vw_wlan: "Wi-Fi", vw_saison: "Season", lg_season: "Times mowed (pale = rarely)", map_refreshing: "Map refreshing…", dbg_title: "Layers received", dbg_zones: "Zones", dbg_nogo: "No-go zones", dbg_walls: "Walls", dbg_obstacles: "Obstacles", dbg_passthrough: "Pass-through", dbg_required: "Required", dbg_tunnels: "Tunnels", dbg_markers: "Markers", dbg_draw: "Draw regions", dbg_paths: "Path points" },
   bg: { no_map: "Все още няма карта", not_connected: "Изчакване на данни от косачката…", start: "Коси", clear: "Изчисти", zone: "зона", zones: "зони", reset_view: "Побери картата", follow: "Следвай косачката", start_mowing: "Започни косене", pause: "Пауза", dock: "Върни към станцията", sent: "Косенето на зони започна", missing_entity: "Задайте обект на косачка TerraMow в конфигурацията" },
   ca: { no_map: "Encara no hi ha mapa", not_connected: "Esperant dades del tallagespa…", start: "Sega", clear: "Neteja", zone: "zona", zones: "zones", reset_view: "Ajusta el mapa", follow: "Segueix el tallagespa", start_mowing: "Comença a segar", pause: "Pausa", dock: "Torna a la base", sent: "Sega per zones iniciada", missing_entity: "Configureu una entitat de tallagespa TerraMow" },
   cs: { no_map: "Mapa zatím není k dispozici", not_connected: "Čekání na data sekačky…", start: "Sekat", clear: "Vymazat", zone: "zóna", zones: "zóny", reset_view: "Přizpůsobit mapu", follow: "Sledovat sekačku", start_mowing: "Zahájit sekání", pause: "Pozastavit", dock: "Zpět na stanici", sent: "Sekání zón zahájeno", missing_entity: "Nastavte entitu sekačky TerraMow v konfiguraci karty" },
@@ -743,11 +743,13 @@ class TerramowMapCard extends HTMLElement {
       this._work = msg.work || null;
       this._status = msg.status || null;
       this._errors = msg.errors || null;
+      this._preflight = msg.preflight || {};
       if (this._follow && this._robot) {
         this._centerOnRobot();
       }
       this._updateHud();
       this._updateButtons();
+      this._updateActionBar();
       this._requestDraw();
     }
   }
@@ -914,6 +916,10 @@ class TerramowMapCard extends HTMLElement {
         font-size: 12px; color: var(--primary-text-color, #212121);
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         max-width: 42vw;
+      }
+      .actions .preflight {
+        font-size: 11px; color: var(--secondary-text-color, #727272);
+        white-space: nowrap;
       }
       .actions button {
         border: none; border-radius: 16px; padding: 6px 14px; font-size: 13px;
@@ -1111,6 +1117,8 @@ class TerramowMapCard extends HTMLElement {
     this._actionBar.className = "actions";
     this._actionNames = document.createElement("span");
     this._actionNames.className = "names";
+    this._preflightText = document.createElement("span");
+    this._preflightText.className = "preflight";
     this._goBtn = document.createElement("button");
     this._goBtn.className = "go";
     this._goBtn.addEventListener("click", () => this._startSelectedZones());
@@ -1121,7 +1129,12 @@ class TerramowMapCard extends HTMLElement {
       this._updateActionBar();
       this._requestDraw();
     });
-    this._actionBar.append(this._actionNames, this._goBtn, this._clearBtn);
+    this._actionBar.append(
+      this._actionNames,
+      this._preflightText,
+      this._goBtn,
+      this._clearBtn
+    );
     wrap.appendChild(this._actionBar);
 
     this._infoPanel = document.createElement("div");
@@ -1696,6 +1709,7 @@ class TerramowMapCard extends HTMLElement {
     const count = this._pending.size;
     this._root.classList.toggle("selecting", count > 0);
     if (!count) {
+      this._preflightText.textContent = "";
       this._actionBar.classList.remove("visible");
       return;
     }
@@ -1727,6 +1741,32 @@ class TerramowMapCard extends HTMLElement {
       text += ` · ${Math.round(areaM2)} m²`;
     }
     this._actionNames.textContent = text;
+    const preflightKey = [...this._pending]
+      .sort((a, b) => Number(a) - Number(b))
+      .join(",");
+    const estimate = this._preflight?.[preflightKey];
+    if (!estimate?.available) {
+      this._preflightText.textContent = localize(this._hass, "preflight_none");
+    } else {
+      const parts = [
+        `${localize(this._hass, "preflight_estimate")}: ${formatEtaMinutes(
+          estimate.duration_seconds
+        )}`,
+        `${estimate.battery_percent}% ${localize(
+          this._hass,
+          "preflight_battery"
+        )}`,
+        `${estimate.recharge_legs} ${localize(
+          this._hass,
+          "preflight_recharges"
+        )}`,
+        `${estimate.sample_count} samples · ${estimate.confidence}`,
+      ];
+      if (estimate.daylight_warning) {
+        parts.push(localize(this._hass, "preflight_daylight"));
+      }
+      this._preflightText.textContent = parts.join(" · ");
+    }
     const unit = pluralWord(this._hass, count, "zone", "zones");
     this._goBtn.textContent = `${localize(this._hass, "start")} ${count} ${unit}`;
     this._clearBtn.textContent = localize(this._hass, "clear");
