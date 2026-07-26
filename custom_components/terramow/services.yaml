@@ -87,3 +87,59 @@ delete_schedule:
           min: 0
           max: 10000
           mode: box
+
+plan_due_zones:
+  name: Plan Due Zones
+  description: >-
+    Store the supplied per-zone service policies and return a dry-run plan.
+    This service never starts the mower.
+  target:
+    entity:
+      integration: terramow
+      domain: lawn_mower
+  fields:
+    policies:
+      name: Zone policies
+      description: >-
+        Mapping of region id to interval_days, priority, enabled, and
+        manual_only policy fields. Omit to use the last stored policies.
+      selector:
+        object:
+    unknown_choice:
+      name: Unknown last-observed state
+      description: Explicit handling for zones without a timestamp.
+      default: ask
+      selector:
+        select:
+          options:
+            - include
+            - exclude
+            - ask
+
+start_due_zones:
+  name: Start Due Zones
+  description: >-
+    Recompute the due-zone plan and send its ids through the confirmed
+    selective-mowing command. An ask decision blocks the command.
+  target:
+    entity:
+      integration: terramow
+      domain: lawn_mower
+  fields:
+    policies:
+      name: Zone policies
+      description: >-
+        Mapping of region id to interval_days, priority, enabled, and
+        manual_only policy fields. Omit to use the last stored policies.
+      selector:
+        object:
+    unknown_choice:
+      name: Unknown last-observed state
+      description: Explicit handling for zones without a timestamp.
+      default: ask
+      selector:
+        select:
+          options:
+            - include
+            - exclude
+            - ask

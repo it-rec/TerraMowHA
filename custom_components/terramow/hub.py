@@ -77,6 +77,7 @@ from .map_scene import (
 )
 from .mission_preflight import MissionPreflightTracker, zone_geometry_signature
 from .passage_reliability import PassageReliabilityTracker
+from .zone_planner import build_zone_plan
 
 if TYPE_CHECKING:
     from . import TerraMowBasicData
@@ -235,6 +236,7 @@ BATTERY_HEALTH_STORE_VERSION = 1
 BATTERY_HEALTH_SAVE_DELAY = 30.0
 PREFLIGHT_STORE_VERSION = 1
 PREFLIGHT_SAVE_DELAY = 30.0
+ZONE_POLICY_STORE_VERSION = 1
 
 
 # Overlapping-subscription duplicate suppression.
@@ -605,6 +607,9 @@ class TerraMowHub:
         self._battery_health_store: Store[dict[str, Any]] | None = None
         self._mission_preflight = MissionPreflightTracker()
         self._preflight_store: Store[dict[str, Any]] | None = None
+        self._zone_policy_store: Store[dict[str, Any]] | None = None
+        self._zone_policies: dict[int, dict[str, Any]] = {}
+        self._last_zone_plan: dict[str, Any] | None = None
         self._pose: dict[str, Any] = {}  # Stores the real-time pose
         # One meta-fetch channel per HTTP-backed resource; each bundles the
         # seq/etag/retry/pending bookkeeping for its meta topic.
@@ -3406,6 +3411,116 @@ class TerraMowHub:
     def zone_last_seen(self) -> dict[int, str]:
         """Zone id -> ISO timestamp of the last pose seen inside that zone."""
         return self._zone_last_seen
+
+    def _get_zone_policy_store(self) -> Store[dict[str, Any]]:
+        """Lazily create the per-zone policy store."""
+        if self._zone_policy_store is None:
+            self._zone_policy_store = Store(
+                self.hass,
+                ZONE_POLICY_STORE_VERSION,
+                f"terramow.zone_policies_{self.host}",
+            )
+        return self._zone_policy_store
+
+    def _zone_names(self) -> dict[int, str | None]:
+        """Current device-reported zone names keyed by stable region id."""
+        names: dict[int, str | None] = {}
+        for region in self._map_data.get("regions") or []:
+            if not isinstance(region, dict):
+                continue
+            for zone in region.get("sub_regions") or []:
+                if not isinstance(zone, dict):
+                    continue
+                zone_id = zone.get("id")
+                if isinstance(zone_id, int) and not isinstance(zone_id, bool):
+                    name = zone.get("name")
+                    names[zone_id] = (
+                        name if isinstance(name, str) and name else None
+                    )
+        return names
+
+    async def async_set_zone_policies(self, policies: dict[Any, Any]) -> None:
+        """Validate and persist policies bound to the current map and zone name."""
+        normalized: dict[int, dict[str, Any]] = {}
+        names = self._zone_names()
+        for raw_id, raw_policy in policies.items():
+            try:
+                zone_id = int(raw_id)
+            except (TypeError, ValueError) as err:
+                raise HomeAssistantError(f"Invalid zone id: {raw_id}") from err
+            if isinstance(raw_id, bool) or not isinstance(raw_policy, dict):
+                raise HomeAssistantError(f"Invalid policy for zone {raw_id}")
+            normalized[zone_id] = {
+                **raw_policy,
+                "map_id": self._map_data.get("id"),
+                "expected_name": names.get(zone_id),
+            }
+        self._zone_policies = normalized
+        await self._get_zone_policy_store().async_save(
+            {"policies": {str(key): value for key, value in normalized.items()}}
+        )
+
+    async def async_restore_zone_policies(self) -> None:
+        """Restore policies; the planner revalidates map id/name on every run."""
+        try:
+            data = await self._get_zone_policy_store().async_load()
+        except Exception as err:
+            _LOGGER.warning("Could not load zone policies: %s", err)
+            return
+        policies = (data or {}).get("policies")
+        if not isinstance(policies, dict):
+            return
+        restored: dict[int, dict[str, Any]] = {}
+        for raw_id, policy in policies.items():
+            try:
+                zone_id = int(raw_id)
+            except (TypeError, ValueError):
+                continue
+            if isinstance(policy, dict):
+                restored[zone_id] = policy
+        self._zone_policies = restored
+
+    async def async_plan_due_zones(
+        self,
+        *,
+        policies: dict[Any, Any] | None = None,
+        unknown_choice: str = "ask",
+    ) -> dict[str, Any]:
+        """Return a fresh, fully explained plan and optionally store policies."""
+        if policies is not None:
+            await self.async_set_zone_policies(policies)
+        self._last_zone_plan = build_zone_plan(
+            map_data=self._map_data,
+            last_seen=self._zone_last_seen,
+            policies=self._zone_policies,
+            unknown_choice=unknown_choice,
+            now=dt_util.utcnow(),
+        )
+        return dict(self._last_zone_plan)
+
+    async def async_start_due_zones(
+        self,
+        *,
+        policies: dict[Any, Any] | None = None,
+        unknown_choice: str = "ask",
+    ) -> dict[str, Any]:
+        """Plan and explicitly start exactly its due region ids."""
+        plan = await self.async_plan_due_zones(
+            policies=policies, unknown_choice=unknown_choice
+        )
+        if plan["blocked_on_unknown"]:
+            raise HomeAssistantError(
+                "Zone plan has unknown last-observed state; choose include or exclude"
+            )
+        region_ids = plan["region_ids"]
+        if region_ids:
+            await self.async_start_select_region_clean(region_ids)
+        return plan
+
+    @property
+    def last_zone_plan(self) -> dict[str, Any] | None:
+        """Last short-lived plan for diagnostics; recompute before starting."""
+        return dict(self._last_zone_plan) if self._last_zone_plan is not None else None
 
     # --- wear forecast ----------------------------------------------------
     #
