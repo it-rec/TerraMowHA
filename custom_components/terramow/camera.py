@@ -96,6 +96,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             "unrendered_fields",
             "scene_counts",
             "geometry_diagnostics",
+            "passage_reliability",
             "rendered_layers",
             "clean_info_summary",
             "mow_param_summary",
@@ -228,6 +229,9 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         attributes["map_theme"] = self._theme
         attributes["map_language"] = self._language
         attributes["coverage_enabled"] = self._show_coverage
+        attributes["passage_reliability"] = getattr(
+            self.basic_data.lawn_mower, "passage_reliability", []
+        )
         if self._last_update_label is not None:
             attributes["map_updated_at"] = self._last_update_label
         calibration = self._build_calibration_points()

@@ -118,6 +118,7 @@ async def async_get_config_entry_diagnostics(
         "base_station_time": lawn_mower.base_station_time,
         "blade_time": lawn_mower.blade_time,
         "schedule_data": lawn_mower.schedule_data,
+        "passage_reliability": lawn_mower.passage_reliability,
     }
 
     return diagnostics

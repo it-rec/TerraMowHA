@@ -1,6 +1,6 @@
 """Final coverage for __init__ and config_flow error / edge paths."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
@@ -81,6 +81,7 @@ async def test_setup_entry_success_starts_hub_and_forwards(hass: HomeAssistant) 
         hub_cls.return_value.async_restore_fault_hotspots = AsyncMock()
         hub_cls.return_value.async_restore_mow_counts = AsyncMock()
         hub_cls.return_value.async_restore_wear_anchors = AsyncMock()
+        hub_cls.return_value.async_restore_passage_reliability = AsyncMock()
         result = await async_setup_entry(hass, entry)
 
     assert result is True
