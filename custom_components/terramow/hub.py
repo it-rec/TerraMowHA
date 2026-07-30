@@ -68,6 +68,7 @@ from .map_scene import (
     point_in_polygon,
     simplify_path_pixels,
 )
+from .passage_reliability import PassageReliabilityTracker
 
 if TYPE_CHECKING:
     from . import TerraMowBasicData
@@ -207,6 +208,8 @@ WEAR_SAVE_DELAY = 30.0  # seconds
 # for two hours a week would be a guess dressed up as a date.
 WEAR_MIN_WINDOW_SECONDS = 24 * 3600.0
 WIFI_MAP_SAVE_DELAY = 30.0  # seconds
+PASSAGE_STORE_VERSION = 1
+PASSAGE_SAVE_DELAY = 30.0
 
 
 # Overlapping-subscription duplicate suppression.
@@ -543,6 +546,8 @@ class TerraMowHub:
         # through it and the current reading.
         self._wear_anchors: dict[str, tuple[str, int]] = {}
         self._wear_store: Store[dict[str, Any]] | None = None
+        self._passage_reliability = PassageReliabilityTracker()
+        self._passage_store: Store[dict[str, Any]] | None = None
         self._pose: dict[str, Any] = {}  # Stores the real-time pose
         # One meta-fetch channel per HTTP-backed resource; each bundles the
         # seq/etag/retry/pending bookkeeping for its meta topic.
@@ -1146,6 +1151,8 @@ class TerraMowHub:
             if isinstance(errors, list):
                 changed = errors != self._error_list
                 self._record_fault_hotspots(errors)
+                if changed and errors:
+                    self._record_passage_fault()
                 self._error_list = errors
                 # dp_116 does not flow through on_mission_status, so notify the
                 # mower / event entities here too: a fault that shows up only in
@@ -2079,7 +2086,12 @@ class TerraMowHub:
                 # batch is being dispatched. The Wi-Fi sampler rides the same
                 # loop hop so heatmap sampling adds no extra wakeup.
                 self._dispatch_batch(
-                    [self._sample_wifi_cell, self._sample_zone_presence, *self.pose_callbacks],
+                    [
+                        self._sample_passage_reliability,
+                        self._sample_wifi_cell,
+                        self._sample_zone_presence,
+                        *self.pose_callbacks,
+                    ],
                     pose,
                 )
             except json.JSONDecodeError:
@@ -2434,6 +2446,7 @@ class TerraMowHub:
             self._fault_map_id = incoming_id
             self._mow_count_map_id = incoming_id
         self._map_data = data
+        self._passage_reliability.set_map(data)
         map_info = self._build_map_info_from_map_data(data)
         if map_info is not None:
             self._update_map_info(map_info)
@@ -2581,6 +2594,77 @@ class TerraMowHub:
     # mower was standing at that moment, and pairing the two turns a season of
     # faults into a map of the spots that actually cause them — the tree root,
     # the soft patch by the pond, the gap it always wedges itself into.
+
+    def _passage_observation_count(self) -> int:
+        return sum(
+            len(items)
+            for stats in self._passage_reliability.stats.values()
+            for items in stats.values()
+            if isinstance(items, list)
+        )
+
+    def _sample_passage_reliability(self, pose: dict[str, Any]) -> None:
+        """Measure passage outcomes from unambiguous live pose evidence."""
+        x = pose.get("x")
+        y = pose.get("y")
+        if (
+            not isinstance(x, (int, float))
+            or isinstance(x, bool)
+            or not isinstance(y, (int, float))
+            or isinstance(y, bool)
+        ):
+            return
+        before = self._passage_observation_count()
+        self._passage_reliability.observe_pose(
+            point=(float(x), float(y)),
+            now=dt_util.utcnow().timestamp(),
+            zone_id=self._zone_at(float(x), float(y)),
+        )
+        if self._passage_observation_count() != before:
+            self._schedule_passage_save()
+
+    def _record_passage_fault(self) -> None:
+        """Associate a new fault only with one uniquely nearby passage."""
+        x = self._pose.get("x")
+        y = self._pose.get("y")
+        if not isinstance(x, (int, float)) or not isinstance(y, (int, float)):
+            return
+        before = self._passage_observation_count()
+        self._passage_reliability.observe_fault(
+            (float(x), float(y)), dt_util.utcnow().timestamp()
+        )
+        if self._passage_observation_count() != before:
+            self._schedule_passage_save()
+
+    def _get_passage_store(self) -> Store[dict[str, Any]]:
+        if self._passage_store is None:
+            self._passage_store = Store(
+                self.hass,
+                PASSAGE_STORE_VERSION,
+                f"terramow.passage_reliability_{self.host}",
+            )
+        return self._passage_store
+
+    def _schedule_passage_save(self) -> None:
+        self._get_passage_store().async_delay_save(
+            self._passage_reliability.dump, PASSAGE_SAVE_DELAY
+        )
+
+    async def async_restore_passage_reliability(self) -> None:
+        """Restore historical passage evidence pending exact geometry match."""
+        try:
+            data = await self._get_passage_store().async_load()
+        except Exception as err:
+            _LOGGER.warning("Could not load passage reliability: %s", err)
+            return
+        self._passage_reliability.restore(data)
+
+    @property
+    def passage_reliability(self) -> list[dict[str, Any]]:
+        """Deterministic graph edges with bounded observed evidence."""
+        return self._passage_reliability.diagnostics(
+            dt_util.utcnow().timestamp()
+        )
 
     def _record_fault_hotspots(self, errors: list[Any]) -> None:
         """Stamp the current pose for every error code that is newly present.
@@ -2850,9 +2934,12 @@ class TerraMowHub:
                 if not isinstance(sub, dict):
                     continue
                 zone_id = sub.get("id")
+                raw_boundary = sub.get("boundary") or []
+                if isinstance(raw_boundary, dict):
+                    raw_boundary = raw_boundary.get("points") or []
                 boundary = [
                     (point.get("x"), point.get("y"))
-                    for point in sub.get("boundary") or []
+                    for point in raw_boundary
                     if isinstance(point, dict)
                 ]
                 if not isinstance(zone_id, int) or len(boundary) < 3:
