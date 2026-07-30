@@ -1027,15 +1027,23 @@ class BatterySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
             return {}
 
         battery_status = hub.battery_status
-        if not battery_status:
-            return {}
-
-        return {
-            'state': battery_status.get('state', 'unknown'),
-            'temperature': (battery_status.get('tempreture') or 'unknown').replace('TEMPRETURE', 'TEMPERATURE'),
-            'charger_connected': battery_status.get('charger_connected', 'unknown'),
-            'is_switch_on': battery_status.get('is_switch_on', 'unknown')
+        attributes: dict[str, Any] = {
+            "health": hub.battery_health_metrics,
         }
+        if battery_status:
+            attributes.update(
+                {
+                    "state": battery_status.get("state", "unknown"),
+                    "temperature": (
+                        battery_status.get("tempreture") or "unknown"
+                    ).replace("TEMPRETURE", "TEMPERATURE"),
+                    "charger_connected": battery_status.get(
+                        "charger_connected", "unknown"
+                    ),
+                    "is_switch_on": battery_status.get("is_switch_on", "unknown"),
+                }
+            )
+        return attributes
 
 
 class TerraMowMowSpeedSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):

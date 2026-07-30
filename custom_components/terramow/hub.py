@@ -37,6 +37,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
+from .battery_health import BatteryHealthTracker
 from .const import (
     APP_DP_TOPIC_FILTER,
     COMMAND_ACK_DP,
@@ -229,6 +230,8 @@ SAFETY_WARNING_TIMEOUT = 10 * 60.0
 # a restored snapshot is revalidated against a live complete-map report before
 # it may produce an alert.
 MAP_INTEGRITY_STORE_VERSION = 1
+BATTERY_HEALTH_STORE_VERSION = 1
+BATTERY_HEALTH_SAVE_DELAY = 30.0
 
 
 # Overlapping-subscription duplicate suppression.
@@ -595,6 +598,8 @@ class TerraMowHub:
         self._map_integrity_baseline: dict[str, Any] | None = None
         self._map_integrity_restored = False
         self._map_integrity_state: dict[str, Any] = {"status": "unknown"}
+        self._battery_health = BatteryHealthTracker()
+        self._battery_health_store: Store[dict[str, Any]] | None = None
         self._pose: dict[str, Any] = {}  # Stores the real-time pose
         # One meta-fetch channel per HTTP-backed resource; each bundles the
         # seq/etag/retry/pending bookkeeping for its meta topic.
@@ -963,6 +968,7 @@ class TerraMowHub:
         try:
             data = json.loads(payload)
             self._current_work_data = data
+            self._observe_battery_health()
             if self._restored_session_paths is not None:
                 # First counters after a restart decide the fate of the
                 # persisted session path segments (issue #239).
@@ -1128,6 +1134,7 @@ class TerraMowHub:
         value = data.get("int_value")
         if isinstance(value, int) and not isinstance(value, bool):
             self._battery_level = value
+            self._observe_battery_health()
 
     async def on_device_info(self, payload: str) -> None:
         """Handle device/network info updates (dp_102).
@@ -1643,6 +1650,7 @@ class TerraMowHub:
         try:
             data = json.loads(payload)
             self._battery_status = data
+            self._observe_battery_health()
             _LOGGER.debug("Battery status updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_108: %s", payload)
@@ -1782,7 +1790,57 @@ class TerraMowHub:
                      old_mission, self.mission, old_sub_mission, self.sub_mission,
                      old_mission_state, self.mission_state, self.has_error, self.back_to_station_reason)
 
+        self._observe_battery_health()
         self._notify_state_listeners()
+
+    def _observe_battery_health(self) -> None:
+        """Coalesce current dp_8/107/108/113 state into aggregate windows."""
+        before = self._battery_health.dump()
+        status = self._battery_status
+        charger_connected = status.get("charger_connected") is True or status.get(
+            "state"
+        ) == "BATTERY_STATE_CHARGING"
+        self._battery_health.observe(
+            level=self._battery_level,
+            charger_connected=charger_connected,
+            is_mowing=self.mission in MOW_MISSIONS,
+            work=self._current_work_data,
+            map_id=self._map_data.get("id"),
+            settings=self._global_params,
+            now=dt_util.utcnow().timestamp(),
+        )
+        if self._battery_health.dump() != before:
+            self._schedule_battery_health_save()
+
+    def _get_battery_health_store(self) -> Store[dict[str, Any]]:
+        """Lazily create the aggregate battery-health store."""
+        if self._battery_health_store is None:
+            self._battery_health_store = Store(
+                self.hass,
+                BATTERY_HEALTH_STORE_VERSION,
+                f"terramow.battery_health_{self.host}",
+            )
+        return self._battery_health_store
+
+    def _schedule_battery_health_save(self) -> None:
+        """Persist aggregate windows only when they change."""
+        self._get_battery_health_store().async_delay_save(
+            self._battery_health.dump, BATTERY_HEALTH_SAVE_DELAY
+        )
+
+    async def async_restore_battery_health(self) -> None:
+        """Restore bounded battery-health aggregates, marked as restored."""
+        try:
+            data = await self._get_battery_health_store().async_load()
+        except Exception as err:
+            _LOGGER.warning("Could not load persisted battery health: %s", err)
+            return
+        self._battery_health.restore(data, dt_util.utcnow().timestamp())
+
+    async def async_reset_battery_health(self) -> None:
+        """Clear the learned baseline after battery replacement or service."""
+        self._battery_health.reset()
+        await self._get_battery_health_store().async_save(self._battery_health.dump())
 
     async def on_command_ack(self, payload: str) -> None:
         """Handle a dp_119 command acknowledgement.
@@ -3922,6 +3980,15 @@ class TerraMowHub:
     def battery_level(self) -> int | None:
         """Get the current battery percentage from dp_8."""
         return self._battery_level
+
+    @property
+    def battery_health_metrics(self) -> dict[str, Any]:
+        """Measured battery/charge rates with evidence and confidence."""
+        return self._battery_health.metrics(
+            map_id=self._map_data.get("id"),
+            settings=self._global_params,
+            now=dt_util.utcnow().timestamp(),
+        )
 
     @property
     def firmware_version_name(self) -> str | None:
