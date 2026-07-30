@@ -309,6 +309,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     await hub.async_restore_safety_history()
     await hub.async_restore_map_integrity()
     await hub.async_restore_battery_health()
+    await hub.async_restore_mission_preflight()
     hub.start()
 
     try:

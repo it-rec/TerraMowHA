@@ -58,6 +58,7 @@ only creates an entity when a GPS anchor is configured in the options.
 | `map_safety.py` | Pure pose-versus-map safety checks for observed no-go entry, allowed-boundary exit and true virtual-wall crossing |
 | `map_integrity.py` | Pure map-integrity layer — extracts JSON-safe snapshots from renderer-supported geometry and compares polygons/lines independent of ordering with a documented coordinate tolerance |
 | `battery_health.py` | Pure bounded aggregator for measured discharge efficiency, 20–80% charge windows, interrupted charges and mower-relative trends |
+| `mission_preflight.py` | Pure bounded performance history and estimates for exact integration-started selective zone sets |
 | `map_render.py` | PIL layer — theme palettes, layout constants, font/placeholder caches and the `MapRenderer` that draws a `map_scene` scene into the final PNG. No HA plumbing |
 | `map_strings.py` | Localized HUD labels baked into the rendered PNG. They cannot live in `strings.json` (hassfest rejects unknown translation categories), so this in-code table is selected by the HA UI language, with English as the complete fallback |
 | `update.py` | Read-only firmware `UpdateEntity` — real version from dp_102, `in_progress` from dp_107 `is_upgrading`, component versions from dp_129 |

@@ -57,7 +57,7 @@ _LOGGER = logging.getLogger(__name__)
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.30.0"
+CARD_VERSION = "1.31.0"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -761,6 +761,7 @@ def build_status_payload(hub: TerraMowHub) -> dict[str, Any]:
         "work": work or None,
         "status": status or None,
         "errors": errors or None,
+        "preflight": hub.mission_preflight_catalog,
     }
 
 
@@ -835,6 +836,8 @@ class _MapFeed:
             self.hub.register_callback(108, self._on_pose),
             self.hub.register_callback(8, self._on_pose),
             self.hub.register_callback(113, self._on_pose),
+            self.hub.register_callback(152, self._on_pose),
+            self.hub.register_callback(155, self._on_pose),
         ]
         # Paint instantly from the last known scene (if any card has rendered
         # this hub before), then schedule the authoritative rebuild which sends

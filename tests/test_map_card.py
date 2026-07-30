@@ -402,6 +402,7 @@ async def test_status_payload(hass: HomeAssistant) -> None:
         "work": None,
         "status": None,
         "errors": None,
+        "preflight": {},
     }
 
     # An active dp_116 fault surfaces on the card with readable catalog text.
