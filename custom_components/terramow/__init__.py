@@ -14,7 +14,7 @@ from homeassistant.const import (
     CONF_PASSWORD,
     Platform,
 )
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.exceptions import (
     ConfigEntryAuthFailed,
     ConfigEntryNotReady,
@@ -44,6 +44,8 @@ from .map_card import async_setup_map_card
 SERVICE_START_SELECT_REGION = "start_select_region"
 SERVICE_ADD_SCHEDULE = "add_schedule"
 SERVICE_DELETE_SCHEDULE = "delete_schedule"
+SERVICE_PLAN_DUE_ZONES = "plan_due_zones"
+SERVICE_START_DUE_ZONES = "start_due_zones"
 ATTR_REGION_IDS = "region_ids"
 ATTR_WEEK_DAYS = "week_days"
 ATTR_START_TIME = "start_time"
@@ -51,6 +53,8 @@ ATTR_END_TIME = "end_time"
 ATTR_DISABLED = "disabled"
 ATTR_RUN_ONCE = "run_once"
 ATTR_ITEM_ID = "item_id"
+ATTR_POLICIES = "policies"
+ATTR_UNKNOWN_CHOICE = "unknown_choice"
 
 START_SELECT_REGION_SCHEMA = vol.Schema(
     {
@@ -78,6 +82,16 @@ DELETE_SCHEDULE_SCHEMA = vol.Schema(
     {
         vol.Required(ATTR_ENTITY_ID): cv.entity_ids,
         vol.Required(ATTR_ITEM_ID): vol.Coerce(int),
+    }
+)
+
+ZONE_PLAN_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ENTITY_ID): cv.entity_ids,
+        vol.Optional(ATTR_POLICIES): dict,
+        vol.Optional(ATTR_UNKNOWN_CHOICE, default="ask"): vol.In(
+            ("include", "exclude", "ask")
+        ),
     }
 )
 
@@ -310,6 +324,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     await hub.async_restore_map_integrity()
     await hub.async_restore_battery_health()
     await hub.async_restore_mission_preflight()
+    await hub.async_restore_zone_policies()
     hub.start()
 
     try:
@@ -395,6 +410,26 @@ def _async_register_services(hass: HomeAssistant) -> None:
         for hub in _resolve_hubs(call.data[ATTR_ENTITY_ID]):
             await hub.async_delete_schedule(item_id)
 
+    async def handle_plan_due_zones(call: ServiceCall) -> dict[str, Any]:
+        plans = [
+            await hub.async_plan_due_zones(
+                policies=call.data.get(ATTR_POLICIES),
+                unknown_choice=call.data[ATTR_UNKNOWN_CHOICE],
+            )
+            for hub in _resolve_hubs(call.data[ATTR_ENTITY_ID])
+        ]
+        return {"plans": plans}
+
+    async def handle_start_due_zones(call: ServiceCall) -> dict[str, Any]:
+        plans = [
+            await hub.async_start_due_zones(
+                policies=call.data.get(ATTR_POLICIES),
+                unknown_choice=call.data[ATTR_UNKNOWN_CHOICE],
+            )
+            for hub in _resolve_hubs(call.data[ATTR_ENTITY_ID])
+        ]
+        return {"plans": plans}
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_START_SELECT_REGION,
@@ -412,6 +447,20 @@ def _async_register_services(hass: HomeAssistant) -> None:
         SERVICE_DELETE_SCHEDULE,
         handle_delete_schedule,
         schema=DELETE_SCHEDULE_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_PLAN_DUE_ZONES,
+        handle_plan_due_zones,
+        schema=ZONE_PLAN_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_START_DUE_ZONES,
+        handle_start_due_zones,
+        schema=ZONE_PLAN_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
     )
     # Assist intents live alongside the services: both are integration-level
     # and both are registered exactly once.
@@ -440,6 +489,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) ->
                 SERVICE_START_SELECT_REGION,
                 SERVICE_ADD_SCHEDULE,
                 SERVICE_DELETE_SCHEDULE,
+                SERVICE_PLAN_DUE_ZONES,
+                SERVICE_START_DUE_ZONES,
             ):
                 if hass.services.has_service(DOMAIN, service):
                     hass.services.async_remove(DOMAIN, service)

@@ -125,6 +125,7 @@ async def async_get_config_entry_diagnostics(
         "map_integrity": lawn_mower.map_integrity_state,
         "battery_health": lawn_mower.battery_health_metrics,
         "mission_preflight": lawn_mower.mission_preflight_catalog,
+        "zone_plan": lawn_mower.last_zone_plan,
     }
 
     return diagnostics

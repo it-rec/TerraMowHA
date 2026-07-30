@@ -86,6 +86,7 @@ async def test_setup_entry_success_starts_hub_and_forwards(hass: HomeAssistant) 
         hub_cls.return_value.async_restore_map_integrity = AsyncMock()
         hub_cls.return_value.async_restore_battery_health = AsyncMock()
         hub_cls.return_value.async_restore_mission_preflight = AsyncMock()
+        hub_cls.return_value.async_restore_zone_policies = AsyncMock()
         result = await async_setup_entry(hass, entry)
 
     assert result is True
