@@ -63,6 +63,11 @@ from .issues import (
     async_sync_blade_maintenance_issue,
     async_sync_compatibility_issue,
 )
+from .map_integrity import (
+    changed_geometry_layers,
+    geometry_digest,
+    snapshot_map_geometry,
+)
 from .map_safety import evaluate_pose, pose_point, segment_is_observable
 from .map_scene import (
     extract_cleaning_path_runs,
@@ -219,6 +224,12 @@ SAFETY_SAVE_DELAY = 10.0
 SAFETY_HISTORY_MAXLEN = 20
 SAFETY_WARNING_TIMEOUT = 10 * 60.0
 
+# Map-integrity baseline: one normalized snapshot of the current map.  The
+# baseline is persisted so a restart does not erase the comparison point, but
+# a restored snapshot is revalidated against a live complete-map report before
+# it may produce an alert.
+MAP_INTEGRITY_STORE_VERSION = 1
+
 
 # Overlapping-subscription duplicate suppression.
 #
@@ -294,6 +305,20 @@ class Mission(Enum):
     MISSION_DRAW_REGION_CLEAN = "MISSION_DRAW_REGION_CLEAN"
     MISSION_EDGE_TRIM_CLEAN = "MISSION_EDGE_TRIM_CLEAN"
     MISSION_UPDATE_BACKUP_MAP = "MISSION_UPDATE_BACKUP_MAP"
+
+
+MAP_MUTATION_MISSIONS = frozenset(
+    {
+        Mission.MISSION_BUILD_MAP,
+        Mission.MISSION_BUILD_MAP_AND_CLEAN,
+        Mission.MISSION_SCHEDULE_BUILD_MAP_AND_CLEAN,
+        Mission.MISSION_BACKUP_MAP,
+        Mission.MISSION_RELOCATE_BASE_STATION,
+        Mission.MISSION_USER_AUTO_CALIBRATION,
+        Mission.MISSION_RESTORE_BACKUP_MAP,
+        Mission.MISSION_UPDATE_BACKUP_MAP,
+    }
+)
 
 
 class SubMission(Enum):
@@ -563,6 +588,13 @@ class TerraMowHub:
         self._safety_active: dict[str, dict[str, Any]] = {}
         self._safety_history: list[dict[str, Any]] = []
         self._safety_indeterminate = False
+        # Last verified map geometry and its comparison state (issue #314).
+        # The snapshot contains only geometry parsed by map_scene; unsupported
+        # shapes remain in the existing geometry diagnostics.
+        self._map_integrity_store: Store[dict[str, Any]] | None = None
+        self._map_integrity_baseline: dict[str, Any] | None = None
+        self._map_integrity_restored = False
+        self._map_integrity_state: dict[str, Any] = {"status": "unknown"}
         self._pose: dict[str, Any] = {}  # Stores the real-time pose
         # One meta-fetch channel per HTTP-backed resource; each bundles the
         # seq/etag/retry/pending bookkeeping for its meta topic.
@@ -2470,6 +2502,7 @@ class TerraMowHub:
             self._wifi_map_id = incoming_id
             self._fault_map_id = incoming_id
             self._mow_count_map_id = incoming_id
+        self._evaluate_map_integrity(data)
         self._map_data = data
         self._passage_reliability.set_map(data)
         map_info = self._build_map_info_from_map_data(data)
@@ -2587,6 +2620,158 @@ class TerraMowHub:
             for item in data["history"][-SAFETY_HISTORY_MAXLEN:]
             if isinstance(item, dict)
         ]
+
+    def _map_report_is_complete(self, data: dict[str, Any]) -> bool:
+        """Whether the available device state says this map body is complete."""
+        state = data.get("map_state")
+        if state is None:
+            state = self._map_status.get("map_state")
+        if state is None:
+            # Some HA-v3 map bodies omit map_state.  An id plus the documented
+            # region collection is the complete HTTP body shape we can verify;
+            # no undocumented field or inferred device state is used.
+            return data.get("id") is not None and isinstance(data.get("regions"), list)
+        return isinstance(state, str) and state == "MAP_STATE_COMPLETE"
+
+    def _map_change_is_expected(self) -> str | None:
+        """Return the reported device operation that explains a map change."""
+        if isinstance(self.mission, Mission) and self.mission in MAP_MUTATION_MISSIONS:
+            return str(self.mission.value)
+        if bool(self._map_status.get("is_backing_up_map")):
+            return "is_backing_up_map"
+        if isinstance(self.sub_mission, SubMission) and self.sub_mission in (
+            SubMission.SUB_MISSION_RELOCATION,
+            SubMission.SUB_MISSION_SAVING_MAP,
+        ):
+            return str(self.sub_mission.value)
+        return None
+
+    def _set_map_integrity_baseline(
+        self, snapshot: dict[str, Any], status: str, reason: str
+    ) -> None:
+        """Adopt a verified live snapshot and persist it."""
+        self._map_integrity_baseline = snapshot
+        self._map_integrity_restored = False
+        self._map_integrity_state = {
+            "status": status,
+            "reason": reason,
+            "map_id": snapshot.get("map_id"),
+            "digest": geometry_digest(snapshot),
+            "observed_at": dt_util.utcnow().isoformat(),
+        }
+        self._schedule_map_integrity_save()
+
+    def _evaluate_map_integrity(self, data: dict[str, Any]) -> None:
+        """Compare a live complete map with the last verified baseline.
+
+        Every compared coordinate comes from two mower-served map bodies.
+        Expected mapping/backup/restore operations replace the baseline
+        without alerting.  A restored baseline is similarly revalidated once:
+        a mismatch can have happened while HA was offline, so it is recorded
+        as a replacement rather than emitted as a live change.
+        """
+        if not self._map_report_is_complete(data):
+            self._map_integrity_state = {
+                "status": "expected_change",
+                "reason": "map_not_complete",
+                "map_id": data.get("id"),
+                "observed_at": dt_util.utcnow().isoformat(),
+            }
+            return
+
+        snapshot = snapshot_map_geometry(data)
+        baseline = self._map_integrity_baseline
+        if baseline is None:
+            self._set_map_integrity_baseline(
+                snapshot, "baseline_created", "first_complete_map"
+            )
+            return
+
+        if baseline.get("map_id") != snapshot.get("map_id"):
+            self._set_map_integrity_baseline(snapshot, "expected_change", "map_switched")
+            return
+
+        changed = changed_geometry_layers(baseline, snapshot)
+        if self._map_integrity_restored:
+            self._set_map_integrity_baseline(
+                snapshot,
+                "baseline_revalidated" if not changed else "baseline_replaced",
+                "restored_baseline",
+            )
+            if changed:
+                self._map_integrity_state["changed_layers"] = changed
+            return
+
+        if not changed:
+            self._map_integrity_state = {
+                "status": "unchanged",
+                "reason": "live_comparison",
+                "map_id": snapshot.get("map_id"),
+                "digest": geometry_digest(baseline),
+                "observed_at": dt_util.utcnow().isoformat(),
+            }
+            return
+
+        reason = self._map_change_is_expected()
+        previous_digest = geometry_digest(baseline)
+        self._set_map_integrity_baseline(
+            snapshot,
+            "expected_change" if reason is not None else "unexpected_change",
+            reason or "unexplained_live_change",
+        )
+        self._map_integrity_state["changed_layers"] = changed
+        self._map_integrity_state["previous_digest"] = previous_digest
+        if reason is None:
+            self.hass.bus.fire(
+                f"{DOMAIN}_map_integrity",
+                dict(self._map_integrity_state),
+            )
+
+    def _get_map_integrity_store(self) -> Store[dict[str, Any]]:
+        """Lazily create the map-integrity baseline store."""
+        if self._map_integrity_store is None:
+            self._map_integrity_store = Store(
+                self.hass,
+                MAP_INTEGRITY_STORE_VERSION,
+                f"terramow.map_integrity_{self.host}",
+            )
+        return self._map_integrity_store
+
+    def _map_integrity_save_data(self) -> dict[str, Any]:
+        """Snapshot the verified baseline for a debounced disk write."""
+        return {"baseline": self._map_integrity_baseline}
+
+    def _schedule_map_integrity_save(self) -> None:
+        """Persist the baseline now (loop-only callers).
+
+        Baselines change rarely (new map, expected map operation), so there is
+        nothing to debounce — and a delayed save would park a bound method (a
+        strong hub reference) on the global timer/final-write listeners, which
+        keeps the hub alive across a config-entry reload.
+        """
+        self.hass.async_create_task(
+            self._get_map_integrity_store().async_save(
+                self._map_integrity_save_data()
+            )
+        )
+
+    async def async_restore_map_integrity(self) -> None:
+        """Restore a baseline, parked until a matching live map revalidates it."""
+        try:
+            data = await self._get_map_integrity_store().async_load()
+        except Exception as err:
+            _LOGGER.warning("Could not load persisted map-integrity baseline: %s", err)
+            return
+        baseline = (data or {}).get("baseline")
+        if not isinstance(baseline, dict):
+            return
+        self._map_integrity_baseline = baseline
+        self._map_integrity_restored = True
+        self._map_integrity_state = {
+            "status": "restored_unverified",
+            "map_id": baseline.get("map_id"),
+            "digest": geometry_digest(baseline),
+        }
 
     def _maybe_archive_session_path(self, new_data: dict[str, Any]) -> None:
         """Preserve the outgoing mow track when the path resets mid-session.
@@ -3637,6 +3822,11 @@ class TerraMowHub:
     def map_data(self) -> dict[str, Any]:
         """Get HTTP-fetched map data."""
         return self._map_data
+
+    @property
+    def map_integrity_state(self) -> dict[str, Any]:
+        """Latest bounded comparison of live map geometry (issue #314)."""
+        return dict(self._map_integrity_state)
 
     @property
     def path_data(self) -> dict[str, Any]:

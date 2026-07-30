@@ -70,6 +70,7 @@ async def test_setup_entry_stops_hub_when_platform_setup_fails(
     hub.async_restore_wear_anchors = AsyncMock()
     hub.async_restore_passage_reliability = AsyncMock()
     hub.async_restore_safety_history = AsyncMock()
+    hub.async_restore_map_integrity = AsyncMock()
     with (
         patch("custom_components.terramow.validate_input", return_value={}),
         patch("custom_components.terramow.TerraMowHub", return_value=hub),

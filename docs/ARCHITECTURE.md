@@ -56,6 +56,7 @@ only creates an entity when a GPS anchor is configured in the options.
 | `map_scene.py` | Protocol/geometry layer — pure functions coercing the `ha_map_v1` / `ha_path_v1` dicts into points, polygons and paths, simplifying polylines, and assembling a drawable scene plus render metadata. No PIL |
 | `passage_reliability.py` | Deterministic zone/passage graph plus bounded unambiguous traversal, retreat and nearby-fault evidence |
 | `map_safety.py` | Pure pose-versus-map safety checks for observed no-go entry, allowed-boundary exit and true virtual-wall crossing |
+| `map_integrity.py` | Pure map-integrity layer — extracts JSON-safe snapshots from renderer-supported geometry and compares polygons/lines independent of ordering with a documented coordinate tolerance |
 | `map_render.py` | PIL layer — theme palettes, layout constants, font/placeholder caches and the `MapRenderer` that draws a `map_scene` scene into the final PNG. No HA plumbing |
 | `map_strings.py` | Localized HUD labels baked into the rendered PNG. They cannot live in `strings.json` (hassfest rejects unknown translation categories), so this in-code table is selected by the HA UI language, with English as the complete fallback |
 | `update.py` | Read-only firmware `UpdateEntity` — real version from dp_102, `in_progress` from dp_107 `is_upgrading`, component versions from dp_129 |
