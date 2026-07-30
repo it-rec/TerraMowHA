@@ -63,6 +63,7 @@ from .issues import (
     async_sync_blade_maintenance_issue,
     async_sync_compatibility_issue,
 )
+from .map_safety import evaluate_pose, pose_point, segment_is_observable
 from .map_scene import (
     extract_cleaning_path_runs,
     point_in_polygon,
@@ -210,6 +211,13 @@ WEAR_MIN_WINDOW_SECONDS = 24 * 3600.0
 WIFI_MAP_SAVE_DELAY = 30.0  # seconds
 PASSAGE_STORE_VERSION = 1
 PASSAGE_SAVE_DELAY = 30.0
+
+# Safety-breach history is derived only from mower-served map geometry and
+# mower-reported poses. It is bounded and live warnings decay.
+SAFETY_STORE_VERSION = 1
+SAFETY_SAVE_DELAY = 10.0
+SAFETY_HISTORY_MAXLEN = 20
+SAFETY_WARNING_TIMEOUT = 10 * 60.0
 
 
 # Overlapping-subscription duplicate suppression.
@@ -548,6 +556,13 @@ class TerraMowHub:
         self._wear_store: Store[dict[str, Any]] | None = None
         self._passage_reliability = PassageReliabilityTracker()
         self._passage_store: Store[dict[str, Any]] | None = None
+        self._safety_store: Store[dict[str, Any]] | None = None
+        self._safety_map_id: Any | None = None
+        self._safety_previous: tuple[tuple[float, float], float] | None = None
+        self._safety_pending: dict[str, int] = {}
+        self._safety_active: dict[str, dict[str, Any]] = {}
+        self._safety_history: list[dict[str, Any]] = []
+        self._safety_indeterminate = False
         self._pose: dict[str, Any] = {}  # Stores the real-time pose
         # One meta-fetch channel per HTTP-backed resource; each bundles the
         # seq/etag/retry/pending bookkeeping for its meta topic.
@@ -2088,6 +2103,7 @@ class TerraMowHub:
                 self._dispatch_batch(
                     [
                         self._sample_passage_reliability,
+                        self._sample_safety_pose,
                         self._sample_wifi_cell,
                         self._sample_zone_presence,
                         *self.pose_callbacks,
@@ -2373,6 +2389,15 @@ class TerraMowHub:
     def _apply_map_data(self, data: dict[str, Any]) -> None:
         """Apply fetched map data: cache it and derive/notify map info."""
         incoming_id = data.get("id")
+        if (
+            self._safety_map_id is not None
+            and incoming_id is not None
+            and incoming_id != self._safety_map_id
+        ):
+            self._clear_safety_state()
+            self._schedule_safety_save()
+        if incoming_id is not None:
+            self._safety_map_id = incoming_id
         if self._restored_map_id is not None and incoming_id is not None:
             if incoming_id != self._restored_map_id:
                 # The persisted segments (parked or already adopted) belong to
@@ -2450,6 +2475,118 @@ class TerraMowHub:
         map_info = self._build_map_info_from_map_data(data)
         if map_info is not None:
             self._update_map_info(map_info)
+
+    def _clear_safety_state(self) -> None:
+        """Clear map-frame breach data at a verified map boundary."""
+        self._safety_previous = None
+        self._safety_pending = {}
+        self._safety_active = {}
+        self._safety_history = []
+        self._safety_indeterminate = False
+
+    @staticmethod
+    def _safety_key(detection: dict[str, Any]) -> str:
+        """Stable key for deduplicating one geometry incident."""
+        return f"{detection['kind']}:{detection['geometry_id']}"
+
+    def _sample_safety_pose(self, pose: dict[str, Any]) -> None:
+        """Compare one raw live pose with the current mower-served map."""
+        point = pose_point(pose)
+        if point is None or not self._map_data:
+            return
+        now_monotonic = time.monotonic()
+        previous = self._safety_previous
+        elapsed = None if previous is None else now_monotonic - previous[1]
+        segment_ok = segment_is_observable(
+            None if previous is None else previous[0], point, elapsed
+        )
+        self._safety_indeterminate = previous is not None and not segment_ok
+        detections = evaluate_pose(
+            self._map_data,
+            None if previous is None else previous[0],
+            point,
+            allow_segment=segment_ok,
+        )
+        self._safety_previous = (point, now_monotonic)
+
+        detected = {self._safety_key(item): item for item in detections}
+        for key in list(self._safety_pending):
+            if key not in detected:
+                self._safety_pending.pop(key, None)
+        for key in list(self._safety_active):
+            if key not in detected or detected.get(key, {}).get("kind") == "virtual_wall":
+                self._safety_active.pop(key, None)
+
+        for key, detection in detected.items():
+            immediate = detection["kind"] == "virtual_wall"
+            count = self._safety_pending.get(key, 0) + 1
+            self._safety_pending[key] = count
+            if key in self._safety_active or (not immediate and count < 2):
+                continue
+            raw_mission = (
+                self.mission.value
+                if isinstance(self.mission, Mission)
+                else self.mission
+            )
+            raw_sub_mission = (
+                self.sub_mission.value
+                if isinstance(self.sub_mission, SubMission)
+                else self.sub_mission
+            )
+            record = {
+                **detection,
+                "map_id": self._map_data.get("id"),
+                "x": point[0],
+                "y": point[1],
+                "observed_at": dt_util.utcnow().isoformat(),
+                "mission": raw_mission,
+                "sub_mission": raw_sub_mission,
+                "source": "live",
+            }
+            self._safety_active[key] = record
+            self._safety_history.append(record)
+            self._safety_history = self._safety_history[-SAFETY_HISTORY_MAXLEN:]
+            self.hass.bus.fire(f"{DOMAIN}_safety_breach", dict(record))
+            self._schedule_safety_save()
+
+    def _get_safety_store(self) -> Store[dict[str, Any]]:
+        """Lazily create the bounded safety-history store."""
+        if self._safety_store is None:
+            self._safety_store = Store(
+                self.hass,
+                SAFETY_STORE_VERSION,
+                f"terramow.safety_breaches_{self.host}",
+            )
+        return self._safety_store
+
+    def _safety_save_data(self) -> dict[str, Any]:
+        """Return historical incidents only; live state is never restored."""
+        return {
+            "map_id": self._safety_map_id,
+            "history": self._safety_history[-SAFETY_HISTORY_MAXLEN:],
+        }
+
+    def _schedule_safety_save(self) -> None:
+        """Persist safety history soon (debounced)."""
+        self._get_safety_store().async_delay_save(
+            self._safety_save_data, SAFETY_SAVE_DELAY
+        )
+
+    async def async_restore_safety_history(self) -> None:
+        """Restore incidents as historical until a live matching map arrives."""
+        try:
+            data = await self._get_safety_store().async_load()
+        except Exception as err:
+            _LOGGER.warning("Could not load persisted safety history: %s", err)
+            return
+        if not isinstance(data, dict) or not isinstance(data.get("history"), list):
+            return
+        self._safety_map_id = data.get("map_id")
+        self._safety_history = [
+            {**item, "source": "restored"}
+            for item in data["history"][-SAFETY_HISTORY_MAXLEN:]
+            if isinstance(item, dict)
+        ]
 
     def _maybe_archive_session_path(self, new_data: dict[str, Any]) -> None:
         """Preserve the outgoing mow track when the path resets mid-session.
@@ -3525,6 +3662,31 @@ class TerraMowHub:
     def pose(self) -> dict[str, Any]:
         """Get current pose data."""
         return self._pose
+
+    @property
+    def safety_breach_state(self) -> dict[str, Any]:
+        """Return bounded derived safety state from live reported geometry."""
+        live = (
+            list(self._safety_active.values())
+            if self._safety_previous is not None
+            and time.monotonic() - self._safety_previous[1] <= SAFETY_WARNING_TIMEOUT
+            else []
+        )
+        status = (
+            "breach"
+            if live
+            else "indeterminate"
+            if self._safety_indeterminate
+            else "clear"
+            if self._safety_previous is not None
+            else "unknown"
+        )
+        return {
+            "status": status,
+            "map_id": self._safety_map_id,
+            "active": [dict(item) for item in live],
+            "history": [dict(item) for item in self._safety_history],
+        }
 
     @property
     def global_params(self) -> dict[str, Any]:
