@@ -127,7 +127,16 @@ ACTIVE_MISSION_DISPLAY_TIMEOUT = 6 * 60 * 60  # seconds
 # memory without bound.
 SESSION_PATH_SIMPLIFY_EPSILON_MM = 25.0
 SESSION_PATH_SIMPLIFY_MIN_SEGMENT_MM = 40.0
-MAX_SESSION_PATH_SEGMENTS = 40
+# Since the archive splits a track into one segment per *mowing run* (#263), a
+# segment count says nothing about how much lawn is remembered: a lawn mowed in
+# stripes yields one run per stripe, so a few hundred segments can be a single
+# leg. Capping the count therefore threw away the earliest-mowed ground in the
+# middle of a job (issue #326). The archives are budgeted by total point count
+# instead, and an over-budget list is compacted by thinning its oldest segments
+# — a track drawn from fewer vertices still covers the same ground, while
+# dropping a segment erases a patch the mower really did mow.
+MAX_SESSION_PATH_POINTS = 20000
+MIN_SESSION_PATH_SEGMENT_POINTS = 8
 
 # The archived segments are also persisted to disk (issue #239): a Home
 # Assistant restart mid-job — e.g. installing an integration update while the
@@ -145,7 +154,6 @@ SESSION_PATH_SAVE_DELAY = 10.0  # seconds
 # the cycle ends. App-parity clearing: a manual "end job / clear progress"
 # clears it immediately; a completed cycle keeps it visible until the next
 # session starts; a map switch always clears. Persisted in the same store.
-MAX_COVERAGE_SEGMENTS = 400
 # The coverage layer draws as a wide (~320 mm) swath, so its polylines need far
 # less point detail than the thin session-path lines. Simplifying coverage
 # segments coarsely and capping their point count keeps the persisted store
@@ -153,6 +161,66 @@ MAX_COVERAGE_SEGMENTS = 400
 # a slow load) and the per-frame swath draw cheap, with no visible change.
 COVERAGE_SIMPLIFY_EPSILON_MM = 90.0
 COVERAGE_MAX_POINTS_PER_SEGMENT = 48
+# Point budget for the cycle coverage, compacted the same way as the session
+# archive above (issue #326). Coarser than the session budget: the swath is
+# wide, so a coverage segment thinned to a handful of vertices still shades the
+# same patch of lawn.
+MAX_COVERAGE_POINTS = 16000
+MIN_COVERAGE_SEGMENT_POINTS = 4
+
+
+def _thin_points(
+    points: list[dict[str, Any]], target: int
+) -> list[dict[str, Any]]:
+    """Evenly thin a polyline to ``target`` points, keeping both endpoints.
+
+    Keeping the endpoints matters: the thinned track must still span the whole
+    run it was built from, or the drawn swath would stop short of where the
+    mower actually reached.
+    """
+    if target >= len(points) or target < 2:
+        return points
+    step = (len(points) - 1) / (target - 1)
+    return [points[round(i * step)] for i in range(target)]
+
+
+def _compact_segments(
+    segments: list[list[dict[str, Any]]],
+    max_points: int,
+    min_points_per_segment: int,
+) -> None:
+    """Bring an archive list back inside its point budget, in place.
+
+    Thins the oldest segments first — they are the ones whose exact shape
+    matters least — and only ever drops a segment when every segment already
+    sits at the per-segment floor, i.e. when the track count alone busts the
+    budget. Losing a whole segment means losing a mowed patch from the map
+    (issue #326), so it is the last resort, not the first.
+
+    ``min_points_per_segment`` must be at least 2: a track needs both of its
+    endpoints to still span the ground it covered.
+    """
+    total = sum(len(segment) for segment in segments)
+    while total > max_points:
+        thinned = 0
+        for index, segment in enumerate(segments):  # oldest first
+            if total <= max_points:
+                break
+            if len(segment) <= min_points_per_segment:
+                continue
+            # ``min_points_per_segment`` >= 2 keeps this halving exact: the
+            # target is always at least two points and always fewer than the
+            # segment has, so the accounting below cannot stall the loop.
+            target = max(min_points_per_segment, len(segment) // 2)
+            segments[index] = _thin_points(segment, target)
+            total -= len(segment) - target
+            thinned += 1
+        if not thinned:
+            break  # every segment sits at the floor
+    while segments and total > max_points:
+        _LOGGER.debug("Archive at its point floor: dropping the oldest track")
+        total -= len(segments[0])
+        del segments[0]
 
 
 def _slim_coverage_segment(
@@ -169,15 +237,49 @@ def _slim_coverage_segment(
     )
     if len(simplified) < 2:
         return None
-    if len(simplified) > COVERAGE_MAX_POINTS_PER_SEGMENT:
-        # Evenly thin the interior, always keeping the two endpoints so the
-        # swath still spans the full run.
-        step = (len(simplified) - 1) / (COVERAGE_MAX_POINTS_PER_SEGMENT - 1)
-        simplified = [
-            simplified[round(i * step)]
-            for i in range(COVERAGE_MAX_POINTS_PER_SEGMENT)
-        ]
-    return [{"x": x, "y": y} for x, y in simplified]
+    points = [{"x": x, "y": y} for x, y in simplified]
+    return _thin_points(points, COVERAGE_MAX_POINTS_PER_SEGMENT)
+
+
+# How many candidate offsets ``_dropped_path_head`` probes before giving up. A
+# stalled mower repeats the same position for many points, so an unbounded
+# search for where the incoming payload resumes could degrade to O(n²) on a
+# long track.
+MAX_PATH_WINDOW_PROBES = 32
+
+
+def _dropped_path_head(
+    old_points: list[Any], new_points: list[Any]
+) -> list[Any] | None:
+    """Which head of the cached path an incoming payload no longer carries.
+
+    ``None`` means nothing was lost: the payload is the cached path unchanged
+    or grown at the tail. Otherwise the returned points are the ones that fell
+    out of the payload and have to be archived to stay on the map — either the
+    whole cached path (the firmware cleared it, e.g. on a dock) or just its
+    head (the firmware serves a bounded window of the current path and the
+    window slid forward, issue #326). The first surviving point is included in
+    a partial head so the archived track and the still-live one touch instead
+    of leaving a seam.
+    """
+    if not old_points:
+        return None
+    if (
+        len(new_points) >= len(old_points)
+        and new_points[: len(old_points)] == old_points
+    ):
+        return None
+    if new_points:
+        start = 0
+        for _ in range(MAX_PATH_WINDOW_PROBES):
+            try:
+                offset = old_points.index(new_points[0], start)
+            except ValueError:
+                break
+            if new_points[: len(old_points) - offset] == old_points[offset:]:
+                return old_points[: offset + 1]
+            start = offset + 1
+    return old_points
 
 # Self-sampled Wi-Fi heatmap (issue #200, approach B): the firmware exposes a
 # wifi_signal_map_index in map_data but never serves the raster locally (probe
@@ -2914,10 +3016,15 @@ class TerraMowHub:
         The firmware clears the realtime path whenever the mower docks — also
         for a mid-session recharge — which made everything mowed before the
         dock vanish from the map (issue #214). When the incoming payload does
-        not continue the cached one while the ``active_mission`` latch still
-        reports a running session, the cached mowing points are archived as a
-        finished segment; the scene keeps drawing them until the session
+        not carry the cached points any more while the ``active_mission`` latch
+        still reports a running session, the lost mowing points are archived as
+        finished segments; the scene keeps drawing them until the session
         completes or a new one starts.
+
+        Only the points the payload actually dropped are archived. The firmware
+        also serves the current path as a bounded window that slides forward on
+        a long leg, and re-archiving the whole cached track on every such push
+        flooded the archives with duplicates of the current leg (issue #326).
         """
         old_data = self._path_data
         old_points = old_data.get("points")
@@ -2928,11 +3035,10 @@ class TerraMowHub:
             # the previous map and is dropped with it.
             return
         new_points = new_data.get("points")
-        if (
-            isinstance(new_points, list)
-            and len(new_points) >= len(old_points)
-            and new_points[: len(old_points)] == old_points
-        ):
+        lost_points = _dropped_path_head(
+            old_points, new_points if isinstance(new_points, list) else []
+        )
+        if lost_points is None:
             return  # the same path, unchanged or grown at the tail
         if self.active_mission == Mission.MISSION_IDLE:
             return  # no running session: the normal end-of-job clear
@@ -2940,7 +3046,7 @@ class TerraMowHub:
         # between areas is not one straight segment, so a single archived
         # segment would draw a phantom diagonal across the transit gap.
         archived = 0
-        for run in extract_cleaning_path_runs(old_data):
+        for run in extract_cleaning_path_runs({"points": lost_points}):
             if len(run) < 2:
                 continue
             simplified = simplify_path_pixels(
@@ -2960,8 +3066,7 @@ class TerraMowHub:
             archived += 1
         if not archived:
             return
-        del self._session_path_segments[:-MAX_SESSION_PATH_SEGMENTS]
-        del self._coverage_segments[:-MAX_COVERAGE_SEGMENTS]
+        self._compact_archives()
         self._schedule_session_path_save()
         _LOGGER.debug(
             "Archived %d session path segment(s) (%d total)",
@@ -2986,7 +3091,20 @@ class TerraMowHub:
             self._coverage_segments.append(cov)
             harvested += 1
         if harvested:
-            del self._coverage_segments[:-MAX_COVERAGE_SEGMENTS]
+            self._compact_archives()
+
+    def _compact_archives(self) -> None:
+        """Keep both archives inside their point budgets (issue #326)."""
+        _compact_segments(
+            self._session_path_segments,
+            MAX_SESSION_PATH_POINTS,
+            MIN_SESSION_PATH_SEGMENT_POINTS,
+        )
+        _compact_segments(
+            self._coverage_segments,
+            MAX_COVERAGE_POINTS,
+            MIN_COVERAGE_SEGMENT_POINTS,
+        )
 
     @property
     def coverage_segments(self) -> list[list[dict[str, Any]]]:
@@ -3728,7 +3846,12 @@ class TerraMowHub:
             # Cycle coverage is restored unconditionally: it survives session
             # boundaries by design; a map mismatch clears it in
             # _apply_map_data (issue #202).
-            self._coverage_segments = coverage[-MAX_COVERAGE_SEGMENTS:]
+            self._coverage_segments = list(coverage)
+            _compact_segments(
+                self._coverage_segments,
+                MAX_COVERAGE_POINTS,
+                MIN_COVERAGE_SEGMENT_POINTS,
+            )
             self._coverage_cycle_done = bool(
                 (data or {}).get("coverage_cycle_done")
             )
@@ -3777,11 +3900,10 @@ class TerraMowHub:
         )
         if session_open and map_matches:
             self._session_path_segments = restored + self._session_path_segments
-            del self._session_path_segments[:-MAX_SESSION_PATH_SEGMENTS]
             for segment in restored:
                 if segment not in self._coverage_segments:
                     self._coverage_segments.append(segment)
-            del self._coverage_segments[:-MAX_COVERAGE_SEGMENTS]
+            self._compact_archives()
             _LOGGER.info(
                 "Restored %d session path segments from before the restart",
                 len(restored),

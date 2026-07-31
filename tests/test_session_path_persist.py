@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.hub import (
-    MAX_SESSION_PATH_SEGMENTS,
+    MAX_SESSION_PATH_POINTS,
     SESSION_PATH_SAVE_DELAY,
     TerraMowHub,
 )
@@ -167,13 +167,16 @@ def test_unknown_current_map_still_adopts() -> None:
     assert hub.session_path_segments == [SEGMENT]
 
 
-def test_adoption_caps_the_segment_count() -> None:
+def test_adoption_keeps_every_restored_segment() -> None:
     hub = _hub()
-    many = [[{"x": i, "y": 0}, {"x": i, "y": 1}] for i in range(MAX_SESSION_PATH_SEGMENTS)]
+    many = [[{"x": i, "y": 0}, {"x": i, "y": 1}] for i in range(200)]
     _restore(hub, {"map_id": None, "segments": many})
     hub._session_path_segments = [SEGMENT_B]
     _work(hub, work_duration=1)
-    assert len(hub.session_path_segments) == MAX_SESSION_PATH_SEGMENTS
+    # Restored tracks are ground the mower covered before the restart: the
+    # adoption budget thins them, it does not throw them away (issue #326).
+    assert len(hub.session_path_segments) == len(many) + 1
+    assert sum(len(s) for s in hub.session_path_segments) <= MAX_SESSION_PATH_POINTS
     assert hub.session_path_segments[-1] == SEGMENT_B
 
 
