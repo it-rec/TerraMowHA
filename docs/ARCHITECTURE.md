@@ -343,6 +343,7 @@ dashboard cheap. Change them only with the corresponding perf test in mind.
 | `COVERAGE_RECOMPUTE_INTERVAL` (12 s), `_HUB_COVERAGE_CACHES` | `map_card.py` | The per-zone mowed-% is O(edges × zones); it is recomputed at most this often while path and robot keep updating live |
 | `STATIC_REBUILD_MIN_INTERVAL` (10 s) | `camera.py` | A streaming live view re-does the supersampled static base at most this often; an unviewed camera does no work at all (lazy render) |
 | `COVERAGE_MAX_POINTS_PER_SEGMENT` (48) | `hub.py` | The persistent coverage store coarse-simplifies and caps each segment, so a long mow's cycle coverage stays small enough to keep across restarts |
+| `MAX_SESSION_PATH_POINTS` (20 000), `MAX_COVERAGE_POINTS` (16 000) | `hub.py` | Total point budgets for the two archives. Over budget, the oldest segments are *thinned* (fewer vertices, same ground); segments are only dropped once every one of them sits at its per-segment floor |
 
 **Persistence.** Cycle-level mowed coverage and archived session mow paths are
 stored so they survive a Home Assistant restart and a mid-session recharge
