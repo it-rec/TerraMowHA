@@ -127,6 +127,88 @@ const makeCard = (w, h) => ({
   _refitOnResize: CardClass.prototype._refitOnResize,
 });
 
+// The reported failure itself, driven through the real scene handler: the
+// first scene carries nothing but the scanned extent, so the backend's
+// content_bounds falls back to that full box. Fitting to it leaves the lawn
+// small and off-centre; the scene that finally carries the lawn has to
+// re-frame it, or the map stays wrong until the user presses fit.
+const extentOnly = {
+  bounds: [0, 0, 2000, 2000],
+  content_bounds: [0, 0, 2000, 2000],
+  regions: [],
+  map_extent: [
+    [0, 0],
+    [2000, 0],
+    [2000, 2000],
+    [0, 2000],
+  ],
+};
+const withLawn = {
+  ...extentOnly,
+  content_bounds: [0, 0, 1000, 1000],
+  regions: [{}],
+};
+const feedCard = () => ({
+  _config: { entity: "lawn_mower.test", fit_padding: 1 },
+  _root: { clientWidth: 600, clientHeight: 600 },
+  _rot: 0,
+  _view: null,
+  _viewIsAuto: true,
+  _fitBox: null,
+  _scene: null,
+  _sceneRev: 0,
+  _pathRev: 0,
+  _legend: null,
+  _fitView: CardClass.prototype._fitView,
+  _hasGeometry: CardClass.prototype._hasGeometry,
+  _fitBasisChanged: CardClass.prototype._fitBasisChanged,
+  _onFeedMessage: CardClass.prototype._onFeedMessage,
+  _pruneStaleSelection() {},
+  _updateHud() {},
+  _maybeAutoOpenLegend() {},
+  _requestDraw() {},
+});
+
+const feed = feedCard();
+feed._onFeedMessage({ type: "scene", scene: extentOnly });
+// 2000 world units across 600 px: the lawn is framed inside the scanned box.
+if (Math.abs(feed._view.scale - 0.3) > 1e-9) {
+  fail(`#327: first fit scale ${feed._view.scale}, expected 0.3`);
+}
+feed._onFeedMessage({ type: "scene", scene: withLawn });
+if (Math.abs(feed._view.scale - 0.6) > 1e-9) {
+  fail(
+    `#327: the lawn scene did not re-frame the map (scale ${feed._view.scale}, expected 0.6)`
+  );
+}
+
+// Same sequence, but the user framed the map themselves in between: their
+// view must survive the incoming scene untouched.
+const held = feedCard();
+held._onFeedMessage({ type: "scene", scene: extentOnly });
+held._view.tx += 42;
+held._viewIsAuto = false;
+const heldView = { ...held._view };
+held._onFeedMessage({ type: "scene", scene: withLawn });
+if (JSON.stringify(held._view) !== JSON.stringify(heldView)) {
+  fail("#327: a scene overrode the view the user had framed");
+}
+
+// A scene that only moves the mower leaves the same geometry, so it must not
+// re-frame. Comparing the view would prove nothing — re-fitting the same
+// geometry at the same size yields the same numbers — so count the fits.
+const steady = feedCard();
+let fits = 0;
+steady._fitView = function (...args) {
+  fits += 1;
+  return CardClass.prototype._fitView.apply(this, args);
+};
+steady._onFeedMessage({ type: "scene", scene: withLawn });
+steady._onFeedMessage({ type: "scene", scene: { ...withLawn } });
+if (fits !== 1) {
+  fail(`#327: unchanged geometry triggered ${fits} fits, expected 1`);
+}
+
 // A fit against a provisional height, then the real one: the view must follow.
 const card = makeCard(600, 100);
 card._fitView();

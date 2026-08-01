@@ -480,6 +480,9 @@ class TerramowMapCard extends HTMLElement {
     // first fit can land on a provisional size and stick (issue #327), but a
     // view someone panned or zoomed to is theirs to keep.
     this._viewIsAuto = true;
+    // The box the automatic view was framed against, so a later scene that
+    // reframes the lawn can be told from one that merely moved the mower.
+    this._fitBox = null;
     this._follow = false;
     this._pending = new Set(); // sub-region ids tapped by the user
     this._pointers = new Map();
@@ -706,7 +709,10 @@ class TerramowMapCard extends HTMLElement {
       this._sceneRev += 1;
       this._pathRev += 1;
       this._pruneStaleSelection();
-      if (!hadScene && this._hasGeometry()) {
+      // Re-frame whenever the geometry the automatic view was fitted to has
+      // changed, not just on the first scene: the first one can carry nothing
+      // but the scanned extent, and that fit must not stand (issue #327).
+      if (this._hasGeometry() && (!hadScene || this._fitBasisChanged())) {
         this._fitView();
       }
       this._updateHud();
@@ -2592,6 +2598,33 @@ class TerramowMapCard extends HTMLElement {
       ty: (h - bh * scale) / 2 - rMinY * scale,
     };
     this._viewIsAuto = true;
+    this._fitBox = [minX, minY, maxX, maxY];
+  }
+
+  /**
+   * Whether the box the automatic view was framed against has since changed.
+   *
+   * The card used to fit exactly once, when the first scene carrying any
+   * geometry arrived (issue #327). That first scene can be incomplete: the
+   * backend derives content_bounds from the *drawn* geometry and falls back to
+   * the full scanned extent while there is none, and _hasGeometry() is already
+   * satisfied by that extent alone. The one and only fit was then spent on a
+   * rectangle the card never draws, leaving the lawn small and off-centre, and
+   * the later scene that did carry the lawn never re-framed it — which is why
+   * pressing fit put it right. A view the user has moved is left alone.
+   */
+  _fitBasisChanged() {
+    if (!this._viewIsAuto || !this._scene) {
+      return false;
+    }
+    const box = this._scene.content_bounds || this._scene.bounds;
+    if (!box) {
+      return false;
+    }
+    if (!this._fitBox) {
+      return true;
+    }
+    return box.some((value, index) => value !== this._fitBox[index]);
   }
 
   /**
