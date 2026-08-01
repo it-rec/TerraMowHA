@@ -475,6 +475,14 @@ class TerramowMapCard extends HTMLElement {
     this._robotPrev = null;
     this._robotAnimStart = 0;
     this._view = null; // {scale, tx, ty}
+    // Whether _view is still the automatic fit rather than one the user chose.
+    // Only an automatic view may be recomputed when the card is resized: the
+    // first fit can land on a provisional size and stick (issue #327), but a
+    // view someone panned or zoomed to is theirs to keep.
+    this._viewIsAuto = true;
+    // The box the automatic view was framed against, so a later scene that
+    // reframes the lawn can be told from one that merely moved the mower.
+    this._fitBox = null;
     this._follow = false;
     this._pending = new Set(); // sub-region ids tapped by the user
     this._pointers = new Map();
@@ -701,7 +709,10 @@ class TerramowMapCard extends HTMLElement {
       this._sceneRev += 1;
       this._pathRev += 1;
       this._pruneStaleSelection();
-      if (!hadScene && this._hasGeometry()) {
+      // Re-frame whenever the geometry the automatic view was fitted to has
+      // changed, not just on the first scene: the first one can carry nothing
+      // but the scanned extent, and that fit must not stand (issue #327).
+      if (this._hasGeometry() && (!hadScene || this._fitBasisChanged())) {
         this._fitView();
       }
       this._updateHud();
@@ -1192,6 +1203,7 @@ class TerramowMapCard extends HTMLElement {
     this._resizeObserver = new ResizeObserver(() => {
       this._root.classList.toggle("narrow", this._root.clientWidth < 420);
       this._syncCanvasSize();
+      this._refitOnResize();
       this._requestDraw();
     });
     this._resizeObserver.observe(wrap);
@@ -1434,6 +1446,9 @@ class TerramowMapCard extends HTMLElement {
     this._followBtn.setAttribute("aria-label", followLabel);
     this._followBtn.setAttribute("aria-pressed", String(this._follow));
     if (this._follow) {
+      // Following carries the view away from the fitted one, so a later
+      // resize must not snap it back to the whole lawn (issue #327).
+      this._viewIsAuto = false;
       this._centerOnRobot();
       this._requestDraw();
     }
@@ -1869,6 +1884,7 @@ class TerramowMapCard extends HTMLElement {
           }
           this._view.tx += dx;
           this._view.ty += dy;
+          this._viewIsAuto = false;
           this._requestDraw();
         }
       }
@@ -2000,6 +2016,7 @@ class TerramowMapCard extends HTMLElement {
     view.tx = px - (px - view.tx) * realFactor;
     view.ty = py - (py - view.ty) * realFactor;
     view.scale = newScale;
+    this._viewIsAuto = false;
     this._requestDraw();
   }
 
@@ -2020,6 +2037,7 @@ class TerramowMapCard extends HTMLElement {
     const sin = Math.sin(rot);
     view.tx = sx - (wx * cos - wy * sin) * view.scale;
     view.ty = sy - (wx * sin + wy * cos) * view.scale;
+    this._viewIsAuto = false;
     this._updateCompass();
     this._persistLiveRotation();
     this._requestDraw();
@@ -2177,6 +2195,7 @@ class TerramowMapCard extends HTMLElement {
       this._setFollow(false);
       this._view.tx += w / 2 - sx;
       this._view.ty += h / 2 - sy;
+      this._viewIsAuto = false;
     }
   }
 
@@ -2578,6 +2597,53 @@ class TerramowMapCard extends HTMLElement {
       tx: (w - bw * scale) / 2 - rMinX * scale,
       ty: (h - bh * scale) / 2 - rMinY * scale,
     };
+    this._viewIsAuto = true;
+    this._fitBox = [minX, minY, maxX, maxY];
+  }
+
+  /**
+   * Whether the box the automatic view was framed against has since changed.
+   *
+   * The card used to fit exactly once, when the first scene carrying any
+   * geometry arrived (issue #327). That first scene can be incomplete: the
+   * backend derives content_bounds from the *drawn* geometry and falls back to
+   * the full scanned extent while there is none, and _hasGeometry() is already
+   * satisfied by that extent alone. The one and only fit was then spent on a
+   * rectangle the card never draws, leaving the lawn small and off-centre, and
+   * the later scene that did carry the lawn never re-framed it — which is why
+   * pressing fit put it right. A view the user has moved is left alone.
+   */
+  _fitBasisChanged() {
+    if (!this._viewIsAuto || !this._scene) {
+      return false;
+    }
+    const box = this._scene.content_bounds || this._scene.bounds;
+    if (!box) {
+      return false;
+    }
+    if (!this._fitBox) {
+      return true;
+    }
+    return box.some((value, index) => value !== this._fitBox[index]);
+  }
+
+  /**
+   * Re-frame the map after the card changed size. Returns whether it re-fit.
+   *
+   * A scene can arrive before the browser has settled the card's size — a
+   * `rows: auto` grid row reports a provisional height first. The fit computed
+   * against that size is wrong but non-zero, so before issue #327 nothing ever
+   * recomputed it and the map stayed mis-zoomed until the user pressed fit.
+   * Re-fitting also keeps the map framed across sidebars, device rotation and
+   * expanding dashboard sections — but only while the view is still the
+   * automatic one, because a view the user panned or zoomed to is theirs.
+   */
+  _refitOnResize() {
+    if (!this._viewIsAuto || !this._hasGeometry()) {
+      return false;
+    }
+    this._fitView();
+    return true;
   }
 
   _requestDraw() {
