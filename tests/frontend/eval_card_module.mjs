@@ -101,4 +101,75 @@ for (const [upto, want] of cases) {
   }
 }
 
+// Issue #327: the card is sometimes drawn at the wrong zoom until the user
+// presses fit. A scene can arrive before the browser has settled the card's
+// size — a `rows: auto` grid row reports a provisional height first — and the
+// fit computed against that size is wrong but non-zero, so nothing recomputed
+// it. These pin the re-fit rule the ResizeObserver relies on.
+const fail = (msg) => {
+  console.error(msg);
+  process.exit(1);
+};
+const makeCard = (w, h) => ({
+  _scene: {
+    bounds: [0, 0, 1000, 1000],
+    content_bounds: [0, 0, 1000, 1000],
+    regions: [{}],
+    map_extent: [],
+  },
+  _root: { clientWidth: w, clientHeight: h },
+  _config: { fit_padding: 1 },
+  _rot: 0,
+  _view: null,
+  _viewIsAuto: true,
+  _fitView: CardClass.prototype._fitView,
+  _hasGeometry: CardClass.prototype._hasGeometry,
+  _refitOnResize: CardClass.prototype._refitOnResize,
+});
+
+// A fit against a provisional height, then the real one: the view must follow.
+const card = makeCard(600, 100);
+card._fitView();
+const provisional = card._view.scale;
+card._root.clientHeight = 600;
+if (card._refitOnResize() !== true) {
+  fail("#327: resize did not re-fit an automatic view");
+}
+if (!(card._view.scale > provisional)) {
+  fail(
+    `#327: view kept the provisional fit (${provisional} -> ${card._view.scale})`
+  );
+}
+// 1000 world units across 600 px at fit_padding 1 — the frame now fits exactly.
+if (Math.abs(card._view.scale - 0.6) > 1e-9) {
+  fail(`#327: re-fit scale ${card._view.scale}, expected 0.6`);
+}
+
+// A view the user moved is theirs: a resize must leave it exactly alone.
+const moved = makeCard(600, 600);
+moved._fitView();
+moved._view.tx += 137;
+moved._viewIsAuto = false;
+const before = { ...moved._view };
+moved._root.clientWidth = 300;
+if (moved._refitOnResize() !== false) {
+  fail("#327: resize overrode a view the user had panned");
+}
+if (JSON.stringify(moved._view) !== JSON.stringify(before)) {
+  fail("#327: user view mutated on resize");
+}
+
+// Pressing fit hands control back, so later resizes track again.
+moved._fitView();
+if (moved._viewIsAuto !== true) {
+  fail("#327: fit did not restore the automatic view");
+}
+
+// Without geometry there is nothing to frame — must not throw or fit.
+const empty = makeCard(600, 600);
+empty._scene = null;
+if (empty._refitOnResize() !== false || empty._view !== null) {
+  fail("#327: re-fit ran without geometry");
+}
+
 console.log("card module OK:", [...defined.keys()].join(", "));
