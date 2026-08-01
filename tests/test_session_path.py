@@ -17,8 +17,10 @@ sys.modules.setdefault("turbojpeg", MagicMock())
 from custom_components.terramow import TerraMowBasicData  # noqa: E402
 from custom_components.terramow.camera import TerraMowMapCamera  # noqa: E402
 from custom_components.terramow.hub import (  # noqa: E402
-    MAX_SESSION_PATH_SEGMENTS,
+    MAX_PATH_WINDOW_PROBES,
+    MAX_SESSION_PATH_POINTS,
     TerraMowHub,
+    _dropped_path_head,
 )
 from custom_components.terramow.map_card import build_scene_payload  # noqa: E402
 from custom_components.terramow.map_scene import (  # noqa: E402
@@ -217,17 +219,67 @@ def test_degenerate_track_simplifying_to_a_point_is_not_archived() -> None:
     assert hub.session_path_segments == []
 
 
-def test_archive_is_capped() -> None:
+def test_archive_keeps_every_leg_within_its_point_budget() -> None:
     hub = _hub()
     _start_session(hub)
-    for i in range(MAX_SESSION_PATH_SEGMENTS + 1):
+    legs = 60
+    for i in range(legs):
         hub._apply_path_data(
             _path(_clean((i, 0), (i, 1000)), path_id=100 + i)
         )
         hub._apply_path_data(_path([], path_id=100 + i))
-    assert len(hub.session_path_segments) == MAX_SESSION_PATH_SEGMENTS
-    # the oldest segment fell off the front
-    assert hub.session_path_segments[0][0] == {"x": 1.0, "y": 0.0}
+    # Segments are tracks, not a queue: a long job must not push the first
+    # legs of the lawn off the map (issue #326).
+    assert len(hub.session_path_segments) == legs
+    assert hub.session_path_segments[0][0] == {"x": 0.0, "y": 0.0}
+    assert (
+        sum(len(segment) for segment in hub.session_path_segments)
+        <= MAX_SESSION_PATH_POINTS
+    )
+
+
+def test_sliding_path_window_archives_only_what_fell_out() -> None:
+    """The firmware serves a bounded window of the current leg.
+
+    When it slides forward, only the points that dropped off the front are
+    archived — re-archiving the whole cached track on every push buried the
+    earlier legs under duplicates of the current one (issue #326).
+    """
+    hub = _hub()
+    _start_session(hub)
+    track = _clean(*[(i * 200, 0) for i in range(20)])
+    hub._apply_path_data(_path(track))
+
+    slid = track[5:] + _clean((4000, 0), (4200, 0))
+    hub._apply_path_data(_path(slid))
+    assert len(hub.session_path_segments) == 1
+    first = hub.session_path_segments[0]
+    assert first[0] == {"x": 0.0, "y": 0.0}
+    # the first surviving point is kept so the archived and live tracks touch
+    assert first[-1] == {"x": 1000.0, "y": 0.0}
+
+    slid_again = slid[5:] + _clean((4400, 0))
+    hub._apply_path_data(_path(slid_again))
+    assert len(hub.session_path_segments) == 2
+    assert hub.session_path_segments[1][0] == {"x": 1000.0, "y": 0.0}
+    assert hub.session_path_segments[1][-1] == {"x": 2000.0, "y": 0.0}
+
+
+def test_dropped_path_head_classifies_the_payload() -> None:
+    old = [{"position": {"x": i, "y": 0}, "type": "T"} for i in range(6)]
+    # unchanged / grown at the tail: nothing lost
+    assert _dropped_path_head(old, old) is None
+    assert _dropped_path_head(old, old + old[:2]) is None
+    assert _dropped_path_head([], old) is None
+    # the window slid: the head that fell out, plus the boundary point
+    assert _dropped_path_head(old, old[2:]) == old[:3]
+    # cleared or replaced wholesale: everything cached is lost
+    assert _dropped_path_head(old, []) == old
+    assert _dropped_path_head(old, [{"position": {"x": 9, "y": 9}}]) == old
+    # a stalled mower repeats a point; the probe budget bounds the search and
+    # falls back to archiving the whole cached track
+    stalled = [old[0]] * (MAX_PATH_WINDOW_PROBES + 8) + [old[1]]
+    assert _dropped_path_head(stalled, [old[0], old[1]]) == stalled
 
 
 # ---------------------------------------------------------------------------

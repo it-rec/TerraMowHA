@@ -13,8 +13,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.hub import (
-    MAX_COVERAGE_SEGMENTS,
+    MAX_COVERAGE_POINTS,
     TerraMowHub,
+    _compact_segments,
 )
 
 SEGMENT = [{"x": 0, "y": 0}, {"x": 5000, "y": 0}]
@@ -151,17 +152,48 @@ def test_slim_coverage_segment_caps_and_coarsens() -> None:
     assert _slim_coverage_segment([{"x": 5, "y": 5}] * 3) is None
 
 
-def test_coverage_is_capped() -> None:
-    hub = _hub()
-    hub._coverage_segments = [
-        [{"x": i, "y": 0}, {"x": i, "y": 9000}]
-        for i in range(MAX_COVERAGE_SEGMENTS)
+def test_coverage_over_budget_is_thinned_not_dropped() -> None:
+    # Enough detailed tracks to bust the point budget. Every one of them is
+    # lawn the mower really mowed, so the compaction has to keep them all and
+    # pay for the budget in vertices instead (issue #326).
+    detailed = [
+        [{"x": i, "y": y} for y in range(0, 4000, 100)]
+        for i in range(MAX_COVERAGE_POINTS // 40 + 20)
     ]
+    hub = _hub()
+    hub._coverage_segments = [list(segment) for segment in detailed]
     _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
     hub._apply_path_data(MOW_TRACK)
     _mission(hub, "MISSION_IDLE", "MISSION_STATE_IDLE")
     hub._apply_path_data(DOCK_RESET)
-    assert len(hub.coverage_segments) == MAX_COVERAGE_SEGMENTS
+
+    assert len(hub.coverage_segments) == len(detailed) + 1
+    assert (
+        sum(len(segment) for segment in hub.coverage_segments)
+        <= MAX_COVERAGE_POINTS
+    )
+    # the oldest tracks lost detail but still span the ground they covered
+    oldest = hub.coverage_segments[0]
+    assert len(oldest) < len(detailed[0])
+    assert oldest[0] == detailed[0][0]
+    assert oldest[-1] == detailed[0][-1]
+
+
+def test_compact_segments_drops_only_at_the_per_segment_floor() -> None:
+    floor = 4
+    segments = [
+        [{"x": i, "y": y} for y in range(floor)] for i in range(20)
+    ]
+    _compact_segments(segments, floor * 10, floor)
+    assert len(segments) == 10
+    # dropping starts at the oldest end
+    assert segments[0][0] == {"x": 10, "y": 0}
+
+
+def test_compact_segments_leaves_a_list_inside_its_budget_alone() -> None:
+    segments = [[{"x": 0, "y": 0}, {"x": 1, "y": 1}]]
+    _compact_segments(segments, 100, 4)
+    assert segments == [[{"x": 0, "y": 0}, {"x": 1, "y": 1}]]
 
 
 # ---------------------------------------------------------------------------
