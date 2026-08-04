@@ -138,6 +138,21 @@ SESSION_PATH_SIMPLIFY_MIN_SEGMENT_MM = 40.0
 # really did mow.
 MAX_SESSION_PATH_POINTS = 20000
 MIN_SESSION_PATH_SEGMENT_POINTS = 8
+# Hard ceiling on how far compaction may move a drawn track away from the
+# ground the mower actually covered. RDP guarantees every vertex it keeps stays
+# within the tolerance of the original polyline, so a ceiling well below the
+# mow spacing means a compacted track can never bridge a strip it did not mow.
+#
+# Without a ceiling the tolerance simply doubled until the shape was gone, and
+# because compaction re-simplifies already-simplified points the error
+# compounds pass over pass. On a saturated archive that ground *every* segment
+# down to its point floor: a real store held 2277 segments of 8 points each,
+# spanning 7 m on average, drawn as straight lines across the lawn and across
+# gaps the mower never crossed (issue #332). Eight points over seven metres is
+# not a track any more. Past this ceiling the honest move is to drop the oldest
+# tracks whole — losing the earliest ground is visible and true, a straight
+# line through unmowed lawn is neither.
+SESSION_PATH_MAX_SIMPLIFY_MM = 200.0
 
 # The archived segments are also persisted to disk (issue #239): a Home
 # Assistant restart mid-job — e.g. installing an integration update while the
@@ -168,6 +183,9 @@ COVERAGE_MAX_POINTS_PER_SEGMENT = 48
 # same patch of lawn.
 MAX_COVERAGE_POINTS = 16000
 MIN_COVERAGE_SEGMENT_POINTS = 4
+# Same fidelity ceiling as the session archive, one notch coarser: the coverage
+# swath is ~320 mm wide, so a little more slack still shades the same lawn.
+COVERAGE_MAX_SIMPLIFY_MM = 300.0
 
 
 def _thin_points(
@@ -185,15 +203,11 @@ def _thin_points(
     return [points[round(i * step)] for i in range(target)]
 
 
-# How many times ``_shrink_segment`` may double its tolerance. Six doublings
-# take the session epsilon from 25 mm to 1.6 m — past that, removing more
-# vertices means genuinely redrawing the track, which is what dropping whole
-# segments is for.
-_SHRINK_EPSILON_ROUNDS = 6
-
-
 def _shrink_segment(
-    points: list[dict[str, Any]], target: int, epsilon: float
+    points: list[dict[str, Any]],
+    target: int,
+    epsilon: float,
+    max_epsilon: float,
 ) -> list[dict[str, Any]]:
     """Reduce a polyline toward ``target`` points without cutting corners.
 
@@ -202,9 +216,14 @@ def _shrink_segment(
     lawn the mower drove. Thinning by index instead drops corner vertices and
     bridges them with diagonals the mower never drove — the ghost lines of
     issue #332 — so it is kept only as the fallback for malformed points that
-    carry no coordinates. May return more than ``target`` points when the
-    shape genuinely needs them; the caller drops whole segments only as a
-    last resort.
+    carry no coordinates.
+
+    The tolerance never grows past ``max_epsilon``, which is what keeps the
+    drawn track honest: RDP holds every kept vertex within the tolerance of
+    the original line, so the ceiling is a hard bound on how far compaction
+    may move the track. Returning more than ``target`` points is therefore the
+    expected outcome on a shape that genuinely needs them — the caller then
+    drops the oldest tracks whole rather than flattening every one of them.
     """
     if target >= len(points) or target < 2:
         return points
@@ -215,10 +234,8 @@ def _shrink_segment(
     # simplify_path_pixels declares int tuples but is value-agnostic; the
     # archives store float millimetres.
     pixels = cast("list[tuple[int, int]]", pairs)
-    for _ in range(_SHRINK_EPSILON_ROUNDS):
-        if len(pixels) <= target:
-            break
-        epsilon *= 2.0
+    while len(pixels) > target and epsilon < max_epsilon:
+        epsilon = min(epsilon * 2.0, max_epsilon)
         pixels = simplify_path_pixels(pixels, epsilon, 0.0)
     if len(pixels) >= len(points):
         return points
@@ -230,14 +247,20 @@ def _compact_segments(
     max_points: int,
     min_points_per_segment: int,
     epsilon: float,
+    max_epsilon: float,
 ) -> None:
     """Bring an archive list back inside its point budget, in place.
 
     Shrinks the oldest segments first — they are the ones whose exact shape
-    matters least — and only ever drops a segment when no segment can give up
-    another vertex without redrawing the track. Losing a whole segment means
-    losing a mowed patch from the map (issue #326), so it is the last resort,
-    not the first.
+    matters least — but never past ``max_epsilon`` of deviation from the track
+    the mower actually drove. Once no segment can give up another vertex
+    within that ceiling, the oldest segments are dropped whole.
+
+    Losing a whole segment means losing a mowed patch from the map (issue
+    #326), so it stays the last resort. It is still the right last resort:
+    shrinking everything without a fidelity ceiling turned a saturated archive
+    into straight lines across the lawn (issue #332), which is worse than an
+    honest gap — the map claimed ground the mower never touched.
 
     ``min_points_per_segment`` must be at least 2: a track needs both of its
     endpoints to still span the ground it covered.
@@ -251,7 +274,7 @@ def _compact_segments(
             if len(segment) <= min_points_per_segment:
                 continue
             target = max(min_points_per_segment, len(segment) // 2)
-            shrunk = _shrink_segment(segment, target, epsilon)
+            shrunk = _shrink_segment(segment, target, epsilon, max_epsilon)
             if len(shrunk) < len(segment):
                 segments[index] = shrunk
                 total -= len(segment) - len(shrunk)
@@ -3240,12 +3263,14 @@ class TerraMowHub:
             MAX_SESSION_PATH_POINTS,
             MIN_SESSION_PATH_SEGMENT_POINTS,
             SESSION_PATH_SIMPLIFY_EPSILON_MM,
+            SESSION_PATH_MAX_SIMPLIFY_MM,
         )
         _compact_segments(
             self._coverage_segments,
             MAX_COVERAGE_POINTS,
             MIN_COVERAGE_SEGMENT_POINTS,
             COVERAGE_SIMPLIFY_EPSILON_MM,
+            COVERAGE_MAX_SIMPLIFY_MM,
         )
 
     @property
@@ -3994,6 +4019,7 @@ class TerraMowHub:
                 MAX_COVERAGE_POINTS,
                 MIN_COVERAGE_SEGMENT_POINTS,
                 COVERAGE_SIMPLIFY_EPSILON_MM,
+                COVERAGE_MAX_SIMPLIFY_MM,
             )
             self._coverage_cycle_done = bool(
                 (data or {}).get("coverage_cycle_done")

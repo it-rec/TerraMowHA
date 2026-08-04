@@ -343,7 +343,8 @@ dashboard cheap. Change them only with the corresponding perf test in mind.
 | `COVERAGE_RECOMPUTE_INTERVAL` (12 s), `_HUB_COVERAGE_CACHES` | `map_card.py` | The per-zone mowed-% is O(edges × zones); it is recomputed at most this often while path and robot keep updating live |
 | `STATIC_REBUILD_MIN_INTERVAL` (10 s) | `camera.py` | A streaming live view re-does the supersampled static base at most this often; an unviewed camera does no work at all (lazy render) |
 | `COVERAGE_MAX_POINTS_PER_SEGMENT` (48) | `hub.py` | The persistent coverage store coarse-simplifies and caps each segment, so a long mow's cycle coverage stays small enough to keep across restarts |
-| `MAX_SESSION_PATH_POINTS` (20 000), `MAX_COVERAGE_POINTS` (16 000) | `hub.py` | Total point budgets for the two archives. Over budget, the oldest segments are *re-simplified* with a coarsening tolerance (fewer vertices, same line — never index-thinned, which cuts corners into ghost diagonals); segments are only dropped once nothing can shrink further |
+| `MAX_SESSION_PATH_POINTS` (20 000), `MAX_COVERAGE_POINTS` (16 000) | `hub.py` | Total point budgets for the two archives. Over budget, the oldest segments are *re-simplified* with a coarsening tolerance (fewer vertices, same line — never index-thinned, which cuts corners into ghost diagonals) |
+| `SESSION_PATH_MAX_SIMPLIFY_MM` (200), `COVERAGE_MAX_SIMPLIFY_MM` (300) | `hub.py` | Ceiling on that coarsening tolerance — the map's honesty guarantee. RDP holds every kept vertex within the tolerance of the original line, so a compacted track can never bridge a strip the mower did not mow. Once nothing can shrink inside the ceiling, the oldest tracks are dropped **whole**: an honest gap beats a straight line across unmowed lawn (issue #332) |
 
 **Persistence.** Cycle-level mowed coverage and archived session mow paths are
 stored so they survive a Home Assistant restart and a mid-session recharge

@@ -184,7 +184,7 @@ def test_compact_segments_drops_only_at_the_per_segment_floor() -> None:
     segments = [
         [{"x": i, "y": y} for y in range(floor)] for i in range(20)
     ]
-    _compact_segments(segments, floor * 10, floor, 90.0)
+    _compact_segments(segments, floor * 10, floor, 90.0, 300.0)
     assert len(segments) == 10
     # dropping starts at the oldest end
     assert segments[0][0] == {"x": 10, "y": 0}
@@ -192,7 +192,7 @@ def test_compact_segments_drops_only_at_the_per_segment_floor() -> None:
 
 def test_compact_segments_leaves_a_list_inside_its_budget_alone() -> None:
     segments = [[{"x": 0, "y": 0}, {"x": 1, "y": 1}]]
-    _compact_segments(segments, 100, 4, 90.0)
+    _compact_segments(segments, 100, 4, 90.0, 300.0)
     assert segments == [[{"x": 0, "y": 0}, {"x": 1, "y": 1}]]
 
 
@@ -208,7 +208,7 @@ def test_compaction_shrinks_without_cutting_corners() -> None:
     leg_a = [{"x": float(x), "y": 0.0} for x in range(0, 2000, 100)]
     leg_b = [{"x": 1900.0, "y": float(y)} for y in range(100, 2100, 100)]
     segments = [leg_a + leg_b]
-    _compact_segments(segments, 10, 4, 25.0)
+    _compact_segments(segments, 10, 4, 25.0, 200.0)
     shrunk = segments[0]
     assert 2 < len(shrunk) <= 10
     assert shrunk[0] == {"x": 0.0, "y": 0.0}
@@ -221,19 +221,19 @@ def test_compaction_shrinks_without_cutting_corners() -> None:
         {"x": float(i * 1000), "y": 0.0 if i % 2 == 0 else 1e7}
         for i in range(8)
     ]
-    assert _shrink_segment(list(jagged), 4, 25.0) == jagged
+    assert _shrink_segment(list(jagged), 4, 25.0, 200.0) == jagged
     # an irreducible archive over budget falls back to dropping oldest whole
     segments = [list(jagged), list(jagged)]
-    _compact_segments(segments, 8, 4, 25.0)
+    _compact_segments(segments, 8, 4, 25.0, 200.0)
     assert segments == [jagged]
 
     # degenerate targets leave the polyline untouched
-    assert _shrink_segment(list(jagged), 8, 25.0) == jagged
-    assert _shrink_segment(list(jagged), 1, 25.0) == jagged
+    assert _shrink_segment(list(jagged), 8, 25.0, 200.0) == jagged
+    assert _shrink_segment(list(jagged), 1, 25.0, 200.0) == jagged
 
     # malformed points (no coordinates) can only be thinned by index
     opaque = [{"n": i} for i in range(8)]
-    thinned = _shrink_segment(list(opaque), 4, 25.0)
+    thinned = _shrink_segment(list(opaque), 4, 25.0, 200.0)
     assert len(thinned) == 4
     assert thinned[0] == {"n": 0}
     assert thinned[-1] == {"n": 7}
@@ -360,3 +360,52 @@ def test_scene_payload_renders_the_cycle_coverage() -> None:
     hub._coverage_segments = [SEGMENT]
     payload = build_scene_payload(hub)
     assert payload["session_paths"] == [[[0, 0], [5000, 0]]]
+
+
+def test_compaction_never_draws_across_ground_the_mower_missed() -> None:
+    """A saturated archive loses old tracks, not the shape of every track.
+
+    From a real store on 2026-08-04: 2277 segments ground down to the 8-point
+    floor, spanning 7 m on average — drawn as straight lines across the lawn
+    and across gaps the mower never crossed (issue #332). The cause was an
+    unbounded tolerance: it doubled until the shape was gone, and compaction
+    re-simplifies already-simplified points, so the error compounded pass over
+    pass. Coarsening now stops at ``SESSION_PATH_MAX_SIMPLIFY_MM`` and the
+    oldest tracks are dropped whole instead. An honest gap beats a line
+    through lawn the mower never touched.
+    """
+    from custom_components.terramow.hub import (
+        SESSION_PATH_MAX_SIMPLIFY_MM,
+        _compact_segments,
+    )
+
+    def hairpin(index: int) -> list[dict[str, float]]:
+        """One stripe: down one side, back up 600 mm over."""
+        x = float(index * 2000)
+        down = [{"x": x, "y": float(y)} for y in range(0, 3001, 100)]
+        up = [
+            {"x": x + 600.0, "y": float(y)} for y in range(3000, -1, -100)
+        ]
+        return down + up
+
+    segments = [hairpin(i) for i in range(20)]
+    _compact_segments(segments, 40, 8, 25.0, SESSION_PATH_MAX_SIMPLIFY_MM)
+
+    assert sum(len(segment) for segment in segments) <= 40
+    # the budget was met by dropping the oldest stripes whole ...
+    assert len(segments) == 10
+    assert segments[0][0]["x"] == 20000.0
+    # ... not by flattening the survivors: both legs of every hairpin remain,
+    # so no drawn line cuts through the unmowed strip between them.
+    for segment in segments:
+        assert len({point["x"] for point in segment}) == 2
+        ys = [point["y"] for point in segment]
+        assert max(ys) - min(ys) == 3000.0
+
+
+def test_shrink_stops_at_the_fidelity_ceiling() -> None:
+    """At the ceiling there is no coarser tolerance left to try."""
+    from custom_components.terramow.hub import _shrink_segment
+
+    line = [{"x": float(x), "y": 0.0} for x in range(0, 1000, 100)]
+    assert _shrink_segment(list(line), 2, 200.0, 200.0) == line
