@@ -184,7 +184,7 @@ def test_compact_segments_drops_only_at_the_per_segment_floor() -> None:
     segments = [
         [{"x": i, "y": y} for y in range(floor)] for i in range(20)
     ]
-    _compact_segments(segments, floor * 10, floor)
+    _compact_segments(segments, floor * 10, floor, 90.0)
     assert len(segments) == 10
     # dropping starts at the oldest end
     assert segments[0][0] == {"x": 10, "y": 0}
@@ -192,8 +192,51 @@ def test_compact_segments_drops_only_at_the_per_segment_floor() -> None:
 
 def test_compact_segments_leaves_a_list_inside_its_budget_alone() -> None:
     segments = [[{"x": 0, "y": 0}, {"x": 1, "y": 1}]]
-    _compact_segments(segments, 100, 4)
+    _compact_segments(segments, 100, 4, 90.0)
     assert segments == [[{"x": 0, "y": 0}, {"x": 1, "y": 1}]]
+
+
+def test_compaction_shrinks_without_cutting_corners() -> None:
+    """Shrinking must not draw lines the mower never drove (issue #332).
+
+    An L-shaped track thinned by index can lose its corner vertex, bridging
+    the two legs with a ghost diagonal across the lawn. Re-simplifying keeps
+    the corner and drops the collinear filler instead.
+    """
+    from custom_components.terramow.hub import _shrink_segment
+
+    leg_a = [{"x": float(x), "y": 0.0} for x in range(0, 2000, 100)]
+    leg_b = [{"x": 1900.0, "y": float(y)} for y in range(100, 2100, 100)]
+    segments = [leg_a + leg_b]
+    _compact_segments(segments, 10, 4, 25.0)
+    shrunk = segments[0]
+    assert 2 < len(shrunk) <= 10
+    assert shrunk[0] == {"x": 0.0, "y": 0.0}
+    assert shrunk[-1] == {"x": 1900.0, "y": 2000.0}
+    # the corner survives: no diagonal from (0,0) to (1900,2000)
+    assert {"x": 1900.0, "y": 0.0} in shrunk
+
+    # a segment nothing can be shaved off (every vertex is a huge deviation)
+    jagged = [
+        {"x": float(i * 1000), "y": 0.0 if i % 2 == 0 else 1e7}
+        for i in range(8)
+    ]
+    assert _shrink_segment(list(jagged), 4, 25.0) == jagged
+    # an irreducible archive over budget falls back to dropping oldest whole
+    segments = [list(jagged), list(jagged)]
+    _compact_segments(segments, 8, 4, 25.0)
+    assert segments == [jagged]
+
+    # degenerate targets leave the polyline untouched
+    assert _shrink_segment(list(jagged), 8, 25.0) == jagged
+    assert _shrink_segment(list(jagged), 1, 25.0) == jagged
+
+    # malformed points (no coordinates) can only be thinned by index
+    opaque = [{"n": i} for i in range(8)]
+    thinned = _shrink_segment(list(opaque), 4, 25.0)
+    assert len(thinned) == 4
+    assert thinned[0] == {"n": 0}
+    assert thinned[-1] == {"n": 7}
 
 
 # ---------------------------------------------------------------------------

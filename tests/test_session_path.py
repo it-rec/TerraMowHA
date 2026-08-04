@@ -20,7 +20,7 @@ from custom_components.terramow.hub import (  # noqa: E402
     MAX_PATH_WINDOW_PROBES,
     MAX_SESSION_PATH_POINTS,
     TerraMowHub,
-    _dropped_path_head,
+    _lost_path_points,
 )
 from custom_components.terramow.map_card import build_scene_payload  # noqa: E402
 from custom_components.terramow.map_scene import (  # noqa: E402
@@ -265,21 +265,161 @@ def test_sliding_path_window_archives_only_what_fell_out() -> None:
     assert hub.session_path_segments[1][-1] == {"x": 2000.0, "y": 0.0}
 
 
-def test_dropped_path_head_classifies_the_payload() -> None:
+def test_reserved_identical_track_is_archived_only_once() -> None:
+    """A track the firmware re-serves verbatim must not burn budget twice."""
+    hub = _hub()
+    _start_session(hub)
+    hub._apply_path_data(MOW_TRACK)
+    hub._apply_path_data(DOCK_RESET)
+    assert len(hub.session_path_segments) == 1
+
+    # the same ground re-served under a new path id, then cleared again
+    hub._apply_path_data(_path(_clean((0, 0), (5000, 0), (5000, 1000), (0, 1000)), path_id=103))
+    hub._apply_path_data(_path([], path_id=103))
+    assert len(hub.session_path_segments) == 1
+
+
+def test_in_place_rewrite_of_the_live_path_is_not_archived() -> None:
+    """A same-id decimated re-push covers the same ground: nothing to archive.
+
+    Pre-#330 this archived the whole track on every rewrite; post-#330 the
+    too-strict window match still did. Either way the archive flooded with
+    duplicates of the current leg until the budget evicted the earlier legs
+    (issues #326/#332).
+    """
+    hub = _hub()
+    _start_session(hub)
+    track = _clean(*[(i * 100, (i % 2) * 3000) for i in range(40)])
+    hub._apply_path_data(_path(track))
+    decimated = track[::2] + _clean((4100, 0))
+    hub._apply_path_data(_path(decimated))
+    assert hub.session_path_segments == []
+    assert hub.coverage_segments == []
+
+
+def test_finished_job_leg_is_not_archived_into_the_next_session() -> None:
+    """Feedback on #326: the previous job's mowed area stayed on the map.
+
+    After a job completes the firmware keeps serving its final leg as the
+    current path until the next job replaces it. That replacement arrives
+    after the new session is latched, so without the exemption the old job's
+    leg was archived — and drawn — as ground the *new* job mowed.
+    """
+    hub = _hub()
+    _start_session(hub)
+    hub._apply_path_data(MOW_TRACK)
+    _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_COMPLETE")
+    assert hub.session_path_segments == []
+    assert hub.coverage_segments  # the completed cycle stays visible
+
+    # the finished leg may keep updating (same path id) without being adopted
+    hub._apply_path_data(_path(_clean((0, 0), (5000, 0), (5000, 1000))))
+
+    _start_session(hub)  # new job starts; the cycle coverage resets
+    hub._apply_path_data(_path(_clean((0, 5000), (1000, 5000)), path_id=202))
+    assert hub.session_path_segments == []
+    assert hub.coverage_segments == []
+
+
+def test_adopted_segments_survive_the_first_mow_frame_after_restart() -> None:
+    """Restart mid-session: dp_113 may adopt the stored segments before the
+    first dp_107 mow frame arrives. That frame sees no latched session, but
+    the open work counters mark it as the same job continuing — it must not
+    wipe what was just adopted (issue #332: paths messed up after upgrading)."""
+    hub = _hub()
+    hub._session_path_segments = [
+        [{"x": 0.0, "y": 0.0}, {"x": 1000.0, "y": 0.0}]
+    ]
+    hub._current_work_data = {"work_duration": 12, "clean_area": 5}
+    _start_session(hub)
+    assert hub.session_path_segments
+
+
+def test_fresh_session_with_junk_work_data_still_wipes_stale_archive() -> None:
+    hub = _hub()
+    hub._session_path_segments = [
+        [{"x": 0.0, "y": 0.0}, {"x": 1000.0, "y": 0.0}]
+    ]
+    hub._current_work_data = ["not", "a", "dict"]  # type: ignore[assignment]
+    _start_session(hub)
+    assert hub.session_path_segments == []
+
+
+def _data(points: list, path_id: int = 101) -> dict:
+    return {"id": path_id, "map_id": 1, "points": points}
+
+
+def test_lost_path_points_classifies_the_payload() -> None:
     old = [{"position": {"x": i, "y": 0}, "type": "T"} for i in range(6)]
     # unchanged / grown at the tail: nothing lost
-    assert _dropped_path_head(old, old) is None
-    assert _dropped_path_head(old, old + old[:2]) is None
-    assert _dropped_path_head([], old) is None
+    assert _lost_path_points(_data(old), _data(old)) is None
+    assert _lost_path_points(_data(old), _data(old + old[:2])) is None
+    assert _lost_path_points(_data([]), _data(old)) is None
     # the window slid: the head that fell out, plus the boundary point
-    assert _dropped_path_head(old, old[2:]) == old[:3]
-    # cleared or replaced wholesale: everything cached is lost
-    assert _dropped_path_head(old, []) == old
-    assert _dropped_path_head(old, [{"position": {"x": 9, "y": 9}}]) == old
+    assert _lost_path_points(_data(old), _data(old[2:])) == old[:3]
+    # cleared, replaced wholesale, or replaced by a new path id: everything
+    # cached is lost
+    assert _lost_path_points(_data(old), _data([])) == old
+    assert (
+        _lost_path_points(_data(old), _data([{"position": {"x": 9, "y": 9}}]))
+        == old
+    )
+    fresh = [{"position": {"x": 90 + i, "y": 9}, "type": "T"} for i in range(6)]
+    assert _lost_path_points(_data(old), _data(fresh, path_id=102)) == old
+    # payloads missing the points list entirely count as cleared / empty
+    assert _lost_path_points(_data(old), {"id": 101, "map_id": 1}) == old
+    assert _lost_path_points({"id": 101, "map_id": 1}, _data(old)) is None
+    # malformed points (no position, or junk coordinates) never match a
+    # cached point, so such a payload counts as a wholesale replacement
+    assert _lost_path_points(_data(old), _data([{"type": "T"}] * 6)) == old
+    junk = [{"position": {"x": "junk", "y": 0}, "type": "T"}] * 6
+    assert _lost_path_points(_data(old), _data(junk)) == old
     # a stalled mower repeats a point; the probe budget bounds the search and
     # falls back to archiving the whole cached track
     stalled = [old[0]] * (MAX_PATH_WINDOW_PROBES + 8) + [old[1]]
-    assert _dropped_path_head(stalled, [old[0], old[1]]) == stalled
+    assert _lost_path_points(_data(stalled), _data([old[0], old[1]])) == stalled
+    # a repeated point does not fool the window match: the probe walks past
+    # the earlier occurrence and still finds where the window really slid
+    a, b, c, d = old[:4]
+    looped = [a, b, a, b, c, d]
+    assert _lost_path_points(_data(looped), _data([b, c, d])) == looped[:4]
+
+
+def test_lost_path_points_tolerates_in_place_rewrites() -> None:
+    """The firmware rewrites the current path without dropping any ground.
+
+    The provisional live tail point moves between pushes, and a long track is
+    decimated wholesale to stay bounded. Both keep the same path id and still
+    cover the same lawn, so nothing may be archived — calling these "lost"
+    re-archived the whole track on every push and buried the earlier legs
+    under duplicates (issues #326/#332).
+    """
+    old = [{"position": {"x": i * 100, "y": 0}, "type": "T"} for i in range(8)]
+    # the provisional last point was rewritten in place, then mowing went on
+    rewritten = old[:-1] + [
+        {"position": {"x": 705, "y": 3}, "type": "T"},
+        {"position": {"x": 800, "y": 0}, "type": "T"},
+    ]
+    assert _lost_path_points(_data(old), _data(rewritten)) is None
+    # the whole track was decimated to every second point
+    decimated = old[::2] + [{"position": {"x": 800, "y": 0}, "type": "T"}]
+    assert _lost_path_points(_data(old), _data(decimated)) is None
+    # the same rewrite under a NEW path id is a different path: the cached
+    # leg would vanish from the map, so it is lost in full
+    assert _lost_path_points(_data(old), _data(decimated, path_id=102)) == old
+    # a same-id payload sharing next to nothing with the cache is a
+    # replacement, not a rewrite
+    alien = [
+        {"position": {"x": 9000 + i, "y": 9000}, "type": "T"} for i in range(8)
+    ]
+    assert _lost_path_points(_data(old), _data(alien)) == old
+    # matching is by coordinates, not float identity: a serializer round-trip
+    # re-serving the same track is still a continuation
+    reserved = [
+        {"position": {"x": float(p["position"]["x"]), "y": 0.0}, "type": "T"}
+        for p in old
+    ]
+    assert _lost_path_points(_data(old), _data(reserved)) is None
 
 
 # ---------------------------------------------------------------------------
