@@ -242,6 +242,68 @@ def _shrink_segment(
     return [{"x": x, "y": y} for x, y in pixels]
 
 
+def _archive_health(
+    segments: list[list[dict[str, Any]]],
+    max_points: int,
+    min_points_per_segment: int,
+) -> dict[str, Any]:
+    """Summarise an archive's shape so a bug report can show it.
+
+    The totals are the least interesting part. What diagnoses a sick archive
+    is the *distribution*: a median segment sitting exactly on the point floor
+    means compaction has ground every track down as far as it may go, and a
+    large gap between consecutive points means a track is being drawn
+    straighter than the mower drove it. A real store carried 2277 segments of
+    8 points each — the floor — with gaps up to 23 m, and the map showed
+    straight lines across the lawn (issue #332).
+
+    None of that was visible in diagnostics at the time; it could only be
+    found by reading the store off the device's disk, which is not something
+    a bug reporter can be asked to do. Hence this summary. The point
+    coordinates themselves stay local — the lawn's geometry is private.
+    """
+    lengths = sorted(len(segment) for segment in segments)
+    gaps: list[float] = []
+    for segment in segments:
+        for start, end in zip(segment, segment[1:], strict=False):
+            try:
+                dx = float(end["x"]) - float(start["x"])
+                dy = float(end["y"]) - float(start["y"])
+            except (KeyError, TypeError, ValueError):
+                continue  # malformed point: no distance to measure
+            gaps.append(math.hypot(dx, dy))
+    gaps.sort()
+
+    def at(values: list[float], fraction: float) -> float | None:
+        if not values:
+            return None
+        return round(values[min(len(values) - 1, int(len(values) * fraction))], 1)
+
+    return {
+        "segments": len(segments),
+        "points": sum(lengths),
+        "budget": max_points,
+        "point_floor": min_points_per_segment,
+        # The tell-tale: segments compaction can no longer shrink.
+        "segments_at_floor": sum(
+            1 for length in lengths if length <= min_points_per_segment
+        ),
+        "points_per_segment": {
+            "min": lengths[0] if lengths else None,
+            "median": lengths[len(lengths) // 2] if lengths else None,
+            "max": lengths[-1] if lengths else None,
+        },
+        # Distance between consecutive points of a drawn track, in mm. A
+        # healthy track is sub-metre; metres mean the shape is gone.
+        "point_gap_mm": {
+            "median": at(gaps, 0.5),
+            "p90": at(gaps, 0.9),
+            "p99": at(gaps, 0.99),
+            "max": at(gaps, 1.0),
+        },
+    }
+
+
 def _compact_segments(
     segments: list[list[dict[str, Any]]],
     max_points: int,
@@ -3277,6 +3339,22 @@ class TerraMowHub:
     def coverage_segments(self) -> list[list[dict[str, Any]]]:
         """Cycle-level mowed coverage segments (issue #202)."""
         return self._coverage_segments
+
+    @property
+    def path_archive_health(self) -> dict[str, Any]:
+        """How healthy the two map archives are, for diagnostics."""
+        return {
+            "session_path": _archive_health(
+                self._session_path_segments,
+                MAX_SESSION_PATH_POINTS,
+                MIN_SESSION_PATH_SEGMENT_POINTS,
+            ),
+            "coverage": _archive_health(
+                self._coverage_segments,
+                MAX_COVERAGE_POINTS,
+                MIN_COVERAGE_SEGMENT_POINTS,
+            ),
+        }
 
     @property
     def wifi_map_cells(self) -> dict[tuple[int, int], float]:

@@ -126,6 +126,11 @@ async def async_get_config_entry_diagnostics(
         "battery_health": lawn_mower.battery_health_metrics,
         "mission_preflight": lawn_mower.mission_preflight_catalog,
         "zone_plan": lawn_mower.last_zone_plan,
+        # Shape of the two map archives — segment/point distribution and how
+        # far apart consecutive points of a drawn track sit. Enough to tell a
+        # healthy archive from one compaction has flattened (issue #332)
+        # without exporting the lawn's geometry.
+        "path_archive_health": lawn_mower.path_archive_health,
     }
 
     return diagnostics
