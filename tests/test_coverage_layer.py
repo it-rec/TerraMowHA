@@ -14,6 +14,7 @@ from unittest.mock import AsyncMock, MagicMock
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.hub import (
     MAX_COVERAGE_POINTS,
+    MAX_SESSION_PATH_POINTS,
     TerraMowHub,
     _compact_segments,
 )
@@ -409,3 +410,69 @@ def test_shrink_stops_at_the_fidelity_ceiling() -> None:
 
     line = [{"x": float(x), "y": 0.0} for x in range(0, 1000, 100)]
     assert _shrink_segment(list(line), 2, 200.0, 200.0) == line
+
+
+def test_archive_health_shows_what_only_the_disk_store_showed() -> None:
+    """Diagnostics must be able to tell a sick archive from a healthy one.
+
+    When issue #332 was investigated the damage — 2277 segments ground to the
+    8-point floor, gaps up to 23 m — could only be seen by reading the store
+    off the device's disk. A bug reporter cannot be asked to do that, so the
+    distribution is summarised here instead. Coordinates stay local; the
+    lawn's geometry is private.
+    """
+    from custom_components.terramow.hub import _archive_health
+
+    # Healthy: dense tracks, sub-metre steps, nothing sitting at the floor.
+    healthy = [
+        [{"x": float(x), "y": float(run * 500)} for x in range(0, 2000, 100)]
+        for run in range(3)
+    ]
+    report = _archive_health(healthy, 20000, 8)
+    assert report["segments"] == 3
+    assert report["points"] == 60
+    assert report["budget"] == 20000
+    assert report["point_floor"] == 8
+    assert report["segments_at_floor"] == 0
+    assert report["points_per_segment"] == {"min": 20, "median": 20, "max": 20}
+    assert report["point_gap_mm"]["max"] == 100.0
+
+    # Sick: every track at the floor, 23 m between consecutive points.
+    sick = [[{"x": 0.0, "y": 0.0}, {"x": 23000.0, "y": 0.0}] for _ in range(50)]
+    report = _archive_health(sick, 20000, 8)
+    assert report["segments_at_floor"] == 50
+    assert report["points_per_segment"]["median"] == 2
+    assert report["point_gap_mm"]["max"] == 23000.0
+
+    # An empty archive has no numbers to report and must not blow up.
+    empty = _archive_health([], 20000, 8)
+    assert empty["segments"] == 0
+    assert empty["points"] == 0
+    assert empty["points_per_segment"] == {
+        "min": None,
+        "median": None,
+        "max": None,
+    }
+    assert empty["point_gap_mm"] == {
+        "median": None,
+        "p90": None,
+        "p99": None,
+        "max": None,
+    }
+
+    # Malformed points carry no distance; the summary still comes back.
+    malformed = _archive_health([[{"n": 0}, {"n": 1}]], 20000, 8)
+    assert malformed["points"] == 2
+    assert malformed["point_gap_mm"]["max"] is None
+
+
+def test_hub_reports_both_archives_for_diagnostics() -> None:
+    hub = _hub()
+    hub._session_path_segments = [list(SEGMENT)]
+    hub._coverage_segments = [list(SEGMENT), list(SEGMENT)]
+    health = hub.path_archive_health
+    assert health["session_path"]["segments"] == 1
+    assert health["session_path"]["budget"] == MAX_SESSION_PATH_POINTS
+    assert health["coverage"]["segments"] == 2
+    assert health["coverage"]["budget"] == MAX_COVERAGE_POINTS
+    assert health["coverage"]["point_gap_mm"]["max"] == 5000.0
