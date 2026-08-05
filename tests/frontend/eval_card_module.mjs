@@ -254,4 +254,83 @@ if (empty._refitOnResize() !== false || empty._view !== null) {
   fail("#327: re-fit ran without geometry");
 }
 
+// Issue #304: the maintenance panel's row builder decides what the wrench
+// shows and when it warns. It is pure over (hass.states, feed payload), so it
+// is worth pinning: the entity ids always come from the feed — the reporter's
+// install prefixes them with the area name, ours does not — a counter at zero
+// reads as due, the last tenth of a cycle as soon, and anything without a
+// state drops out instead of rendering an empty row.
+const maintCard = (states, maintenance) => ({
+  _hass: { language: "en", states },
+  _maintenance: maintenance,
+  _maintRows: CardClass.prototype._maintRows,
+  _maintSignature: CardClass.prototype._maintSignature,
+});
+const counterState = (minutes, cycle) => ({
+  state: `${minutes}`,
+  attributes: { recommended_cycle: cycle },
+});
+// Entity ids exactly as the reporter's install names them.
+const maintIds = {
+  base_station_time: "sensor.garten_terramow_restzeit_basisstation",
+  base_station_reset: "button.garten_terramow_basisstation_zahler_zurucksetzen",
+  blade_time: "sensor.garten_terramow_restzeit_klingen",
+  blade_reset: "button.garten_terramow_klingen_zahler_zurucksetzen",
+};
+const pressable = { state: "unknown", attributes: {} };
+const maintStates = {
+  [maintIds.base_station_time]: counterState(21600, 43200), // half a cycle
+  [maintIds.base_station_reset]: pressable,
+  [maintIds.blade_time]: counterState(0, 14400), // used up
+  [maintIds.blade_reset]: pressable,
+};
+const maintRows = maintCard(maintStates, maintIds)._maintRows();
+if (maintRows.length !== 2) {
+  fail(`#304: expected two maintenance rows, got ${maintRows.length}`);
+}
+if (maintRows[0].due || maintRows[0].soon) {
+  fail("#304: a half-used base-station counter warned");
+}
+if (maintRows[0].value !== "15 d") {
+  fail(`#304: base-station value ${maintRows[0].value}, expected "15 d"`);
+}
+if (!maintRows[1].due || maintRows[1].value !== "due now") {
+  fail("#304: a blade counter at zero did not read as due");
+}
+if (maintRows[1].resetId !== maintIds.blade_reset) {
+  fail("#304: the row lost the reset button entity from the feed");
+}
+// The last tenth of the cycle warns, without claiming the blade is finished.
+const soonRows = maintCard(
+  { ...maintStates, [maintIds.blade_time]: counterState(1000, 14400) },
+  maintIds
+)._maintRows();
+if (soonRows[1].due || !soonRows[1].soon) {
+  fail("#304: a nearly used-up blade counter did not warn");
+}
+if (soonRows[1].value !== "16 h 40 min") {
+  fail(`#304: blade value ${soonRows[1].value}, expected "16 h 40 min"`);
+}
+// A reset button that has no state (disabled) leaves the counter readable.
+const noResetRows = maintCard(
+  { [maintIds.blade_time]: counterState(500, 14400) },
+  maintIds
+)._maintRows();
+if (noResetRows.length !== 1 || noResetRows[0].resetId !== null) {
+  fail("#304: a disabled reset button was offered anyway");
+}
+// Nothing to show: no rows, so the card hides the wrench entirely.
+if (maintCard({}, maintIds)._maintRows().length) {
+  fail("#304: rows were built for counters that have no state");
+}
+if (maintCard(maintStates, null)._maintRows().length) {
+  fail("#304: rows were built before the feed named the entities");
+}
+if (maintCard(maintStates, maintIds)._maintSignature() !== "21600|0") {
+  fail("#304: the counter signature does not track both counters");
+}
+if (maintCard(maintStates, null)._maintSignature() !== "") {
+  fail("#304: a signature was built without maintenance entities");
+}
+
 console.log("card module OK:", [...defined.keys()].join(", "));

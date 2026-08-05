@@ -22,6 +22,7 @@
  *                              # from before a mid-session recharge dock
  *   zone_selection: true       # tap (or arrow-key) zones to start a selective mow
  *   show_hud: true             # status chips (state, battery, progress)
+ *   show_maintenance: true     # wrench button: blade / base-station counters
  *   show_markers: true         # trapped / maintenance / passage markers
  *   show_replay: true          # session replay scrubber button
  *   show_hotspots: true        # recorded fault locations
@@ -51,12 +52,12 @@ const CARD_TAG = "terramow-map-card";
 /* Keys: no_map, not_connected, start, clear, zone, zones, reset_view,
    follow, start_mowing, pause, dock, sent, missing_entity */
 const STRINGS = {
-  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", reset_rotation: "Reset to default rotation", follow: "Follow the mower", replay: "Replay this session", replay_play: "Play the replay", start_mowing: "Start mowing", pause: "Pause", hud_progress: "Progress", hud_eta_left: "left", dock: "Return to dock", sent: "Zone mowing started", preflight_none: "Not enough comparable history", preflight_estimate: "Estimate", preflight_battery: "battery", preflight_recharges: "recharges", preflight_daylight: "may finish after sunset", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", kbd_selected: "selected", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_zone: "Mowing zone", lg_zone_pending: "Selected to mow", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_hotspot: "Fault happened here (repeat count)", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area", lg_wifi: "Wi-Fi signal (green = strong)", view_mode: "View", vw_beides: "Both", vw_weg: "Path", vw_flaeche: "Area", vw_wlan: "Wi-Fi", vw_saison: "Season", lg_season: "Times mowed (pale = rarely)", map_refreshing: "Map refreshing…", dbg_title: "Layers received", dbg_zones: "Zones", dbg_nogo: "No-go zones", dbg_walls: "Walls", dbg_obstacles: "Obstacles", dbg_passthrough: "Pass-through", dbg_required: "Required", dbg_tunnels: "Tunnels", dbg_markers: "Markers", dbg_draw: "Draw regions", dbg_paths: "Path points" },
+  en: { no_map: "No map available yet", not_connected: "Waiting for mower data…", start: "Mow", clear: "Clear", zone: "zone", zones: "zones", reset_view: "Fit map to view", reset_rotation: "Reset to default rotation", follow: "Follow the mower", replay: "Replay this session", replay_play: "Play the replay", start_mowing: "Start mowing", pause: "Pause", hud_progress: "Progress", hud_eta_left: "left", dock: "Return to dock", sent: "Zone mowing started", preflight_none: "Not enough comparable history", preflight_estimate: "Estimate", preflight_battery: "battery", preflight_recharges: "recharges", preflight_daylight: "may finish after sunset", missing_entity: "Set a TerraMow lawn mower entity in the card config", zi_cut_height: "Cut height", zi_speed: "Mow speed", zi_spacing: "Stripe spacing", zi_blade: "Blade speed", zi_edge: "Edge cutting", zi_direction: "Direction", zi_order: "Mow order", zi_custom: "Custom settings", zi_global: "Global settings", lvl_low: "Low", lvl_medium: "Medium", lvl_high: "High", kbd_selected: "selected", legend: "Legend", legend_show: "Show legend", legend_hide: "Hide legend", lg_zone: "Mowing zone", lg_zone_pending: "Selected to mow", lg_mower: "Mower position", lg_dock: "Charging base", lg_order: "Mow order", lg_custom: "Custom zone settings", lg_direction: "Mow direction", lg_stuck: "Got stuck here", lg_hotspot: "Fault happened here (repeat count)", lg_maint: "Maintenance point", lg_passage: "Passage point", lg_nogo: "No-go zone", lg_wall: "Virtual wall", lg_coverage: "Mowed area", lg_wifi: "Wi-Fi signal (green = strong)", view_mode: "View", vw_beides: "Both", vw_weg: "Path", vw_flaeche: "Area", vw_wlan: "Wi-Fi", vw_saison: "Season", lg_season: "Times mowed (pale = rarely)", map_refreshing: "Map refreshing…", dbg_title: "Layers received", dbg_zones: "Zones", dbg_nogo: "No-go zones", dbg_walls: "Walls", dbg_obstacles: "Obstacles", dbg_passthrough: "Pass-through", dbg_required: "Required", dbg_tunnels: "Tunnels", dbg_markers: "Markers", dbg_draw: "Draw regions", dbg_paths: "Path points", maint: "Maintenance", maint_show: "Show maintenance", maint_hide: "Hide maintenance", maint_base: "Base station", maint_blade: "Blades", maint_reset: "Reset counter", maint_due: "due now", maint_reset_done: "Counter reset" },
   bg: { no_map: "Все още няма карта", not_connected: "Изчакване на данни от косачката…", start: "Коси", clear: "Изчисти", zone: "зона", zones: "зони", reset_view: "Побери картата", follow: "Следвай косачката", start_mowing: "Започни косене", pause: "Пауза", dock: "Върни към станцията", sent: "Косенето на зони започна", missing_entity: "Задайте обект на косачка TerraMow в конфигурацията" },
   ca: { no_map: "Encara no hi ha mapa", not_connected: "Esperant dades del tallagespa…", start: "Sega", clear: "Neteja", zone: "zona", zones: "zones", reset_view: "Ajusta el mapa", follow: "Segueix el tallagespa", start_mowing: "Comença a segar", pause: "Pausa", dock: "Torna a la base", sent: "Sega per zones iniciada", missing_entity: "Configureu una entitat de tallagespa TerraMow" },
   cs: { no_map: "Mapa zatím není k dispozici", not_connected: "Čekání na data sekačky…", start: "Sekat", clear: "Vymazat", zone: "zóna", zones: "zóny", reset_view: "Přizpůsobit mapu", follow: "Sledovat sekačku", start_mowing: "Zahájit sekání", pause: "Pozastavit", dock: "Zpět na stanici", sent: "Sekání zón zahájeno", missing_entity: "Nastavte entitu sekačky TerraMow v konfiguraci karty" },
   da: { no_map: "Intet kort tilgængeligt endnu", not_connected: "Venter på data fra plæneklipperen…", start: "Klip", clear: "Ryd", zone: "zone", zones: "zoner", reset_view: "Tilpas kortet", follow: "Følg plæneklipperen", start_mowing: "Start klipning", pause: "Pause", dock: "Kør til base", sent: "Zoneklipning startet", missing_entity: "Angiv en TerraMow-plæneklipperentitet i kortets konfiguration" },
-  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", reset_rotation: "Auf Standarddrehung zurücksetzen", follow: "Dem Mäher folgen", replay: "Diese Sitzung abspielen", replay_play: "Wiedergabe starten", start_mowing: "Mähen starten", pause: "Pausieren", hud_progress: "Fortschritt", hud_eta_left: "übrig", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch", kbd_selected: "ausgewählt", legend: "Legende", legend_show: "Legende anzeigen", legend_hide: "Legende ausblenden", lg_zone: "Rasenmähzone", lg_zone_pending: "Zum Mähen ausgewählt", lg_mower: "Mäherposition", lg_dock: "Ladestation", lg_order: "Mähreihenfolge", lg_custom: "Eigene Zoneneinstellungen", lg_direction: "Mährichtung", lg_stuck: "Hier steckengeblieben", lg_hotspot: "Hier trat eine Störung auf (Anzahl)", lg_maint: "Wartungspunkt", lg_passage: "Durchgangspunkt", lg_nogo: "Sperrzone", lg_wall: "Virtuelle Wand", lg_coverage: "Gemähte Fläche", lg_wifi: "WLAN-Signal (grün = stark)", view_mode: "Ansicht", vw_beides: "Beides", vw_weg: "Weg", vw_flaeche: "Fläche", vw_wlan: "WLAN", vw_saison: "Saison", lg_season: "Mähhäufigkeit (blass = selten)", map_refreshing: "Karte wird aktualisiert…", dbg_title: "Empfangene Ebenen", dbg_zones: "Zonen", dbg_nogo: "Sperrzonen", dbg_walls: "Wände", dbg_obstacles: "Hindernisse", dbg_passthrough: "Durchgänge", dbg_required: "Pflichtzonen", dbg_tunnels: "Tunnel", dbg_markers: "Markierungen", dbg_draw: "Zeichenregionen", dbg_paths: "Pfadpunkte" },
+  de: { no_map: "Noch keine Karte verfügbar", not_connected: "Warte auf Mäherdaten…", start: "Mähen", clear: "Leeren", zone: "Zone", zones: "Zonen", reset_view: "Karte einpassen", reset_rotation: "Auf Standarddrehung zurücksetzen", follow: "Dem Mäher folgen", replay: "Diese Sitzung abspielen", replay_play: "Wiedergabe starten", start_mowing: "Mähen starten", pause: "Pausieren", hud_progress: "Fortschritt", hud_eta_left: "übrig", dock: "Zur Station", sent: "Zonenmähen gestartet", missing_entity: "TerraMow-Mäher-Entität in der Kartenkonfiguration setzen", zi_cut_height: "Schnitthöhe", zi_speed: "Mähgeschwindigkeit", zi_spacing: "Bahnabstand", zi_blade: "Messerdrehzahl", zi_edge: "Kantenschnitt", zi_direction: "Richtung", zi_order: "Mähreihenfolge", zi_custom: "Eigene Einstellungen", zi_global: "Globale Einstellungen", lvl_low: "Niedrig", lvl_medium: "Mittel", lvl_high: "Hoch", kbd_selected: "ausgewählt", legend: "Legende", legend_show: "Legende anzeigen", legend_hide: "Legende ausblenden", lg_zone: "Rasenmähzone", lg_zone_pending: "Zum Mähen ausgewählt", lg_mower: "Mäherposition", lg_dock: "Ladestation", lg_order: "Mähreihenfolge", lg_custom: "Eigene Zoneneinstellungen", lg_direction: "Mährichtung", lg_stuck: "Hier steckengeblieben", lg_hotspot: "Hier trat eine Störung auf (Anzahl)", lg_maint: "Wartungspunkt", lg_passage: "Durchgangspunkt", lg_nogo: "Sperrzone", lg_wall: "Virtuelle Wand", lg_coverage: "Gemähte Fläche", lg_wifi: "WLAN-Signal (grün = stark)", view_mode: "Ansicht", vw_beides: "Beides", vw_weg: "Weg", vw_flaeche: "Fläche", vw_wlan: "WLAN", vw_saison: "Saison", lg_season: "Mähhäufigkeit (blass = selten)", map_refreshing: "Karte wird aktualisiert…", dbg_title: "Empfangene Ebenen", dbg_zones: "Zonen", dbg_nogo: "Sperrzonen", dbg_walls: "Wände", dbg_obstacles: "Hindernisse", dbg_passthrough: "Durchgänge", dbg_required: "Pflichtzonen", dbg_tunnels: "Tunnel", dbg_markers: "Markierungen", dbg_draw: "Zeichenregionen", dbg_paths: "Pfadpunkte", maint: "Wartung", maint_show: "Wartung anzeigen", maint_hide: "Wartung ausblenden", maint_base: "Basisstation", maint_blade: "Klingen", maint_reset: "Zähler zurücksetzen", maint_due: "jetzt fällig", maint_reset_done: "Zähler zurückgesetzt" },
   el: { no_map: "Δεν υπάρχει ακόμη χάρτης", not_connected: "Αναμονή δεδομένων χλοοκοπτικού…", start: "Κούρεμα", clear: "Καθαρισμός", zone: "ζώνη", zones: "ζώνες", reset_view: "Προσαρμογή χάρτη", follow: "Ακολούθησε το χλοοκοπτικό", start_mowing: "Έναρξη κουρέματος", pause: "Παύση", dock: "Επιστροφή στη βάση", sent: "Το κούρεμα ζωνών ξεκίνησε", missing_entity: "Ορίστε οντότητα χλοοκοπτικού TerraMow στη διαμόρφωση" },
   es: { no_map: "Aún no hay mapa disponible", not_connected: "Esperando datos del cortacésped…", start: "Cortar", clear: "Borrar", zone: "zona", zones: "zonas", reset_view: "Ajustar mapa", follow: "Seguir al cortacésped", start_mowing: "Iniciar corte", pause: "Pausar", dock: "Volver a la base", sent: "Corte por zonas iniciado", missing_entity: "Configura la entidad del cortacésped TerraMow" },
   et: { no_map: "Kaarti pole veel saadaval", not_connected: "Ootan niiduki andmeid…", start: "Niida", clear: "Tühjenda", zone: "tsoon", zones: "tsooni", reset_view: "Mahuta kaart", follow: "Jälgi niidukit", start_mowing: "Alusta niitmist", pause: "Paus", dock: "Tagasi baasi", sent: "Tsooniniitmine alustatud", missing_entity: "Määra kaardi seadetes TerraMow niiduki olem" },
@@ -104,6 +105,24 @@ function formatEtaMinutes(seconds) {
 }
 
 /**
+ * Remaining maintenance minutes as a short, readable span (issue #304). The
+ * counters run to 14400 min (blade disc) and 43200 min (base station), and
+ * "43200 min" tells nobody anything; the unit letters match the ETA chip's.
+ */
+function formatMaintenanceMinutes(minutes) {
+  const mins = Math.max(0, Math.round(minutes));
+  if (mins <= 0) {
+    return "0 min";
+  }
+  if (mins >= 1440) {
+    const d = Math.floor(mins / 1440);
+    const h = Math.round((mins % 1440) / 60);
+    return h ? `${d} d ${h} h` : `${d} d`;
+  }
+  return formatEtaMinutes(mins * 60);
+}
+
+/**
  * Localized noun for a count, choosing between the singular and plural
  * strings by the language's CLDR plural category rather than `n === 1`.
  * The table carries only two forms per language, so every non-"one"
@@ -144,6 +163,10 @@ const ICONS = {
   batteryCharging: "M16,20H8V6H16M16.67,4H15V2H9V4H7.33A1.33,1.33 0 0,0 6,5.33V20.66C6,21.4 6.6,22 7.33,22H16.66C17.4,22 18,21.4 18,20.66V5.33C18,4.6 17.4,4 16.67,4M11,20V14.5H9L13,7V12.5H15L11,20Z",
   legend: "M7,5H21V7H7V5M7,13V11H21V13H7M4,4.5A1.5,1.5 0 0,1 5.5,6A1.5,1.5 0 0,1 4,7.5A1.5,1.5 0 0,1 2.5,6A1.5,1.5 0 0,1 4,4.5M4,10.5A1.5,1.5 0 0,1 5.5,12A1.5,1.5 0 0,1 4,13.5A1.5,1.5 0 0,1 2.5,12A1.5,1.5 0 0,1 4,10.5M7,19V17H21V19H7M4,16.5A1.5,1.5 0 0,1 5.5,18A1.5,1.5 0 0,1 4,19.5A1.5,1.5 0 0,1 2.5,18A1.5,1.5 0 0,1 4,16.5Z",
   close: "M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z",
+  wrench:
+    "M22.7,19L13.6,9.9C14.5,7.6 14,4.9 12.1,3C10.1,1 7.1,0.6 4.7,1.7L9,6L6,9L1.6,4.7C0.4,7.1 0.9,10.1 2.9,12.1C4.8,14 7.5,14.5 9.8,13.6L18.9,22.7C19.3,23.1 19.9,23.1 20.3,22.7L22.6,20.4C23.1,20 23.1,19.3 22.7,19Z",
+  restore:
+    "M13,3A9,9 0 0,0 4,12H1L4.89,15.89L4.96,16.03L9,12H6A7,7 0 0,1 13,5A7,7 0 0,1 20,12A7,7 0 0,1 13,19C11.07,19 9.32,18.21 8.06,16.94L6.64,18.36C8.27,20 10.5,21 13,21A9,9 0 0,0 22,12A9,9 0 0,0 13,3M12,8V13L16.28,15.54L17,14.33L13.5,12.25V8H12Z",
   refreshing: "M12,4V1L8,5L12,9V6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12H4A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z",
   compass: "M14.19,14.19L6,18L9.81,9.81L18,6M12,10.9A1.1,1.1 0 0,0 10.9,12A1.1,1.1 0 0,0 12,13.1A1.1,1.1 0 0,0 13.1,12A1.1,1.1 0 0,0 12,10.9M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4Z",
 };
@@ -201,6 +224,21 @@ function prettyStatus(v, hass) {
  */
 /** localStorage flag so the legend auto-opens only on a browser's first visit. */
 const LEGEND_SEEN_KEY = "terramow-map-card:legend-seen";
+
+/** The two maintenance counters the wrench panel shows, in display order:
+ *  [role of the counter sensor, its label, role of its reset button]. The
+ *  roles are the keys the backend fills with this install's entity ids
+ *  (MAINTENANCE_ENTITY_SUFFIXES in map_card.py). */
+const MAINT_ROWS = [
+  ["base_station_time", "maint_base", "base_station_reset"],
+  ["blade_time", "maint_blade", "blade_reset"],
+];
+
+/** A counter this far into its last stretch reads as "soon" (orange); at zero
+ *  it is due (red). 10 % of the recommended cycle is about the last three days
+ *  of base-station cleaning and the last 24 mowing hours of a blade disc —
+ *  enough warning to order blades, not so much that it nags all season. */
+const MAINT_SOON_FRACTION = 0.1;
 
 /** Two-finger twist must exceed this (radians, ~7°) before rotation engages,
  *  so an ordinary pinch-zoom doesn't rotate the map by accident. */
@@ -472,6 +510,10 @@ class TerramowMapCard extends HTMLElement {
     this._work = null;
     this._status = null;
     this._errors = null;
+    // {role: entity_id} of this mower's maintenance counters and reset
+    // buttons, sent by the backend; null until the first robot event.
+    this._maintenance = null;
+    this._maintSig = null; // last seen counter states, to gate re-renders
     this._robotPrev = null;
     this._robotAnimStart = 0;
     this._view = null; // {scale, tx, ty}
@@ -530,6 +572,7 @@ class TerramowMapCard extends HTMLElement {
       show_wifi: false,
       zone_selection: true,
       show_hud: true,
+      show_maintenance: true,
       show_controls: true,
       show_markers: true,
       show_replay: true,
@@ -575,6 +618,14 @@ class TerramowMapCard extends HTMLElement {
       this._updateHud();
       this._updateControls();
       this._requestDraw(); // marker tint follows the activity
+    }
+    // The maintenance counters live in hass.states, not in the map feed, and
+    // every state change in the whole system lands here — so re-render only
+    // when one of the two counters actually moved.
+    const maintSig = this._maintSignature();
+    if (maintSig !== this._maintSig) {
+      this._maintSig = maintSig;
+      this._updateMaintBtn();
     }
   }
 
@@ -755,9 +806,11 @@ class TerramowMapCard extends HTMLElement {
       this._status = msg.status || null;
       this._errors = msg.errors || null;
       this._preflight = msg.preflight || {};
+      this._maintenance = msg.maintenance || null;
       if (this._follow && this._robot) {
         this._centerOnRobot();
       }
+      this._updateMaintBtn();
       this._updateHud();
       this._updateButtons();
       this._updateActionBar();
@@ -1042,6 +1095,50 @@ class TerramowMapCard extends HTMLElement {
       }
       .legend .lg-cnt.zero { color: var(--secondary-text-color, #727272); opacity: .6; }
       .legend .lg-cnt .lg-n { font-variant-numeric: tabular-nums; }
+      /* Maintenance: the wrench sits beside the legend button and shares the
+         panel spot above it (only one of the two is ever open). */
+      .maint-btn { position: absolute; left: 50px; bottom: 32px; z-index: 3; }
+      .maint-btn.soon {
+        border-color: var(--warning-color, #ffa726);
+        color: var(--warning-color, #ffa726);
+      }
+      .maint-btn.due {
+        border-color: var(--error-color, #db4437);
+        color: var(--error-color, #db4437);
+        animation: tm-maint-pulse 2s ease-in-out infinite;
+      }
+      .maint-btn.due.active { animation: none; }
+      @keyframes tm-maint-pulse {
+        0%, 100% { opacity: .92; }
+        50% { opacity: .45; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .maint-btn.due { animation: none; }
+      }
+      .maint .mt-row {
+        display: flex; align-items: center; gap: 8px; padding: 3px 0;
+      }
+      .maint .mt-cell {
+        flex: 1; min-width: 0; display: flex; flex-direction: column;
+        background: transparent; border: none; padding: 0; cursor: pointer;
+        color: inherit; font: inherit; text-align: left;
+      }
+      .maint .mt-label { color: var(--secondary-text-color, #727272); }
+      .maint .mt-value { font-variant-numeric: tabular-nums; }
+      .maint .mt-row.soon .mt-value { color: var(--warning-color, #ffa726); }
+      .maint .mt-row.due .mt-value {
+        color: var(--error-color, #db4437); font-weight: 600;
+      }
+      .maint .mt-reset {
+        flex: none; width: 28px; height: 28px; border-radius: 50%;
+        border: 1px solid var(--divider-color, rgba(0,0,0,.12));
+        background: var(--card-background-color, #fff);
+        color: var(--primary-text-color, #212121);
+        cursor: pointer; padding: 0; line-height: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      .maint .mt-reset svg { width: 16px; height: 16px; }
+      .maint .mt-reset:hover { border-color: var(--primary-color, #03a9f4); }
     `;
 
     const card = document.createElement("ha-card");
@@ -1164,6 +1261,18 @@ class TerramowMapCard extends HTMLElement {
     this._legendBtn.setAttribute("aria-label", legendLabel);
     wrap.appendChild(this._legendBtn);
 
+    // Beside it: the maintenance panel (issue #304). It borrows the legend's
+    // box styling — same place, same collapse behaviour — and is shown only
+    // once the feed has named this install's counter entities.
+    this._maintPanel = document.createElement("div");
+    this._maintPanel.className = "legend maint";
+    wrap.appendChild(this._maintPanel);
+    this._maintBtn = this._roundButton(ICONS.wrench, () => this._toggleMaint());
+    this._maintBtn.classList.add("maint-btn");
+    this._maintBtn.setAttribute("aria-expanded", "false");
+    this._maintBtn.style.display = "none";
+    wrap.appendChild(this._maintBtn);
+
     // bottom-centre: the replay scrubber, shown only while replay is on
     this._replayBar = document.createElement("div");
     this._replayBar.className = "replay";
@@ -1211,6 +1320,7 @@ class TerramowMapCard extends HTMLElement {
     this._updateHud();
     this._updateControls();
     this._updateCompass();
+    this._updateMaintBtn();
     this._requestDraw();
   }
 
@@ -1818,9 +1928,13 @@ class TerramowMapCard extends HTMLElement {
   }
 
   _moreInfo() {
+    this._openMoreInfo(this._config.entity);
+  }
+
+  _openMoreInfo(entityId) {
     this.dispatchEvent(
       new CustomEvent("hass-more-info", {
-        detail: { entityId: this._config.entity },
+        detail: { entityId },
         bubbles: true,
         composed: true,
       })
@@ -2284,6 +2398,9 @@ class TerramowMapCard extends HTMLElement {
     const show = !this._legend.classList.contains("visible");
     if (show) {
       this._buildLegend();
+      if (this._maintPanel && this._maintPanel.classList.contains("visible")) {
+        this._toggleMaint(); // both panels live in the same corner
+      }
     }
     this._legend.classList.toggle("visible", show);
     this._legendBtn.classList.toggle("active", show);
@@ -2439,6 +2556,206 @@ class TerramowMapCard extends HTMLElement {
       )
       .join("");
     return `<div class="lg-sec">${localize(this._hass, "dbg_title")}</div>${rows}`;
+  }
+
+  /* -------------------------------------------------------- maintenance */
+
+  /**
+   * The counter states as one string. Every state change anywhere in Home
+   * Assistant lands in `set hass`; without this gate the panel would rebuild
+   * on all of them, for two values that move once a minute.
+   */
+  _maintSignature() {
+    const maintenance = this._maintenance;
+    if (!maintenance || !this._hass) {
+      return "";
+    }
+    return MAINT_ROWS.map(([role]) => {
+      const state = maintenance[role] && this._hass.states[maintenance[role]];
+      return state ? `${state.state}` : "-";
+    }).join("|");
+  }
+
+  /**
+   * One row per maintenance counter that actually has a state — firmware
+   * without dp_125/dp_126, or a sensor someone disabled, simply drops out,
+   * and with both gone the wrench never appears at all.
+   *
+   * `due` is the counter at zero (blades want changing, station wants
+   * cleaning); `soon` is the last tenth of the cycle, measured against the
+   * sensor's own `recommended_cycle` attribute rather than a number repeated
+   * here.
+   */
+  _maintRows() {
+    const hass = this._hass;
+    const maintenance = this._maintenance;
+    if (!hass || !maintenance) {
+      return [];
+    }
+    const rows = [];
+    for (const [role, labelKey, resetRole] of MAINT_ROWS) {
+      const entityId = maintenance[role];
+      const state = entityId ? hass.states[entityId] : null;
+      if (!state) {
+        continue;
+      }
+      const minutes = Number(state.state);
+      const known = Number.isFinite(minutes);
+      const cycle = Number((state.attributes || {}).recommended_cycle);
+      const due = known && minutes <= 0;
+      const soon =
+        known &&
+        !due &&
+        Number.isFinite(cycle) &&
+        cycle > 0 &&
+        minutes <= cycle * MAINT_SOON_FRACTION;
+      let value;
+      if (due) {
+        value = localize(hass, "maint_due");
+      } else if (known) {
+        value = formatMaintenanceMinutes(minutes);
+      } else {
+        // unknown / unavailable: show whatever Home Assistant would show.
+        value = hass.formatEntityState
+          ? hass.formatEntityState(state)
+          : `${state.state}`;
+      }
+      const resetId = maintenance[resetRole];
+      rows.push({
+        entityId,
+        label: localize(hass, labelKey),
+        value,
+        due,
+        soon,
+        // A reset button that isn't in the state machine (disabled) can't be
+        // pressed; the row then shows the counter alone.
+        resetId: resetId && hass.states[resetId] ? resetId : null,
+      });
+    }
+    return rows;
+  }
+
+  /**
+   * Show the wrench only when there is a counter behind it, and colour it by
+   * the worse of the two: red once one has run out, orange shortly before —
+   * the point of the chip is noticing without opening it (issue #304).
+   */
+  _updateMaintBtn() {
+    if (!this._maintBtn) {
+      return;
+    }
+    const rows = this._config.show_maintenance ? this._maintRows() : [];
+    if (!rows.length) {
+      this._maintBtn.style.display = "none";
+      if (this._maintPanel.classList.contains("visible")) {
+        this._toggleMaint();
+      }
+      return;
+    }
+    this._maintBtn.style.display = "";
+    const due = rows.some((row) => row.due);
+    const soon = !due && rows.some((row) => row.soon);
+    this._maintBtn.classList.toggle("due", due);
+    this._maintBtn.classList.toggle("soon", soon);
+    const open = this._maintPanel.classList.contains("visible");
+    const label = localize(this._hass, open ? "maint_hide" : "maint_show");
+    const title = due
+      ? `${label} — ${localize(this._hass, "maint_due")}`
+      : label;
+    this._maintBtn.title = title;
+    this._maintBtn.setAttribute("aria-label", title);
+    if (open) {
+      this._buildMaint();
+    }
+  }
+
+  _toggleMaint() {
+    if (!this._maintPanel) {
+      return;
+    }
+    const show = !this._maintPanel.classList.contains("visible");
+    if (show) {
+      this._buildMaint();
+      if (this._legend && this._legend.classList.contains("visible")) {
+        this._toggleLegend(); // both panels live in the same corner
+      }
+    }
+    this._maintPanel.classList.toggle("visible", show);
+    this._maintBtn.classList.toggle("active", show);
+    this._maintBtn.setAttribute("aria-expanded", String(show));
+    const label = localize(this._hass, show ? "maint_hide" : "maint_show");
+    this._maintBtn.title = label;
+    this._maintBtn.setAttribute("aria-label", label);
+  }
+
+  /**
+   * Fill the panel: one row per counter, the value tappable for the sensor's
+   * more-info dialog and a reset button that presses this install's own reset
+   * button entity. Built from DOM nodes rather than markup so a state string
+   * can never be interpreted as HTML.
+   */
+  _buildMaint() {
+    const hass = this._hass;
+    const head = document.createElement("div");
+    head.className = "lg-head";
+    const heading = document.createElement("span");
+    heading.textContent = localize(hass, "maint");
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.setAttribute("aria-label", localize(hass, "maint_hide"));
+    closeBtn.innerHTML = svgIcon(ICONS.close);
+    closeBtn.addEventListener("click", () => this._toggleMaint());
+    head.append(heading, closeBtn);
+
+    const children = [head];
+    const resetLabel = localize(hass, "maint_reset");
+    for (const row of this._maintRows()) {
+      const rowEl = document.createElement("div");
+      rowEl.className = "mt-row";
+      if (row.due) {
+        rowEl.classList.add("due");
+      } else if (row.soon) {
+        rowEl.classList.add("soon");
+      }
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "mt-cell";
+      const label = document.createElement("span");
+      label.className = "mt-label";
+      label.textContent = row.label;
+      const value = document.createElement("span");
+      value.className = "mt-value";
+      value.textContent = row.value;
+      cell.append(label, value);
+      cell.addEventListener("click", () => this._openMoreInfo(row.entityId));
+      rowEl.appendChild(cell);
+      if (row.resetId) {
+        const resetBtn = document.createElement("button");
+        resetBtn.type = "button";
+        resetBtn.className = "mt-reset";
+        resetBtn.innerHTML = svgIcon(ICONS.restore);
+        resetBtn.title = `${resetLabel}: ${row.label}`;
+        resetBtn.setAttribute("aria-label", `${resetLabel}: ${row.label}`);
+        resetBtn.addEventListener("click", () =>
+          this._resetMaintCounter(row.resetId)
+        );
+        rowEl.appendChild(resetBtn);
+      }
+      children.push(rowEl);
+    }
+    this._maintPanel.replaceChildren(...children);
+  }
+
+  async _resetMaintCounter(entityId) {
+    if (!this._hass) {
+      return;
+    }
+    try {
+      await this._hass.callService("button", "press", { entity_id: entityId });
+      this._toast(localize(this._hass, "maint_reset_done"));
+    } catch (err) {
+      this._toast((err && err.message) || String(err));
+    }
   }
 
   /**
@@ -3738,6 +4055,11 @@ class TerramowMapCardEditor extends HTMLElement {
         selector: { boolean: {} },
       },
       { name: "show_hud", label: "Show status chips", selector: { boolean: {} } },
+      {
+        name: "show_maintenance",
+        label: "Maintenance button (blade / base-station counters)",
+        selector: { boolean: {} },
+      },
       {
         name: "show_markers",
         label: "Show trapped / maintenance markers",
