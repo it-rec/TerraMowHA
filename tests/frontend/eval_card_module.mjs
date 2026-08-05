@@ -333,4 +333,43 @@ if (maintCard(maintStates, null)._maintSignature() !== "") {
   fail("#304: a signature was built without maintenance entities");
 }
 
+// Issue #337: the card ships its own translation table, separate from the
+// integration's translations/*.json, and nothing ever checked it. localize()
+// falls back silently — `table[key] || STRINGS.en[key] || key` — so a language
+// that never got a new key still looks translated while showing English, which
+// is how 28 of 30 languages ended up missing 68 of their 81 labels. English is
+// the source of truth: every table must carry exactly its key set. Missing
+// keys are the drift itself; unknown keys are a typo that can never be shown,
+// because localize() only ever asks for keys that exist in English.
+const STRINGS = CardClass.STRINGS;
+if (!STRINGS || !STRINGS.en) {
+  fail("#337: the card no longer exposes its string table");
+}
+const enKeys = Object.keys(STRINGS.en);
+if (enKeys.length < 50) {
+  fail(`#337: English has only ${enKeys.length} keys — table looks truncated`);
+}
+for (const [lang, table] of Object.entries(STRINGS)) {
+  const missing = enKeys.filter((key) => !(key in table));
+  const unknown = Object.keys(table).filter((key) => !enKeys.includes(key));
+  const empty = enKeys.filter(
+    (key) => key in table && (typeof table[key] !== "string" || !table[key].trim())
+  );
+  if (missing.length || unknown.length || empty.length) {
+    fail(
+      [
+        `#337: ${lang} does not match the English key set`,
+        missing.length ? `missing: ${missing.join(", ")}` : "",
+        unknown.length ? `unknown: ${unknown.join(", ")}` : "",
+        empty.length ? `empty: ${empty.join(", ")}` : "",
+      ]
+        .filter(Boolean)
+        .join(" — ")
+    );
+  }
+}
+
 console.log("card module OK:", [...defined.keys()].join(", "));
+console.log(
+  `card i18n OK: ${Object.keys(STRINGS).length} languages x ${enKeys.length} keys`
+);
