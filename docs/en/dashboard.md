@@ -49,6 +49,13 @@ the robot marker moves without image reloads.
   and Enter selects — the same selection the tap gesture builds.
 - The **legend button** lists the feature types actually present on your
   map, so an unfamiliar colour or marker can be looked up on the spot.
+- The **maintenance button** (wrench, next to the legend) opens the two
+  service counters — time left on the blade disc and until the next base
+  station cleaning — each with the reset button that belongs to it, so a
+  blade change is done on the map instead of on a separate dashboard row.
+  The wrench turns orange in the last tenth of a cycle and red once a
+  counter reaches zero, so you notice without opening it. It appears only
+  when the mower actually reports those counters.
 - **Active faults** are pinned on the map where the mower reported them
   (with the fault text from the error-code catalog), so a stuck or lifted
   mower is located at a glance rather than only named in a sensor.
@@ -65,6 +72,7 @@ the robot marker moves without image reloads.
 | `show_current_path` | `true` | Draw the running job's mowing path, including the track from before a mid-session recharge dock |
 | `show_history_path` | `true` | Draw the previous job's path (faded) |
 | `show_hud` | `true` | Status chips (state, battery, job progress, ETA, map) |
+| `show_maintenance` | `true` | Wrench button with the blade / base-station counters and their reset buttons |
 | `show_markers` | `true` | Trapped / maintenance / passage markers |
 | `show_direction` | `true` | Mowing stripe-direction arrow per region |
 | `zone_info` | `true` | Long-press a zone to show its mow settings |

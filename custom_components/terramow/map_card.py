@@ -57,7 +57,7 @@ _LOGGER = logging.getLogger(__name__)
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.32.0"
+CARD_VERSION = "1.33.0"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -765,8 +765,63 @@ def build_status_payload(hub: TerraMowHub) -> dict[str, Any]:
     }
 
 
-def _resolve_hub(hass: HomeAssistant, entity_id: str) -> TerraMowHub | None:
-    """Find the hub owning ``entity_id`` (any TerraMow entity works)."""
+# The maintenance counters and their reset buttons, keyed by the role the
+# card's maintenance panel gives them, valued by the unique_id suffix the
+# owning entity uses (``lawn_mower.terramow@<device_uid>.<suffix>``, see
+# entity.py). Resolved through the entity registry per config entry because
+# entity_ids are user territory: the same button is
+# ``button.terramow_reset_blade_timer`` on one install and
+# ``button.garten_terramow_klingen_zahler_zurucksetzen`` on the next, so
+# nothing about them may be hardcoded in the card (issue #304).
+MAINTENANCE_ENTITY_SUFFIXES: dict[str, str] = {
+    "base_station_time": "remaining_base_station_time",
+    "base_station_reset": "reset_base_station_timer",
+    "blade_time": "remaining_blade_time",
+    "blade_reset": "reset_blade_timer",
+}
+
+# Roles without which the panel has nothing to show.
+_MAINTENANCE_COUNTERS = ("base_station_time", "blade_time")
+
+
+def build_maintenance_payload(
+    hass: HomeAssistant, config_entry_id: str
+) -> dict[str, str] | None:
+    """Entity ids of one mower's maintenance counters and reset buttons.
+
+    The card reads the counters' state (and presses the buttons) itself, so
+    only the ids travel — the values it shows are then the same ones the
+    sensors show, localized and formatted by Home Assistant.
+
+    Returns ``None`` when neither counter exists: on firmware that never
+    reports dp_125/dp_126, or with both sensors disabled, there is nothing to
+    maintain and the card leaves the chip out instead of opening an empty
+    panel. Disabled entities are skipped for the same reason — they have no
+    state for the card to read.
+    """
+    registry = er.async_get(hass)
+    found: dict[str, str] = {}
+    for reg_entry in er.async_entries_for_config_entry(registry, config_entry_id):
+        if reg_entry.disabled_by is not None:
+            continue
+        for role, suffix in MAINTENANCE_ENTITY_SUFFIXES.items():
+            if reg_entry.unique_id.endswith(f".{suffix}"):
+                found[role] = reg_entry.entity_id
+                break
+    if not any(role in found for role in _MAINTENANCE_COUNTERS):
+        return None
+    return found
+
+
+def _resolve_hub(
+    hass: HomeAssistant, entity_id: str
+) -> tuple[TerraMowHub | None, str | None]:
+    """Find the hub owning ``entity_id`` and its config entry id.
+
+    Any TerraMow entity works. The config entry id comes back with the hub so
+    the feed can resolve the maintenance entities of the same device without a
+    second registry walk.
+    """
     registry = er.async_get(hass)
     reg_entry = registry.async_get(entity_id)
     if (
@@ -774,13 +829,13 @@ def _resolve_hub(hass: HomeAssistant, entity_id: str) -> TerraMowHub | None:
         or reg_entry.platform != DOMAIN
         or reg_entry.config_entry_id is None
     ):
-        return None
+        return None, None
     config_entry = hass.config_entries.async_get_entry(reg_entry.config_entry_id)
     basic_data = getattr(config_entry, "runtime_data", None)
     if basic_data is None:
-        return None
+        return None, None
     hub: TerraMowHub | None = basic_data.lawn_mower
-    return hub
+    return hub, reg_entry.config_entry_id
 
 
 class _MapFeed:
@@ -792,11 +847,21 @@ class _MapFeed:
         connection: ActiveConnection,
         msg_id: int,
         hub: TerraMowHub,
+        config_entry_id: str | None = None,
     ) -> None:
         self.hass = hass
         self.connection = connection
         self.msg_id = msg_id
         self.hub = hub
+        # Resolved once: the platforms are set up long before a dashboard can
+        # subscribe, and the ids only change when entities are added, renamed
+        # or (un)disabled — all of which reload the entry and the card's
+        # subscription with it.
+        self._maintenance = (
+            build_maintenance_payload(hass, config_entry_id)
+            if config_entry_id is not None
+            else None
+        )
         self._unsubs: list[Any] = []
         self._scene_timer: Any | None = None
         # Last pushed scene, split for delta detection: everything except the
@@ -990,6 +1055,9 @@ class _MapFeed:
             "type": "robot",
             "robot": build_robot_payload(self.hub),
             **build_status_payload(self.hub),
+            # Static per subscription; rides this event because it feeds the
+            # same HUD the chips do.
+            "maintenance": self._maintenance,
         }
         if event == self._last_robot_event:
             return
@@ -1010,7 +1078,7 @@ def ws_subscribe_map(
     msg: dict[str, Any],
 ) -> None:
     """Subscribe a map card to live scene and robot pose updates."""
-    hub = _resolve_hub(hass, msg["entity_id"])
+    hub, config_entry_id = _resolve_hub(hass, msg["entity_id"])
     if hub is None:
         connection.send_error(
             msg["id"],
@@ -1019,7 +1087,7 @@ def ws_subscribe_map(
         )
         return
 
-    feed = _MapFeed(hass, connection, msg["id"], hub)
+    feed = _MapFeed(hass, connection, msg["id"], hub, config_entry_id)
     connection.subscriptions[msg["id"]] = feed.stop
     connection.send_result(msg["id"])
     feed.start()

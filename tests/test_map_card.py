@@ -29,6 +29,7 @@ from custom_components.terramow.hub import TerraMowHub
 from custom_components.terramow.map_card import (
     CARD_URL_PATH,
     WS_SUBSCRIBE_MAP,
+    build_maintenance_payload,
     build_robot_payload,
     build_scene_payload,
     build_status_payload,
@@ -1352,3 +1353,129 @@ async def test_geometry_digest_is_stable_across_equal_payloads(
         build_scene_payload(hub)[map_card.GEOMETRY_REV_KEY]
         == build_scene_payload(hub)[map_card.GEOMETRY_REV_KEY]
     )
+
+
+async def test_maintenance_payload_resolves_this_installs_entities(
+    hass: HomeAssistant,
+) -> None:
+    """The panel's entity ids come from the registry, never from a template.
+
+    Entity ids are the user's: the same reset button reads
+    ``button.terramow_reset_blade_timer`` here and
+    ``button.garten_terramow_klingen_zahler_zurucksetzen`` on the reporter's
+    install (issue #304). Only the unique_id suffix is ours to match on.
+    """
+    entry = await setup_terramow(hass)
+
+    payload = build_maintenance_payload(hass, entry.entry_id)
+
+    assert payload is not None
+    assert set(payload) == set(map_card.MAINTENANCE_ENTITY_SUFFIXES)
+    registry = er.async_get(hass)
+    for role, suffix in map_card.MAINTENANCE_ENTITY_SUFFIXES.items():
+        reg_entry = registry.async_get(payload[role])
+        assert reg_entry is not None
+        assert reg_entry.unique_id.endswith(f".{suffix}")
+    assert payload["blade_time"].startswith("sensor.")
+    assert payload["blade_reset"].startswith("button.")
+
+
+async def test_maintenance_payload_skips_disabled_entities(
+    hass: HomeAssistant,
+) -> None:
+    """A disabled counter drops out; the rest of the panel still works."""
+    other = MockConfigEntry(domain=DOMAIN, data={CONF_HOST: "192.0.2.50"})
+    other.add_to_hass(hass)
+    registry = er.async_get(hass)
+    uid = "lawn_mower.terramow@OTHERSERIAL"
+    blade = registry.async_get_or_create(
+        "sensor", DOMAIN, f"{uid}.remaining_blade_time", config_entry=other
+    )
+    blade_reset = registry.async_get_or_create(
+        "button", DOMAIN, f"{uid}.reset_blade_timer", config_entry=other
+    )
+    base_reset = registry.async_get_or_create(
+        "button", DOMAIN, f"{uid}.reset_base_station_timer", config_entry=other
+    )
+    # Disabled entities have no state for the card to read, so they must not
+    # be offered as a row.
+    registry.async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"{uid}.remaining_base_station_time",
+        config_entry=other,
+        disabled_by=er.RegistryEntryDisabler.USER,
+    )
+    # An unrelated entity of the same device matches no role at all.
+    registry.async_get_or_create(
+        "sensor", DOMAIN, f"{uid}.pose", config_entry=other
+    )
+
+    payload = build_maintenance_payload(hass, other.entry_id)
+
+    assert payload == {
+        "blade_time": blade.entity_id,
+        "blade_reset": blade_reset.entity_id,
+        "base_station_reset": base_reset.entity_id,
+    }
+
+
+async def test_maintenance_payload_without_any_counter(
+    hass: HomeAssistant,
+) -> None:
+    """No counter, no chip: the card must not open an empty panel."""
+    other = MockConfigEntry(domain=DOMAIN, data={CONF_HOST: "192.0.2.51"})
+    other.add_to_hass(hass)
+    registry = er.async_get(hass)
+    uid = "lawn_mower.terramow@NOCOUNTERS"
+    # Firmware that never reports dp_125/dp_126 still has the reset buttons.
+    registry.async_get_or_create(
+        "button", DOMAIN, f"{uid}.reset_blade_timer", config_entry=other
+    )
+
+    assert build_maintenance_payload(hass, other.entry_id) is None
+
+
+async def test_robot_event_carries_the_maintenance_entities(
+    hass: HomeAssistant,
+) -> None:
+    """The card learns the ids from the feed it is already subscribed to."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    connection = MagicMock()
+    feed = map_card._MapFeed(hass, connection, 1, hub, entry.entry_id)
+    feed._push_robot()
+
+    event = connection.send_message.call_args[0][0]["event"]
+    assert event["maintenance"] == build_maintenance_payload(hass, entry.entry_id)
+
+    # A feed with no config entry to resolve against carries none, and the
+    # card then simply leaves the chip out.
+    assert map_card._MapFeed(hass, MagicMock(), 2, hub)._maintenance is None
+
+
+async def test_subscribed_card_receives_maintenance_entities(
+    hass: HomeAssistant, hass_ws_client: Any
+) -> None:
+    """End to end: subscribing names the counters of that very mower."""
+    entry = await setup_terramow(hass)
+    client = await hass_ws_client(hass)
+    await client.send_json(
+        {
+            "id": 1,
+            "type": WS_SUBSCRIBE_MAP,
+            "entity_id": _lawn_mower_entity_id(hass),
+        }
+    )
+    assert (await client.receive_json())["success"]
+
+    maintenance = None
+    for _ in range(2):  # the scene and robot events arrive in either order
+        event = (await client.receive_json())["event"]
+        if event["type"] == "robot":
+            maintenance = event["maintenance"]
+
+    assert maintenance == build_maintenance_payload(hass, entry.entry_id)
+    await _drain(client)
