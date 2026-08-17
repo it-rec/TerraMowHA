@@ -14,6 +14,9 @@ codes fall back to ``Error <code>`` — when one shows up, map it here.
 from __future__ import annotations
 
 ERROR_CODES: dict[int, str] = {
+    # S1200 fw 9.9.210, issue #171 comment 5077492698: app said the cutting
+    # height adjustment was stuck.
+    103: "Cutting height adjustment stuck",
     # S1200 fw 9.9.210, issue #171 comment 5048257950: app said the mower
     # was lifted off the ground while mowing.
     201: "Mower lifted",
