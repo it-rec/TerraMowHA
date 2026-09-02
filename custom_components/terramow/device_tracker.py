@@ -22,8 +22,17 @@ import math
 import time
 from typing import Any
 
-from homeassistant.components.device_tracker.config_entry import TrackerEntity
-from homeassistant.components.device_tracker.const import SourceType
+# Imported from the package root on purpose. The old home, .config_entry, is a
+# deprecated alias that stops working in HA 2027.6; the new one, .entity, only
+# exists from HA 2026.6 on, while this integration supports 2024.6+ (hacs.json).
+# The root re-exports both names in every version in that range, so it is the
+# one path that works everywhere. mypy cannot see it because
+# device_tracker/__init__.py re-exports without __all__, making these implicit
+# re-exports; the ignore goes away once Home Assistant declares them explicitly.
+from homeassistant.components.device_tracker import (  # type: ignore[attr-defined]
+    SourceType,
+    TrackerEntity,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
