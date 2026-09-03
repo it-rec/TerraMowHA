@@ -352,6 +352,18 @@ dock — the card and camera show the whole cycle, not just the current leg.
 The mow path is split into **runs**, so a transit between two mowed strips does
 not draw a phantom diagonal across the lawn.
 
+**Cycle boundary.** What ends a cycle — and therefore clears the accumulated
+coverage — is the **dp_113 session counters restarting at zero**, not
+`MISSION_STATE_COMPLETE`. The firmware sends the completion flag when it docks
+at dusk on an unfinished lawn and then resumes the same job the next morning,
+and it sometimes omits it when a job really did end. Trusting the flag broke
+both ways on the same lawn within ten days (issue #214): a resumed job lost
+everything mowed the day before, and a genuinely new job was drawn on top of
+the previous one's coverage. The counters have no such ambiguity — they hold
+their final value after a job ends and restart only when the device begins a
+new one. The flag is still recorded, but a resumed job (counters carrying
+over) now keeps its coverage regardless of it.
+
 ## 8. Repair issues (`issues.py`)
 
 Repair issues surface conditions that a bare sensor would bury, as actionable

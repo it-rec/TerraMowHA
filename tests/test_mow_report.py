@@ -1,7 +1,7 @@
 """Tests for the mow-report image and the hub snapshot behind it.
 
-The report exists because the device destroys the evidence: when a session
-ends it zeroes the dp_113 counters, and the next session clears the cycle
+The report exists because the device destroys the evidence: starting the next
+job restarts the dp_113 counters, and that same restart clears the cycle
 coverage. These tests pin that the snapshot is taken while the data is still
 there, that it describes one session, and that the rendered picture keeps
 showing that session afterwards.
@@ -113,9 +113,13 @@ async def test_report_keeps_the_track_the_next_session_clears(
     captured = report["coverage_segments"]
     assert captured == [[{"x": 0, "y": 0}, {"x": 1000, "y": 1000}]]
 
-    # A new session starts: the live coverage resets (issue #202) …
+    # A new session starts: the device restarts its counters, and the live
+    # coverage goes with them (issues #202/#214) …
     await hub.on_mission_status(
         _mission("MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
+    )
+    await hub.on_current_work_data(
+        json.dumps({"clean_area": 0, "total_area": 1500, "work_duration": 0})
     )
     assert hub.coverage_segments == []
     # … and the report still holds the finished session's track.

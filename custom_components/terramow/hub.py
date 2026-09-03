@@ -170,6 +170,15 @@ SESSION_PATH_SAVE_DELAY = 10.0  # seconds
 # the cycle ends. App-parity clearing: a manual "end job / clear progress"
 # clears it immediately; a completed cycle keeps it visible until the next
 # session starts; a map switch always clears. Persisted in the same store.
+#
+# What marks "the next session" is the device's dp_113 counters restarting at
+# zero, not the completion flag. The firmware reports MISSION_STATE_COMPLETE
+# when it docks for the night on an unfinished lawn and then resumes the same
+# job the next morning, and it sometimes omits the flag when a job really did
+# end — so the flag alone both wiped a resumed job's earlier coverage and left
+# a finished job's coverage shading the next one (issue #214). The counters
+# keep their final value after a job ends and only restart when the device
+# begins a new one, which makes them the reliable boundary.
 # The coverage layer draws as a wide (~320 mm) swath, so its polylines need far
 # less point detail than the thin session-path lines. Simplifying coverage
 # segments coarsely and capping their point count keeps the persisted store
@@ -1263,6 +1272,7 @@ class TerraMowHub:
         _LOGGER.debug("Raw current work data payload: %s", payload)
         try:
             data = json.loads(payload)
+            previous = self._current_work_data
             self._current_work_data = data
             self._observe_battery_health()
             self._observe_mission_preflight()
@@ -1271,6 +1281,7 @@ class TerraMowHub:
                 # persisted session path segments (issue #239).
                 self._adopt_or_discard_restored_paths(data)
             self._maybe_release_latch_on_manual_end(data)
+            self._maybe_start_new_cycle_on_counter_restart(previous, data)
             _LOGGER.debug("Current work data updated: %s", data)
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_113: %s", payload)
@@ -1282,8 +1293,8 @@ class TerraMowHub:
         what the device reported for *this* session — the dp_113 counters plus
         the mow track already folded into the cycle coverage — at the moment
         the session ends. Nothing is synthesized, and nothing is read later:
-        the device zeroes its counters right after, and the next session
-        resets the coverage, so a lazily-read report would describe one
+        starting the next job restarts the device's counters and clears the
+        coverage with them, so a lazily-read report would describe one
         session with another's geometry.
 
         Reset boundary: replaced by the next session's report and dropped on
@@ -1383,6 +1394,54 @@ class TerraMowHub:
         # replacement must not archive it into the next one (issue #326).
         self._finished_session_path = self._path_data
         self._coverage_segments = []
+        self._coverage_cycle_done = False
+        self._schedule_session_path_save()
+
+    def _maybe_start_new_cycle_on_counter_restart(
+        self, previous: dict[str, Any], current: dict[str, Any]
+    ) -> None:
+        """Clear the cycle coverage when the device restarts its counters.
+
+        The completion flag cannot mark the end of a cycle on its own. The
+        firmware sends ``MISSION_STATE_COMPLETE`` when it docks for the night
+        on an unfinished lawn and it sometimes never sends it at all, so the
+        cycle-done latch is either set when the job is really only paused or
+        missing when the job is really over. Both were reported on the same
+        lawn within ten days: a new session drawn on top of the previous one's
+        coverage, and a resumed session losing everything mowed the day before
+        (issue #214).
+
+        The dp_113 counters do not have that ambiguity. They keep their final
+        value after a job ends — a mower idle since yesterday still reports the
+        area it mowed then — and the device zeroes them only when it actually
+        starts a new job. A drop from positive to zero is therefore the
+        device's own statement that a fresh cycle began, and that is when the
+        old coverage has to go.
+
+        Restricted to a running mow mission on purpose: the same drop while
+        docked and idle is the vendor app's "end job / clear progress", which
+        ``_maybe_release_latch_on_manual_end`` already handles.
+        """
+        if self.mission not in MOW_MISSIONS:
+            return
+        if not self._work_counters_positive(previous):
+            return
+        if self._work_counters_positive(current):
+            return
+        if not self._coverage_segments and not self._session_path_segments:
+            self._coverage_cycle_done = False
+            return
+        _LOGGER.debug(
+            "dp_113 counters restarted while mowing: new cycle, "
+            "dropping %d coverage and %d session segments",
+            len(self._coverage_segments),
+            len(self._session_path_segments),
+        )
+        # The cached path belongs to the job that just ended; its eventual
+        # replacement must not be archived into this one (issue #326).
+        self._finished_session_path = self._path_data
+        self._coverage_segments = []
+        self._session_path_segments = []
         self._coverage_cycle_done = False
         self._schedule_session_path_save()
 
@@ -2082,9 +2141,27 @@ class TerraMowHub:
             if self._coverage_cycle_done:
                 # The previous cycle completed and a new one starts: the old
                 # coverage must not shade the fresh cycle (issue #202).
-                self._coverage_segments = []
+                #
+                # "Completed" alone is not enough to decide that, though. The
+                # firmware reports MISSION_STATE_COMPLETE when it docks for the
+                # night on an unfinished lawn — seen at 85.8 % progress — and
+                # then resumes the *same* job the next morning, counting on
+                # from where it stopped. Clearing on the completion flag alone
+                # therefore wiped everything mowed the day before as soon as
+                # the mower carried on (issue #214).
+                #
+                # The device's own session counters settle it: a genuinely new
+                # job starts them at zero, a resumed one carries them over. So
+                # only clear when they are not carrying anything.
+                if not self._work_counters_positive(
+                    self._current_work_data
+                    if isinstance(self._current_work_data, dict)
+                    else {}
+                ):
+                    self._coverage_segments = []
+                    self._schedule_session_path_save()
+                # Either way the cycle is running again.
                 self._coverage_cycle_done = False
-                self._schedule_session_path_save()
             if (
                 self.active_mission == Mission.MISSION_IDLE
                 and not self._work_session_open()
