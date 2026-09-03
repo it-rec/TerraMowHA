@@ -261,6 +261,88 @@ def test_next_session_mid_cycle_keeps_the_coverage() -> None:
     assert hub.coverage_segments == [SEGMENT]
 
 
+def test_a_resumed_job_keeps_the_coverage_despite_the_completion_flag() -> None:
+    """Sunset docking reports the job complete; the next morning resumes it.
+
+    Reported on issue #214: a job stopped at dusk and finished the next day
+    showed an empty map at 84 % progress — everything mowed the day before was
+    gone. The completion flag had latched the cycle as done, so the first mow
+    frame of the resumed job wiped it.
+    """
+    hub = _hub()
+    hub._coverage_segments = [SEGMENT]
+    hub._coverage_cycle_done = True
+    # The device carries yesterday's progress in its counters.
+    _work(hub, clean_area=1770, work_duration=7200, is_completed=False)
+    _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
+    assert hub.coverage_segments == [SEGMENT]
+    # The cycle is evidently still running.
+    assert hub._coverage_cycle_done is False
+
+
+def test_counter_restart_while_mowing_clears_the_previous_cycle() -> None:
+    """A new job restarts the device counters; the old coverage must go.
+
+    The other half of issue #214: a fresh session drew the previous session's
+    coverage over the whole lawn while progress read 17 %. The previous
+    cycle's end had not latched, so nothing cleared it — but the device had
+    plainly restarted, its session counters dropped from 367 m² to zero.
+    """
+    hub = _hub()
+    # Yesterday's finished job: the counters keep their final value.
+    _work(hub, clean_area=3677, work_duration=7200, is_completed=True)
+    _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
+    hub._coverage_segments = [SEGMENT]
+    hub._session_path_segments = [SEGMENT]
+    # The device begins a new job and restarts its counters.
+    _work(hub, clean_area=0, work_duration=0, is_completed=False)
+    assert hub.coverage_segments == []
+    assert hub._session_path_segments == []
+
+
+def test_counter_frames_that_are_not_a_fresh_start_leave_the_coverage() -> None:
+    """Only a drop from positive to zero counts as a new cycle."""
+    hub = _hub()
+    hub._coverage_segments = [SEGMENT]
+    # Already at zero: nothing restarted.
+    _work(hub, clean_area=0, work_duration=0, is_completed=False)
+    _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
+    _work(hub, clean_area=0, work_duration=0, is_completed=False)
+    assert hub.coverage_segments == [SEGMENT]
+    # Still counting up: a running job, not a new one.
+    _work(hub, clean_area=500, work_duration=60, is_completed=False)
+    _work(hub, clean_area=900, work_duration=120, is_completed=False)
+    assert hub.coverage_segments == [SEGMENT]
+
+
+def test_counter_restart_with_nothing_drawn_only_drops_the_latch() -> None:
+    """Nothing to clear: no needless store write, but the latch still lifts."""
+    hub = _hub()
+    _work(hub, clean_area=1000, work_duration=600, is_completed=False)
+    _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
+    hub._coverage_cycle_done = True
+    _work(hub, clean_area=0, work_duration=0, is_completed=False)
+    assert hub.coverage_segments == []
+    assert hub._coverage_cycle_done is False
+
+
+def test_a_recharge_dock_keeps_the_counters_and_the_coverage() -> None:
+    """A mid-session dock must not look like a new cycle.
+
+    The counters keep counting across a recharge, so the drop-to-zero signal
+    never fires and everything mowed before the dock stays on the map — the
+    behaviour issue #214 asked for in the first place.
+    """
+    hub = _hub()
+    _work(hub, clean_area=1200, work_duration=3600, is_completed=False)
+    _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
+    hub._coverage_segments = [SEGMENT]
+    _mission(hub, "MISSION_RECHARGE", "MISSION_STATE_RUNNING")
+    _work(hub, clean_area=1200, work_duration=3900, is_completed=False)
+    _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
+    assert hub.coverage_segments == [SEGMENT]
+
+
 def test_manual_end_clears_the_coverage_with_the_session() -> None:
     hub = _hub()
     _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
