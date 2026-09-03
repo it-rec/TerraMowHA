@@ -48,6 +48,7 @@ setting), then export **once** and line the timestamps up with what you did.
 | 109 | **Wi-Fi signal strength** of the mower's own link, in percent (~= `2 * (RSSI dBm + 100)`). Identified empirically: pinned at 98 right next to an access point (router-side −42 dBm), a noisy 52–68 on the lawn through a wall (router-side −75…−80 dBm), 98 inside a concrete cellar (rules out the earlier GNSS-quality guess) and uncorrelated with the battery level. Note the FRITZ!Box-style router-side reading measures the *other* end of the asymmetric link and differs by up to ~10 dBm, more across mesh-AP roaming / 2.4↔5 GHz switches | `{"int_value":62}` | **Wi-Fi signal** sensor (%; diagnostic) |
 | 122 | Full weekly schedule (richer than dp_138). Only the `SCHEDULE_CMD_TYPE_GET` response carries a `schedule_list`; `ADD`/`DELETE` are write commands acked without one (the schedule is therefore writable over MQTT — a possible future "edit calendar" feature). The hub issues the `GET` on connect, and captures app-direction dp_122 traffic (DEBUG log + diagnostics `schedule_app_captures`) so the exact `ADD`/`DELETE` write format can be documented from real app usage | `{"cmd_type":"SCHEDULE_CMD_TYPE_GET","schedule_list":{"items":[{"id":0,"schedule_type":"SCHEDULE_TYPE_GLOBAL_V2","global_schedule_v2":{"basic_config":{"week_days":["WEEK_DAY_MONDAY",…],"start_time":{"hour":9,"minute":30},"end_time":{"hour":11,"minute":0},"disabled":false,"run_once":false}}}],"global_disabled":false,"disabled_week_days":[],…}}` | Schedule `calendar` entity (weekly slots; event uid = item id) and the **writable schedule**: `terramow.add_schedule` / `terramow.delete_schedule` services. The exact write payload shape is negotiated per firmware — each candidate is verified against a fresh `GET` and every attempt is logged. **Conclusive field finding (V1000 fw overall 28, schedule module 5, home_assistant module 3):** every write candidate is silently dropped — named verbs (`ADD`/`SET`/`UPDATE`/`SAVE`), numeric `cmd_type` 1-6, and every plausible payload shape — while `GET` answers normally; the request message evidently carries only `cmd_type`+`seq`, i.e. **local schedule writes are not exposed by current firmware** (the vendor app writes over BLE/cloud). The services stay in place for future firmware; HA-side scheduling is covered by the weather-adaptive blueprint |
 | 123 | Event log | `{"event_list":[{"code":8,"time":"…Z"}]}` | **Last event** sensor (latest `code` + `event_time` attribute) |
+| 127 | **Compatibility handshake — and an undocumented capability inventory.** The integration reads only `module.home_assistant` from it (the version gate that drives `compatibility_status` and the firmware repair issues). The same payload also carries `overall`, a `dp` version, and a **~55-entry map of per-feature module versions** — in effect a machine-readable list of what the firmware can do. Observed on a V1000 `overall:28`: `map:16, mission_status:11, control:12, clean_record:7, cellular_network:7, voice_notification:6, custom_passage:5, schedule:5, main_direction_angle:5, anti_theft:4, …`. Two entries stand out by being **`0`** while every other is ≥1, which reads as "not present on this firmware": `custom_mowing` and **`overnight_auto_resume`** — the latter names exactly the behaviour behind issue [#214] (a job that stops at dusk and continues the next morning). Nothing beyond `home_assistant` is decoded yet; the full map is in every diagnostics download, so it is the cheapest place to check whether a feature exists before building for it | `{"overall":28,"dp":8,"module":{"home_assistant":3,"map":16,"overnight_auto_resume":0,…}}` | Firmware compatibility gate and repair issues; the rest of the map is visible in diagnostics only |
 | 129 | Per-component firmware versions | `{"ap_app":"9.9.210","main_controller":"09.09.210",…}` | firmware `update` entity `component_versions` attribute |
 | 134 | Undecoded binary flag. Observed toggling `enum_value` between `0` and `1` during operation — so it is a live state, **not** a constant. Its actual meaning is unknown; surfaced only so it can be correlated with mower behaviour and decoded | `{"enum_value":1}` | **State flag 134** binary sensor (raw `enum_value`: `1` → on, `0` → off; diagnostic, **disabled by default**) |
 | 135 | Cellular / 4G modem info (only on models with a modem) | `{"is_enabled":false,"RSRP":0,"RSRQ":0,"type":"CELLULAR_TYPE_UNKNOWN",…}` | **Cellular enabled** binary sensor; **Cellular RSRP** / **RSRQ** / **type** sensors (signal sensors are `None` while disabled) |
@@ -100,6 +101,47 @@ No observed dp_107 field marks "paused mid-session, will resume".
   mark a resumable pause — as well as any still-undecoded neighbouring dp that
   tracks session progress. Any of these would let Active Job track true
   completion instead of relying on the timeout.
+
+**dp_113 `current_work_data` — the counters answer what dp_107 cannot: is this a
+new job or a resumed one.** The session counters (`clean_area`, `work_duration`)
+do **not** reset when a job ends. Measured on a V1000 fw28: a mow finished at
+11:10 with 177.0 m², and the device was still reporting 177.0 m² nine hours
+later and through the night, unchanged, while docked. They restart at zero only
+when the device actually begins a new job — visible as a vertical drop in the
+history graph at the moment mowing starts (issue [#214] comment
+[5293811298](https://github.com/it-rec/TerraMowHA/issues/214#issuecomment-5293811298),
+where the reporter spotted it first).
+
+That makes the counters the reliable cycle boundary, and it matters because
+`MISSION_STATE_COMPLETE` is not one: the firmware sends the completion flag when
+it docks at dusk with the lawn unfinished — observed at **85.8 % progress**,
+minutes before sunset — and then resumes the same job the next morning. It also
+sometimes omits the flag when a job really did end.
+
+- *Consequence:* the cycle-level mowed coverage is cleared on a counter restart,
+  not on the completion flag. Trusting the flag broke both ways on the same lawn
+  within ten days — a resumed job lost the previous day's coverage, a genuinely
+  new job inherited the previous one's (issue [#214]).
+- *To watch for:* whether any firmware zeroes the counters at job end after all.
+  That would make the drop ambiguous again, and the boundary would need a second
+  signal.
+
+**dp_108 `battery_status` — the pack is never run down, so the 20→80 charge
+window never opens.** Over 65 days on a V1000 the lowest *daily minimum* was
+33 %, and the typical minimum was 50 %: the firmware sends the mower home long
+before the battery is low. The integration's battery-health aggregator only
+records a charge sample when a charge starts at ≤ 20 % and reaches ≥ 80 %, so on
+this usage pattern `charge_samples` stays `0` and `charge_20_80_minutes` /
+`charge_percent_per_hour` stay `null` in every diagnostics download, next to 41
+partial discharges and a *high* confidence rating.
+
+- *Consequence:* this is expected, not a fault — worth knowing before someone
+  reads a dump and goes looking for a broken charge detector. Discharge-side
+  metrics (area and minutes per 10 %, efficiency trend) are unaffected and do
+  populate.
+- *To watch for:* if charge figures are wanted in practice, the window has to
+  come down to what mowers actually do, e.g. any sufficiently large uninterrupted
+  rise rather than a fixed 20→80 span.
 
 **Recharge-return, manual job end and the missing `MISSION_STATE_COMPLETE`
 (dp_107 / dp_113).** Live capture of a full interrupted job (V1000 fw28,
@@ -154,3 +196,4 @@ this went unnoticed. The `error_list` clears when the fault resolves.
 [#199]: https://github.com/it-rec/TerraMowHA/issues/199
 [#204]: https://github.com/it-rec/TerraMowHA/issues/204
 [#207]: https://github.com/it-rec/TerraMowHA/issues/207
+[#214]: https://github.com/it-rec/TerraMowHA/issues/214
