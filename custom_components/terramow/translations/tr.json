@@ -337,6 +337,9 @@
       "wifi_signal": {
         "name": "Wi-Fi sinyali"
       },
+      "firmware_capabilities": {
+        "name": "Ürün yazılımı özellikleri"
+      },
       "zone_last_mowed": {
         "name": "{zone} son biçme"
       },

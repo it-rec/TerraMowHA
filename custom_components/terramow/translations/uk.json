@@ -337,6 +337,9 @@
       "wifi_signal": {
         "name": "Сигнал Wi-Fi"
       },
+      "firmware_capabilities": {
+        "name": "Можливості прошивки"
+      },
       "zone_last_mowed": {
         "name": "{zone} останнє кошіння"
       },

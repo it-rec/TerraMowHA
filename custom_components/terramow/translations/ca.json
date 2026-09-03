@@ -337,6 +337,9 @@
       "wifi_signal": {
         "name": "Senyal Wi-Fi"
       },
+      "firmware_capabilities": {
+        "name": "Capacitats del microprogramari"
+      },
       "zone_last_mowed": {
         "name": "{zone} darrera sega"
       },

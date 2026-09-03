@@ -337,6 +337,9 @@
       "wifi_signal": {
         "name": "Wi-Fi 신호"
       },
+      "firmware_capabilities": {
+        "name": "펌웨어 기능"
+      },
       "zone_last_mowed": {
         "name": "{zone} 마지막 예초"
       },
