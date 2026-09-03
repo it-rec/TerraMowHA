@@ -337,6 +337,9 @@
       "wifi_signal": {
         "name": "WLAN-Signal"
       },
+      "firmware_capabilities": {
+        "name": "Firmware-Fähigkeiten"
+      },
       "zone_last_mowed": {
         "name": "{zone} zuletzt gemäht"
       },

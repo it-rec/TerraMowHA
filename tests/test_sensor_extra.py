@@ -348,3 +348,51 @@ def test_back_to_station_reason_without_lawn_mower_is_none() -> None:
     sensor = _sensor(hub, "back_to_station_reason")
     hub.basic_data.lawn_mower = None
     assert sensor.native_value is None
+
+
+def test_firmware_capabilities_without_a_payload() -> None:
+    """No dp_127 yet: nothing to count, nothing to show."""
+    hub = _hub()
+    sensor = _sensor(hub, "firmware_capabilities")
+    assert sensor.native_value is None
+    assert sensor.extra_state_attributes == {}
+
+
+def test_firmware_capabilities_ignores_a_malformed_module_map() -> None:
+    """A payload whose ``module`` is not a map is treated as absent."""
+    hub = _hub()
+    hub.basic_data.firmware_version = {"overall": 28, "module": ["not", "a", "map"]}
+    sensor = _sensor(hub, "firmware_capabilities")
+    assert sensor.native_value is None
+    assert sensor.extra_state_attributes == {}
+
+
+def test_firmware_capabilities_counts_and_lists_the_modules() -> None:
+    """Countable versions only, and a 0 is kept: it means "not present"."""
+    hub = _hub()
+    hub.basic_data.firmware_version = {
+        "overall": 28,
+        "dp": 8,
+        "module": {
+            "home_assistant": 3,
+            "mow_speed": "3",             # numeric strings are versions
+            "overnight_auto_resume": 0,   # a feature this firmware lacks
+            "custom_mowing": 0,
+            "ble_communication": True,    # a bool is not a version
+            "weather": {"nested": 1},     # neither is a structure
+            "map": "sixteen",             # nor unparseable text
+        },
+    }
+    sensor = _sensor(hub, "firmware_capabilities")
+    assert sensor.native_value == 4
+    attributes = sensor.extra_state_attributes
+    assert attributes is not None
+    assert attributes["overall"] == 28
+    assert attributes["dp"] == 8
+    assert attributes["unsupported"] == ["custom_mowing", "overnight_auto_resume"]
+    assert attributes["modules"] == {
+        "custom_mowing": 0,
+        "home_assistant": 3,
+        "mow_speed": 3,
+        "overnight_auto_resume": 0,
+    }

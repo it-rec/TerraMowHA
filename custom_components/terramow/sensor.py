@@ -481,6 +481,55 @@ def _wifi_signal(hub: TerraMowHub) -> StateType:
     return hub.wifi_signal
 
 
+def _capability_modules(hub: TerraMowHub) -> dict[str, int]:
+    """The dp_127 per-feature module map, reduced to plain integers.
+
+    Parsed defensively like every other unofficial payload: a module whose
+    version is missing, boolean or unparseable is dropped rather than shown as
+    a fake ``0``, because ``0`` is meaningful here -- it is how this firmware
+    marks a feature it does not have.
+    """
+    module = hub.firmware_version_info.get("module")
+    if not isinstance(module, dict):
+        return {}
+    versions: dict[str, int] = {}
+    for name, value in module.items():
+        if isinstance(value, bool) or not isinstance(value, (int, str)):
+            continue
+        try:
+            versions[str(name)] = int(value)
+        except ValueError:
+            continue
+    return versions
+
+
+def _firmware_capabilities(hub: TerraMowHub) -> StateType:
+    """How many feature modules the firmware advertises.
+
+    The count is the state because it is the one number that moves on its own:
+    an update that adds a feature raises it, and the history then dates the
+    change. A version bump inside a module shows in the attributes instead.
+    """
+    return len(_capability_modules(hub)) or None
+
+
+def _firmware_capability_attributes(hub: TerraMowHub) -> dict[str, Any]:
+    """The full map, plus the two entries worth reading first."""
+    versions = _capability_modules(hub)
+    if not versions:
+        return {}
+    info = hub.firmware_version_info
+    return {
+        "overall": info.get("overall"),
+        "dp": info.get("dp"),
+        # Everything else on the reference device reports >= 1, so a 0 reads
+        # as "this firmware does not have it" -- the quickest answer to
+        # whether a missing feature is the device's doing or the integration's.
+        "unsupported": sorted(n for n, v in versions.items() if v == 0),
+        "modules": dict(sorted(versions.items())),
+    }
+
+
 def _map_save_progress(hub: TerraMowHub) -> StateType:
     value = hub.map_save_progress.get("int_value")
     return value if isinstance(value, int) and not isinstance(value, bool) else None
@@ -988,6 +1037,26 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         push_dp_ids=(109,),
         value_fn=_wifi_signal,
+    ),
+    # Firmware capabilities (dp_127): the per-feature module map the firmware
+    # advertises. Only two of its ~55 entries drive anything today
+    # (``home_assistant`` gates compatibility, ``mow_speed`` gates the AUTO
+    # level), and the rest was reachable only by downloading diagnostics.
+    # Surfacing it makes a capability comparable across models from the UI --
+    # which is what deciding "is this feature absent or just unimplemented?"
+    # needs, and what a bug report can carry without attaching a file.
+    #
+    # Separate from Version compatibility on purpose: that sensor answers
+    # "may these two versions talk to each other" and names the three modules
+    # that decide it. This one answers "what can this firmware do at all", so
+    # it carries every module and the list of those reporting 0.
+    TerraMowSensorEntityDescription(
+        key="firmware_capabilities",
+        translation_key="firmware_capabilities",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        push_dp_ids=(127,),
+        value_fn=_firmware_capabilities,
+        attributes_fn=_firmware_capability_attributes,
     ),
 )
 

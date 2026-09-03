@@ -337,6 +337,9 @@
       "wifi_signal": {
         "name": "Wi-Fi-signal"
       },
+      "firmware_capabilities": {
+        "name": "Fastvarefunksjoner"
+      },
       "zone_last_mowed": {
         "name": "{zone} sist klippet"
       },

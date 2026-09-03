@@ -337,6 +337,9 @@
       "wifi_signal": {
         "name": "Wi-Fi signāls"
       },
+      "firmware_capabilities": {
+        "name": "Aparātprogrammatūras iespējas"
+      },
       "zone_last_mowed": {
         "name": "{zone} pēdējoreiz pļauts"
       },

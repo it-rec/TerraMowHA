@@ -337,6 +337,9 @@
       "wifi_signal": {
         "name": "Wi-Fi сигнал"
       },
+      "firmware_capabilities": {
+        "name": "Могућности фирмвера"
+      },
       "zone_last_mowed": {
         "name": "{zone} последње кошење"
       },

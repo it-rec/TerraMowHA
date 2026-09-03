@@ -337,6 +337,9 @@
       "wifi_signal": {
         "name": "Wi-Fi signalas"
       },
+      "firmware_capabilities": {
+        "name": "Programinės aparatinės įrangos galimybės"
+      },
       "zone_last_mowed": {
         "name": "{zone} paskutinį kartą pjauta"
       },
