@@ -1293,8 +1293,8 @@ class TerraMowHub:
         what the device reported for *this* session — the dp_113 counters plus
         the mow track already folded into the cycle coverage — at the moment
         the session ends. Nothing is synthesized, and nothing is read later:
-        the device zeroes its counters right after, and the next session
-        resets the coverage, so a lazily-read report would describe one
+        starting the next job restarts the device's counters and clears the
+        coverage with them, so a lazily-read report would describe one
         session with another's geometry.
 
         Reset boundary: replaced by the next session's report and dropped on
@@ -1398,7 +1398,7 @@ class TerraMowHub:
         self._schedule_session_path_save()
 
     def _maybe_start_new_cycle_on_counter_restart(
-        self, previous: Any, current: dict[str, Any]
+        self, previous: dict[str, Any], current: dict[str, Any]
     ) -> None:
         """Clear the cycle coverage when the device restarts its counters.
 
@@ -1422,8 +1422,6 @@ class TerraMowHub:
         docked and idle is the vendor app's "end job / clear progress", which
         ``_maybe_release_latch_on_manual_end`` already handles.
         """
-        if not isinstance(previous, dict):
-            return
         if self.mission not in MOW_MISSIONS:
             return
         if not self._work_counters_positive(previous):
