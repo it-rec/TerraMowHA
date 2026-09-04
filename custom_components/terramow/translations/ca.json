@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Tall minuciós de cantonades"
+      },
+      "cliff_detection": {
+        "name": "Detecció de cingles"
+      },
+      "slope_detection": {
+        "name": "Detecció de pendents"
+      },
+      "after_rain_auto_resume": {
+        "name": "Represa automàtica després de pluja"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Angle de la segona direcció"
+      },
+      "rain_sensor_threshold": {
+        "name": "Llindar del sensor de pluja"
+      },
+      "after_rain_resume_delay": {
+        "name": "Retard de represa després de pluja"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "La gespadora no ha acceptat el canvi de planificació (intents: {attempts}). El microprogramari actual de TerraMow no accepta escriptures de planificació per la xarxa local: l'aplicació del fabricant utilitza Bluetooth/núvol. Utilitzeu el blueprint de sega adaptativa al temps per planificar des de Home Assistant; aquests serveis funcionaran quan el microprogramari admeti l'escriptura local."
+    },
+    "advanced_setting_write_failed": {
+      "message": "La segadora no ha aplicat l'ajust {setting}. És possible que el microprogramari actual no accepti l'escriptura d'ajustos avançats per MQTT local (intents: {attempts})."
     }
   }
 }

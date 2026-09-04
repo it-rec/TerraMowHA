@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Põhjalik nurkade niitmine"
+      },
+      "cliff_detection": {
+        "name": "Järsaku tuvastus"
+      },
+      "slope_detection": {
+        "name": "Kalde tuvastus"
+      },
+      "after_rain_auto_resume": {
+        "name": "Automaatne jätkamine pärast vihma"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Teise suuna nurk"
+      },
+      "rain_sensor_threshold": {
+        "name": "Vihmaanduri lävi"
+      },
+      "after_rain_resume_delay": {
+        "name": "Jätkamise viivitus pärast vihma"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "Muruniiduk ei võtnud ajakava muudatust vastu (katseid: {attempts}). Praegune TerraMow püsivara ei luba ajakava kirjutamist kohtvõrgu kaudu – tootja rakendus kasutab selleks Bluetoothi/pilve. Home Assistantist ajastamiseks kasuta ilmapõhise niitmise blueprinti; need teenused hakkavad tööle, kui püsivara lisab kohaliku kirjutamise toe."
+    },
+    "advanced_setting_write_failed": {
+      "message": "Robotniiduk ei rakendanud seadistust {setting}. Praegune püsivara ei pruugi aktsepteerida täpsemate seadistuste kirjutamist kohaliku MQTT kaudu (katsed: {attempts})."
     }
   }
 }

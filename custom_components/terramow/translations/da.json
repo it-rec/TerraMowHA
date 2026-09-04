@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Grundig hjørneklipning"
+      },
+      "cliff_detection": {
+        "name": "Registrering af kanter"
+      },
+      "slope_detection": {
+        "name": "Registrering af skråninger"
+      },
+      "after_rain_auto_resume": {
+        "name": "Auto-genoptagelse efter regn"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Vinkel for anden retning"
+      },
+      "rain_sensor_threshold": {
+        "name": "Regnsensortærskel"
+      },
+      "after_rain_resume_delay": {
+        "name": "Genoptagelsesforsinkelse efter regn"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "Plæneklipperen accepterede ikke ændringen af planen (forsøg: {attempts}). Den nuværende TerraMow-firmware accepterer ikke skrivning af planer over det lokale netværk – producentens app bruger i stedet Bluetooth/sky. Brug blueprintet til vejrtilpasset klipning til planlægning fra Home Assistant; disse tjenester virker, når firmwaren understøtter lokal skrivning."
+    },
+    "advanced_setting_write_failed": {
+      "message": "Robotten anvendte ikke indstillingen {setting}. Den nuværende firmware accepterer muligvis ikke skrivning af avancerede indstillinger via lokal MQTT (forsøg: {attempts})."
     }
   }
 }

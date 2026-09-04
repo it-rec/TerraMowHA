@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Důkladné sečení rohů"
+      },
+      "cliff_detection": {
+        "name": "Detekce srázů"
+      },
+      "slope_detection": {
+        "name": "Detekce svahů"
+      },
+      "after_rain_auto_resume": {
+        "name": "Auto. pokračování po dešti"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Úhel druhého směru"
+      },
+      "rain_sensor_threshold": {
+        "name": "Práh dešťového senzoru"
+      },
+      "after_rain_resume_delay": {
+        "name": "Zpoždění pokračování po dešti"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "Sekačka nepřijala změnu plánu (pokusů: {attempts}). Současný firmware TerraMow neumožňuje zápis plánu přes místní síť – aplikace výrobce místo toho používá Bluetooth/cloud. Pro plánování z Home Assistant použijte blueprint pro sečení podle počasí; tyto služby budou fungovat, jakmile firmware doplní podporu místního zápisu."
+    },
+    "advanced_setting_write_failed": {
+      "message": "Sekačka nepoužila nastavení {setting}. Současný firmware nemusí přijímat zápis pokročilých nastavení přes místní MQTT (pokusy: {attempts})."
     }
   }
 }

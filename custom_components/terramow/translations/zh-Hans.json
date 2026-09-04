@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "彻底贴边切角"
+      },
+      "cliff_detection": {
+        "name": "悬崖检测"
+      },
+      "slope_detection": {
+        "name": "坡度检测"
+      },
+      "after_rain_auto_resume": {
+        "name": "雨后自动恢复"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "第二主方向角度"
+      },
+      "rain_sensor_threshold": {
+        "name": "雨量传感器阈值"
+      },
+      "after_rain_resume_delay": {
+        "name": "雨后恢复延迟"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "割草机未接受此日程更改（尝试次数：{attempts}）。当前 TerraMow 固件不支持通过本地网络写入日程——厂商 App 改用蓝牙/云端。请使用随天气自适应割草的蓝图在 Home Assistant 中进行排程；待固件支持本地写入后，这些服务即可使用。"
+    },
+    "advanced_setting_write_failed": {
+      "message": "割草机未应用 {setting} 设置。当前固件可能不接受通过本地 MQTT 写入高级设置（尝试：{attempts}）。"
     }
   }
 }

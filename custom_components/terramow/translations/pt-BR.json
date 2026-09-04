@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Corte minucioso de cantos"
+      },
+      "cliff_detection": {
+        "name": "Detecção de bordas"
+      },
+      "slope_detection": {
+        "name": "Detecção de inclinação"
+      },
+      "after_rain_auto_resume": {
+        "name": "Retomada automática após chuva"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Ângulo da segunda direção"
+      },
+      "rain_sensor_threshold": {
+        "name": "Limite do sensor de chuva"
+      },
+      "after_rain_resume_delay": {
+        "name": "Atraso de retomada após chuva"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "O robô cortador de grama não aceitou a alteração da programação (tentativas: {attempts}). O firmware atual do TerraMow não aceita gravação de programações pela rede local — o aplicativo do fabricante usa Bluetooth/nuvem. Use o blueprint de corte adaptado ao clima para agendar pelo Home Assistant; esses serviços funcionarão quando o firmware oferecer suporte à gravação local."
+    },
+    "advanced_setting_write_failed": {
+      "message": "O robô não aplicou a configuração {setting}. O firmware atual pode não aceitar a gravação de configurações avançadas por MQTT local (tentativas: {attempts})."
     }
   }
 }

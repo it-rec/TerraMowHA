@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Grondig hoeken maaien"
+      },
+      "cliff_detection": {
+        "name": "Klifdetectie"
+      },
+      "slope_detection": {
+        "name": "Hellingdetectie"
+      },
+      "after_rain_auto_resume": {
+        "name": "Auto-hervatten na regen"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Hoek tweede richting"
+      },
+      "rain_sensor_threshold": {
+        "name": "Regensensordrempel"
+      },
+      "after_rain_resume_delay": {
+        "name": "Hervattingsvertraging na regen"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "De maaier heeft de schemawijziging niet geaccepteerd (pogingen: {attempts}). De huidige TerraMow-firmware accepteert geen schemaschrijfacties via het lokale netwerk - de app van de fabrikant gebruikt in plaats daarvan Bluetooth/cloud. Gebruik de blueprint voor weersafhankelijk maaien om vanuit Home Assistant te plannen; deze services werken zodra de firmware lokaal schrijven ondersteunt."
+    },
+    "advanced_setting_write_failed": {
+      "message": "De maaier heeft de instelling {setting} niet toegepast. De huidige firmware accepteert mogelijk geen schrijfacties voor geavanceerde instellingen via lokale MQTT (pogingen: {attempts})."
     }
   }
 }

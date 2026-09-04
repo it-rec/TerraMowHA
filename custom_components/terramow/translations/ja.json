@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "コーナーの徹底刈り取り"
+      },
+      "cliff_detection": {
+        "name": "段差検知"
+      },
+      "slope_detection": {
+        "name": "傾斜検知"
+      },
+      "after_rain_auto_resume": {
+        "name": "雨上がり自動再開"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "第2方向角度"
+      },
+      "rain_sensor_threshold": {
+        "name": "雨センサーしきい値"
+      },
+      "after_rain_resume_delay": {
+        "name": "雨上がり再開遅延"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "芝刈り機がスケジュールの変更を受け付けませんでした (試行回数: {attempts})。現在の TerraMow ファームウェアはローカルネットワーク経由のスケジュール書き込みに対応していません。メーカーのアプリは代わりに Bluetooth/クラウドを使用します。Home Assistant からスケジュールを設定するには、天候対応の芝刈りブループリントを使用してください。これらのサービスは、ファームウェアがローカル書き込みに対応すれば利用できるようになります。"
+    },
+    "advanced_setting_write_failed": {
+      "message": "芝刈り機は設定 {setting} を適用しませんでした。現在のファームウェアはローカル MQTT 経由での詳細設定の書き込みに対応していない可能性があります (試行: {attempts})。"
     }
   }
 }

@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Corte minucioso de cantos"
+      },
+      "cliff_detection": {
+        "name": "Deteção de bordas"
+      },
+      "slope_detection": {
+        "name": "Deteção de inclinação"
+      },
+      "after_rain_auto_resume": {
+        "name": "Retoma automática após chuva"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Ângulo da segunda direção"
+      },
+      "rain_sensor_threshold": {
+        "name": "Limiar do sensor de chuva"
+      },
+      "after_rain_resume_delay": {
+        "name": "Atraso de retoma após chuva"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "O robô corta-relva não aceitou a alteração do agendamento (tentativas: {attempts}). O firmware atual do TerraMow não aceita a escrita de agendamentos através da rede local — a aplicação do fabricante utiliza Bluetooth/nuvem. Utilize o blueprint de corte adaptado à meteorologia para agendar a partir do Home Assistant; estes serviços funcionarão assim que o firmware suportar a escrita local."
+    },
+    "advanced_setting_write_failed": {
+      "message": "O robô não aplicou a definição {setting}. O firmware atual pode não aceitar a escrita de definições avançadas por MQTT local (tentativas: {attempts})."
     }
   }
 }

@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Noggrann hörnklippning"
+      },
+      "cliff_detection": {
+        "name": "Kantdetektering"
+      },
+      "slope_detection": {
+        "name": "Lutningsdetektering"
+      },
+      "after_rain_auto_resume": {
+        "name": "Auto-återupptagning efter regn"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Vinkel för andra riktningen"
+      },
+      "rain_sensor_threshold": {
+        "name": "Regnsensortröskel"
+      },
+      "after_rain_resume_delay": {
+        "name": "Återupptagningsfördröjning efter regn"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "Gräsklipparen accepterade inte schemaändringen (försök: {attempts}). Nuvarande TerraMow-fastvara accepterar inte schemaskrivningar över det lokala nätverket – tillverkarens app använder Bluetooth/moln i stället. Använd blueprinten för väderanpassad klippning för schemaläggning från Home Assistant; dessa tjänster fungerar när fastvaran stöder lokal skrivning."
+    },
+    "advanced_setting_write_failed": {
+      "message": "Roboten tillämpade inte inställningen {setting}. Den nuvarande fastvaran accepterar kanske inte skrivning av avancerade inställningar via lokal MQTT (försök: {attempts})."
     }
   }
 }

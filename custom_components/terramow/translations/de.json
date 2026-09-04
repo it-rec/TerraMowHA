@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Gründliches Eckenmähen"
+      },
+      "cliff_detection": {
+        "name": "Klippenerkennung"
+      },
+      "slope_detection": {
+        "name": "Hangerkennung"
+      },
+      "after_rain_auto_resume": {
+        "name": "Auto-Fortsetzen nach Regen"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Zweiter Richtungswinkel"
+      },
+      "rain_sensor_threshold": {
+        "name": "Regensensor-Schwelle"
+      },
+      "after_rain_resume_delay": {
+        "name": "Fortsetzungs-Verzögerung nach Regen"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "Der Mäher hat die Zeitplanänderung nicht übernommen (Versuche: {attempts}). Die aktuelle TerraMow-Firmware akzeptiert keine Zeitplan-Schreibzugriffe über das lokale Netzwerk - die Hersteller-App nutzt stattdessen Bluetooth/Cloud. Verwende das Blueprint \"Weather-adaptive mowing\" für Zeitpläne aus Home Assistant; diese Dienste funktionieren, sobald die Firmware lokales Schreiben unterstützt."
+    },
+    "advanced_setting_write_failed": {
+      "message": "Der Mäher hat die Einstellung {setting} nicht übernommen. Die aktuelle Firmware akzeptiert Schreibzugriffe auf erweiterte Einstellungen über lokales MQTT möglicherweise nicht (Versuche: {attempts})."
     }
   }
 }

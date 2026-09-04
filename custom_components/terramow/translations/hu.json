@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Alapos Sarokvágás"
+      },
+      "cliff_detection": {
+        "name": "Szakadékérzékelés"
+      },
+      "slope_detection": {
+        "name": "Lejtőérzékelés"
+      },
+      "after_rain_auto_resume": {
+        "name": "Automatikus folytatás eső után"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Második Irány Szöge"
+      },
+      "rain_sensor_threshold": {
+        "name": "Esőérzékelő küszöb"
+      },
+      "after_rain_resume_delay": {
+        "name": "Folytatási késleltetés eső után"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "A fűnyíró nem fogadta el az ütemterv módosítását (próbálkozások: {attempts}). A jelenlegi TerraMow firmware nem fogad el ütemterv-írást a helyi hálózaton keresztül – a gyártói alkalmazás helyette Bluetooth-t/felhőt használ. A Home Assistantból való ütemezéshez használja az időjáráshoz igazodó nyírás blueprintet; ezek a szolgáltatások akkor működnek majd, ha a firmware támogatja a helyi írást."
+    },
+    "advanced_setting_write_failed": {
+      "message": "A fűnyíró nem alkalmazta a(z) {setting} beállítást. A jelenlegi firmware nem biztos, hogy elfogadja a speciális beállítások írását helyi MQTT-n keresztül (kísérletek: {attempts})."
     }
   }
 }

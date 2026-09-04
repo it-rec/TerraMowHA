@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Tăiere Minuțioasă a Colțurilor"
+      },
+      "cliff_detection": {
+        "name": "Detectare margini"
+      },
+      "slope_detection": {
+        "name": "Detectare pantă"
+      },
+      "after_rain_auto_resume": {
+        "name": "Reluare automată după ploaie"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Unghiul Celei de-a Doua Direcții"
+      },
+      "rain_sensor_threshold": {
+        "name": "Prag senzor de ploaie"
+      },
+      "after_rain_resume_delay": {
+        "name": "Întârziere reluare după ploaie"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "Mașina de tuns iarba nu a acceptat modificarea programului (încercări: {attempts}). Firmware-ul TerraMow actual nu acceptă scrierea programului prin rețeaua locală – aplicația producătorului folosește în schimb Bluetooth/cloud. Pentru programare din Home Assistant, folosiți blueprintul de tuns adaptat la vreme; aceste servicii vor funcționa după ce firmware-ul va adăuga suport pentru scriere locală."
+    },
+    "advanced_setting_write_failed": {
+      "message": "Robotul nu a aplicat setarea {setting}. Firmware-ul actual s-ar putea să nu accepte scrierea setărilor avansate prin MQTT local (încercări: {attempts})."
     }
   }
 }

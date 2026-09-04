@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Dokładne koszenie narożników"
+      },
+      "cliff_detection": {
+        "name": "Wykrywanie krawędzi"
+      },
+      "slope_detection": {
+        "name": "Wykrywanie nachylenia"
+      },
+      "after_rain_auto_resume": {
+        "name": "Auto-wznowienie po deszczu"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Kąt drugiego kierunku"
+      },
+      "rain_sensor_threshold": {
+        "name": "Próg czujnika deszczu"
+      },
+      "after_rain_resume_delay": {
+        "name": "Opóźnienie wznowienia po deszczu"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "Kosiarka nie przyjęła zmiany harmonogramu (próby: {attempts}). Obecne oprogramowanie układowe TerraMow nie obsługuje zapisu harmonogramu przez sieć lokalną – aplikacja producenta używa zamiast tego Bluetooth/chmury. Do planowania z Home Assistanta użyj blueprintu koszenia dostosowanego do pogody; te usługi zadziałają, gdy oprogramowanie układowe doda obsługę zapisu lokalnego."
+    },
+    "advanced_setting_write_failed": {
+      "message": "Kosiarka nie zastosowała ustawienia {setting}. Obecne oprogramowanie układowe może nie akceptować zapisu ustawień zaawansowanych przez lokalne MQTT (próby: {attempts})."
     }
   }
 }

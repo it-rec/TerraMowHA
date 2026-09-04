@@ -42,7 +42,9 @@
       "main_direction_single_angle": { "default": "mdi:compass-outline" },
       "main_direction_auto_rotate_interval": { "default": "mdi:rotate-right" },
       "multiple_direction_angle1": { "default": "mdi:compass-outline" },
-      "multiple_direction_angle2": { "default": "mdi:compass" }
+      "multiple_direction_angle2": { "default": "mdi:compass" },
+      "rain_sensor_threshold": { "default": "mdi:weather-pouring" },
+      "after_rain_resume_delay": { "default": "mdi:timer-sand" }
     },
     "select": {
       "region_select": { "default": "mdi:map-marker-multiple" },
@@ -83,7 +85,10 @@
       "clean_mode": { "default": "mdi:broom" }
     },
     "switch": {
-      "thorough_corner_cutting": { "default": "mdi:vector-polyline" }
+      "thorough_corner_cutting": { "default": "mdi:vector-polyline" },
+      "cliff_detection": { "default": "mdi:image-filter-hdr" },
+      "slope_detection": { "default": "mdi:angle-acute" },
+      "after_rain_auto_resume": { "default": "mdi:weather-rainy" }
     }
   }
 }

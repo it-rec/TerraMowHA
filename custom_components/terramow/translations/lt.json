@@ -490,6 +490,15 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Kruopštus kampų pjovimas"
+      },
+      "cliff_detection": {
+        "name": "Skardžio aptikimas"
+      },
+      "slope_detection": {
+        "name": "Nuolydžio aptikimas"
+      },
+      "after_rain_auto_resume": {
+        "name": "Automatinis tęsimas po lietaus"
       }
     },
     "number": {
@@ -513,6 +522,12 @@
       },
       "multiple_direction_angle2": {
         "name": "Antrosios krypties kampas"
+      },
+      "rain_sensor_threshold": {
+        "name": "Lietaus jutiklio slenkstis"
+      },
+      "after_rain_resume_delay": {
+        "name": "Tęsimo delsa po lietaus"
       }
     },
     "update": {
@@ -595,6 +610,9 @@
     },
     "schedule_write_failed": {
       "message": "Vejapjovė nepriėmė tvarkaraščio pakeitimo (bandymų: {attempts}). Dabartinė TerraMow programinė aparatinė įranga nepriima tvarkaraščio įrašymo per vietinį tinklą – gamintojo programėlė vietoje to naudoja „Bluetooth“/debesį. Planavimui iš Home Assistant naudokite orams prisitaikančio pjovimo planą (blueprint); šios paslaugos veiks, kai programinė aparatinė įranga pridės vietinio įrašymo palaikymą."
+    },
+    "advanced_setting_write_failed": {
+      "message": "Vejapjovė nepritaikė nustatymo {setting}. Dabartinė aparatinė programinė įranga gali nepriimti išplėstinių nustatymų įrašymo per vietinį MQTT (bandymai: {attempts})."
     }
   }
 }

@@ -150,12 +150,14 @@ async def test_setup_loads_and_creates_all_platform_entities(
         "image": 1,
         "update": 1,
         "button": 3,
-        "switch": 1,
+        # 1 mow-param switch + 3 writable dp_150 advanced settings.
+        "switch": 4,
         "event": 1,
         "calendar": 1,
         "todo": 1,
         "select": 5,
-        "number": 7,
+        # 7 dp_155 controls + 2 writable dp_150 advanced settings.
+        "number": 9,
         "binary_sensor": len(BINARY_SENSORS),
         # 9 hand-written sensors (battery, pose, 3 map, mow speed, version
         # compatibility, 2 wear forecasts) + the description table.
