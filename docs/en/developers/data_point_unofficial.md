@@ -66,13 +66,33 @@ Documented here for future work; not decoded into entities yet.
 | 103 | **Ack echo of the dp_103 command channel** (the integration publishes selective-mow / clean commands to `data_point/103/app`): the `/robot` side answers `{seq, ret:0}` per accepted command. Live-confirmed (V1000 fw28): each `start_mowing` / `dock` sent over local MQTT produced exactly one echo with a monotonically increasing `seq` — so unlike dp_119 (which only carries the internal commander's acks on this firmware), dp_103 *does* ack local-MQTT commands. **Draw-region finding (2026-07-22):** a guarded brute-force run fired six draw-region command shapes (`START_MODE_DRAW_REGION_CLEAN` / `_CUSTOM_REGION_CLEAN` / `_DRAW_CLEAN` with `{polygon:{points}}`, `{points}`, `{draw_region_polygons:[…]}` fragments) — **none was acked at all**, while a `START_MODE_SELECT_REGION_CLEAN` control was acked (`ret:0`) and started the mower. So local dp_103 only accepts the documented start modes (`GLOBAL_CLEAN` / `SELECT_REGION_CLEAN` / `EDGE_TRIM_CLEAN` / `RETURN`); there is **no local draw-region start mode** on this firmware (the app draws regions over BLE/cloud), issue [#199] | `{"seq":917327464,"ret":0}` |
 | 104 | **Ack fired by the app's "End job / clear auto-mode progress"** action (V1000 fw28): observed exactly once, in the same second the user confirmed "Clear" in the vendor app; presumably the `/robot` ack of an end/clear command channel (the app writes over BLE/cloud, so only the ack is visible locally). `seq` is epoch-like | `{"seq":1784657579,"ret":0}` |
 | 110 | Unknown scalar | `{"int_value":60}` |
-| 111 | Upload progress (companion of dp_118?). Stayed `{false, 0}` through a full mow with a mid-session recharge dock — whatever it uploads, a normal mow does not trigger it | `{"is_uploading":false,"process":0}` |
+| 111 | Upload progress (companion of dp_118?). Stayed `{false, 0}` through a full mow with a mid-session recharge dock — whatever it uploads, a normal mow does not trigger it. **S1200 fw `9.9.32` (issue [#208], 2026-09-16):** with the mower idle and docked, it ran once overnight at 22:52 UTC in uneven steps (`0 → 1 … 6 → 14 … 16 → 29 … 33 → 50 … 52 → 100`, about 2 min) and then went back to `{false, 0}`. A firmware update was pending in the vendor app at the time, so this could be a background OTA download or a scheduled log upload (the `upload_log` capability module). One run is not enough to tell them apart | `{"is_uploading":false,"process":0}` |
 | 114 | **Latest event code** — mirrors the newest entry of the dp_123 event log. Observed `int_value:90` at the exact moment dp_123 appended `{code:90}` (a relocation event); earlier `int_value:8` matched dp_123 code 8. **Re-confirmed 2026-07-21 (V1000 fw28):** dp_114 and dp_123 arrive within <100 ms of each other, and a day's dp_114 values (`43`, `87`, `65`) each matched the newest dp_123 `code` with identical timestamps (`65` fired at a recharge-return dock; a cellar relocation had produced `135`) — this also refutes an earlier link-quality-metric hypothesis for this dp. Redundant with the **Last event** sensor, so not surfaced separately | `{"int_value":65}` |
 | 115 | **Latest error code** — mirrors the newest entry of the dp_116 active-error list, exactly as dp_114 mirrors the dp_123 event log. Community-confirmed twice on an S1200 fw `9.9.210` (issue [#171]): `int_value:201` arrived in the same instant dp_116 appended `{code:201}` (mower lifted), and `int_value:903` matched `{code:903}` (mower stuck). Decoded into the hub (`active_error_code`); fault surfacing stays on the richer dp_116 list. Known code meanings live in `error_codes.py` | `{"int_value":903}` |
 | 120 | Ack/echo-shaped, same family as dp_119 (`code` instead of `ret`); single observation while the mower idled docked, context unknown. `seq` epoch-like | `{"seq":1784579052,"code":0}` |
 | 134 | Undecoded binary flag (surfaced as **State flag 134**). Note: it stayed **constant** through a full start/pause/resume/dock session, so it is **not** tied to the mowing state — meaning still unknown | `{"enum_value":0}` |
 | 145 | Custom-passage creation status | `{"stage":"CUSTOM_PASSAGE_STAGE_INVALID","is_on_grass":false,…}` |
 | 146 | Unknown scalar | `{"int_value":1}` |
+
+## Pending firmware updates are not published locally
+
+Issue [#208]: the vendor app showed "update available" (S1200, installed
+`9.9.32`) while the Update entity reported up to date. A diagnostics export
+taken while that update was pending found **no available-version field**
+anywhere on the local broker:
+
+- none of the undocumented data points (103, 110, 111, 114, 145) carried a
+  version string;
+- the broker-wide `#` subscription was live (duplicate deliveries were being
+  counted), yet no topic outside the documented namespace appeared;
+- the app wrote only dp_127 and dp_122 over local MQTT and never queried an
+  OTA channel, so it gets the "latest version" from the TerraMow cloud.
+
+That export could not show the raw dp_102 / dp_129 payloads, so a new field
+there would have been missed. Diagnostics now include them under `firmware`
+(with identifiers redacted). Until one of them turns out to carry the pending
+version, the Update entity's `latest_version` stays equal to the installed
+version.
 
 ## Behavioural findings (official data points)
 
@@ -196,4 +216,5 @@ this went unnoticed. The `error_list` clears when the fault resolves.
 [#199]: https://github.com/it-rec/TerraMowHA/issues/199
 [#204]: https://github.com/it-rec/TerraMowHA/issues/204
 [#207]: https://github.com/it-rec/TerraMowHA/issues/207
+[#208]: https://github.com/it-rec/TerraMowHA/issues/208
 [#214]: https://github.com/it-rec/TerraMowHA/issues/214

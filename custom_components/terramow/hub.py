@@ -4630,6 +4630,11 @@ class TerraMowHub:
         return version if isinstance(version, str) and version else None
 
     @property
+    def robot_info(self) -> dict[str, Any]:
+        """Get a copy of the latest raw dp_102 device/network info payload."""
+        return dict(self._robot_info)
+
+    @property
     def component_versions(self) -> dict[str, Any]:
         """Get the per-component firmware versions (dp_129)."""
         return self._component_versions
