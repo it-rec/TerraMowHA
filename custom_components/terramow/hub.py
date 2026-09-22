@@ -847,6 +847,7 @@ class TerraMowHub:
         self.pose_callbacks: list[Callable[..., Any]] = []  # Stores pose callback functions
         self.path_callbacks: list[Callable[..., Any]] = []  # Stores path data callback functions
         self.history_path_callbacks: list[Callable[..., Any]] = []  # Stores history path data callback functions
+        self.coverage_callbacks: list[Callable[..., Any]] = []  # Notified when the archived tracks / cycle coverage change
         self._state_listeners: list[Callable[[], None]] = []  # State change listeners (connection state, dp_107, model)
         self.connection_error = False  # Whether the MQTT connection is in an error state
         self._pending_serial: str | None = None  # dp_102 serial parked during entry setup
@@ -2842,6 +2843,24 @@ class TerraMowHub:
             self._dispatch(callback, self._history_path_data)
         return _make_unsubscriber(self.history_path_callbacks, callback)
 
+    def register_coverage_callback(
+        self, callback: Callable[..., Any]
+    ) -> Callable[[], None]:
+        """Register a no-argument callback for archive/coverage changes.
+
+        The session archive and the cycle coverage are also cleared by
+        frames that carry no path data — the dp_113 counters restarting for
+        a new job, a manual job end, a mission-state change. Views that only
+        listened to map/path pushes kept drawing the previous job until the
+        next path fetch, or until a reload when none followed (issue #214).
+
+        Returns an idempotent unsubscribe callable removing the callback.
+        """
+        if not callable(callback):
+            raise ValueError("Callback must be a callable function.")
+        self.coverage_callbacks.append(callback)
+        return _make_unsubscriber(self.coverage_callbacks, callback)
+
     def _update_map_info(self, map_info: dict[str, Any]) -> None:
         """Update map info and notify callbacks."""
         self._map_info = map_info
@@ -4176,10 +4195,16 @@ class TerraMowHub:
         }
 
     def _schedule_session_path_save(self) -> None:
-        """Persist the archived segments soon (debounced; loop-only callers)."""
+        """Persist the archived segments soon (debounced; loop-only callers).
+
+        Every change to the archived tracks and the cycle coverage is
+        persisted through here, which makes it the one place that also tells
+        the live views (map card, camera) to redraw.
+        """
         self._get_session_path_store().async_delay_save(
             self._session_path_save_data, SESSION_PATH_SAVE_DELAY
         )
+        self._dispatch_batch(list(self.coverage_callbacks))
 
     async def async_restore_session_paths(self) -> None:
         """Load segments a previous run persisted; park them until dp_113.

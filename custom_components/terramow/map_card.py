@@ -895,6 +895,7 @@ class _MapFeed:
             self.hub.register_map_callback(self._on_scene_source),
             self.hub.register_path_callback(self._on_scene_source),
             self.hub.register_history_path_callback(self._on_scene_source),
+            self.hub.register_coverage_callback(self._on_coverage_change),
             self.hub.register_pose_callback(self._on_pose),
             # dp_108 charger state feeds the docked fallback pose and the
             # battery chip; dp_8 the battery level; dp_113 the job progress
@@ -934,6 +935,14 @@ class _MapFeed:
         self._scene_timer = self.hass.loop.call_later(
             SCENE_PUSH_DEBOUNCE, self._schedule_scene_build
         )
+
+    async def _on_coverage_change(self) -> None:
+        # The archive/coverage changed without a path push — typically cleared
+        # for a new job (issue #214). Drop the throttled per-zone ratios too,
+        # or the zones would report the previous job's coverage for up to
+        # COVERAGE_RECOMPUTE_INTERVAL.
+        self._coverage_cache.clear()
+        await self._on_scene_source(None)
 
     async def _on_pose(self, _data: Any) -> None:
         self._push_robot()

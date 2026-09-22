@@ -619,10 +619,12 @@ def test_firmware_reboot_is_not_an_error_until_the_grace_lapses() -> None:
     assert hub.is_firmware_reboot_expected is True
     assert compute_phase(hub, connection_error_is_error=True) == "docked"
 
-    # the grace window is a hard bound: still gone after it -> error
+    # the grace window is a hard bound: still gone after it -> error. One
+    # second past it, not exactly on it: (t + grace) - t can round below grace
+    # for a large monotonic t, which made this assertion flaky.
     with patch(
         "custom_components.terramow.hub.time.monotonic",
-        return_value=started + FIRMWARE_UPGRADE_REBOOT_GRACE,
+        return_value=started + FIRMWARE_UPGRADE_REBOOT_GRACE + 1,
     ):
         assert hub.is_firmware_reboot_expected is False
         assert compute_phase(hub, connection_error_is_error=True) == "error"
@@ -671,6 +673,7 @@ def test_register_callbacks_reject_non_callable() -> None:
         hub.register_pose_callback,
         hub.register_path_callback,
         hub.register_history_path_callback,
+        hub.register_coverage_callback,
     ):
         try:
             register("not-callable")  # type: ignore[arg-type]

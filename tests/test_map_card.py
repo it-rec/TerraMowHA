@@ -1237,6 +1237,47 @@ async def test_zone_coverage_recompute_is_throttled(hass: HomeAssistant) -> None
         assert zc.call_count == 2
 
 
+async def test_coverage_reset_repaints_an_open_card(
+    hass: HomeAssistant, hass_ws_client: Any, monkeypatch: Any
+) -> None:
+    """A cleared coverage reaches an open card without a reload (issue #214).
+
+    A new job restarts the device counters and the hub drops the previous
+    job's coverage in that dp_113 frame — no path push follows it, so the
+    card kept drawing the old job until the dashboard was reloaded.
+    """
+    monkeypatch.setattr(map_card, "SCENE_PUSH_DEBOUNCE", 0)
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    hub._apply_map_data(MAP_DATA)
+    hub._coverage_segments = [
+        [{"x": 0, "y": 0}, {"x": 5000, "y": 0}, {"x": 5000, "y": 1000}]
+    ]
+    await hass.async_block_till_done()
+
+    client = await hass_ws_client(hass)
+    await client.send_json(
+        {"id": 1, "type": WS_SUBSCRIBE_MAP, "entity_id": _lawn_mower_entity_id(hass)}
+    )
+    assert (await client.receive_json())["success"]
+    await _drain(client)
+
+    # Seed a stale per-zone ratio so the test sees the throttle cache dropped.
+    coverage_cache = map_card._HUB_COVERAGE_CACHES[hub]
+    coverage_cache["value"] = {1: 0.9}
+
+    hub._coverage_segments = []
+    hub._session_path_segments = []
+    hub._schedule_session_path_save()
+    await hass.async_block_till_done()
+
+    event = await client.receive_json()
+    assert event["event"]["type"] == "scene"
+    assert event["event"]["scene"]["session_paths"] == []
+    assert coverage_cache["value"] != {1: 0.9}
+
+
 async def test_hub_caches_are_released_with_their_hub(hass: HomeAssistant) -> None:
     """A collected hub takes its cache entries with it.
 
