@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Дощ",
           "back_to_station_reason_mow_motor_overheat": "Перегрів мотора ножів",
           "back_to_station_reason_wheel_overheat": "Перегрів привідного колеса",
-          "back_to_station_reason_night_time": "Темрява"
+          "back_to_station_reason_night_time": "Темрява",
+          "back_to_station_reason_wait_after_rain_stop": "Очікування після дощу"
         }
       },
       "mission": {

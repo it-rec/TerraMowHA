@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Regn",
           "back_to_station_reason_mow_motor_overheat": "Klippemotor overophedet",
           "back_to_station_reason_wheel_overheat": "Hjulmotor overophedet",
-          "back_to_station_reason_night_time": "Mørke"
+          "back_to_station_reason_night_time": "Mørke",
+          "back_to_station_reason_wait_after_rain_stop": "Venter efter regn"
         }
       },
       "mission": {

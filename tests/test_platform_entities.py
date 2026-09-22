@@ -9,6 +9,8 @@ import asyncio
 import json
 from unittest.mock import MagicMock
 
+import pytest
+
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.binary_sensor import (
     BINARY_SENSORS,
@@ -327,6 +329,18 @@ def test_back_to_station_reason_sensor_from_dp107() -> None:
         "back_to_station_reason": "BACK_TO_STATION_REASON_LOW_BATTERY",
     })
     assert sensor.native_value == "back_to_station_reason_low_battery"
+
+
+def test_back_to_station_reason_wait_after_rain_stop(caplog: pytest.LogCaptureFixture) -> None:
+    """Newer firmware reports a post-rain wait reason (issue #349)."""
+    hub = _hub()
+    sensor = _sensor(hub, "back_to_station_reason")
+    _feed(hub.on_mission_status, {
+        "back_to_station_reason": "BACK_TO_STATION_REASON_WAIT_AFTER_RAIN_STOP",
+    })
+    assert sensor.native_value == "back_to_station_reason_wait_after_rain_stop"
+    assert sensor.native_value in sensor.options
+    assert "Invalid value for back_to_station_reason" not in caplog.text
 
 
 def test_mow_speed_sensor_from_dp155() -> None:

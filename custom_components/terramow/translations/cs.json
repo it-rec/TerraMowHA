@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Déšť",
           "back_to_station_reason_mow_motor_overheat": "Přehřátí motoru sečení",
           "back_to_station_reason_wheel_overheat": "Přehřátí motoru kol",
-          "back_to_station_reason_night_time": "Tma"
+          "back_to_station_reason_night_time": "Tma",
+          "back_to_station_reason_wait_after_rain_stop": "Čekání po dešti"
         }
       },
       "mission": {

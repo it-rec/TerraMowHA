@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "강우",
           "back_to_station_reason_mow_motor_overheat": "깎기 모터 과열",
           "back_to_station_reason_wheel_overheat": "구동 바퀴 과열",
-          "back_to_station_reason_night_time": "야간"
+          "back_to_station_reason_night_time": "야간",
+          "back_to_station_reason_wait_after_rain_stop": "비 그친 후 대기"
         }
       },
       "mission": {

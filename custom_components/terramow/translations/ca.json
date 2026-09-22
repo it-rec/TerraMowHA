@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Pluja",
           "back_to_station_reason_mow_motor_overheat": "Sobreescalfament del motor de tall",
           "back_to_station_reason_wheel_overheat": "Sobreescalfament de les rodes motrius",
-          "back_to_station_reason_night_time": "Foscor"
+          "back_to_station_reason_night_time": "Foscor",
+          "back_to_station_reason_wait_after_rain_stop": "Espera després de la pluja"
         }
       },
       "mission": {

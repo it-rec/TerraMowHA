@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Дъжд",
           "back_to_station_reason_mow_motor_overheat": "Прегряване на мотора за косене",
           "back_to_station_reason_wheel_overheat": "Прегряване на задвижващото колело",
-          "back_to_station_reason_night_time": "Тъмнина"
+          "back_to_station_reason_night_time": "Тъмнина",
+          "back_to_station_reason_wait_after_rain_stop": "Изчакване след дъжд"
         }
       },
       "mission": {

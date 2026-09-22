@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Regen",
           "back_to_station_reason_mow_motor_overheat": "Maaimotor oververhit",
           "back_to_station_reason_wheel_overheat": "Wielmotor oververhit",
-          "back_to_station_reason_night_time": "Duisternis"
+          "back_to_station_reason_night_time": "Duisternis",
+          "back_to_station_reason_wait_after_rain_stop": "Wachten na regen"
         }
       },
       "mission": {

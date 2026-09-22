@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Regen",
           "back_to_station_reason_mow_motor_overheat": "Mähmotor überhitzt",
           "back_to_station_reason_wheel_overheat": "Antriebsmotor überhitzt",
-          "back_to_station_reason_night_time": "Dunkelheit"
+          "back_to_station_reason_night_time": "Dunkelheit",
+          "back_to_station_reason_wait_after_rain_stop": "Wartezeit nach Regen"
         }
       },
       "mission": {

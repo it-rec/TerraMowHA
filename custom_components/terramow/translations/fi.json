@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Sade",
           "back_to_station_reason_mow_motor_overheat": "Leikkuumoottori ylikuumentunut",
           "back_to_station_reason_wheel_overheat": "Pyörämoottori ylikuumentunut",
-          "back_to_station_reason_night_time": "Pimeys"
+          "back_to_station_reason_night_time": "Pimeys",
+          "back_to_station_reason_wait_after_rain_stop": "Odotus sateen jälkeen"
         }
       },
       "mission": {
