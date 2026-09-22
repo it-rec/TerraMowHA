@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Dážď",
           "back_to_station_reason_mow_motor_overheat": "Prehriatie žacieho motora",
           "back_to_station_reason_wheel_overheat": "Prehriatie hnacích kolies",
-          "back_to_station_reason_night_time": "Tma"
+          "back_to_station_reason_night_time": "Tma",
+          "back_to_station_reason_wait_after_rain_stop": "Čakanie po daždi"
         }
       },
       "mission": {

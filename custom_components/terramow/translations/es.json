@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Lluvia",
           "back_to_station_reason_mow_motor_overheat": "Sobrecalentamiento del motor de corte",
           "back_to_station_reason_wheel_overheat": "Sobrecalentamiento del motor de las ruedas",
-          "back_to_station_reason_night_time": "Oscuridad"
+          "back_to_station_reason_night_time": "Oscuridad",
+          "back_to_station_reason_wait_after_rain_stop": "Espera tras la lluvia"
         }
       },
       "mission": {

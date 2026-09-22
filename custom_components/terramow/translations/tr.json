@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Yağmur",
           "back_to_station_reason_mow_motor_overheat": "Biçme Motoru Aşırı Isınması",
           "back_to_station_reason_wheel_overheat": "Tahrik Tekerleği Aşırı Isınması",
-          "back_to_station_reason_night_time": "Karanlık"
+          "back_to_station_reason_night_time": "Karanlık",
+          "back_to_station_reason_wait_after_rain_stop": "Yağmur sonrası bekleme"
         }
       },
       "mission": {

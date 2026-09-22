@@ -84,7 +84,7 @@ Data Point Definition
   | power_mode | String | - | Power consumption level:<br>"POWER_MODE_RUNNING" - Operating<br>"POWER_MODE_STANDBY" - Standby power consumption<br>"POWER_MODE_HIBERNATE" - Sleep power consumption |
   | has_error | Boolean | - | Whether the robot currently has a fault |
   | is_saving_data | Boolean | - | Whether the robot is saving data |
-  | back_to_station_reason | String | - | Reason for returning to base station:<br>"BACK_TO_STATION_REASON_NONE" - None<br>"BACK_TO_STATION_REASON_LOW_BATTERY" - Low battery<br>"BACK_TO_STATION_REASON_RAINING" - Raining<br>"BACK_TO_STATION_REASON_MOW_MOTOR_OVERHEAT" - Mowing motor overheating<br>"BACK_TO_STATION_REASON_WHEEL_OVERHEAT" - Drive wheel motor overheating<br>"BACK_TO_STATION_REASON_NIGHT_TIME" - Darkness |
+  | back_to_station_reason | String | - | Reason for returning to base station:<br>"BACK_TO_STATION_REASON_NONE" - None<br>"BACK_TO_STATION_REASON_LOW_BATTERY" - Low battery<br>"BACK_TO_STATION_REASON_RAINING" - Raining<br>"BACK_TO_STATION_REASON_MOW_MOTOR_OVERHEAT" - Mowing motor overheating<br>"BACK_TO_STATION_REASON_WHEEL_OVERHEAT" - Drive wheel motor overheating<br>"BACK_TO_STATION_REASON_NIGHT_TIME" - Darkness<br>"BACK_TO_STATION_REASON_WAIT_AFTER_RAIN_STOP" - Waiting out the rain delay after rain stopped (newer firmware) |
   | is_robot_navi_located | Boolean | - | Whether the robot currently has accurate navigation location information |
   | is_upgrading | Boolean | - | Whether the robot is upgrading firmware |
   | is_data_conversion_in_progress | Boolean | - | Whether the robot is performing data compatibility conversion |

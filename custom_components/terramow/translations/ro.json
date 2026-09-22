@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Plouă",
           "back_to_station_reason_mow_motor_overheat": "Supraîncălzirea Motorului de Tundere",
           "back_to_station_reason_wheel_overheat": "Supraîncălzirea Roții de Tracțiune",
-          "back_to_station_reason_night_time": "Întuneric"
+          "back_to_station_reason_night_time": "Întuneric",
+          "back_to_station_reason_wait_after_rain_stop": "Așteptare după ploaie"
         }
       },
       "mission": {

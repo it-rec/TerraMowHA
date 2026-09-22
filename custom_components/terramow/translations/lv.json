@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Lietus",
           "back_to_station_reason_mow_motor_overheat": "Pļaušanas motora pārkaršana",
           "back_to_station_reason_wheel_overheat": "Piedziņas riteņu pārkaršana",
-          "back_to_station_reason_night_time": "Tumsa"
+          "back_to_station_reason_night_time": "Tumsa",
+          "back_to_station_reason_wait_after_rain_stop": "Gaidīšana pēc lietus"
         }
       },
       "mission": {
