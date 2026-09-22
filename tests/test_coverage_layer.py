@@ -300,6 +300,31 @@ def test_counter_restart_while_mowing_clears_the_previous_cycle() -> None:
     assert hub._session_path_segments == []
 
 
+def test_counter_restart_notifies_the_live_views() -> None:
+    """Clearing the coverage tells the map card and camera to redraw.
+
+    The clear happens in a dp_113 frame that carries no path data; before
+    the coverage callbacks an open card kept drawing the previous job until
+    the dashboard was reloaded (issue #214).
+    """
+    hub = _hub()
+    listener = MagicMock()
+    hub.register_coverage_callback(listener)
+    _work(hub, clean_area=3677, work_duration=7200, is_completed=True)
+    _mission(hub, "MISSION_GLOBAL_CLEAN", "MISSION_STATE_RUNNING")
+    hub._coverage_segments = [SEGMENT]
+    hub.hass.loop.call_soon_threadsafe.reset_mock()
+
+    _work(hub, clean_area=0, work_duration=0, is_completed=False)
+
+    assert hub.coverage_segments == []
+    scheduled = hub.hass.loop.call_soon_threadsafe.call_args_list
+    assert scheduled, "the clear scheduled no notification"
+    for call in scheduled:
+        call.args[0]()
+    listener.assert_called_once_with()
+
+
 def test_counter_frames_that_are_not_a_fresh_start_leave_the_coverage() -> None:
     """Only a drop from positive to zero counts as a new cycle."""
     hub = _hub()

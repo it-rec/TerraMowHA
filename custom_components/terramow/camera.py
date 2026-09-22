@@ -214,6 +214,9 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             self.async_on_remove(
                 lawn_mower.register_history_path_callback(self._on_history_path_data)
             )
+            self.async_on_remove(
+                lawn_mower.register_coverage_callback(self._mark_static_dirty)
+            )
             self.async_on_remove(lawn_mower.register_pose_callback(self._on_pose))
             self.async_on_remove(
                 lawn_mower.register_callback(BATTERY_STATUS_DP, self._on_battery_status)

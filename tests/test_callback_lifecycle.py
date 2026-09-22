@@ -62,6 +62,7 @@ def test_register_stream_callbacks_return_idempotent_unsubscribe() -> None:
         (hub.register_pose_callback, hub.pose_callbacks),
         (hub.register_path_callback, hub.path_callbacks),
         (hub.register_history_path_callback, hub.history_path_callbacks),
+        (hub.register_coverage_callback, hub.coverage_callbacks),
     ):
         cb = MagicMock()
         unsubscribe = register(cb)
