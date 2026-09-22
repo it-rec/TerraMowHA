@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import Entity
 
 _LOGGER = logging.getLogger(__name__)
@@ -16,6 +18,29 @@ if TYPE_CHECKING:
     _MixinBase = Entity
 else:
     _MixinBase = object
+
+
+def async_get_entry_device(
+    device_registry: dr.DeviceRegistry,
+    identifier: tuple[str, str],
+    config_entry_id: str | None,
+) -> dr.DeviceEntry | None:
+    """Return the device with ``identifier`` owned by ``config_entry_id``.
+
+    Newer Home Assistant releases no longer treat device identifiers as unique
+    across config entries and deprecate ``async_get_device`` (it stops working
+    in 2027.8) in favour of the entry-scoped ``async_get_device_by_identifier``.
+    Use that when available and fall back to ``async_get_device`` on older
+    cores, which still support the minimum version declared in ``hacs.json``.
+    """
+    get_by_identifier: (
+        Callable[[tuple[str, str], str], dr.DeviceEntry | None] | None
+    ) = getattr(device_registry, "async_get_device_by_identifier", None)
+    if get_by_identifier is None:
+        return device_registry.async_get_device({identifier})
+    if config_entry_id is None:
+        return None
+    return get_by_identifier(identifier, config_entry_id)
 
 
 def _can_write_state(entity: Entity) -> bool:

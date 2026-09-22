@@ -59,6 +59,7 @@ from .const import (
     ZONE_PRESENCE_SAMPLE_SECONDS,
     CompatibilityStatus,
 )
+from .entity_utils import async_get_entry_device
 from .issues import (
     async_sync_base_station_maintenance_issue,
     async_sync_blade_maintenance_issue,
@@ -4390,9 +4391,9 @@ class TerraMowHub:
             return f"{overall}.{ha_version}"
         return str(overall)
 
-    def _device_identifiers(self) -> set[tuple[str, str]]:
-        """Return the device registry identifiers for this mower."""
-        return {(DOMAIN, self.basic_data.device_uid or self.basic_data.host)}
+    def _device_identifier(self) -> tuple[str, str]:
+        """Return the device registry identifier for this mower."""
+        return (DOMAIN, self.basic_data.device_uid or self.basic_data.host)
 
     async def _async_adopt_serial(self, serial: str) -> None:
         """Adopt the device serial (dp_102 ``sn``) as the stable identity.
@@ -4447,7 +4448,9 @@ class TerraMowHub:
                 )
 
         device_registry = dr.async_get(self.hass)
-        device_entry = device_registry.async_get_device({(DOMAIN, old_uid)})
+        device_entry = async_get_entry_device(
+            device_registry, (DOMAIN, old_uid), entry_id
+        )
         if device_entry:
             device_registry.async_update_device(
                 device_entry.id, new_identifiers={(DOMAIN, serial)}
@@ -4486,8 +4489,8 @@ class TerraMowHub:
         """Asynchronously update the firmware version info in the device registry."""
         try:
             device_registry = dr.async_get(self.hass)
-            device_entry = device_registry.async_get_device(
-                self._device_identifiers()
+            device_entry = async_get_entry_device(
+                device_registry, self._device_identifier(), self.basic_data.entry_id
             )
             if device_entry and device_entry.sw_version != sw_version:
                 device_registry.async_update_device(
@@ -4503,7 +4506,9 @@ class TerraMowHub:
             device_registry = dr.async_get(self.hass)
 
             # Look up the device and update its model info
-            device_entry = device_registry.async_get_device(self._device_identifiers())
+            device_entry = async_get_entry_device(
+                device_registry, self._device_identifier(), self.basic_data.entry_id
+            )
             if device_entry:
                 device_registry.async_update_device(
                     device_entry.id,

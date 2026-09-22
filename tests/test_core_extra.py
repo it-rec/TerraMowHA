@@ -320,10 +320,11 @@ def test_map_meta_success_without_data_or_pending() -> None:
 
 def test_update_device_sw_version_noop_when_unchanged() -> None:
     hub = _hub()
+    hub.basic_data.entry_id = "entry-1"
     reg = MagicMock()
     device = MagicMock()
     device.sw_version = "1.2.3"
-    reg.async_get_device.return_value = device
+    reg.async_get_device_by_identifier.return_value = device
     with patch("custom_components.terramow.hub.dr.async_get", return_value=reg):
         asyncio.run(hub._async_update_device_sw_version("1.2.3"))
     reg.async_update_device.assert_not_called()
