@@ -90,9 +90,28 @@ anywhere on the local broker:
 
 That export could not show the raw dp_102 / dp_129 payloads, so a new field
 there would have been missed. Diagnostics now include them under `firmware`
-(with identifiers redacted). Until one of them turns out to carry the pending
-version, the Update entity's `latest_version` stays equal to the installed
-version.
+(with identifiers redacted). A second export taken with the update still
+pending (2026-09-22) showed both carry **only the installed version**: dp_102
+`version: "9.9.32"` plus identifiers and warranty data, and dp_129 the
+per-component versions (`ap_app 9.9.32`, `main_controller 09.09.32`, …).
+Neither payload changed size after the update. So the Update entity's
+`latest_version` stays equal to the installed version: the pending version
+exists only in the vendor cloud.
+
+**What a local install looks like** (same device, debug log, 9.9.32 → 9.9.43;
+times are local):
+
+| Time | Event |
+|------|-------|
+| 21:17:54 | dp_107 `is_upgrading: true`, a single push with the mower docked and idle. No progress data point follows (dp_111 and dp_118 stay silent) |
+| 21:24:41 | The broker drops (the mower reboots), and reconnects are refused or time out |
+| 21:26:02 | The broker is back. Retained dp_102 reports `version: "9.9.43"`, and dp_107 `is_upgrading: false` |
+
+The integration keeps the mower `docked` rather than `error` while the
+connection is lost during that reboot, for at most 30 minutes after
+`is_upgrading` turned true (`FIRMWARE_UPGRADE_REBOOT_GRACE`). The Update
+entity's `in_progress` follows `is_upgrading`. No local signal reports install
+progress, so there is no percentage to show.
 
 ## Behavioural findings (official data points)
 

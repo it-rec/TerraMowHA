@@ -117,6 +117,15 @@ MAP_SAVE_DISPLAY_TIMEOUT = 30 * 60  # seconds
 # the way the stale sub-mission/state did before #142.
 ACTIVE_MISSION_DISPLAY_TIMEOUT = 6 * 60 * 60  # seconds
 
+# A firmware install ends with the mower rebooting, which takes its MQTT broker
+# down for a minute or two. Field capture (issue #208, S1200 9.9.32 -> 9.9.43):
+# dp_107 ``is_upgrading`` went true at 21:17:54, the broker dropped at 21:24:41
+# and was back on the new version at 21:26:02. A connection loss while the
+# device's last report says it is upgrading is that expected reboot, not a
+# fault, for at most this long after the upgrade was announced. Past it, a
+# still-missing mower is reported as an error again (a failed install).
+FIRMWARE_UPGRADE_REBOOT_GRACE = 30 * 60  # seconds
+
 # The firmware also clears the realtime path whenever the mower docks —
 # including a mid-session recharge — so everything mowed before the dock
 # vanished from the map until the session's next path push (issue #214). The
@@ -698,7 +707,10 @@ def compute_phase(hub: TerraMowHub, *, connection_error_is_error: bool) -> str:
     flag and a non-empty dp_116 error list), because some faults populate only
     one of the two signals (issue #171).
     """
-    if (connection_error_is_error and hub.connection_error) or hub.has_active_error:
+    # A lost connection is an error unless it is the reboot that finishes a
+    # firmware install the device announced (issue #208).
+    lost = hub.connection_error and not hub.is_firmware_reboot_expected
+    if (connection_error_is_error and lost) or hub.has_active_error:
         return "error"
     if hub.mission_state == MissionState.MISSION_STATE_RUNNING:
         if hub.mission in MOW_MISSIONS:
@@ -985,6 +997,10 @@ class TerraMowHub:
         self.mission_state = MissionState.MISSION_STATE_IDLE
         self._is_robot_navi_located: bool | None = None
         self._is_upgrading: bool | None = None
+        # monotonic time dp_107 ``is_upgrading`` last turned true (None = not upgrading)
+        self._upgrading_since: float | None = None
+        # last value of is_firmware_reboot_expected the listeners were told about
+        self._reboot_expected_notified = False
         self._power_mode: str | None = None
 
         # dp_119 command acknowledgements: confirmed commands park a future
@@ -2057,7 +2073,12 @@ class TerraMowHub:
         if "is_robot_navi_located" in data:
             self._is_robot_navi_located = data.get("is_robot_navi_located")
         if "is_upgrading" in data:
-            self._is_upgrading = data.get("is_upgrading")
+            upgrading = data.get("is_upgrading")
+            if upgrading is True and self._upgrading_since is None:
+                self._upgrading_since = time.monotonic()
+            elif upgrading is not True:
+                self._upgrading_since = None
+            self._is_upgrading = upgrading
         if "power_mode" in data:
             self._power_mode = data.get("power_mode")
 
@@ -2489,6 +2510,13 @@ class TerraMowHub:
                 _LOGGER.debug("MQTT message stream ended; reconnecting")
             # Set the error state
             self._set_connection_error(True)
+            # The listeners were notified when the connection dropped; tell
+            # them again once an expected firmware reboot outlives its grace
+            # window so the mower flips to ERROR without waiting for a push.
+            expected = self.is_firmware_reboot_expected
+            if expected != self._reboot_expected_notified:
+                self._reboot_expected_notified = expected
+                self._notify_state_listeners()
             # Exponential backoff capped at MQTT_RECONNECT_MAX_DELAY.
             delay = min(
                 MQTT_RECONNECT_BASE_DELAY * (2 ** (consecutive_failures - 1)),
@@ -4822,6 +4850,22 @@ class TerraMowHub:
     def is_upgrading(self) -> bool | None:
         """Get whether the robot is upgrading firmware (from dp_107)."""
         return self._is_upgrading
+
+    @property
+    def is_firmware_reboot_expected(self) -> bool:
+        """Whether a lost connection is the reboot that ends a firmware install.
+
+        Derived, not reported: true while the MQTT connection is down, the last
+        dp_107 said ``is_upgrading``, and that upgrade was announced less than
+        ``FIRMWARE_UPGRADE_REBOOT_GRACE`` ago. Clears when the device reports
+        ``is_upgrading`` false (normally in the first push after the reboot) or
+        when the grace window lapses (issue #208).
+        """
+        return (
+            self.connection_error
+            and self._upgrading_since is not None
+            and time.monotonic() - self._upgrading_since < FIRMWARE_UPGRADE_REBOOT_GRACE
+        )
 
     @property
     def power_mode(self) -> str | None:

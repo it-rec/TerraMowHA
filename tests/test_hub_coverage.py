@@ -559,6 +559,107 @@ def test_mqtt_runner_backs_off_with_throttled_logging(caplog) -> None:
 
 
 # ---------------------------------------------------------------------------
+# firmware-install reboot vs. a real connection loss (issue #208)
+# ---------------------------------------------------------------------------
+
+
+def _run_failing_runner(hub: TerraMowHub, attempts_wanted: int = 2) -> None:
+    attempts = {"n": 0}
+
+    def failing_client(**kwargs):
+        attempts["n"] += 1
+        raise aiomqtt.MqttError("connection refused")
+
+    async def main() -> None:
+        with (
+            patch(
+                "custom_components.terramow.hub.aiomqtt.Client",
+                side_effect=failing_client,
+            ),
+            patch("custom_components.terramow.hub.MQTT_RECONNECT_BASE_DELAY", 0),
+        ):
+            task = asyncio.get_running_loop().create_task(hub._async_mqtt_runner())
+            for _ in range(200):
+                await asyncio.sleep(0)
+                if attempts["n"] >= attempts_wanted:
+                    break
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+    asyncio.run(main())
+
+
+def test_firmware_reboot_is_not_an_error_until_the_grace_lapses() -> None:
+    from custom_components.terramow.hub import (
+        FIRMWARE_UPGRADE_REBOOT_GRACE,
+        compute_phase,
+    )
+
+    hub = _hub()
+    # no upgrade announced: a lost connection is an error, as before
+    hub.connection_error = True
+    assert hub.is_firmware_reboot_expected is False
+    assert compute_phase(hub, connection_error_is_error=True) == "error"
+
+    hub.connection_error = False
+    asyncio.run(hub.on_mission_status(json.dumps({"is_upgrading": True})))
+    started = hub._upgrading_since
+    assert started is not None
+    # a repeated true push keeps the original start of the upgrade
+    asyncio.run(hub.on_mission_status(json.dumps({"is_upgrading": True})))
+    assert hub._upgrading_since == started
+    # connected and upgrading: nothing to excuse
+    assert hub.is_firmware_reboot_expected is False
+
+    # the install's reboot drops the broker: expected, the mower stays docked
+    hub.connection_error = True
+    assert hub.is_firmware_reboot_expected is True
+    assert compute_phase(hub, connection_error_is_error=True) == "docked"
+
+    # the grace window is a hard bound: still gone after it -> error
+    with patch(
+        "custom_components.terramow.hub.time.monotonic",
+        return_value=started + FIRMWARE_UPGRADE_REBOOT_GRACE,
+    ):
+        assert hub.is_firmware_reboot_expected is False
+        assert compute_phase(hub, connection_error_is_error=True) == "error"
+
+    # a device fault is never excused by an upgrade
+    hub._error_list = [{"code": 201}]
+    assert compute_phase(hub, connection_error_is_error=True) == "error"
+    hub._error_list = []
+
+    # the device reporting the upgrade over clears the window
+    asyncio.run(hub.on_mission_status(json.dumps({"is_upgrading": False})))
+    assert hub._upgrading_since is None
+    assert compute_phase(hub, connection_error_is_error=True) == "error"
+
+
+def test_runner_notifies_when_the_reboot_grace_starts_and_lapses() -> None:
+    from custom_components.terramow.hub import FIRMWARE_UPGRADE_REBOOT_GRACE
+
+    hub = _hub()
+    calls = []
+    hub.register_state_listener(lambda: calls.append(hub.is_firmware_reboot_expected))
+    asyncio.run(hub.on_mission_status(json.dumps({"is_upgrading": True})))
+
+    _run_failing_runner(hub)
+    assert hub._reboot_expected_notified is True
+    # the dp_107 push itself (still connected), the connection flip, then the
+    # reboot window opening; further retries stay quiet
+    assert calls == [False, True, True]
+
+    # the mower never came back: the window lapses on the next retry
+    hub._upgrading_since = time.monotonic() - FIRMWARE_UPGRADE_REBOOT_GRACE - 1
+    _run_failing_runner(hub)
+    assert hub._reboot_expected_notified is False
+    assert calls == [False, True, True, False]
+
+
+# ---------------------------------------------------------------------------
 # register_*_callback: validation + immediate replay of cached data
 # ---------------------------------------------------------------------------
 

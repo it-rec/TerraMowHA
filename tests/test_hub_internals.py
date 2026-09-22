@@ -525,6 +525,8 @@ def test_diagnostics_exports_firmware_payloads_with_identifiers_redacted() -> No
         "wifi_mac": "aa:bb",
         "ip": "192.0.2.5",
         "ssid": "home",
+        "uuid": "uuidf8e2",
+        "ble_info": {"id": "eCKIUNKA", "mac": "cc:dd"},
         "warranty": {"sn": "SN123", "expire": "2028-01-01"},
         "new_version": "9.9.40",
     }
@@ -540,8 +542,9 @@ def test_diagnostics_exports_firmware_payloads_with_identifiers_redacted() -> No
     assert info["new_version"] == "9.9.40"
     assert info["warranty"]["expire"] == "2028-01-01"
     # ...while identifiers are redacted, nested copies included
-    for key in ("sn", "wifi_mac", "ip", "ssid"):
+    for key in ("sn", "wifi_mac", "ip", "ssid", "uuid"):
         assert info[key] == "**REDACTED**"
+    assert info["ble_info"] == {"id": "**REDACTED**", "mac": "**REDACTED**"}
     assert info["warranty"]["sn"] == "**REDACTED**"
     assert firmware["component_versions"] == {"ap_app": "9.9.32"}
     # the export is a copy: redaction never touches the hub's own state
