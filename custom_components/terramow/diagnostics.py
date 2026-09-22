@@ -20,6 +20,9 @@ TO_REDACT = {CONF_HOST, CONF_PASSWORD, "host", "serial"}
 # OTA version (issue #208) — shows up in a diagnostics download.
 DEVICE_INFO_REDACT = {
     "sn",
+    "uuid",
+    # ble_info.id: the mower's Bluetooth identifier (issue #208 capture)
+    "id",
     "serial",
     "ip",
     "ssid",
