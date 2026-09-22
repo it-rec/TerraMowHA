@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Kiša",
           "back_to_station_reason_mow_motor_overheat": "Pregrijavanje motora za košnju",
           "back_to_station_reason_wheel_overheat": "Pregrijavanje pogonskih kotača",
-          "back_to_station_reason_night_time": "Mrak"
+          "back_to_station_reason_night_time": "Mrak",
+          "back_to_station_reason_wait_after_rain_stop": "Čekanje nakon kiše"
         }
       },
       "mission": {

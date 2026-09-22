@@ -666,6 +666,8 @@ class BackToStationReason(Enum):
     BACK_TO_STATION_REASON_MOW_MOTOR_OVERHEAT = "BACK_TO_STATION_REASON_MOW_MOTOR_OVERHEAT"
     BACK_TO_STATION_REASON_WHEEL_OVERHEAT = "BACK_TO_STATION_REASON_WHEEL_OVERHEAT"
     BACK_TO_STATION_REASON_NIGHT_TIME = "BACK_TO_STATION_REASON_NIGHT_TIME"
+    # Newer firmware: docked while waiting out the rain delay after rain stopped
+    BACK_TO_STATION_REASON_WAIT_AFTER_RAIN_STOP = "BACK_TO_STATION_REASON_WAIT_AFTER_RAIN_STOP"
 
 
 # Missions that count as an active mowing job / a recharge run. Used both

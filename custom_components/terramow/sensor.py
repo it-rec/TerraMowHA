@@ -629,6 +629,7 @@ BACK_TO_STATION_REASON_OPTIONS = [
     "back_to_station_reason_mow_motor_overheat",
     "back_to_station_reason_wheel_overheat",
     "back_to_station_reason_night_time",
+    "back_to_station_reason_wait_after_rain_stop",
 ]
 
 

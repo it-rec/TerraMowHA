@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Deszcz",
           "back_to_station_reason_mow_motor_overheat": "Przegrzanie silnika koszenia",
           "back_to_station_reason_wheel_overheat": "Przegrzanie silnika kół",
-          "back_to_station_reason_night_time": "Ciemność"
+          "back_to_station_reason_night_time": "Ciemność",
+          "back_to_station_reason_wait_after_rain_stop": "Oczekiwanie po deszczu"
         }
       },
       "mission": {

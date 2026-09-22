@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Dež",
           "back_to_station_reason_mow_motor_overheat": "Pregrevanje motorja za košnjo",
           "back_to_station_reason_wheel_overheat": "Pregrevanje pogonskih koles",
-          "back_to_station_reason_night_time": "Tema"
+          "back_to_station_reason_night_time": "Tema",
+          "back_to_station_reason_wait_after_rain_stop": "Čakanje po dežju"
         }
       },
       "mission": {

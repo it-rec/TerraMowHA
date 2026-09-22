@@ -85,7 +85,7 @@ Data Point 定义
   | power_mode | 字符串 | - | 功耗等级：<br>"POWER_MODE_RUNNING" - 运行中<br>"POWER_MODE_STANDBY" - 待机功耗<br>"POWER_MODE_HIBERNATE" - 休眠功耗 |
   | has_error | 布尔值 | - | 机器人当前是否有故障 |
   | is_saving_data | 布尔值 | - | 机器人是否正在保存数据 |
-  | back_to_station_reason | 字符串 | - | 返回基站原因：<br>"BACK_TO_STATION_REASON_NONE" - 无<br>"BACK_TO_STATION_REASON_LOW_BATTERY" - 低电量<br>"BACK_TO_STATION_REASON_RAINING" - 下雨<br>"BACK_TO_STATION_REASON_MOW_MOTOR_OVERHEAT" - 割草电机过热<br>"BACK_TO_STATION_REASON_WHEEL_OVERHEAT" - 驱动轮电机过热<br>"BACK_TO_STATION_REASON_NIGHT_TIME" - 天黑 |
+  | back_to_station_reason | 字符串 | - | 返回基站原因：<br>"BACK_TO_STATION_REASON_NONE" - 无<br>"BACK_TO_STATION_REASON_LOW_BATTERY" - 低电量<br>"BACK_TO_STATION_REASON_RAINING" - 下雨<br>"BACK_TO_STATION_REASON_MOW_MOTOR_OVERHEAT" - 割草电机过热<br>"BACK_TO_STATION_REASON_WHEEL_OVERHEAT" - 驱动轮电机过热<br>"BACK_TO_STATION_REASON_NIGHT_TIME" - 天黑<br>"BACK_TO_STATION_REASON_WAIT_AFTER_RAIN_STOP" - 雨停后等待（较新固件） |
   | is_robot_navi_located | 布尔值 | - | 机器人当前是否有准确的导航定位信息 |
   | is_upgrading | 布尔值 | - | 机器人是否正在升级固件中 |
   | is_data_conversion_in_progress | 布尔值 | - | 机器人是否正在进行数据兼容性转换 |

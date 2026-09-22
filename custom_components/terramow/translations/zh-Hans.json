@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "下雨",
           "back_to_station_reason_mow_motor_overheat": "刀盘电机过热",
           "back_to_station_reason_wheel_overheat": "驱动轮电机过热",
-          "back_to_station_reason_night_time": "夜间"
+          "back_to_station_reason_night_time": "夜间",
+          "back_to_station_reason_wait_after_rain_stop": "雨停后等待"
         }
       },
       "mission": {

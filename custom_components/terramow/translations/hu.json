@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Eső",
           "back_to_station_reason_mow_motor_overheat": "Nyírómotor Túlmelegedése",
           "back_to_station_reason_wheel_overheat": "Hajtókerék Túlmelegedése",
-          "back_to_station_reason_night_time": "Sötétség"
+          "back_to_station_reason_night_time": "Sötétség",
+          "back_to_station_reason_wait_after_rain_stop": "Várakozás eső után"
         }
       },
       "mission": {

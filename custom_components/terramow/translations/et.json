@@ -210,7 +210,8 @@
           "back_to_station_reason_raining": "Vihm",
           "back_to_station_reason_mow_motor_overheat": "Niitmismootori ülekuumenemine",
           "back_to_station_reason_wheel_overheat": "Veorataste ülekuumenemine",
-          "back_to_station_reason_night_time": "Pimedus"
+          "back_to_station_reason_night_time": "Pimedus",
+          "back_to_station_reason_wait_after_rain_stop": "Ootamine pärast vihma"
         }
       },
       "mission": {
