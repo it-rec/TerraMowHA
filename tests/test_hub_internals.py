@@ -501,6 +501,53 @@ def test_diagnostics_redacts_secrets_and_exports_hub_state() -> None:
     assert captures[0]["time"].endswith("+00:00")
 
 
+def test_diagnostics_exports_firmware_payloads_with_identifiers_redacted() -> None:
+    from custom_components.terramow.diagnostics import (
+        async_get_config_entry_diagnostics,
+    )
+
+    hub = _hub()
+    hub.register_all_callbacks()
+    entry = MagicMock()
+    entry.data = {}
+    entry.options = {}
+    entry.runtime_data = hub.basic_data
+
+    # before any firmware payload arrived the section is empty, not missing
+    firmware = asyncio.run(async_get_config_entry_diagnostics(MagicMock(), entry))[
+        "firmware"
+    ]
+    assert firmware == {"device_info": {}, "component_versions": {}, "is_upgrading": None}
+
+    device_info = {
+        "version": "9.9.32",
+        "sn": "SN123",
+        "wifi_mac": "aa:bb",
+        "ip": "192.0.2.5",
+        "ssid": "home",
+        "warranty": {"sn": "SN123", "expire": "2028-01-01"},
+        "new_version": "9.9.40",
+    }
+    hub._dispatch = MagicMock()  # sw_version / serial adoption not under test
+    asyncio.run(hub.on_device_info(json.dumps(device_info)))
+    asyncio.run(hub.on_component_versions('{"ap_app": "9.9.32"}'))
+    firmware = asyncio.run(async_get_config_entry_diagnostics(MagicMock(), entry))[
+        "firmware"
+    ]
+    info = firmware["device_info"]
+    # unknown fields (a would-be pending version) survive the export...
+    assert info["version"] == "9.9.32"
+    assert info["new_version"] == "9.9.40"
+    assert info["warranty"]["expire"] == "2028-01-01"
+    # ...while identifiers are redacted, nested copies included
+    for key in ("sn", "wifi_mac", "ip", "ssid"):
+        assert info[key] == "**REDACTED**"
+    assert info["warranty"]["sn"] == "**REDACTED**"
+    assert firmware["component_versions"] == {"ap_app": "9.9.32"}
+    # the export is a copy: redaction never touches the hub's own state
+    assert hub.robot_info["sn"] == "SN123"
+
+
 def test_diagnostics_without_loaded_data() -> None:
     from custom_components.terramow.diagnostics import (
         async_get_config_entry_diagnostics,

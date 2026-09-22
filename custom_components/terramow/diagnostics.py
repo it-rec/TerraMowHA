@@ -14,6 +14,25 @@ from . import TerraMowConfigEntry
 # The hostname/IP and password are private information; redact them before export.
 TO_REDACT = {CONF_HOST, CONF_PASSWORD, "host", "serial"}
 
+# dp_102 mixes the firmware version with device/network identifiers. The
+# identifiers are redacted (recursively, so nested copies go too); every other
+# field is exported as-is, so a field the firmware adds later — e.g. a pending
+# OTA version (issue #208) — shows up in a diagnostics download.
+DEVICE_INFO_REDACT = {
+    "sn",
+    "serial",
+    "ip",
+    "ssid",
+    "bssid",
+    "mac",
+    "wifi_mac",
+    "bt_mac",
+    "ble_mac",
+    "imei",
+    "imsi",
+    "iccid",
+}
+
 
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: TerraMowConfigEntry
@@ -107,6 +126,14 @@ async def async_get_config_entry_diagnostics(
             }
             for ts, topic, payload in unknown["unknown_topic_captures"]
         ],
+    }
+    # Everything the firmware publishes about its own version, raw: the Update
+    # entity reads only dp_102 ``version``, so any "update available" signal
+    # has to be found in these payloads first (issue #208).
+    diagnostics["firmware"] = {
+        "device_info": async_redact_data(lawn_mower.robot_info, DEVICE_INFO_REDACT),
+        "component_versions": lawn_mower.component_versions,
+        "is_upgrading": lawn_mower.is_upgrading,
     }
     diagnostics["state"] = {
         "task_status": lawn_mower.task_status,
