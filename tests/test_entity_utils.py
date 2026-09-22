@@ -1,8 +1,9 @@
-"""Tests for the safe state-write guards (upstream issue #77)."""
+"""Tests for the shared entity helpers (safe state writes, device lookup)."""
 
 from unittest.mock import MagicMock
 
 from custom_components.terramow.entity_utils import (
+    async_get_entry_device,
     safe_schedule_update_ha_state,
     safe_write_ha_state,
 )
@@ -87,3 +88,36 @@ def test_push_update_mixin_registers_callbacks() -> None:
         lawn_mower.register_callback.return_value,
         lawn_mower.register_map_callback.return_value,
     ]
+
+
+def test_device_lookup_is_scoped_to_the_config_entry() -> None:
+    """Newer cores: use the entry-scoped lookup, never async_get_device (#348)."""
+    registry = MagicMock()
+    device = MagicMock()
+    registry.async_get_device_by_identifier.return_value = device
+
+    found = async_get_entry_device(registry, ("terramow", "SN1"), "entry-1")
+
+    assert found is device
+    registry.async_get_device_by_identifier.assert_called_once_with(
+        ("terramow", "SN1"), "entry-1"
+    )
+    registry.async_get_device.assert_not_called()
+
+
+def test_device_lookup_without_entry_id_finds_nothing() -> None:
+    registry = MagicMock()
+
+    assert async_get_entry_device(registry, ("terramow", "SN1"), None) is None
+    registry.async_get_device_by_identifier.assert_not_called()
+    registry.async_get_device.assert_not_called()
+
+
+def test_device_lookup_falls_back_on_older_cores() -> None:
+    """Cores without async_get_device_by_identifier keep the old lookup."""
+    registry = MagicMock(spec=["async_get_device"])
+    device = MagicMock()
+    registry.async_get_device.return_value = device
+
+    assert async_get_entry_device(registry, ("terramow", "SN1"), "entry-1") is device
+    registry.async_get_device.assert_called_once_with({("terramow", "SN1")})

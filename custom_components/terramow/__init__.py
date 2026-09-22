@@ -36,6 +36,7 @@ from .const import (
     CompatibilityStatus,
 )
 from .const import DOMAIN as DOMAIN
+from .entity_utils import async_get_entry_device
 from .hub import TerraMowHub
 from .intent import async_setup_intents
 from .issues import async_clear_compatibility_issue, async_clear_maintenance_issues
@@ -228,11 +229,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     for legacy_identifier in legacy_identifiers:
         if legacy_identifier == new_identifier:
             continue
-        old_device_entry = device_registry.async_get_device({legacy_identifier})
+        old_device_entry = async_get_entry_device(
+            device_registry, legacy_identifier, entry.entry_id
+        )
         if old_device_entry is None:
             continue
         # Check if a device with the new identifier already exists to avoid conflicts
-        if device_registry.async_get_device({new_identifier}):
+        if async_get_entry_device(device_registry, new_identifier, entry.entry_id):
             if (
                 entry.data.get(CONF_SERIAL)
                 and entry.entry_id in old_device_entry.config_entries

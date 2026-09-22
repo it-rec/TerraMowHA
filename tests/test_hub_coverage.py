@@ -403,11 +403,12 @@ def test_dock_while_recharging_running_is_ignored() -> None:
 
 def test_update_device_sw_version_writes_when_changed() -> None:
     hub = _hub()
+    hub.basic_data.entry_id = "entry-1"
     reg = MagicMock()
     device = MagicMock()
     device.sw_version = "old"
     device.id = "dev-1"
-    reg.async_get_device.return_value = device
+    reg.async_get_device_by_identifier.return_value = device
     with patch("custom_components.terramow.hub.dr.async_get", return_value=reg):
         asyncio.run(hub._async_update_device_sw_version("new"))
     reg.async_update_device.assert_called_once()
@@ -424,15 +425,16 @@ def test_update_device_sw_version_handles_registry_error() -> None:
 
 def test_update_device_model_writes_and_warns_when_missing() -> None:
     hub = _hub()
+    hub.basic_data.entry_id = "entry-1"
     reg = MagicMock()
     device = MagicMock()
     device.id = "dev-1"
-    reg.async_get_device.return_value = device
+    reg.async_get_device_by_identifier.return_value = device
     with patch("custom_components.terramow.hub.dr.async_get", return_value=reg):
         asyncio.run(hub._async_update_device_model("TerraMow S1200"))
     reg.async_update_device.assert_called_once()
 
-    reg.async_get_device.return_value = None
+    reg.async_get_device_by_identifier.return_value = None
     reg.async_update_device.reset_mock()
     with patch("custom_components.terramow.hub.dr.async_get", return_value=reg):
         asyncio.run(hub._async_update_device_model("TerraMow S1200"))
