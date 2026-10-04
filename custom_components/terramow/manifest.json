@@ -24,8 +24,7 @@
   ],
   "quality_scale": "platinum",
   "requirements": [
-    "aiomqtt>=2.0.0",
-    "Pillow>=9.1.0"
+    "aiomqtt>=2.0.0"
   ],
   "version": "1.77.4",
   "zeroconf": [
