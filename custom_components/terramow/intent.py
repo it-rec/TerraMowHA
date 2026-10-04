@@ -24,7 +24,7 @@ import unicodedata
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import intent
 
@@ -138,6 +138,22 @@ class MowZoneIntentHandler(intent.IntentHandler):
 
 
 async def async_setup_intents(hass: HomeAssistant) -> None:
-    """Register the TerraMow intents (idempotent across config entries)."""
+    """Register the TerraMow intents (idempotent across config entries).
+
+    Every config entry setup runs this, including the reload right after a
+    restart when the mower's serial is adopted as its identity. Home Assistant
+    logs a warning whenever an intent type is registered over an existing one
+    (issue #358), so an already registered handler is left in place.
+    """
+    if any(
+        handler.intent_type == INTENT_MOW_ZONE for handler in intent.async_get(hass)
+    ):
+        return
     intent.async_register(hass, MowZoneIntentHandler())
     _LOGGER.debug("Registered the %s intent", INTENT_MOW_ZONE)
+
+
+@callback
+def async_remove_intents(hass: HomeAssistant) -> None:
+    """Drop the TerraMow intents once the last config entry is unloaded."""
+    intent.async_remove(hass, INTENT_MOW_ZONE)
