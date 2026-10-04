@@ -369,6 +369,109 @@ for (const [lang, table] of Object.entries(STRINGS)) {
   }
 }
 
+// Issue #359: the ETA chip switches between time left and the finish time,
+// and a finish that would land after the mower's own sunset reads "continues
+// tomorrow" — the firmware docks for the night and resumes the next day, so
+// an evening clock time would be a promise it does not keep. Pinned in the
+// server's zone so the result does not depend on the machine running CI.
+const etaCard = (locale = {}, language = "en") => ({
+  _hass: {
+    language,
+    locale: { time_format: "24", time_zone: "server", ...locale },
+    config: { time_zone: "Europe/Berlin" },
+  },
+  _etaText: CardClass.prototype._etaText,
+});
+const at = (hhmm, day = "04") => Date.parse(`2026-10-${day}T${hhmm}:00+02:00`);
+const sunset = "2026-10-04T19:00:00+02:00";
+const H = 3600;
+
+let eta = etaCard()._etaText(2 * H, at("14:00"), null, "remaining");
+if (eta.text !== "≈ 2 h left" || eta.icon !== "timerSand") {
+  fail(`#359: remaining form read ${JSON.stringify(eta)}`);
+}
+if (eta.title !== "≈ 2 h left · done ≈ 16:00") {
+  fail(`#359: the tooltip must carry both forms, got "${eta.title}"`);
+}
+eta = etaCard()._etaText(2 * H, at("14:00"), sunset, "finish");
+if (eta.text !== "done ≈ 16:00" || eta.icon !== "clock" || eta.pastSunset) {
+  fail(`#359: finish before sunset read ${JSON.stringify(eta)}`);
+}
+// Past the device's sunset: no evening time, in either form's icon.
+eta = etaCard()._etaText(6 * H, at("14:00"), sunset, "finish");
+if (eta.text !== "continues tomorrow" || eta.icon !== "moon" || !eta.pastSunset) {
+  fail(`#359: a finish after sunset read ${JSON.stringify(eta)}`);
+}
+if (eta.title !== "≈ 6 h left · runs past sunset (19:00) · continues tomorrow") {
+  fail(`#359: the after-sunset tooltip read "${eta.title}"`);
+}
+eta = etaCard()._etaText(6 * H, at("14:00"), sunset, "remaining");
+if (eta.text !== "≈ 6 h left" || eta.icon !== "moon") {
+  fail(`#359: time left past sunset read ${JSON.stringify(eta)}`);
+}
+// Still mowing after sunset: the dark is not stopping it, the clock stands.
+eta = etaCard()._etaText(1 * H, at("19:30"), sunset, "finish");
+if (eta.text !== "done ≈ 20:30" || eta.pastSunset) {
+  fail(`#359: mowing after sunset read ${JSON.stringify(eta)}`);
+}
+// A finish past midnight says so instead of a bare, ambiguous early time.
+eta = etaCard()._etaText(2 * H, at("23:00"), null, "finish");
+if (eta.text !== "done tomorrow ≈ 01:00") {
+  fail(`#359: a finish after midnight read "${eta.text}"`);
+}
+// Localized label, and the user's 12-hour profile setting.
+eta = etaCard({}, "de")._etaText(2 * H, at("14:00"), null, "finish");
+if (eta.text !== "fertig ≈ 16:00") {
+  fail(`#359: German finish form read "${eta.text}"`);
+}
+eta = etaCard({ time_format: "12" })._etaText(2 * H, at("14:00"), null, "finish");
+if (!/^done ≈ 4:00\sPM$/u.test(eta.text)) {
+  fail(`#359: 12-hour finish form read "${eta.text}"`);
+}
+// An unusable sunset report is ignored rather than guessed at.
+eta = etaCard()._etaText(6 * H, at("14:00"), "not a date", "finish");
+if (eta.pastSunset || eta.text !== "done ≈ 20:00") {
+  fail(`#359: a malformed sunset changed the chip: ${JSON.stringify(eta)}`);
+}
+
+// The chosen form: the configured default until a tap, then the tap sticks
+// (per entity, across reloads) — and blocked storage still toggles.
+const etaModeCard = (config) => ({
+  _config: { entity: "lawn_mower.test", ...config },
+  _etaMode: null,
+  _etaDisplay: CardClass.prototype._etaDisplay,
+  _toggleEtaDisplay: CardClass.prototype._toggleEtaDisplay,
+  _updateHud() {},
+});
+const blocked = etaModeCard({});
+if (blocked._etaDisplay() !== "remaining") {
+  fail("#359: the chip did not default to time left");
+}
+blocked._toggleEtaDisplay();
+if (blocked._etaDisplay() !== "finish") {
+  fail("#359: a tap did not switch the chip with storage blocked");
+}
+if (etaModeCard({ eta_display: "finish" })._etaDisplay() !== "finish") {
+  fail("#359: eta_display: finish was not honored");
+}
+if (etaModeCard({ eta_display: "bogus" })._etaDisplay() !== "remaining") {
+  fail("#359: an unknown eta_display did not fall back to time left");
+}
+const stored = new Map();
+globalThis.localStorage = {
+  getItem: (key) => (stored.has(key) ? stored.get(key) : null),
+  setItem: (key, value) => stored.set(key, String(value)),
+};
+const tapped = etaModeCard({ eta_display: "finish" });
+tapped._toggleEtaDisplay();
+if (stored.get("terramow-map-card:eta:lawn_mower.test") !== "remaining") {
+  fail("#359: the tapped form was not remembered");
+}
+if (etaModeCard({ eta_display: "finish" })._etaDisplay() !== "remaining") {
+  fail("#359: a remembered tap did not override the configured default");
+}
+delete globalThis.localStorage;
+
 console.log("card module OK:", [...defined.keys()].join(", "));
 console.log(
   `card i18n OK: ${Object.keys(STRINGS).length} languages x ${enKeys.length} keys`

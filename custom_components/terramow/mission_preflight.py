@@ -33,6 +33,25 @@ def zone_geometry_signature(
     return hashlib.blake2b(encoded.encode(), digest_size=12).hexdigest()
 
 
+def sunset_today(sunset: Any, now: datetime) -> datetime | None:
+    """Today's sunset as an instant, from the device-reported time of day.
+
+    dp_152 reports sunset as a bare ``{"hour": int, "minute": int}`` wall-clock
+    time, which is pinned to ``now``'s date and time zone here. ``None`` when
+    the device has not reported one or the fields are malformed.
+    """
+    if not isinstance(sunset, dict):
+        return None
+    hour = sunset.get("hour")
+    minute = sunset.get("minute")
+    if not isinstance(hour, int) or not isinstance(minute, int):
+        return None
+    try:
+        return now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+    except ValueError:
+        return None
+
+
 def mow_settings_signature(settings: dict[str, Any]) -> str:
     """Stable signature of the device's relevant reported mowing settings."""
     keys = (
@@ -194,18 +213,10 @@ class MissionPreflightTracker:
             )
         )
         finish = now.timestamp() + duration
-        daylight_warning: bool | None = None
-        if isinstance(sunset, dict):
-            hour = sunset.get("hour")
-            minute = sunset.get("minute")
-            if isinstance(hour, int) and isinstance(minute, int):
-                try:
-                    sunset_at = now.replace(
-                        hour=hour, minute=minute, second=0, microsecond=0
-                    )
-                    daylight_warning = finish > sunset_at.timestamp()
-                except ValueError:
-                    pass
+        sunset_at = sunset_today(sunset, now)
+        daylight_warning = (
+            finish > sunset_at.timestamp() if sunset_at is not None else None
+        )
         confidence = (
             "high"
             if len(comparable) >= 8

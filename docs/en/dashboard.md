@@ -59,6 +59,16 @@ the robot marker moves without image reloads.
 - **Active faults** are pinned on the map where the mower reported them
   (with the fault text from the error-code catalog), so a stuck or lifted
   mower is located at a glance rather than only named in a sensor.
+- **Tap the time chip** to switch between the time left
+  (*≈ 3 h 24 min left*) and the finish time (*done ≈ 18:35*); the hover
+  tooltip always shows both. The estimate extrapolates the running job's
+  pace, so it appears only while mowing and once a few percent are done.
+  If the finish would land after the sunset the mower itself reports, the
+  chip shows a moon and reads *continues tomorrow* instead of an evening
+  time — the mower docks for the night on an unfinished lawn and resumes
+  the job the next day. The finish time follows the 12/24-hour and time
+  zone settings of your Home Assistant profile; the choice is remembered
+  per entity in the browser, and `eta_display` sets the starting form.
 
 **Options**
 
@@ -72,6 +82,7 @@ the robot marker moves without image reloads.
 | `show_current_path` | `true` | Draw the running job's mowing path, including the track from before a mid-session recharge dock |
 | `show_history_path` | `true` | Draw the previous job's path (faded) |
 | `show_hud` | `true` | Status chips (state, battery, job progress, ETA, map) |
+| `eta_display` | `remaining` | What the time chip shows first: `remaining` (time left) or `finish` (finish time); a tap switches and is remembered per browser |
 | `show_maintenance` | `true` | Wrench button with the blade / base-station counters and their reset buttons |
 | `show_markers` | `true` | Trapped / maintenance / passage markers |
 | `show_direction` | `true` | Mowing stripe-direction arrow per region |
