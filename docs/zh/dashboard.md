@@ -58,6 +58,7 @@ entity: lawn_mower.terramow
 | `show_current_path` | `true` | 绘制当前作业的割草路径，包含中途回充之前的轨迹 |
 | `show_history_path` | `true` | 绘制上一次作业的路径（淡化显示） |
 | `show_hud` | `true` | 状态标签（状态、电量、作业进度、预计剩余时间、地图） |
+| `eta_display` | `remaining` | 时间标签默认显示的内容：`remaining`（剩余时间）或 `finish`（预计完成时刻）；点按标签即可切换，并按浏览器记住选择。若预计完成时刻晚于割草机上报的日落时间，标签显示“明天继续” |
 | `show_maintenance` | `true` | 扳手按钮：刀盘 / 基站保养计时器及其重置按钮 |
 | `show_markers` | `true` | 被困 / 维护 / 通道标记 |
 | `show_direction` | `true` | 每个区域的割草条带方向箭头 |

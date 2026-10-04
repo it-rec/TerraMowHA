@@ -13,6 +13,7 @@ import gc
 import json
 import math
 import weakref
+from datetime import datetime
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -21,6 +22,7 @@ import pytest
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.terramow import map_card
@@ -404,6 +406,7 @@ async def test_status_payload(hass: HomeAssistant) -> None:
         "status": None,
         "errors": None,
         "preflight": {},
+        "sunset": None,
     }
 
     # An active dp_116 fault surfaces on the card with readable catalog text.
@@ -429,6 +432,31 @@ async def test_status_payload(hass: HomeAssistant) -> None:
     # Work data without any numeric fields yields no work chip payload
     hub._current_work_data = {"type": "WORK_TYPE_NORMAL"}
     assert build_status_payload(hub)["work"] is None
+
+
+async def test_status_payload_sunset(hass: HomeAssistant) -> None:
+    """Today's device-reported sunset reaches the ETA chip as an instant (#359).
+
+    dp_152 only carries a wall-clock hour/minute; the feed pins it to today in
+    Home Assistant's zone so the card can compare its finish estimate against
+    it without guessing time zones. Anything malformed stays unknown.
+    """
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    now = datetime(2026, 10, 4, 14, 0, tzinfo=dt_util.get_default_time_zone())
+
+    with patch.object(map_card.dt_util, "now", return_value=now):
+        await hub.on_environment_info(
+            json.dumps({"sunset": {"hour": 19, "minute": 2}})
+        )
+        assert build_status_payload(hub)["sunset"] == now.replace(
+            hour=19, minute=2
+        ).isoformat()
+
+        for bad in ({"hour": 99, "minute": 0}, {"hour": "7", "minute": 0}, None):
+            await hub.on_environment_info(json.dumps({"sunset": bad}))
+            assert build_status_payload(hub)["sunset"] is None
 
 
 async def test_status_payload_mission_info(hass: HomeAssistant) -> None:

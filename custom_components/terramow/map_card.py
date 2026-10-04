@@ -39,6 +39,7 @@ from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.core import Event, HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .error_codes import describe_error
@@ -51,13 +52,14 @@ from .map_scene import (
     coverage_ratios_for_zones,
     normalize_angle_radians,
 )
+from .mission_preflight import sunset_today
 
 _LOGGER = logging.getLogger(__name__)
 
 # Bump when frontend/terramow-map-card.js changes; busts browser caches via
 # the ?v= query on the auto-registered resource URL (and re-fires the
 # resource-update path on existing installs).
-CARD_VERSION = "1.34.0"
+CARD_VERSION = "1.35.0"
 
 # Register the card as a classic "js" resource, NOT an ES "module". A classic
 # <script> re-executes on every page load -- even when the file is served from
@@ -756,12 +758,20 @@ def build_status_payload(hub: TerraMowHub) -> dict[str, Any]:
         for code in hub.active_error_codes
     ]
 
+    # Today's sunset from the mower's own dp_152 report, as an absolute
+    # instant so the card can compare its finish-time estimate against it
+    # without guessing time zones (issue #359). The firmware docks for the
+    # night on an unfinished lawn and resumes the next day, so a finish
+    # projected past this point reads "continues tomorrow" on the ETA chip.
+    sunset_at = sunset_today(hub.environment_info.get("sunset"), dt_util.now())
+
     return {
         "battery": battery or None,
         "work": work or None,
         "status": status or None,
         "errors": errors or None,
         "preflight": hub.mission_preflight_catalog,
+        "sunset": sunset_at.isoformat() if sunset_at is not None else None,
     }
 
 
