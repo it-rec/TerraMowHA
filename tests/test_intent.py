@@ -20,6 +20,7 @@ from custom_components.terramow.hub import TerraMowHub
 from custom_components.terramow.intent import (
     INTENT_MOW_ZONE,
     MowZoneIntentHandler,
+    async_remove_intents,
     async_setup_intents,
     match_zone,
     normalize_name,
@@ -200,10 +201,38 @@ async def test_the_mower_that_knows_the_zone_is_chosen(hass: HomeAssistant) -> N
     back.async_start_select_region_clean.assert_awaited_once_with([9])
 
 
-async def test_the_intent_is_registered_once(hass: HomeAssistant) -> None:
+async def test_the_intent_is_registered_once(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A second setup (another entry, or a reload) keeps the first handler.
+
+    Home Assistant warns "Intent ... is being overwritten" on every repeat
+    registration, which is what users saw after a restart (issue #358).
+    """
     await async_setup_intents(hass)
+    first = [h for h in intent.async_get(hass) if h.intent_type == INTENT_MOW_ZONE]
     await async_setup_intents(hass)  # a second config entry must not blow up
+    again = [h for h in intent.async_get(hass) if h.intent_type == INTENT_MOW_ZONE]
+
+    assert len(first) == 1
+    assert again == first
+    assert "is being overwritten" not in caplog.text
 
     handler = MowZoneIntentHandler()
     assert handler.intent_type == INTENT_MOW_ZONE
     assert handler.description
+
+
+async def test_the_intent_is_removed_and_can_be_registered_again(
+    hass: HomeAssistant, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Unloading the last entry drops the intent; the next setup is clean."""
+    await async_setup_intents(hass)
+    async_remove_intents(hass)
+    assert not any(
+        h.intent_type == INTENT_MOW_ZONE for h in intent.async_get(hass)
+    )
+
+    await async_setup_intents(hass)
+    assert any(h.intent_type == INTENT_MOW_ZONE for h in intent.async_get(hass))
+    assert "is being overwritten" not in caplog.text

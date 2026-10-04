@@ -11,6 +11,7 @@ from homeassistant.exceptions import (
     HomeAssistantError,
 )
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import intent
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.terramow import (
@@ -22,6 +23,7 @@ from custom_components.terramow import (
 )
 from custom_components.terramow.config_flow import CannotConnect, InvalidAuth
 from custom_components.terramow.const import DOMAIN
+from custom_components.terramow.intent import INTENT_MOW_ZONE, async_setup_intents
 
 USER_INPUT = {CONF_HOST: "192.0.2.10", CONF_PASSWORD: "secret"}
 
@@ -130,6 +132,7 @@ async def test_unload_entry_stops_hub_and_clears_data(hass: HomeAssistant) -> No
     )
     basic_data.lawn_mower = hub
     entry.runtime_data = basic_data
+    await async_setup_intents(hass)
 
     with patch("custom_components.terramow.async_clear_compatibility_issue") as clear:
         result = await async_unload_entry(hass, entry)
@@ -139,6 +142,12 @@ async def test_unload_entry_stops_hub_and_clears_data(hass: HomeAssistant) -> No
     clear.assert_called_once()
     # It was the only entry, so the shared service is removed.
     assert not hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION)
+    # ...and so is the Assist intent, or the next setup would register it over
+    # itself and Home Assistant would log a warning (issue #358).
+    assert not any(
+        handler.intent_type == INTENT_MOW_ZONE
+        for handler in intent.async_get(hass)
+    )
 
 
 # ---------------------------------------------------------------------------

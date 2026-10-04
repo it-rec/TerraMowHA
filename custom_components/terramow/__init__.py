@@ -38,7 +38,7 @@ from .const import (
 from .const import DOMAIN as DOMAIN
 from .entity_utils import async_get_entry_device
 from .hub import TerraMowHub
-from .intent import async_setup_intents
+from .intent import async_remove_intents, async_setup_intents
 from .issues import async_clear_compatibility_issue, async_clear_maintenance_issues
 from .map_card import async_setup_map_card
 
@@ -497,5 +497,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) ->
             ):
                 if hass.services.has_service(DOMAIN, service):
                     hass.services.async_remove(DOMAIN, service)
+            # The Assist intent is integration-level too; leaving it behind
+            # made the next setup register it over itself (issue #358).
+            async_remove_intents(hass)
 
     return unload_ok
