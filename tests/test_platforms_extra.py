@@ -113,19 +113,34 @@ def test_lawn_mower_supported_features() -> None:
     assert features & LawnMowerEntityFeature.DOCK
 
 
+def _auto_reply(hub: TerraMowHub, ret: int = 0) -> None:
+    """Answer each published command like the device's dp_<n>/robot reply."""
+
+    def _publish(topic: str, payload: str, qos: int = 0) -> MagicMock:
+        dp_id = int(topic.split("/")[1])
+        reply = json.dumps({"seq": json.loads(payload)["seq"], "ret": ret})
+        asyncio.get_running_loop().call_soon(
+            lambda: asyncio.ensure_future(hub.on_command_reply(dp_id, reply))
+        )
+        return MagicMock(rc=0)
+
+    hub.mqtt_client.publish.side_effect = _publish
+
+
 def test_lawn_mower_pause_and_dock_delegate_to_hub() -> None:
     hub = _hub()
+    _auto_reply(hub)
     entity = TerraMowLawnMowerEntity(hub.basic_data, hub.hass)
     _feed(hub.on_mission_status, {
         "mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_RUNNING",
     })
     hub._last_control_time = 0.0
-    entity.pause()
+    asyncio.run(entity.async_pause())
     topic, _ = hub.mqtt_client.publish.call_args.args
     assert topic == "data_point/105/app"
 
     hub._last_control_time = 0.0
-    entity.dock()
+    asyncio.run(entity.async_dock())
     topic, _ = hub.mqtt_client.publish.call_args.args
     assert topic == "data_point/103/app"
 

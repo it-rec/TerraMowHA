@@ -51,7 +51,7 @@ Questa è un'integrazione di Home Assistant per i robot tagliaerba TerraMow.
 - **Segnalazioni di riparazione** — schede della dashboard utilizzabili per firmware incompatibile e per la manutenzione dovuta della lama / della stazione base
 - Download della diagnostica per semplificare le segnalazioni di bug
 - Tradotta in 33 lingue (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
-- **Comandi confermati** — il taglio per zone attende la conferma dp_119 del dispositivo e segnala i rifiuti invece di «riuscire» in silenzio
+- **Comandi confermati** — avvio, pausa, ritorno alla base, rifinitura dei bordi e taglio per zone attendono la conferma del dispositivo (la risposta del comando stesso su dp_103/105/106 o dp_119) e segnalano i rifiuti — ad es. un avvio fuori dagli orari di taglio consentiti — invece di «riuscire» in silenzio
 - Comunicazione locale push basata su MQTT — nessun cloud richiesto
 
 ### Entità supportate

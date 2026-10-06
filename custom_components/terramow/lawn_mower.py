@@ -2,7 +2,8 @@
 
 The MQTT/protocol logic lives in :mod:`.hub`; this entity only maps the
 hub's mission state onto Home Assistant's ``LawnMowerActivity`` and
-forwards the start/pause/dock commands.
+forwards the start/pause/dock commands, waiting for the device's reply so
+a rejected command fails the service call.
 """
 
 from __future__ import annotations
@@ -136,14 +137,14 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
         else:
             self.activity = LawnMowerActivity.DOCKED
 
-    def start_mowing(self) -> None:
-        """Start mowing implementation for lawn_mower entity."""
-        self.hub.start_mowing()
+    async def async_start_mowing(self) -> None:
+        """Start mowing; a device rejection fails the service call."""
+        await self.hub.async_start_mowing()
 
-    def pause(self) -> None:
-        """Pause mowing implementation for lawn_mower entity."""
-        self.hub.pause()
+    async def async_pause(self) -> None:
+        """Pause mowing; a device rejection fails the service call."""
+        await self.hub.async_pause()
 
-    def dock(self) -> None:
-        """Docking implementation for lawn_mower entity."""
-        self.hub.dock()
+    async def async_dock(self) -> None:
+        """Return to the base station; a device rejection fails the call."""
+        await self.hub.async_dock()

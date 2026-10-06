@@ -148,7 +148,8 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
                     'region_ids': [zone_id]  # Device protocol field name, keep unchanged
                 }
             }
-            hub.publish_data_point(103, command)
+            # Wait for the dp_103 reply so a rejection fails the selection.
+            await hub.async_publish_with_ack(103, command)
             _LOGGER.info("Zone clean command sent: zone_id=%d", zone_id)
         else:
             _LOGGER.error("Cannot send zone clean command: lawn_mower not available")

@@ -51,7 +51,7 @@ Dette er en Home Assistant-integration til TerraMow robotplæneklippere.
 - **Reparationssager** — handlingsrettede dashboardkort for inkompatibel firmware og for forfalden vedligeholdelse af kniv / basestation
 - Download af diagnostik til lettere fejlrapporter
 - Oversat til 33 sprog (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
-- **Bekræftede kommandoer** — zoneklipning venter på enhedens dp_119-bekræftelse og rapporterer afvisninger i stedet for stille at "lykkes"
+- **Bekræftede kommandoer** — start, pause, retur til basen, kantklipning og zoneklipning venter på enhedens bekræftelse (kommandoens eget dp_103/105/106-svar eller dp_119) og rapporterer afvisninger — f.eks. en start uden for de tilladte klippetider — i stedet for stille at "lykkes"
 - Lokal push-kommunikation via MQTT — ingen sky nødvendig
 
 ### Understøttede entiteter

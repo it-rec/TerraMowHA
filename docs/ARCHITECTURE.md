@@ -42,7 +42,7 @@ only creates an entity when a GPS anchor is configured in the options.
 | `const.py` | `DOMAIN`, MQTT constants, topic names, version thresholds, enum-token helpers (`to_ha_enum_state`/`to_device_enum`), map-resolution options |
 | `diagnostics.py` | Redacted config-entry diagnostics dump (compatibility, device, cached state) |
 | `issues.py` | Repair issues: firmware compatibility + blade/base-station maintenance |
-| `error_codes.py` | Community-sourced error-code catalog (`describe_error`) turning device fault codes into readable text; backs the **Fault** sensor and the card's fault pins |
+| `error_codes.py` | Community-sourced error- and event-code catalogs (`describe_error`, `describe_event`) turning device fault and event codes into readable text; backs the **Fault** sensor, the card's fault pins and the **Last event** sensor's `event_description` |
 | `lawn_mower.py` | `LawnMowerEntity` — maps hub mission state to `LawnMowerActivity`, forwards start/pause/dock |
 | `sensor.py` | ~25 sensors (battery, statistics, session, maintenance, mission enums, pose, version) + imports map sensors |
 | `map_sensor.py` | Map-derived sensors (`map_status`, `map_area`, `clean_mode`); added by the `sensor` platform, not its own platform |
@@ -102,9 +102,16 @@ guard), so they are registered once even with multiple entries. The handler reso
 registry, validates each resolves to a loaded `runtime_data` with a ready
 `lawn_mower`, then awaits
 `basic_data.lawn_mower.async_start_select_region_clean()` — the confirmed
-variant that waits for the device's dp_119 ack and raises a translated
+variant that waits for the device's ack and raises a translated
 `command_rejected` error on a non-zero code (a missing ack falls back to
-optimistic success after `COMMAND_ACK_TIMEOUT`).
+optimistic success after `COMMAND_ACK_TIMEOUT`). The ack is whichever arrives
+first of the command channel's own `{seq, ret}` reply on
+`data_point/103|105|106/robot` (`on_command_reply`) and a dp_119 `{seq, code}`
+(`on_command_ack`). The lawn mower's start/pause/dock, the edge-trim button and
+the zone select go through the same confirmed path (`async_start_mowing`,
+`async_pause`, `async_dock`, `async_start_edge_trim`, `async_publish_with_ack`),
+so a refused command — e.g. a start outside the operating window — fails the
+service call instead of reporting success.
 
 `async_unload_entry`:
 

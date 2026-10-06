@@ -51,7 +51,7 @@ Dit is een Home Assistant-integratie voor TerraMow-robotmaaiers.
 - **Reparatiemeldingen** — bruikbare dashboardkaarten voor incompatibele firmware en voor verlopen onderhoud van mes / basisstation
 - Diagnostiek-download voor eenvoudige bugrapporten
 - Vertaald in 33 talen (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
-- **Bevestigde opdrachten** — zone-maaien wacht op de dp_119-bevestiging van het apparaat en meldt afwijzingen in plaats van stil te "slagen"
+- **Bevestigde opdrachten** — starten, pauzeren, terugkeren naar het basisstation, randen maaien en zone-maaien wachten op de bevestiging van het apparaat (het eigen dp_103/105/106-antwoord van de opdracht of dp_119) en melden afwijzingen — bijv. een start buiten de toegestane maaitijden — in plaats van stil te "slagen"
 - Lokale push-communicatie via MQTT — geen cloud nodig
 
 ### Ondersteunde entiteiten

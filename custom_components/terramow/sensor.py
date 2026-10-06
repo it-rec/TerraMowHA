@@ -36,7 +36,7 @@ from .const import (
 )
 from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin, safe_write_ha_state
-from .error_codes import describe_error
+from .error_codes import describe_error, describe_event
 from .hub import Mission, MissionState, SubMission, TerraMowHub
 
 # Push-based integration: no update throttling needed
@@ -387,20 +387,25 @@ def _latest_event(hub: TerraMowHub) -> dict[str, Any] | None:
     return last if isinstance(last, dict) else None
 
 
-def _last_event_code(hub: TerraMowHub) -> StateType:
+def _last_event_code(hub: TerraMowHub) -> int | None:
+    """Newest dp_123 event code; dp_114's mirror of it until dp_123 arrives."""
     last = _latest_event(hub)
     if last is None:
-        return None
+        return hub.latest_event_code
     code = last.get("code")
     return code if isinstance(code, int) and not isinstance(code, bool) else None
 
 
 def _last_event_attributes(hub: TerraMowHub) -> dict[str, Any]:
+    attributes: dict[str, Any] = {}
+    code = _last_event_code(hub)
+    if code is not None:
+        attributes["event_description"] = describe_event(code)
     last = _latest_event(hub)
-    if not last:
-        return {}
-    event_time = last.get("time")
-    return {"event_time": event_time} if event_time is not None else {}
+    event_time = last.get("time") if last else None
+    if event_time is not None:
+        attributes["event_time"] = event_time
+    return attributes
 
 
 def _cellular_signal(field: str) -> Callable[[TerraMowHub], StateType]:
@@ -911,14 +916,15 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         value_fn=_fault_text,
         attributes_fn=_fault_attributes,
     ),
-    # Code of the most recent device event (dp_123); its timestamp is an
-    # attribute. Raw event code, niche; off by default.
+    # Code of the most recent device event (dp_123, or its dp_114 mirror);
+    # its timestamp and known meaning are attributes. Raw event code, niche;
+    # off by default.
     TerraMowSensorEntityDescription(
         key="last_event",
         translation_key="last_event",
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
-        push_dp_ids=(123,),
+        push_dp_ids=(114, 123),
         value_fn=_last_event_code,
         attributes_fn=_last_event_attributes,
     ),

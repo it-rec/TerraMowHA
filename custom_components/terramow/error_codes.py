@@ -1,4 +1,4 @@
-"""Known TerraMow device error codes mapped to human-readable text.
+"""Known TerraMow device error and event codes mapped to human-readable text.
 
 The firmware reports faults as bare numeric codes on two channels: the
 dp_116 ``error_list`` (all currently active faults, ``{code, time}``) and
@@ -43,3 +43,27 @@ def describe_error(code: object) -> str:
     ):
         return ERROR_CODES[code]
     return f"Error {code}"
+
+
+# Device event codes (dp_123 event log / dp_114 latest-event mirror). Events
+# are informational notices, not faults — a separate table from the faults
+# above.
+EVENT_CODES: dict[int, str] = {
+    # V1000 fw 9.9.226, upstream TerraMow/TerraMowHA issue #86: emitted when
+    # the mower refused a start outside its allowed operating window (the
+    # dp_103 reply carried ret -3 at the same moment). A V1000 fw28 also
+    # logged 135 around a manual relocation (data_point_unofficial.md, dp_114),
+    # so the label reflects the one case where the meaning was confirmed.
+    135: "Outside operating time",
+}
+
+
+def describe_event(code: object) -> str:
+    """Human text for a device event code, falling back to the bare number."""
+    if (
+        isinstance(code, int)
+        and not isinstance(code, bool)
+        and code in EVENT_CODES
+    ):
+        return EVENT_CODES[code]
+    return f"Event {code}"

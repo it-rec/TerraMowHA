@@ -51,7 +51,7 @@ To jest integracja Home Assistant dla robotów koszących TerraMow.
 - **Zgłoszenia naprawy** — konkretne karty w panelu dla niezgodnego oprogramowania oraz zaległej konserwacji noża / stacji bazowej
 - Pobieranie diagnostyki dla łatwiejszego zgłaszania błędów
 - Przetłumaczona na 33 języki (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
-- **Potwierdzone polecenia** — koszenie strefowe czeka na potwierdzenie dp_119 z urządzenia i raportuje odrzucenia, zamiast po cichu „kończyć się sukcesem”
+- **Potwierdzone polecenia** — start, pauza, powrót do stacji, przycinanie krawędzi i koszenie strefowe czekają na potwierdzenie z urządzenia (własną odpowiedź polecenia na dp_103/105/106 lub dp_119) i raportują odrzucenia — np. start poza dozwolonymi godzinami koszenia — zamiast po cichu „kończyć się sukcesem”
 - Lokalna komunikacja push oparta na MQTT — chmura nie jest potrzebna
 
 ### Obsługiwane encje

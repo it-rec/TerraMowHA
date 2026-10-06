@@ -51,7 +51,7 @@ Esta es una integración de Home Assistant para los robots cortacésped TerraMow
 - **Avisos de reparación** — tarjetas de panel accionables para firmware incompatible y para el mantenimiento pendiente de la cuchilla / la estación base
 - Descarga de diagnósticos para facilitar los informes de errores
 - Traducida a 33 idiomas (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
-- **Órdenes confirmadas** — la siega por zonas espera la confirmación dp_119 del dispositivo e informa de los rechazos en lugar de «tener éxito» en silencio
+- **Órdenes confirmadas** — iniciar, pausar, volver a la base, recorte de bordes y siega por zonas esperan la confirmación del dispositivo (la respuesta propia de la orden en dp_103/105/106 o dp_119) e informan de los rechazos —p. ej., un inicio fuera del horario de siega permitido— en lugar de «tener éxito» en silencio
 - Comunicación local push basada en MQTT — sin necesidad de nube
 
 ### Entidades compatibles

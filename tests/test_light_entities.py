@@ -38,6 +38,20 @@ def _published(hub) -> tuple[str, dict]:
     return topic, json.loads(payload)
 
 
+def _auto_reply(hub: TerraMowHub, ret: int = 0) -> None:
+    """Answer each published command like the device's dp_<n>/robot reply."""
+
+    def _publish(topic: str, payload: str, qos: int = 0) -> MagicMock:
+        dp_id = int(topic.split("/")[1])
+        reply = json.dumps({"seq": json.loads(payload)["seq"], "ret": ret})
+        asyncio.get_running_loop().call_soon(
+            lambda: asyncio.ensure_future(hub.on_command_reply(dp_id, reply))
+        )
+        return MagicMock(rc=0)
+
+    hub.mqtt_client.publish.side_effect = _publish
+
+
 # ---------------------------------------------------------------------------
 # mow speed select
 # ---------------------------------------------------------------------------
@@ -123,6 +137,7 @@ def test_edge_trim_button_starts_edge_trim() -> None:
     hub = _hub()
     # clear the command rate limiter so the one-shot command is accepted
     hub._last_control_time = 0.0
+    _auto_reply(hub)
     button = EdgeTrimButton(hub.basic_data, hub.hass)
     asyncio.run(button.async_press())
     topic, command = _published(hub)

@@ -162,11 +162,60 @@ def test_last_event_sensor_from_dp123() -> None:
         {"code": 8, "time": "2026-07-06T08:27:38Z"},
     ]})
     assert sensor.native_value == 8
-    assert sensor.extra_state_attributes == {"event_time": "2026-07-06T08:27:38Z"}
+    assert sensor.extra_state_attributes == {
+        "event_description": "Event 8",
+        "event_time": "2026-07-06T08:27:38Z",
+    }
     # a malformed latest entry / missing fields degrade gracefully
     _feed(hub.on_event_data, {"event_list": ["oops"]})
     assert sensor.native_value is None
     assert sensor.extra_state_attributes == {}
+
+
+def test_latest_event_code_from_dp114() -> None:
+    hub = _hub()
+    assert hub.latest_event_code is None
+    _feed(hub.on_latest_event_code, {"int_value": 135})
+    assert hub.latest_event_code == 135
+    # bools / non-ints / non-dict payloads never overwrite the last value
+    _feed(hub.on_latest_event_code, {"int_value": True})
+    _feed(hub.on_latest_event_code, {"int_value": "7"})
+    asyncio.run(hub.on_latest_event_code("[135]"))
+    assert hub.latest_event_code == 135
+
+
+def test_latest_event_code_invalid_json_is_logged(caplog) -> None:
+    hub = _hub()
+    asyncio.run(hub.on_latest_event_code("not json"))
+    assert hub.latest_event_code is None
+    assert "Invalid JSON payload for dp_114" in caplog.text
+
+
+def test_last_event_sensor_falls_back_to_dp114() -> None:
+    hub = _hub()
+    sensor = _sensor(hub, "last_event")
+    # dp_114 alone (dp_123 not received yet): its code, no timestamp
+    _feed(hub.on_latest_event_code, {"int_value": 135})
+    assert sensor.native_value == 135
+    assert sensor.extra_state_attributes == {
+        "event_description": "Outside operating time",
+    }
+    # once the dp_123 log is there, its newest entry (with time) wins
+    _feed(hub.on_event_data, {"event_list": [
+        {"code": 135, "time": "2026-10-06T21:00:00Z"},
+    ]})
+    assert sensor.native_value == 135
+    assert sensor.extra_state_attributes == {
+        "event_description": "Outside operating time",
+        "event_time": "2026-10-06T21:00:00Z",
+    }
+    # an entry without a time keeps just the description
+    _feed(hub.on_event_data, {"event_list": [{"code": 8}]})
+    assert sensor.extra_state_attributes == {"event_description": "Event 8"}
+
+
+def test_last_event_sensor_pushes_on_dp114_and_dp123() -> None:
+    assert _SENSOR_DESCRIPTIONS["last_event"].push_dp_ids == (114, 123)
 
 
 # ---------------------------------------------------------------------------

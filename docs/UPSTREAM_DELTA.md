@@ -61,9 +61,16 @@ synced point are already covered by the fork:
   themselves once resolved.
 - **Diagnostics** (`diagnostics.py`): a redacted JSON snapshot for bug reports.
 - **`terramow.start_select_region` service** with translated exceptions — a
-  **confirmed write**: it waits for the device's dp_119 command
-  acknowledgement and raises on rejection (rejected fire-and-forget commands
-  are logged; the last ack ships in diagnostics).
+  **confirmed write**: it waits for the device's command acknowledgement
+  (the dp_103 `ret` reply or a dp_119 `code`) and raises on rejection
+  (rejected unconfirmed commands are logged; the last ack ships in
+  diagnostics).
+- **Confirmed mower commands**: start, pause, dock, edge trim and the zone
+  select wait for their command channel's `{seq, ret}` reply on
+  `data_point/103|105|106/robot` and fail the service call on a non-zero
+  `ret` — upstream reports a start refused outside the operating window as
+  success (upstream issue #86). The dp_114 latest-event mirror feeds the
+  **Last event** sensor, which also carries a readable `event_description`.
 - **Writable mowing schedule**: `terramow.add_schedule` / `terramow.delete_schedule`
   services (dp_122 `ADD`/`DELETE`) with per-firmware payload negotiation —
   every write is judged by its dp_119 ack and verified against a fresh `GET`.

@@ -84,12 +84,23 @@ COMPATIBILITY_INFO_DP = 127
 # command's seq with code 0 (OK) or a non-zero error code.
 COMMAND_ACK_DP = 119
 
-# How long a confirmed command waits for its dp_119 ack before falling back
-# to optimistic (fire-and-forget) semantics. Field finding (V1000 fw28): the
-# device does NOT ack commands sent by this integration at all — dp_119 acks
-# observed there carry epoch-like seqs belonging to the mower's internal
-# (BLE/cloud) commander. The wait is therefore short; a missing ack is never
-# treated as a failure.
+# Command channels whose /robot side answers each command with
+# ``{"seq": <command seq>, "ret": <code>}`` (0 = accepted, non-zero =
+# rejected). dp_103 (start / return) is field-confirmed: V1000 fw28 acks every
+# local-MQTT start/dock with ``ret:0``, and V1000 fw 9.9.226 rejects a start
+# outside the operating window with ``ret:-3`` (upstream TerraMow/TerraMowHA
+# issue #86). dp_105 (pause) and dp_106 (resume) are the sibling command
+# channels and are listened to the same way; a reply that never comes keeps
+# the optimistic semantics below.
+COMMAND_REPLY_DPS = (103, 105, 106)
+
+# How long a confirmed command waits for its reply (dp_103/105/106 ``ret`` or
+# dp_119 ``code``) before falling back to optimistic (fire-and-forget)
+# semantics. Field finding (V1000 fw28): dp_119 does NOT ack commands sent by
+# this integration — the acks observed there carry epoch-like seqs belonging
+# to the mower's internal (BLE/cloud) commander — but the command channel's
+# own /robot reply does. The wait is short; a missing reply is never treated
+# as a failure.
 COMMAND_ACK_TIMEOUT = 2.0
 
 # dp_122: full weekly schedule channel (GET/ADD/DELETE commands).

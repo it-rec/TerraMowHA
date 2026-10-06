@@ -1,9 +1,11 @@
-"""Tests for the dp_119 command-acknowledgement channel.
+"""Tests for the command-acknowledgement channels.
 
 Covers the hub's ack bookkeeping (futures per seq, rejection logging,
-diagnostics), the confirmed-command helper ``async_publish_with_ack``, the
-confirmed ``terramow.start_select_region`` service path, and the dp_122
-app-direction schedule-write capture.
+diagnostics) for dp_119 ``code`` acks and the command channels' own
+dp_103/105/106 ``ret`` replies, the confirmed-command helper
+``async_publish_with_ack``, the confirmed ``terramow.start_select_region``
+service and lawn_mower start/pause/dock paths, and the dp_122 app-direction
+schedule-write capture.
 """
 
 from __future__ import annotations
@@ -15,6 +17,12 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from homeassistant.components.lawn_mower import (
+    DOMAIN as LAWN_MOWER_DOMAIN,
+    SERVICE_DOCK,
+    SERVICE_PAUSE,
+    SERVICE_START_MOWING,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import entity_registry as er
@@ -83,11 +91,11 @@ async def test_ack_resolves_confirmed_command(hass: HomeAssistant) -> None:
     await asyncio.sleep(0)  # let the command publish and park its future
     _push_ack(hub, 42, 0)
     assert await task == 0
-    assert hub.last_command_ack == {"seq": 42, "code": 0}
+    assert hub.last_command_ack == {"dp": 119, "seq": 42, "code": 0}
     assert not hub._pending_acks
 
     snapshot = hub.diagnostics_snapshot()
-    assert snapshot["last_command_ack"] == {"seq": 42, "code": 0}
+    assert snapshot["last_command_ack"] == {"dp": 119, "seq": 42, "code": 0}
 
 
 async def test_ack_rejection_raises(hass: HomeAssistant) -> None:
@@ -266,3 +274,211 @@ async def test_app_direction_capture(hass: HomeAssistant) -> None:
         ("data_point/122/app", payload),
         ("data_point/121/app", '{"x": 1}'),
     ]
+
+
+# ---------------------------------------------------------------------------
+# dp_103/105/106 command replies (upstream TerraMow/TerraMowHA issue #86)
+# ---------------------------------------------------------------------------
+
+
+def _push(hub: TerraMowHub, dp_id: int, payload: Any) -> None:
+    """Deliver a /robot message exactly like the MQTT worker thread would."""
+    raw = payload if isinstance(payload, str) else json.dumps(payload)
+    msg = SimpleNamespace(topic=f"data_point/{dp_id}/robot", payload=raw.encode())
+    hub.on_mqtt_message(None, None, msg)
+
+
+def _mower_entity_id(hass: HomeAssistant) -> str:
+    entity_id = er.async_get(hass).async_get_entity_id(
+        "lawn_mower", DOMAIN, f"lawn_mower.terramow@{SERIAL}"
+    )
+    assert entity_id is not None
+    return entity_id
+
+
+async def _call_mower(
+    hass: HomeAssistant, hub: TerraMowHub, service: str, ret: int
+) -> None:
+    """Call a lawn_mower service and answer its command on its own channel."""
+
+    async def _reply() -> None:
+        for _ in range(50):
+            await asyncio.sleep(0.01)
+            if hub._pending_acks:
+                seq = next(iter(hub._pending_acks))
+                topic = hub.mqtt_client.publish.call_args[0][0]
+                dp_id = int(topic.split("/")[1])
+                _push(hub, dp_id, {"seq": seq, "ret": ret})
+                return
+
+    hub._last_control_time = 0.0  # clear the command rate limiter
+    hass.async_create_task(_reply())
+    await hass.services.async_call(
+        LAWN_MOWER_DOMAIN,
+        service,
+        {"entity_id": _mower_entity_id(hass)},
+        blocking=True,
+    )
+
+
+async def _set_mission(hass: HomeAssistant, hub: TerraMowHub, **dp107: str) -> None:
+    _push(hub, 107, dp107)
+    await hass.async_block_till_done()
+
+
+async def test_rejected_start_fails_the_service_call(hass: HomeAssistant) -> None:
+    """Upstream #86: a start refused with ret -3 must not report success."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    with pytest.raises(HomeAssistantError) as err:
+        await _call_mower(hass, hub, SERVICE_START_MOWING, ret=-3)
+    assert err.value.translation_key == "command_rejected"
+    assert err.value.translation_placeholders == {"code": "-3"}
+
+    topic, payload = hub.mqtt_client.publish.call_args[0][:2]
+    command = json.loads(payload)
+    assert topic == "data_point/103/app"
+    assert command["mode"] == "START_MODE_GLOBAL_CLEAN"
+    assert hub.last_command_ack == {"dp": 103, "seq": command["seq"], "code": -3}
+    assert not hub._pending_acks
+
+
+async def test_accepted_start_completes(hass: HomeAssistant) -> None:
+    """A ret-0 reply on dp_103 completes the start service call."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    await _call_mower(hass, hub, SERVICE_START_MOWING, ret=0)
+    assert hub.last_command_ack["dp"] == 103
+    assert hub.last_command_ack["code"] == 0
+
+
+async def test_rejected_resume_on_dp106_fails(hass: HomeAssistant) -> None:
+    """Resuming a paused job goes over dp_106; its reply is matched too."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    await _set_mission(
+        hass, hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_PAUSE"
+    )
+
+    with pytest.raises(HomeAssistantError):
+        await _call_mower(hass, hub, SERVICE_START_MOWING, ret=-3)
+    assert hub.mqtt_client.publish.call_args[0][0] == "data_point/106/app"
+    assert hub.last_command_ack["dp"] == 106
+
+
+async def test_pause_and_dock_wait_for_their_replies(hass: HomeAssistant) -> None:
+    """Pause (dp_105) and dock (dp_103) surface rejections the same way."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    await _set_mission(
+        hass, hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING"
+    )
+
+    await _call_mower(hass, hub, SERVICE_PAUSE, ret=0)
+    assert hub.mqtt_client.publish.call_args[0][0] == "data_point/105/app"
+    assert hub.last_command_ack["dp"] == 105
+
+    with pytest.raises(HomeAssistantError):
+        await _call_mower(hass, hub, SERVICE_DOCK, ret=-1)
+    assert hub.mqtt_client.publish.call_args[0][0] == "data_point/103/app"
+
+
+async def test_noop_command_does_not_wait(hass: HomeAssistant) -> None:
+    """Start while already mowing sends nothing and returns at once."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    await _set_mission(
+        hass, hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING"
+    )
+    hub.mqtt_client.publish.reset_mock()
+    hub._last_control_time = 0.0
+
+    await asyncio.wait_for(hub.async_start_mowing(), timeout=0.5)
+    hub.mqtt_client.publish.assert_not_called()
+    assert not hub._pending_acks
+
+
+async def test_edge_trim_rejection_raises(hass: HomeAssistant) -> None:
+    """The edge-trim start is confirmed on dp_103 like a normal start."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    hub._last_control_time = 0.0
+
+    task = hass.async_create_task(hub.async_start_edge_trim())
+    await asyncio.sleep(0)
+    seq = next(iter(hub._pending_acks))
+    _push(hub, 103, {"seq": seq, "ret": -3})
+    with pytest.raises(HomeAssistantError):
+        await task
+
+
+async def test_dp119_ack_still_confirms_a_start(hass: HomeAssistant) -> None:
+    """Whichever channel acks first resolves the wait (dp_119 here)."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    hub._last_control_time = 0.0
+
+    task = hass.async_create_task(hub.async_start_mowing())
+    await asyncio.sleep(0)
+    seq = next(iter(hub._pending_acks))
+    _push_ack(hub, seq, 0)
+    await task
+    # a later duplicate on dp_103 finds nothing waiting and stays quiet
+    _push(hub, 103, {"seq": seq, "ret": 0})
+    await hass.async_block_till_done()
+    assert hub.last_command_ack == {"dp": 103, "seq": seq, "code": 0}
+
+
+async def test_late_rejection_is_logged(hass: HomeAssistant, caplog: Any) -> None:
+    """A rejection nobody waits for (late, or another commander's) warns."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    _push(hub, 103, {"seq": 5, "ret": -3})
+    await hass.async_block_till_done()
+    assert "rejected command seq=5 with code=-3" in caplog.text
+
+    caplog.clear()
+    _push(hub, 105, {"seq": 6, "ret": 0})
+    await hass.async_block_till_done()
+    assert "rejected" not in caplog.text
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "not json",
+        "[1, 2]",
+        {"seq": 1},
+        {"ret": 0},
+        {"seq": "1", "ret": 0},
+        {"seq": 1, "ret": "0"},
+        {"seq": True, "ret": 0},
+        {"seq": 1, "ret": False},
+    ],
+)
+async def test_non_reply_payloads_are_ignored(
+    hass: HomeAssistant, payload: Any
+) -> None:
+    """Anything but an int seq + int ret on a command channel is not a reply."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    future: asyncio.Future[int] = hass.loop.create_future()
+    hub._pending_acks[1] = future
+
+    _push(hub, 103, payload)
+    await hass.async_block_till_done()
+    assert hub.last_command_ack == {}
+    assert not future.done()
+    hub._pending_acks.clear()

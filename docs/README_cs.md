@@ -51,7 +51,7 @@ Toto je integrace pro Home Assistant určená pro robotické sekačky TerraMow.
 - **Hlášení opravy** — konkrétní karty v panelu pro nekompatibilní firmware a pro dlužnou údržbu nože / základnové stanice
 - Stažení diagnostiky pro snadné hlášení chyb
 - Přeloženo do 33 jazyků (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
-- **Potvrzené příkazy** — sečení po zónách čeká na potvrzení dp_119 ze zařízení a hlásí odmítnutí, místo aby tiše „uspělo“
+- **Potvrzené příkazy** — spuštění, pozastavení, návrat na základnu, sekání okrajů a sečení po zónách čekají na potvrzení ze zařízení (odpověď příkazu na dp_103/105/106 nebo dp_119) a hlásí odmítnutí — např. spuštění mimo povolenou dobu sečení —, místo aby tiše „uspěly“
 - Lokální push komunikace přes MQTT — cloud není potřeba
 
 ### Podporované entity

@@ -51,7 +51,7 @@ Ceci est une intégration Home Assistant pour les robots tondeuses TerraMow.
 - **Signalements de réparation** — cartes de tableau de bord exploitables pour un micrologiciel incompatible et pour l'entretien dû de la lame / de la station de base
 - Téléchargement des diagnostics pour faciliter les rapports de bug
 - Traduit en 33 langues (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
-- **Commandes confirmées** — la tonte par zone attend l'accusé de réception dp_119 de l'appareil et signale les rejets au lieu de « réussir » silencieusement
+- **Commandes confirmées** — le démarrage, la pause, le retour à la base, la coupe des bordures et la tonte par zone attendent l'accusé de réception de l'appareil (la réponse propre de la commande sur dp_103/105/106 ou dp_119) et signalent les rejets — par ex. un démarrage en dehors des heures de tonte autorisées — au lieu de « réussir » silencieusement
 - Communication locale en push basée sur MQTT — aucun cloud requis
 
 ### Entités prises en charge

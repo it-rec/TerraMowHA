@@ -51,7 +51,7 @@ Esta é uma integração para o Home Assistant destinada aos corta-relvas robót
 - **Avisos de reparação** — cartões de painel acionáveis para firmware incompatível e para a manutenção pendente da lâmina / da estação base
 - Descarregamento de diagnósticos para facilitar os relatórios de erro
 - Traduzida em 33 idiomas (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
-- **Comandos confirmados** — o corte por zonas aguarda a confirmação dp_119 do dispositivo e comunica as rejeições em vez de «ter êxito» silenciosamente
+- **Comandos confirmados** — iniciar, pausar, regressar à base, aparar as bordas e o corte por zonas aguardam a confirmação do dispositivo (a resposta do próprio comando em dp_103/105/106 ou dp_119) e comunicam as rejeições — p. ex. um início fora do horário de corte permitido — em vez de «ter êxito» silenciosamente
 - Comunicação local push baseada em MQTT — sem necessidade de nuvem
 
 ### Entidades suportadas

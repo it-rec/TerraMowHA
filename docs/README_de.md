@@ -55,7 +55,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 - **Reparaturhinweise** — handlungsorientierte Dashboard-Karten für inkompatible Firmware und für fällige Wartung von Messer / Basisstation
 - Diagnose-Download für einfache Fehlerberichte
 - In 33 Sprachen übersetzt (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
-- **Bestätigte Befehle** — das Zonenmähen wartet auf die dp_119-Bestätigung des Geräts und meldet Ablehnungen, anstatt stillschweigend „Erfolg“ zu melden
+- **Bestätigte Befehle** — Start, Pause, Rückkehr zur Basis, Kantenschnitt und Zonenmähen warten auf die Bestätigung des Geräts (die eigene dp_103/105/106-Antwort des Befehls oder dp_119) und melden Ablehnungen — z. B. einen Start außerhalb der erlaubten Mähzeiten —, anstatt stillschweigend „Erfolg“ zu melden
 - Lokale Push-Kommunikation auf MQTT-Basis — keine Cloud erforderlich
 
 ### Unterstützte Entitäten

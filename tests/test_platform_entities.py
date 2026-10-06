@@ -183,8 +183,23 @@ def test_zone_select_builds_options_from_map_info() -> None:
     assert select.current_option == "all_zones"
 
 
+def _auto_reply(hub: TerraMowHub, ret: int = 0) -> None:
+    """Answer each published command like the device's dp_<n>/robot reply."""
+
+    def _publish(topic: str, payload: str, qos: int = 0) -> MagicMock:
+        dp_id = int(topic.split("/")[1])
+        reply = json.dumps({"seq": json.loads(payload)["seq"], "ret": ret})
+        asyncio.get_running_loop().call_soon(
+            lambda: asyncio.ensure_future(hub.on_command_reply(dp_id, reply))
+        )
+        return MagicMock(rc=0)
+
+    hub.mqtt_client.publish.side_effect = _publish
+
+
 def test_zone_select_starts_zone_clean() -> None:
     hub = _hub()
+    _auto_reply(hub)
     select = TerraMowZoneSelect(hub.basic_data, hub.hass)
     select.async_write_ha_state = MagicMock()
     asyncio.run(select._on_map_info(MAP_INFO_WITH_ZONES))

@@ -51,7 +51,7 @@ Tämä on Home Assistant -integraatio TerraMow-robottiruohonleikkureille.
 - **Korjausilmoitukset** — toimintaan ohjaavat koontinäyttökortit yhteensopimattomasta laiteohjelmistosta sekä erääntyneestä terän / tukiaseman huollosta
 - Diagnostiikan lataus vikailmoitusten helpottamiseksi
 - Käännetty 33 kielelle (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
-- **Vahvistetut komennot** — vyöhykeleikkuu odottaa laitteen dp_119-kuittausta ja ilmoittaa hylkäyksistä sen sijaan, että "onnistuisi" hiljaisesti
+- **Vahvistetut komennot** — käynnistys, tauko, paluu latausasemalle, reunaleikkuu ja vyöhykeleikkuu odottavat laitteen kuittausta (komennon oma dp_103/105/106-vastaus tai dp_119) ja ilmoittavat hylkäyksistä — esim. käynnistyksestä sallittujen leikkuuaikojen ulkopuolella — sen sijaan, että "onnistuisivat" hiljaisesti
 - Paikallinen push-tiedonsiirto MQTT:llä — pilveä ei tarvita
 
 ### Tuetut oliot
