@@ -8,6 +8,7 @@ def test_known_codes_resolve_to_text() -> None:
     assert describe_error(201) == "Mower lifted"
     assert describe_error(903) == "Mower stuck"
     assert describe_error(909) == "Mower stuck"
+    assert describe_error(911) == "Not able to leave station"
     # every catalog entry resolves through describe_error
     for code, text in ERROR_CODES.items():
         assert describe_error(code) == text
