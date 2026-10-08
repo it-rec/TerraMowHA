@@ -113,9 +113,14 @@ strict typing, etc.).
 
 1. Bump `version` in `custom_components/terramow/manifest.json` in its own PR and
    merge it.
-2. Run the **Release** workflow (`release.yml`) via *workflow dispatch* with the
-   `tag` input set to `vX.Y.Z`. It builds `terramow.zip` and publishes the
-   GitHub release with auto-generated notes.
+2. That's it: the merge to `main` triggers the **Release** workflow
+   (`release.yml`), which tags the merge commit `vX.Y.Z`, builds `terramow.zip`
+   and publishes the GitHub release with auto-generated notes. Manifest edits
+   that leave the version unchanged do not release.
+
+To publish by hand (e.g. after a failed automatic run), push a `vX.Y.Z` tag or
+run the workflow via *workflow dispatch* with the `tag` input. Runs for a version
+that already has a release do nothing.
 
 ## Where things live (quick reference)
 

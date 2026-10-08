@@ -6,6 +6,14 @@ on:
     tags:
       - "v*.*.*"
       - "[0-9]+.[0-9]+.[0-9]+"
+    # A merged "chore: bump version" PR releases on its own: the run tags the
+    # merge commit with the new manifest version and publishes from it.
+    # Manifest edits that keep the version (e.g. requirements) are skipped
+    # because the tag already exists.
+    branches:
+      - main
+    paths:
+      - custom_components/terramow/manifest.json
   workflow_dispatch:
     inputs:
       tag:
@@ -15,6 +23,12 @@ on:
 
 permissions:
   contents: write
+
+# Serialize runs so a bump-triggered run and a manually pushed tag for the
+# same version cannot both publish; the later one sees the release and skips.
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -28,17 +42,39 @@ jobs:
 
       - name: Resolve tag and version
         id: meta
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
-          else
+          SKIP=false
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            TAG="${INPUT_TAG}"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
+          else
+            MANIFEST_VERSION=$(python -c               "import json,sys; print(json.load(open(sys.argv[1]))['version'])"               custom_components/terramow/manifest.json)
+            TAG="v${MANIFEST_VERSION}"
+            if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+              echo "${TAG} already exists; manifest change is not a version bump"
+              SKIP=true
+            else
+              # Pushed with GITHUB_TOKEN, so it does not re-trigger this
+              # workflow via the tag filter.
+              git tag "${TAG}" "${GITHUB_SHA}"
+              git push origin "refs/tags/${TAG}"
+            fi
+          fi
+          if [ "${SKIP}" = "false" ] && gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists; nothing to do"
+            SKIP=true
           fi
           VERSION="${TAG#v}"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "skip=${SKIP}" >> "$GITHUB_OUTPUT"
 
       - name: Verify manifest version matches tag
+        if: steps.meta.outputs.skip != 'true'
         env:
           TAG_VERSION: ${{ steps.meta.outputs.version }}
         run: |
@@ -54,6 +90,7 @@ jobs:
           fi
 
       - name: Create HACS-compatible zip
+        if: steps.meta.outputs.skip != 'true'
         run: |
           cd custom_components/terramow
           zip -r "${{ github.workspace }}/terramow.zip" .
@@ -66,6 +103,7 @@ jobs:
       # "## What's Changed" heading, so this section uses a different one --
       # naming both the same rendered as a duplicate heading up to v1.62.0.
       - name: Build release notes from commits
+        if: steps.meta.outputs.skip != 'true'
         env:
           TAG: ${{ steps.meta.outputs.tag }}
         run: |
@@ -92,6 +130,7 @@ jobs:
           cat release_notes.md
 
       - name: Create GitHub Release
+        if: steps.meta.outputs.skip != 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.meta.outputs.tag }}
