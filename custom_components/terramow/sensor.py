@@ -622,6 +622,24 @@ def _mission_enum(attr: str) -> Callable[[TerraMowHub], StateType]:
     return value_fn
 
 
+def _mission_protocol_value(attr: str) -> Callable[[TerraMowHub], dict[str, Any]]:
+    """Raw dp_107 enum, exactly as the device reported it.
+
+    Exposed as the ``protocol_value`` attribute (same name as upstream). It is
+    always read from the raw hub field, so on the sub-mission / mission-state
+    sensors (``display_*`` decay, #142) and the active-job sensor (session
+    latch) it keeps the device report visible next to the derived state.
+    """
+
+    def attributes_fn(hub: TerraMowHub) -> dict[str, Any]:
+        member = getattr(hub, attr, None)
+        if member is None:
+            return {}
+        return {"protocol_value": str(getattr(member, "value", member))}
+
+    return attributes_fn
+
+
 BACK_TO_STATION_REASON_OPTIONS = [
     "back_to_station_reason_none",
     "back_to_station_reason_low_battery",
@@ -848,6 +866,7 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         push_dp_ids=(107,),
         value_fn=_mission_enum("mission"),
+        attributes_fn=_mission_protocol_value("mission"),
     ),
     # Session-level view of the mow job in progress. Unlike ``mission`` (raw
     # dp_107), this keeps reporting the active mow mission across a mid-session
@@ -863,6 +882,7 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         # refreshes this sensor immediately, not on the next dp_107 push.
         push_dp_ids=(107, 113),
         value_fn=_mission_enum("active_mission"),
+        attributes_fn=_mission_protocol_value("mission"),
     ),
     # Sub-mission surfaces transient states like waiting for rain.
     TerraMowSensorEntityDescription(
@@ -875,6 +895,7 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         # it too so the decay to idle shows without waiting for a poll (#142).
         push_dp_ids=(107, 118),
         value_fn=_mission_enum("display_sub_mission"),
+        attributes_fn=_mission_protocol_value("sub_mission"),
     ),
     # Mission lifecycle state: idle / running / paused / abort / complete.
     TerraMowSensorEntityDescription(
@@ -885,6 +906,7 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         push_dp_ids=(107, 118),
         value_fn=_mission_enum("display_mission_state"),
+        attributes_fn=_mission_protocol_value("mission_state"),
     ),
     # Unofficial / reverse-engineered diagnostics; see
     # docs/en/developers/data_point_unofficial.md.

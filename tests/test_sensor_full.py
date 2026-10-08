@@ -327,6 +327,49 @@ def test_mission_sensor_none_when_member_unset() -> None:
     # an unset mission member reports None
     hub.mission = None
     assert mission.native_value is None
+    # ... and carries no protocol_value rather than a fabricated one
+    assert mission.extra_state_attributes == {}
+
+
+def test_mission_enum_sensors_expose_raw_protocol_value() -> None:
+    hub = _hub()
+    _feed(hub.on_mission_status, {
+        "mission": "MISSION_GLOBAL_CLEAN",
+        "sub_mission": "SUB_MISSION_WAIT_FOR_RAIN_TO_STOP",
+        "state": "MISSION_STATE_PAUSE",
+    })
+    # State is the lowercase HA token; the attribute keeps the device's enum.
+    assert _sensor(hub, "mission").extra_state_attributes == {
+        "protocol_value": "MISSION_GLOBAL_CLEAN"
+    }
+    assert _sensor(hub, "sub_mission").extra_state_attributes == {
+        "protocol_value": "SUB_MISSION_WAIT_FOR_RAIN_TO_STOP"
+    }
+    assert _sensor(hub, "mission_state").extra_state_attributes == {
+        "protocol_value": "MISSION_STATE_PAUSE"
+    }
+
+
+def test_protocol_value_stays_raw_while_display_decays() -> None:
+    hub = _hub()
+    sub = _sensor(hub, "sub_mission")
+    state = _sensor(hub, "mission_state")
+    _feed(hub.on_mission_status, {
+        "mission": "MISSION_BUILD_MAP",
+        "sub_mission": "SUB_MISSION_SAVING_MAP",
+        "state": "MISSION_STATE_RUNNING",
+    })
+    _feed(hub.on_map_save_progress, {"int_value": 100})
+    # #142: the state decays to idle once the save finished, but the attribute
+    # still shows what the device last reported, so the derivation is visible.
+    assert sub.native_value == "sub_mission_idle"
+    assert sub.extra_state_attributes == {
+        "protocol_value": "SUB_MISSION_SAVING_MAP"
+    }
+    assert state.native_value == "mission_state_idle"
+    assert state.extra_state_attributes == {
+        "protocol_value": "MISSION_STATE_RUNNING"
+    }
 
 
 def test_active_job_sensor_survives_mid_session_dock() -> None:
@@ -346,6 +389,8 @@ def test_active_job_sensor_survives_mid_session_dock() -> None:
     })
     assert mission.native_value == "mission_idle"
     assert active.native_value == "mission_global_clean"
+    # the latched job still shows the raw device mission beside it
+    assert active.extra_state_attributes == {"protocol_value": "MISSION_IDLE"}
 
 
 def test_back_to_station_reason_unknown_value_is_none() -> None:
