@@ -52,7 +52,9 @@ jobs:
           elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             TAG="${GITHUB_REF#refs/tags/}"
           else
-            MANIFEST_VERSION=$(python -c               "import json,sys; print(json.load(open(sys.argv[1]))['version'])"               custom_components/terramow/manifest.json)
+            MANIFEST_VERSION=$(python -c \
+              "import json,sys; print(json.load(open(sys.argv[1]))['version'])" \
+              custom_components/terramow/manifest.json)
             TAG="v${MANIFEST_VERSION}"
             if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
               echo "${TAG} already exists; manifest change is not a version bump"
