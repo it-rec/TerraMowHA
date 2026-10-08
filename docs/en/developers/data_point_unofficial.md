@@ -222,7 +222,8 @@ this went unnoticed. The `error_list` clears when the fault resolves.
   shape as the dp_123 event log. Each fault also fires dp_115 with the bare
   code (see the table above).
 - *Known codes* (community-sourced, catalog in `error_codes.py`): `201` mower
-  lifted, `903` and `909` mower stuck (two distinct stuck-type codes). The codes surface with
+  lifted, `903` and `909` mower stuck (two distinct stuck-type codes), `911`
+  not able to leave station. The codes surface with
   readable text on the **Active errors** sensor (`errors[].text`), the
   **Problem** binary sensor (`error_descriptions`), the **error** event, and —
   as the entity state itself — the **Fault** sensor, which reads the joined

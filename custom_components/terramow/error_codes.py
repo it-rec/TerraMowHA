@@ -26,6 +26,9 @@ ERROR_CODES: dict[int, str] = {
     # S1200 fw 9.9.210, issue #171 comment 5069633047: a second stuck-type
     # fault the app also labels "mower stuck".
     909: "Mower stuck",
+    # Issue #171 comment 6063032089: app said the mower was not able to
+    # leave the charging station.
+    911: "Not able to leave station",
 }
 
 
