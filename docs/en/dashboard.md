@@ -248,6 +248,12 @@ integration's options. Most of them control how the map camera renders:
   width underneath the path line, so it is easy to see which parts of the lawn
   still need work.
 
+`sensor.terramow_current_session_progress` follows the vendor's progress
+rules: while a job runs it is held at 98 % at most (the uncapped value shows
+in the `raw_progress` attribute), only the completion signal reads 100 %, and
+it is unknown when no progress applies — Spot mode, drawn-region or
+edge-trim mowing, an unfinished map, or a map-and-mow job.
+
 One option affects the session sensors rather than the map:
 
 - **Treat every finished job as 100 % complete** — some firmware ends a

@@ -23,6 +23,7 @@ from custom_components.terramow.sensor import (
     _raw_session_progress,
     _raw_session_time,
     _session_outcome_attributes,
+    _session_progress_attributes,
 )
 
 
@@ -161,9 +162,8 @@ def test_raw_values_stay_reachable_via_attributes() -> None:
     assert area_attrs["raw_area"] == 210.0
     assert area_attrs["work_type"] == "MAP_AREA_TYPE_CLEANING"
 
-    progress_attrs = _session_outcome_attributes(
-        _raw_session_progress, "raw_progress"
-    )(hub)
+    # the progress sensor's wired attributes: outcome + raw, no cap extra
+    progress_attrs = _session_progress_attributes(hub)
     assert progress_attrs == {
         "session_outcome": "completed",
         "raw_progress": 70.0,
