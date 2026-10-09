@@ -83,11 +83,11 @@ async def test_ack_resolves_confirmed_command(hass: HomeAssistant) -> None:
     await asyncio.sleep(0)  # let the command publish and park its future
     _push_ack(hub, 42, 0)
     assert await task == 0
-    assert hub.last_command_ack == {"seq": 42, "code": 0}
+    assert hub.last_command_ack == {"dp": 119, "seq": 42, "code": 0}
     assert not hub._pending_acks
 
     snapshot = hub.diagnostics_snapshot()
-    assert snapshot["last_command_ack"] == {"seq": 42, "code": 0}
+    assert snapshot["last_command_ack"] == {"dp": 119, "seq": 42, "code": 0}
 
 
 async def test_ack_rejection_raises(hass: HomeAssistant) -> None:
@@ -141,7 +141,7 @@ async def test_unsolicited_rejection_is_logged(
 
     _push_ack(hub, 99, 3)
     await hass.async_block_till_done()
-    assert "rejected command seq=99 with code=3" in caplog.text
+    assert "rejected command seq=99 with code=3 (dp_119)" in caplog.text
 
     # ...while a code-0 ack stays quiet
     caplog.clear()
@@ -266,3 +266,158 @@ async def test_app_direction_capture(hass: HomeAssistant) -> None:
         ("data_point/122/app", payload),
         ("data_point/121/app", '{"x": 1}'),
     ]
+
+
+# ---------------------------------------------------------------------------
+# Same-dp command replies (dp_103/105/106 ``{seq, ret}``)
+# ---------------------------------------------------------------------------
+
+
+def _push_reply(hub: TerraMowHub, dp_id: int, payload: Any) -> None:
+    """Deliver a /robot reply on a control data point like the MQTT worker."""
+    raw = payload if isinstance(payload, str) else json.dumps(payload)
+    msg = SimpleNamespace(topic=f"data_point/{dp_id}/robot", payload=raw.encode())
+    hub.on_mqtt_message(None, None, msg)
+
+
+async def _reply_when_pending(
+    hub: TerraMowHub, dp_id: int, extra: dict[str, Any]
+) -> None:
+    """Answer the first parked command on ``dp_id`` with ``extra`` merged in."""
+    for _ in range(100):
+        await asyncio.sleep(0.01)
+        if hub._pending_acks:
+            seq = next(iter(hub._pending_acks))
+            _push_reply(hub, dp_id, {"seq": seq, **extra})
+            return
+
+
+async def test_same_dp_reply_resolves_confirmed_command(
+    hass: HomeAssistant,
+) -> None:
+    """A dp_103 reply completes the wait; an omitted ret means accepted."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    task = hass.async_create_task(
+        hub.async_publish_with_ack(103, {"seq": 50, "mode": "X"})
+    )
+    await asyncio.sleep(0)
+    _push_reply(hub, 103, {"seq": 50})  # protobuf JSON drops ret=0
+    assert await task == 0
+    assert hub.last_command_ack == {"dp": 103, "seq": 50, "code": 0}
+    assert not hub._pending_acks
+
+
+async def test_start_mowing_service_waits_for_reply(hass: HomeAssistant) -> None:
+    """lawn_mower.start_mowing publishes dp_103 and completes on its reply."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    entity_id = er.async_get(hass).async_get_entity_id(
+        "lawn_mower", DOMAIN, f"lawn_mower.terramow@{SERIAL}"
+    )
+    assert entity_id is not None
+
+    hub._last_control_time = 0.0
+    hass.async_create_task(_reply_when_pending(hub, 103, {"ret": 0}))
+    await hass.services.async_call(
+        "lawn_mower", "start_mowing", {"entity_id": entity_id}, blocking=True
+    )
+    topic, payload = hub.mqtt_client.publish.call_args[0][:2]
+    assert topic == "data_point/103/app"
+    assert json.loads(payload)["mode"] == "START_MODE_GLOBAL_CLEAN"
+    assert hub.last_command_ack["dp"] == 103
+
+
+async def test_dock_service_surfaces_rejection(hass: HomeAssistant) -> None:
+    """A non-zero ret on the command's own dp reaches the caller."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+    entity_id = er.async_get(hass).async_get_entity_id(
+        "lawn_mower", DOMAIN, f"lawn_mower.terramow@{SERIAL}"
+    )
+    assert entity_id is not None
+
+    hub._last_control_time = 0.0
+    hass.async_create_task(_reply_when_pending(hub, 103, {"ret": 911}))
+    with pytest.raises(HomeAssistantError):
+        await hass.services.async_call(
+            "lawn_mower", "dock", {"entity_id": entity_id}, blocking=True
+        )
+    assert not hub._pending_acks
+
+
+async def test_confirmed_pause_uses_dp105_reply(hass: HomeAssistant) -> None:
+    """Pause is confirmed through dp_105, not dp_119."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    await hub.on_mission_status(
+        json.dumps(
+            {"mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_RUNNING"}
+        )
+    )
+    hub._last_control_time = 0.0
+    hass.async_create_task(_reply_when_pending(hub, 105, {"ret": 0}))
+    await hub.async_pause()
+    topic = hub.mqtt_client.publish.call_args[0][0]
+    assert topic == "data_point/105/app"
+    assert hub.last_command_ack["dp"] == 105
+
+
+async def test_confirmed_command_with_nothing_to_send(hass: HomeAssistant) -> None:
+    """When the plan is a no-op (pausing an idle mower) nothing is published."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    hub.mqtt_client.publish.reset_mock()
+    hub._last_control_time = 0.0
+    await hub.async_pause()
+    hub.mqtt_client.publish.assert_not_called()
+    assert not hub._pending_acks
+
+
+async def test_unsolicited_reply_rejection_is_logged(
+    hass: HomeAssistant, caplog: Any
+) -> None:
+    """A rejected fire-and-forget command's same-dp reply is a warning."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    _push_reply(hub, 106, {"seq": 123, "ret": 4})
+    await hass.async_block_till_done()
+    assert "rejected command seq=123 with code=4 (dp_106)" in caplog.text
+    assert hub.last_command_ack == {"dp": 106, "seq": 123, "code": 4}
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        "not json",
+        "[1, 2]",
+        {"ret": 0},  # no seq: not a command reply
+        {"seq": "7", "ret": 0},
+        {"seq": 7, "ret": "bad"},
+    ],
+)
+async def test_non_reply_payloads_are_ignored(
+    hass: HomeAssistant, payload: Any
+) -> None:
+    """Anything that isn't ``{seq:int, ret:int}`` leaves acks untouched."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    future: asyncio.Future[int] = hass.loop.create_future()
+    hub._pending_acks[7] = future
+    _push_reply(hub, 103, payload)
+    await hass.async_block_till_done()
+    assert not future.done()
+    assert hub.last_command_ack == {}
+    hub._pending_acks.clear()

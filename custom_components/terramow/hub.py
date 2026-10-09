@@ -24,6 +24,7 @@ from collections import Counter, OrderedDict, deque
 from collections.abc import Callable
 from datetime import timedelta
 from enum import Enum
+from functools import partial
 from typing import TYPE_CHECKING, Any, cast
 
 import aiohttp
@@ -42,6 +43,8 @@ from .const import (
     APP_DP_TOPIC_FILTER,
     COMMAND_ACK_DP,
     COMMAND_ACK_TIMEOUT,
+    COMMAND_REPLY_DPS,
+    COMMAND_REPLY_TIMEOUT,
     COMPATIBILITY_INFO_DP,
     CONF_SERIAL,
     DOMAIN,
@@ -84,6 +87,9 @@ if TYPE_CHECKING:
     from . import TerraMowBasicData
 
 _LOGGER = logging.getLogger(__name__)
+
+# A control command ready to publish: (data point id, payload with seq).
+PlannedCommand = tuple[int, dict[str, Any]]
 
 # Define the regular expression pattern
 TOPIC_PATTERN = re.compile(r"^data_point/(\d+)/robot$")
@@ -1007,11 +1013,12 @@ class TerraMowHub:
         self._reboot_expected_notified = False
         self._power_mode: str | None = None
 
-        # dp_119 command acknowledgements: confirmed commands park a future
-        # here keyed by their seq; on_command_ack resolves it with the code.
+        # Command acknowledgements: confirmed commands park a future here
+        # keyed by their seq; on_command_ack (dp_119 ``code``) or
+        # on_command_reply (same-dp ``ret`` on dp_103/105/106) resolves it.
         # Only touched from the event loop.
         self._pending_acks: dict[int, asyncio.Future[int]] = {}
-        self._last_command_ack: dict[str, Any] = {}  # Last dp_119 ack (diagnostics)
+        self._last_command_ack: dict[str, Any] = {}  # Last ack/reply (diagnostics)
         # Captured app-direction writes (epoch, topic, payload) — source
         # material for documenting undocumented write formats (schedule etc.).
         self._app_dp_captures: deque[tuple[float, str, str]] = deque(maxlen=50)
@@ -1240,6 +1247,8 @@ class TerraMowHub:
         self.register_callback(109, self.on_wifi_signal)
         self.register_callback(150, self.on_advanced_settings)
         self.register_callback(COMMAND_ACK_DP, self.on_command_ack)
+        for dp_id in COMMAND_REPLY_DPS:
+            self.register_callback(dp_id, partial(self.on_command_reply, dp_id=dp_id))
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
 
     async def on_global_params(self, payload: str) -> None:
@@ -2343,29 +2352,65 @@ class TerraMowHub:
         except (json.JSONDecodeError, TypeError, ValueError):
             _LOGGER.warning("Invalid dp_119 command ack payload: %s", payload[:200])
             return
-        self._last_command_ack = {"seq": seq, "code": code}
+        self._resolve_ack(COMMAND_ACK_DP, seq, code)
+
+    async def on_command_reply(self, payload: str, *, dp_id: int) -> None:
+        """Handle a control command's reply on its own data point.
+
+        dp_103/105/106 answer each command published on their ``/app``
+        topic with ``{seq, ret}`` on the ``/robot`` topic — unlike dp_119,
+        this covers commands sent over local MQTT. A missing ``ret`` is the
+        protobuf JSON default and means accepted. Payloads without an
+        integer ``seq`` are not command replies and are ignored.
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.debug("Non-JSON payload on dp_%s: %s", dp_id, payload[:200])
+            return
+        if not isinstance(data, dict):
+            return
+        seq = data.get("seq")
+        ret = data.get("ret", 0)
+        if type(seq) is not int or type(ret) is not int:
+            return
+        self._resolve_ack(dp_id, seq, ret)
+
+    def _resolve_ack(self, source_dp: int, seq: int, code: int) -> None:
+        """Record an ack/reply and complete the command waiting on its seq.
+
+        Rejected fire-and-forget commands are surfaced as a warning so
+        failures are at least visible in the log.
+        """
+        self._last_command_ack = {"dp": source_dp, "seq": seq, "code": code}
         future = self._pending_acks.pop(seq, None)
         if future is not None:
             if not future.done():
                 future.set_result(code)
         elif code != 0:
             _LOGGER.warning(
-                "Device rejected command seq=%s with code=%s", seq, code
+                "Device rejected command seq=%s with code=%s (dp_%s)",
+                seq,
+                code,
+                source_dp,
             )
 
     @property
     def last_command_ack(self) -> dict[str, Any]:
-        """Get the last dp_119 command acknowledgement (for diagnostics)."""
+        """Get the last command ack/reply (dp_119 or same-dp, diagnostics)."""
         return self._last_command_ack
 
     async def _async_wait_ack(
         self, dp_id: int, data: dict[str, Any], timeout: float = COMMAND_ACK_TIMEOUT
     ) -> int | None:
-        """Publish a command and return its dp_119 ack code.
+        """Publish a command and return its ack code.
 
-        Returns the code (0 = OK, non-zero = rejected) or ``None`` when no
-        ack arrived within the timeout. Never raises on rejection — callers
-        that probe candidate formats need the raw code.
+        The ack is either a dp_119 ``code`` or, for the control data points
+        in ``COMMAND_REPLY_DPS``, the same-dp ``ret`` — whichever arrives
+        first for the command's ``seq``. Returns the code (0 = OK, non-zero
+        = rejected) or ``None`` when no ack arrived within the timeout.
+        Never raises on rejection — callers that probe candidate formats
+        need the raw code.
 
         Must be called from the event loop; ``data`` must carry a ``seq``.
         """
@@ -2377,7 +2422,7 @@ class TerraMowHub:
             return await asyncio.wait_for(future, timeout)
         except TimeoutError:
             _LOGGER.debug(
-                "No dp_119 ack for command seq=%s within %.1fs; assuming ok",
+                "No ack for command seq=%s within %.1fs; assuming ok",
                 seq,
                 timeout,
             )
@@ -2388,10 +2433,10 @@ class TerraMowHub:
     async def async_publish_with_ack(
         self, dp_id: int, data: dict[str, Any], timeout: float = COMMAND_ACK_TIMEOUT
     ) -> int | None:
-        """Publish a command and wait for its dp_119 acknowledgement.
+        """Publish a command and wait for its acknowledgement.
 
         Returns the ack code (0 = OK) or ``None`` when no ack arrived within
-        the timeout — older firmware doesn't ack every command, so a missing
+        the timeout — firmware doesn't ack every command, so a missing
         ack keeps the optimistic fire-and-forget semantics. A non-zero code
         raises a translated ``HomeAssistantError`` so service calls report
         the device's rejection instead of silently "succeeding".
@@ -5012,46 +5057,45 @@ class TerraMowHub:
             self.cmd_seq += 1
             return self.cmd_seq
 
-    def start_mowing(self) -> None:
-        """Start mowing, resuming a paused or station-waiting job."""
+    def _plan_start_mowing(self) -> PlannedCommand | None:
+        """Pick start_mowing's command, resuming a paused/station-waiting job.
+
+        Applies the command rate limiter; ``None`` means nothing to send.
+        """
         self._ensure_command_allowed()
 
         if self.mission in MOW_MISSIONS:
             if self.sub_mission == SubMission.SUB_MISSION_FLEXIBLE_STATION_WAIT:
                 _LOGGER.info("SubMissionWaitInStation resume mow")
-                self._resume_mow()
-            else:
-                if self.mission_state == MissionState.MISSION_STATE_RUNNING:
-                    _LOGGER.info("Now is mowing, can not start mow again")
-                elif self.mission_state == MissionState.MISSION_STATE_PAUSE:
-                    _LOGGER.info("Mission paused, resume mow")
-                    self._resume_mow()
-        else:
-            _LOGGER.info("START CLEAN : Sending start command")
-            self._start_normal_mow()
+                return self._resume_mow_command()
+            if self.mission_state == MissionState.MISSION_STATE_RUNNING:
+                _LOGGER.info("Now is mowing, can not start mow again")
+            elif self.mission_state == MissionState.MISSION_STATE_PAUSE:
+                _LOGGER.info("Mission paused, resume mow")
+                return self._resume_mow_command()
+            return None
+        _LOGGER.info("START CLEAN : Sending start command")
+        return self._global_clean_command()
 
-    def pause(self) -> None:
-        """Pause the running job."""
+    def _plan_pause(self) -> PlannedCommand | None:
+        """Pick pause's command; ``None`` when the job can't be paused."""
         self._ensure_command_allowed()
 
-        if self.mission in MOW_MISSIONS:
-            if self.sub_mission == SubMission.SUB_MISSION_FLEXIBLE_STATION_WAIT:
-                _LOGGER.info("SubMissionWaitInStation, now is not ok to pause mow")
-            else:
-                if self.mission_state == MissionState.MISSION_STATE_RUNNING:
-                    _LOGGER.info("PAUSE CLEAN : Sending pause command")
-                    self._send_pause_command()
-                elif self.mission_state == MissionState.MISSION_STATE_PAUSE:
-                    _LOGGER.info("Now is paused, can not pause mow again")
-        else:
-            if self.mission_state == MissionState.MISSION_STATE_RUNNING:
-                _LOGGER.info("PAUSE CLEAN : Sending pause command")
-                self._send_pause_command()
-            elif self.mission_state == MissionState.MISSION_STATE_PAUSE:
-                _LOGGER.info("Now is paused, can not pause mow again")
+        if (
+            self.mission in MOW_MISSIONS
+            and self.sub_mission == SubMission.SUB_MISSION_FLEXIBLE_STATION_WAIT
+        ):
+            _LOGGER.info("SubMissionWaitInStation, now is not ok to pause mow")
+            return None
+        if self.mission_state == MissionState.MISSION_STATE_RUNNING:
+            _LOGGER.info("PAUSE CLEAN : Sending pause command")
+            return self._pause_command()
+        if self.mission_state == MissionState.MISSION_STATE_PAUSE:
+            _LOGGER.info("Now is paused, can not pause mow again")
+        return None
 
-    def dock(self) -> None:
-        """Send the mower back to the base station."""
+    def _plan_dock(self) -> PlannedCommand | None:
+        """Pick dock's command, resuming a paused return-to-station."""
         self._ensure_command_allowed()
 
         if self.mission in RECHARGE_MISSIONS:
@@ -5059,19 +5103,57 @@ class TerraMowHub:
                 _LOGGER.info("Now is not ok to start recharge")
             elif self.mission_state == MissionState.MISSION_STATE_PAUSE:
                 _LOGGER.info("ResumeRecharge : Resuming recharge")
-                self._resume_recharge()
-        else:
-            _LOGGER.info("StartRecharge : Sending recharge command")
-            self._start_normal_recharge()
+                # Resuming recharge is equivalent to resuming mowing
+                return self._resume_mow_command()
+            return None
+        _LOGGER.info("StartRecharge : Sending recharge command")
+        return self._return_command()
 
-    def _start_normal_mow(self) -> None:
-        """Start normal mowing"""
-        command = {
+    def _publish_planned(self, planned: PlannedCommand | None) -> None:
+        """Send a planned command fire-and-forget."""
+        if planned is not None:
+            self.publish_data_point(*planned)
+
+    async def _async_publish_planned(self, planned: PlannedCommand | None) -> None:
+        """Send a planned command and wait for the device's reply.
+
+        A rejection raises ``HomeAssistantError``; no reply within
+        ``COMMAND_REPLY_TIMEOUT`` keeps the optimistic semantics.
+        """
+        if planned is not None:
+            await self.async_publish_with_ack(*planned, timeout=COMMAND_REPLY_TIMEOUT)
+
+    def start_mowing(self) -> None:
+        """Start mowing, resuming a paused or station-waiting job."""
+        self._publish_planned(self._plan_start_mowing())
+
+    async def async_start_mowing(self) -> None:
+        """Confirmed variant of :meth:`start_mowing`."""
+        await self._async_publish_planned(self._plan_start_mowing())
+
+    def pause(self) -> None:
+        """Pause the running job."""
+        self._publish_planned(self._plan_pause())
+
+    async def async_pause(self) -> None:
+        """Confirmed variant of :meth:`pause`."""
+        await self._async_publish_planned(self._plan_pause())
+
+    def dock(self) -> None:
+        """Send the mower back to the base station."""
+        self._publish_planned(self._plan_dock())
+
+    async def async_dock(self) -> None:
+        """Confirmed variant of :meth:`dock`."""
+        await self._async_publish_planned(self._plan_dock())
+
+    def _global_clean_command(self) -> PlannedCommand:
+        """dp_103 command starting a normal (global) mow."""
+        return 103, {
             'seq': self.get_cmd_seq(),
             'mode': 'START_MODE_GLOBAL_CLEAN',
             'global_clean': {'restart': False}
         }
-        self.publish_data_point(103, command)
 
     def _build_select_region_command(self, region_ids: list[int]) -> dict[str, Any]:
         """Build the dp_103 selective-mow command payload.
@@ -5099,7 +5181,7 @@ class TerraMowHub:
         self.publish_data_point(103, self._build_select_region_command(region_ids))
 
     async def async_start_select_region_clean(self, region_ids: list[int]) -> None:
-        """Start a selective mow and wait for the device's dp_119 ack.
+        """Start a selective mow and wait for the device's reply.
 
         The confirmed variant of :meth:`start_select_region_clean`, used by
         the ``terramow.start_select_region`` service (and through it the map
@@ -5112,7 +5194,9 @@ class TerraMowHub:
         self._ensure_command_allowed()
         _LOGGER.info("START SELECT REGION CLEAN (confirmed): regions=%s", region_ids)
         await self.async_publish_with_ack(
-            103, self._build_select_region_command(region_ids)
+            103,
+            self._build_select_region_command(region_ids),
+            timeout=COMMAND_REPLY_TIMEOUT,
         )
         self._mission_preflight.begin(
             region_ids=region_ids,
@@ -5124,43 +5208,38 @@ class TerraMowHub:
             now=dt_util.utcnow().timestamp(),
         )
 
-    def _start_edge_trim(self) -> None:
-        """Start edge-trim mowing"""
-        command = {
-            'seq': self.get_cmd_seq(),
-            'mode': 'START_MODE_EDGE_TRIM_CLEAN'
-        }
-        self.publish_data_point(103, command)
-
-    def start_edge_trim(self) -> None:
-        """Public wrapper to start edge-trim mowing."""
+    def _plan_edge_trim(self) -> PlannedCommand:
+        """dp_103 command starting edge-trim mowing (rate-limited)."""
         self._ensure_command_allowed()
 
         _LOGGER.info("START EDGE TRIM : Sending edge trim command")
-        self._start_edge_trim()
+        return 103, {
+            'seq': self.get_cmd_seq(),
+            'mode': 'START_MODE_EDGE_TRIM_CLEAN'
+        }
 
-    def _resume_mow(self) -> None:
-        """Resume mowing"""
-        command = {'seq': self.get_cmd_seq()}
-        self.publish_data_point(106, command)
+    def start_edge_trim(self) -> None:
+        """Start edge-trim mowing (fire-and-forget)."""
+        self._publish_planned(self._plan_edge_trim())
 
-    def _send_pause_command(self) -> None:
-        """Send pause command"""
-        command = {'seq': self.get_cmd_seq()}
-        self.publish_data_point(105, command)
+    async def async_start_edge_trim(self) -> None:
+        """Confirmed variant of :meth:`start_edge_trim`."""
+        await self._async_publish_planned(self._plan_edge_trim())
 
-    def _start_normal_recharge(self) -> None:
-        """Start normal recharging"""
-        command = {
+    def _resume_mow_command(self) -> PlannedCommand:
+        """dp_106 resume command (also resumes a paused recharge)."""
+        return 106, {'seq': self.get_cmd_seq()}
+
+    def _pause_command(self) -> PlannedCommand:
+        """dp_105 pause command."""
+        return 105, {'seq': self.get_cmd_seq()}
+
+    def _return_command(self) -> PlannedCommand:
+        """dp_103 command sending the mower back to the station."""
+        return 103, {
             'seq': self.get_cmd_seq(),
             'mode': 'START_MODE_RETURN'
         }
-        self.publish_data_point(103, command)
-
-    def _resume_recharge(self) -> None:
-        """Resume recharging"""
-        # Resuming recharge is equivalent to resuming mowing
-        return self._resume_mow()
 
     def _request_compatibility_info(self) -> None:
         """Request version compatibility information."""

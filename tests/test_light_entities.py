@@ -7,7 +7,7 @@ corner-cutting switch.
 
 import asyncio
 import json
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.button import (
@@ -123,10 +123,12 @@ def test_edge_trim_button_starts_edge_trim() -> None:
     hub = _hub()
     # clear the command rate limiter so the one-shot command is accepted
     hub._last_control_time = 0.0
+    hub.async_publish_with_ack = AsyncMock(return_value=0)
     button = EdgeTrimButton(hub.basic_data, hub.hass)
     asyncio.run(button.async_press())
-    topic, command = _published(hub)
-    assert topic == "data_point/103/app"
+    # the button waits for the device's dp_103 reply
+    dp_id, command = hub.async_publish_with_ack.await_args.args
+    assert dp_id == 103
     assert command["mode"] == "START_MODE_EDGE_TRIM_CLEAN"
 
 

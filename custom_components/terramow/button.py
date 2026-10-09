@@ -83,4 +83,4 @@ class EdgeTrimButton(TerraMowEntity, ButtonEntity):
         if not hub:
             _LOGGER.error("Lawn mower not available")
             return
-        hub.start_edge_trim()
+        await hub.async_start_edge_trim()

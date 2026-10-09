@@ -102,9 +102,14 @@ guard), so they are registered once even with multiple entries. The handler reso
 registry, validates each resolves to a loaded `runtime_data` with a ready
 `lawn_mower`, then awaits
 `basic_data.lawn_mower.async_start_select_region_clean()` — the confirmed
-variant that waits for the device's dp_119 ack and raises a translated
-`command_rejected` error on a non-zero code (a missing ack falls back to
-optimistic success after `COMMAND_ACK_TIMEOUT`).
+variant that waits for the device's reply and raises a translated
+`command_rejected` error on a non-zero code (a missing reply falls back to
+optimistic success after `COMMAND_REPLY_TIMEOUT`). Replies arrive as
+`{seq, ret}` on the command's own data point (dp_103 start/return, dp_105
+pause, dp_106 resume — `COMMAND_REPLY_DPS`) or as a dp_119 `code`; the
+lawn-mower start/pause/dock actions and the edge-trim button use the same
+confirmed path (`hub.async_start_mowing` / `async_pause` / `async_dock` /
+`async_start_edge_trim`).
 
 `async_unload_entry`:
 

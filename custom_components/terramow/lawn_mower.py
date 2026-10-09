@@ -136,14 +136,17 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
         else:
             self.activity = LawnMowerActivity.DOCKED
 
-    def start_mowing(self) -> None:
+    # The commands wait for the device's reply so a rejection (e.g. the
+    # mower can't leave the station) reaches the caller as an error.
+
+    async def async_start_mowing(self) -> None:
         """Start mowing implementation for lawn_mower entity."""
-        self.hub.start_mowing()
+        await self.hub.async_start_mowing()
 
-    def pause(self) -> None:
+    async def async_pause(self) -> None:
         """Pause mowing implementation for lawn_mower entity."""
-        self.hub.pause()
+        await self.hub.async_pause()
 
-    def dock(self) -> None:
+    async def async_dock(self) -> None:
         """Docking implementation for lawn_mower entity."""
-        self.hub.dock()
+        await self.hub.async_dock()
