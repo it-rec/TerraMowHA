@@ -154,10 +154,33 @@ def _raw_session_area(hub: TerraMowHub) -> StateType:
     return round(float(clean_area) / 10, 1)
 
 
+# dp_113 area types whose clean_area/total_area pair is not a mowing progress
+# per the vendor protocol doc: NONE means no job yet, a pure mapping area has
+# no valid clean_area, and draw-region / edge-trim jobs report an invalid
+# total_area.
+_NO_PROGRESS_AREA_TYPES = frozenset(
+    {
+        "MAP_AREA_TYPE_NONE",
+        "MAP_AREA_TYPE_BUILD_MAP",
+        "MAP_AREA_TYPE_DRAW_REGION_CLEANING",
+        "MAP_AREA_TYPE_EDGE_TRIM_CLEANING",
+    }
+)
+# dp_154 mow modes a session progress applies to (missing = global, as the
+# vendor integration treats firmware predating mow_mode).
+_PROGRESS_MOW_MODES = frozenset({"MOW_MODE_GLOBAL", "MOW_MODE_SELECT_REGION"})
+# A running job never reads 100 %: only the completion signal does (#204).
+# The device's clean_area can briefly exceed total_area near the end, so the
+# unfinished value is held just below, as the vendor integration does.
+_UNFINISHED_PROGRESS_CAP = 98.0
+
+
 def _raw_session_progress(hub: TerraMowHub) -> StateType:
     """The session progress computed from dp_113 as the device reports it."""
     current_work_data = hub.current_work_data
     if not current_work_data:
+        return None
+    if current_work_data.get("type") in _NO_PROGRESS_AREA_TYPES:
         return None
     total_area = current_work_data.get("total_area") or 0
     clean_area = current_work_data.get("clean_area") or 0
@@ -192,6 +215,29 @@ def _current_session_area(hub: TerraMowHub) -> StateType:
     return _raw_session_area(hub)
 
 
+def _session_progress_applies(hub: TerraMowHub) -> bool:
+    """Whether the current map/work mode has a meaningful mowing progress.
+
+    Per the vendor protocol: no progress in spot (no base station) mode, for
+    drawn-region / edge-trim mowing (dp_154), while the map is still being
+    built, or for a map-and-mow job. Missing dp_117/dp_154 fields count as
+    the defaults so older firmware keeps its progress.
+    """
+    modes = hub.operating_modes
+    if modes.get("map_mode") == "MAP_MODE_SPOT":
+        return False
+    if modes.get("mow_mode", "MOW_MODE_GLOBAL") not in _PROGRESS_MOW_MODES:
+        return False
+    map_status = hub.map_status
+    if (
+        map_status.get("is_map_detected") is False
+        or map_status.get("map_state", "MAP_STATE_COMPLETE") != "MAP_STATE_COMPLETE"
+        or map_status.get("is_able_to_run_build_map") is True
+    ):
+        return False
+    return hub.mission is not Mission.MISSION_BUILD_MAP_AND_CLEAN
+
+
 def _current_session_progress(hub: TerraMowHub) -> StateType:
     outcome = hub.session_outcome
     if outcome == "completed":
@@ -207,7 +253,12 @@ def _current_session_progress(hub: TerraMowHub) -> StateType:
         if hub.basic_data.assume_job_complete:
             return 100.0
         return 0.0
-    return _raw_session_progress(hub)
+    if not _session_progress_applies(hub):
+        return None
+    raw = _raw_session_progress(hub)
+    if raw is None:
+        return None
+    return min(float(raw), _UNFINISHED_PROGRESS_CAP)
 
 
 def _current_session_time(hub: TerraMowHub) -> StateType:
@@ -232,6 +283,21 @@ def _session_outcome_attributes(
         return attrs
 
     return attributes_fn
+
+
+_session_progress_outcome_attributes = _session_outcome_attributes(
+    _raw_session_progress, "raw_progress"
+)
+
+
+def _session_progress_attributes(hub: TerraMowHub) -> dict[str, Any]:
+    """Outcome attributes, plus ``raw_progress`` while the 98 % cap holds."""
+    attrs = _session_progress_outcome_attributes(hub)
+    if hub.session_outcome is None:
+        raw = _raw_session_progress(hub)
+        if raw is not None and float(raw) > _UNFINISHED_PROGRESS_CAP:
+            attrs["raw_progress"] = raw
+    return attrs
 
 
 def _current_session_attributes(hub: TerraMowHub) -> dict[str, Any]:
@@ -731,11 +797,11 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        push_dp_ids=(113, 107),
+        # dp_117 (map status) and dp_154 (work modes) decide whether a
+        # progress applies at all
+        push_dp_ids=(113, 107, 117, 154),
         value_fn=_current_session_progress,
-        attributes_fn=_session_outcome_attributes(
-            _raw_session_progress, "raw_progress"
-        ),
+        attributes_fn=_session_progress_attributes,
     ),
     TerraMowSensorEntityDescription(
         key="current_session_time",

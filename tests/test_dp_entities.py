@@ -9,6 +9,8 @@ import asyncio
 import json
 from unittest.mock import MagicMock
 
+import pytest
+
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.binary_sensor import (
     BINARY_SENSORS,
@@ -530,10 +532,104 @@ def test_current_session_sensors_from_dp113() -> None:
     assert _sensor(hub, "current_job_type").native_value == "map_area_type_cleaning"
 
 
-def test_session_progress_is_capped_at_100() -> None:
+def test_unfinished_session_progress_is_held_below_100() -> None:
+    """Only the completion signal reads 100 %; a running job caps at 98 %."""
     hub = _hub()
     _feed(hub.on_current_work_data, {"clean_area": 1050, "total_area": 1000})
-    assert _sensor(hub, "current_session_progress").native_value == 100.0
+    sensor = _sensor(hub, "current_session_progress")
+    assert sensor.native_value == 98.0
+    # the raw device computation stays visible (capped only at 100)
+    assert sensor.extra_state_attributes["raw_progress"] == 100.0
+
+    _feed(hub.on_current_work_data, {"clean_area": 400, "total_area": 1000})
+    assert sensor.native_value == 40.0
+
+
+@pytest.mark.parametrize(
+    "area_type",
+    [
+        "MAP_AREA_TYPE_NONE",
+        "MAP_AREA_TYPE_BUILD_MAP",
+        "MAP_AREA_TYPE_DRAW_REGION_CLEANING",
+        "MAP_AREA_TYPE_EDGE_TRIM_CLEANING",
+    ],
+)
+def test_session_progress_none_for_area_types_without_progress(
+    area_type: str,
+) -> None:
+    """dp_113 types with an invalid total/clean area have no progress."""
+    hub = _hub()
+    _feed(
+        hub.on_current_work_data,
+        {"type": area_type, "clean_area": 500, "total_area": 1000},
+    )
+    sensor = _sensor(hub, "current_session_progress")
+    assert sensor.native_value is None
+    assert sensor.extra_state_attributes.get("raw_progress") is None
+
+
+@pytest.mark.parametrize(
+    "area_type",
+    [
+        "MAP_AREA_TYPE_CLEANING",
+        "MAP_AREA_TYPE_SELECT_REGION_CLEANING",
+        "MAP_AREA_TYPE_BUILD_MAP_AND_CLEANING",
+    ],
+)
+def test_session_progress_for_mowing_area_types(area_type: str) -> None:
+    hub = _hub()
+    _feed(
+        hub.on_current_work_data,
+        {"type": area_type, "clean_area": 500, "total_area": 1000},
+    )
+    assert _sensor(hub, "current_session_progress").native_value == 50.0
+
+
+@pytest.mark.parametrize(
+    ("dp_id", "payload"),
+    [
+        (154, {"map_mode": "MAP_MODE_SPOT"}),
+        (154, {"mow_mode": "MOW_MODE_DRAW_REGION"}),
+        (154, {"mow_mode": "MOW_MODE_EDGE_TRIM"}),
+        (117, {"is_map_detected": False}),
+        (117, {"is_map_detected": True, "map_state": "MAP_STATE_BUILDING"}),
+        (117, {"map_state": "MAP_STATE_COMPLETE", "is_able_to_run_build_map": True}),
+        (107, {"mission": "MISSION_BUILD_MAP_AND_CLEAN"}),
+    ],
+)
+def test_session_progress_not_applicable(dp_id: int, payload: dict) -> None:
+    """Spot mode, drawn/edge mowing, an unfinished map or map-and-mow: none."""
+    hub = _hub()
+    _feed(hub.on_current_work_data, {"clean_area": 500, "total_area": 1000})
+    handler = {
+        154: hub.on_operating_modes,
+        117: hub.on_map_status,
+        107: hub.on_mission_status,
+    }[dp_id]
+    _feed(handler, payload)
+    assert _sensor(hub, "current_session_progress").native_value is None
+
+
+def test_session_progress_applies_with_default_modes_and_complete_map() -> None:
+    hub = _hub()
+    _feed(hub.on_current_work_data, {"clean_area": 500, "total_area": 1000})
+    _feed(
+        hub.on_operating_modes,
+        {
+            "move_mode": "MOVE_MODE_MOW",
+            "map_mode": "MAP_MODE_BASE_STATION",
+            "mow_mode": "MOW_MODE_SELECT_REGION",
+        },
+    )
+    _feed(
+        hub.on_map_status,
+        {
+            "is_map_detected": True,
+            "map_state": "MAP_STATE_COMPLETE",
+            "is_able_to_run_build_map": False,
+        },
+    )
+    assert _sensor(hub, "current_session_progress").native_value == 50.0
 
 
 def test_unknown_job_type_reports_none() -> None:
