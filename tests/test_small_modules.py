@@ -8,7 +8,7 @@ mixin helpers, diagnostics and the issues reason parser.
 import asyncio
 import json
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from homeassistant.components.lawn_mower import LawnMowerActivity
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
@@ -226,8 +226,10 @@ def test_lawn_mower_commands_delegate_to_hub() -> None:
     hub = _hub()
     hub._last_control_time = 0.0
     entity = _lawn_mower(hub)
-    entity.start_mowing()
-    assert hub.mqtt_client.publish.called
+    hub.async_publish_with_ack = AsyncMock(return_value=0)
+    asyncio.run(entity.async_start_mowing())
+    dp_id, command = hub.async_publish_with_ack.await_args.args
+    assert (dp_id, command["mode"]) == (103, "START_MODE_GLOBAL_CLEAN")
     assert entity.available is True
 
 

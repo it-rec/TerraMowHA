@@ -10,7 +10,7 @@ binary-sensor callback registration and empty-status paths.
 import asyncio
 import json
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.components.lawn_mower import LawnMowerActivity
 from homeassistant.components.lawn_mower.const import LawnMowerEntityFeature
@@ -119,15 +119,14 @@ def test_lawn_mower_pause_and_dock_delegate_to_hub() -> None:
     _feed(hub.on_mission_status, {
         "mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_RUNNING",
     })
+    hub.async_publish_with_ack = AsyncMock(return_value=0)
     hub._last_control_time = 0.0
-    entity.pause()
-    topic, _ = hub.mqtt_client.publish.call_args.args
-    assert topic == "data_point/105/app"
+    asyncio.run(entity.async_pause())
+    assert hub.async_publish_with_ack.await_args.args[0] == 105
 
     hub._last_control_time = 0.0
-    entity.dock()
-    topic, _ = hub.mqtt_client.publish.call_args.args
-    assert topic == "data_point/103/app"
+    asyncio.run(entity.async_dock())
+    assert hub.async_publish_with_ack.await_args.args[0] == 103
 
 
 def test_lawn_mower_recharge_without_returning_falls_back_to_docked() -> None:

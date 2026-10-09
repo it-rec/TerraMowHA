@@ -92,6 +92,18 @@ COMMAND_ACK_DP = 119
 # treated as a failure.
 COMMAND_ACK_TIMEOUT = 2.0
 
+# Control-command data points whose /robot side echoes each command sent on
+# the /app side as ``{seq, ret}`` (``ret`` 0 = accepted; protobuf JSON may
+# omit a zero ``ret``): dp_103 start/return, dp_105 pause, dp_106 resume.
+# Unlike dp_119, these replies DO cover commands sent over local MQTT
+# (live-confirmed for dp_103 on V1000 fw28; the vendor integration matches
+# replies the same way on all three).
+COMMAND_REPLY_DPS = (103, 105, 106)
+
+# How long a lawn-mower control command waits for its reply. Matches the
+# vendor integration; a missing reply still keeps optimistic semantics.
+COMMAND_REPLY_TIMEOUT = 5.0
+
 # dp_122: full weekly schedule channel (GET/ADD/DELETE commands).
 SCHEDULE_DP = 122
 
