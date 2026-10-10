@@ -53,7 +53,7 @@ def test_async_setup_entry_creates_all_numbers() -> None:
     added: list = []
     entry = SimpleNamespace(entry_id="e1", runtime_data=hub.basic_data)
     asyncio.run(async_setup_entry(hub.hass, entry, added.extend))
-    assert len(added) == 7
+    assert len(added) == 9
 
 
 # ---------------------------------------------------------------------------

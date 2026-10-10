@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberMode
-from homeassistant.const import DEGREE, EntityCategory, UnitOfLength
+from homeassistant.const import DEGREE, EntityCategory, UnitOfLength, UnitOfTime
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -35,6 +35,8 @@ async def async_setup_entry(
         MainDirectionAutoRotateIntervalNumber(basic_data, hass),
         MultipleDirectionAngle1Number(basic_data, hass),
         MultipleDirectionAngle2Number(basic_data, hass),
+        RainSensorThresholdNumber(basic_data, hass),
+        AfterRainResumeDelayNumber(basic_data, hass),
     ]
 
     async_add_entities(entities)
@@ -634,3 +636,102 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
                         attrs['angle_difference'] = abs(angles[1] - angles[0])
 
         return attrs
+
+
+class TerraMowAdvancedSettingNumber(PushUpdateMixin, TerraMowEntity, NumberEntity):
+    """Base for the writable dp_150 advanced-setting numbers.
+
+    Disabled by default for the same reason as the matching switches: dp_150
+    writes are undocumented and current firmware may drop them, in which case
+    setting a value raises instead of silently doing nothing. The diagnostic
+    sensors remain the read-only view.
+    """
+
+    _push_dp_ids = (150,)
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_entity_registry_enabled_default = False
+    _attr_mode = NumberMode.BOX
+
+    # Path to the value inside the dp_150 block.
+    _path: tuple[str, ...] = ()
+
+    def _reported(self) -> Any:
+        hub = self.hub
+        if not hub or not hub.advanced_settings:
+            return None
+        return hub.resolve_advanced_setting(hub.advanced_settings, self._path)
+
+    def _clamp_native(self, value: float) -> float:
+        """Clamp a device-reported value into the entity's declared range."""
+        return min(self.native_max_value, max(self.native_min_value, value))
+
+    async def _write(self, value: Any) -> None:
+        hub = self.hub
+        if not hub:
+            _LOGGER.error("Lawn mower not available")
+            return
+        await hub.async_write_advanced_setting(self._path, value)
+        safe_write_ha_state(self)
+
+
+class RainSensorThresholdNumber(TerraMowAdvancedSettingNumber):
+    """Rain-sensor trigger threshold (dp_150 ``rain_sensor_threshold``).
+
+    The device reports a raw sensor count (1000 on the reference unit), not a
+    physical unit, so the entity stays unitless and spans the full observed
+    range instead of inventing one.
+    """
+
+    _attr_translation_key = "rain_sensor_threshold"
+    _attr_native_min_value = 0
+    _attr_native_max_value = 4095
+    _attr_native_step = 1
+
+    _unique_id_suffix = "setting_rain_sensor_threshold"
+    _path = ("rain_sensor_threshold", "upper_limit")
+
+    @property
+    def native_value(self) -> float | None:
+        value = self._reported()
+        if not isinstance(value, int) or isinstance(value, bool):
+            return None
+        return float(self._clamp_native(float(value)))
+
+    async def async_set_native_value(self, value: float) -> None:
+        await self._write(int(value))
+
+
+class AfterRainResumeDelayNumber(TerraMowAdvancedSettingNumber):
+    """Delay before mowing resumes after rain (dp_150, hours + minutes).
+
+    Presented as whole minutes and written back as the device's
+    ``{"hours": h, "minutes": m}`` pair.
+    """
+
+    _attr_translation_key = "after_rain_resume_delay"
+    _attr_device_class = NumberDeviceClass.DURATION
+    _attr_native_unit_of_measurement = UnitOfTime.MINUTES
+    _attr_native_min_value = 0
+    _attr_native_max_value = 1440
+    _attr_native_step = 15
+
+    _unique_id_suffix = "setting_after_rain_resume_delay"
+    _path = ("after_rain_stop_setting", "auto_resume_delay_time")
+
+    @property
+    def native_value(self) -> float | None:
+        delay = self._reported()
+        if not isinstance(delay, dict):
+            return None
+
+        def _int(value: Any) -> int:
+            if isinstance(value, int) and not isinstance(value, bool):
+                return value
+            return 0
+
+        return float(_int(delay.get("hours")) * 60 + _int(delay.get("minutes")))
+
+    async def async_set_native_value(self, value: float) -> None:
+        total = int(value)
+        await self._write({"hours": total // 60, "minutes": total % 60})
