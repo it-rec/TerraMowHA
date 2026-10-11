@@ -582,6 +582,9 @@
     "command_rate_limited": {
       "message": "Kosilici je upravo poslana druga naredba. Pričekajte trenutak i pokušajte ponovno."
     },
+    "edge_trim_unsupported_firmware": {
+      "message": "Edge trimming requires mower firmware with control module version 8 or later (current: {control_version}). Please update the mower firmware."
+    },
     "command_rejected": {
       "message": "Kosilica je odbila naredbu (kôd pogreške {code})."
     },

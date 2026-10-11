@@ -149,6 +149,11 @@ MOW_SPEED_TYPES = [
 # speed supports the AUTO setting
 MIN_MOW_SPEED_VERSION_FOR_AUTO = 3
 
+# Minimum dp_127 ``module.control`` version that understands the dp_103
+# START_MODE_EDGE_TRIM_CLEAN start mode (vendor integration v0.3.3). Older
+# control modules ignore the command, so it is rejected before publishing.
+MIN_EDGE_TRIM_CONTROL_VERSION = 8
+
 # dp_155 blade disk speed default value (matches the firmware's actual init path)
 DEFAULT_BLADE_DISK_SPEED_TYPE = "BLADE_DISK_SPEED_TYPE_MEDIUM"
 

@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from homeassistant.components.lawn_mower.const import LawnMowerActivity
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.hub import (
@@ -357,6 +357,59 @@ def test_command_rate_limit() -> None:
     with pytest.raises(HomeAssistantError):
         hub.start_edge_trim()  # immediately again -> rate limited, raises
     assert hub.mqtt_client.publish.call_count == 1
+
+
+@pytest.mark.parametrize(
+    ("module", "expected"),
+    [
+        ({"control": 8}, 8),
+        ({"control": "7"}, 7),
+        ({"control": "v7"}, None),
+        ({"control": True}, None),
+        ({"control": 7.0}, None),
+        ({}, None),
+        ("not-a-dict", None),
+    ],
+)
+def test_control_module_version_parsing(module: object, expected: int | None) -> None:
+    hub = _make_hub()
+    hub.basic_data.firmware_version = {"module": module}
+    assert hub.control_module_version == expected
+
+
+def test_control_module_version_without_firmware_report() -> None:
+    hub = _make_hub()
+    assert hub.control_module_version is None
+
+
+@pytest.mark.parametrize("control", [7, "0"])
+def test_edge_trim_rejected_below_control_version_8(control: object) -> None:
+    hub = _make_hub()
+    hub.mqtt_client = MagicMock()
+    hub.basic_data.firmware_version = {"module": {"control": control}}
+    _allow_command(hub)
+    with pytest.raises(ServiceValidationError) as err:
+        hub.start_edge_trim()
+    assert err.value.translation_key == "edge_trim_unsupported_firmware"
+    assert err.value.translation_placeholders == {"control_version": str(control)}
+    hub.mqtt_client.publish.assert_not_called()
+    # a rejected edge trim must not consume the rate-limit window
+    assert time.monotonic() - hub._last_control_time >= 10
+
+
+@pytest.mark.parametrize("module", [{"control": 8}, {"control": 9}, {}])
+def test_edge_trim_allowed_at_or_above_control_version_8(module: object) -> None:
+    """Control version 8 is the boundary; an unreported version stays allowed."""
+    hub = _make_hub()
+    hub.mqtt_client = MagicMock()
+    hub.mqtt_client.is_connected.return_value = True
+    hub.mqtt_client.publish.return_value.rc = 0
+    hub.basic_data.firmware_version = {"module": module}
+    _allow_command(hub)
+    hub.start_edge_trim()
+    topic, payload = hub.mqtt_client.publish.call_args.args[:2]
+    assert topic == "data_point/103/app"
+    assert json.loads(payload)["mode"] == "START_MODE_EDGE_TRIM_CLEAN"
 
 
 def test_dp_callback_dispatch_and_unknown_dp_logging() -> None:

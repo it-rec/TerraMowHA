@@ -582,6 +582,9 @@
     "command_rate_limited": {
       "message": "Une autre commande vient d'être envoyée au robot tondeuse. Patientez un instant puis réessayez."
     },
+    "edge_trim_unsupported_firmware": {
+      "message": "Edge trimming requires mower firmware with control module version 8 or later (current: {control_version}). Please update the mower firmware."
+    },
     "command_rejected": {
       "message": "La tondeuse a rejeté la commande (code d'erreur {code})."
     },

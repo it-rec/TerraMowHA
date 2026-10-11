@@ -495,6 +495,33 @@ def test_battery_status_sensors_from_dp108() -> None:
     assert _binary(hub, "power_switch").is_on is False
 
 
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("BATTERY_TEMPRETURE_OVERHEAT", "battery_tempreture_overheat"),
+        # corrected spelling (accepted by the vendor integration) maps to the
+        # same option token instead of a state outside the options
+        ("BATTERY_TEMPERATURE_OVERHEAT", "battery_tempreture_overheat"),
+        ("BATTERY_TEMPERATURE_UNDERHEAT", "battery_tempreture_underheat"),
+        (42, None),
+    ],
+)
+def test_battery_temperature_state_accepts_both_spellings(
+    raw: object, expected: str | None
+) -> None:
+    hub = _hub()
+    _feed(hub.on_battery_status, {"state": "BATTERY_STATE_IDLE", "tempreture": raw})
+    sensor = _sensor(hub, "battery_temperature_state")
+    assert sensor.native_value == expected
+    if expected is not None:
+        assert expected in sensor.options
+
+
+def test_battery_temperature_state_without_report() -> None:
+    hub = _hub()
+    assert _sensor(hub, "battery_temperature_state").native_value is None
+
+
 # ---------------------------------------------------------------------------
 # dp_124 — lifetime statistics
 # ---------------------------------------------------------------------------

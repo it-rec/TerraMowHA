@@ -31,7 +31,7 @@ import aiohttp
 import aiomqtt
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -50,6 +50,7 @@ from .const import (
     DOMAIN,
     MAP_INFO_TOPIC,
     MAP_META_TOPIC,
+    MIN_EDGE_TRIM_CONTROL_VERSION,
     MODEL_NAME_TOPIC,
     MQTT_PORT,
     MQTT_RECONNECT_BASE_DELAY,
@@ -5208,8 +5209,39 @@ class TerraMowHub:
             now=dt_util.utcnow().timestamp(),
         )
 
+    @property
+    def control_module_version(self) -> int | None:
+        """dp_127 ``module.control`` version, or None when not (validly) reported."""
+        module = self.firmware_version_info.get("module")
+        raw = module.get("control") if isinstance(module, dict) else None
+        if isinstance(raw, bool):
+            return None
+        if isinstance(raw, int):
+            return raw
+        if isinstance(raw, str):
+            try:
+                return int(raw)
+            except ValueError:
+                return None
+        return None
+
     def _plan_edge_trim(self) -> PlannedCommand:
-        """dp_103 command starting edge-trim mowing (rate-limited)."""
+        """dp_103 command starting edge-trim mowing (rate-limited).
+
+        Firmware whose control module is known to predate edge trimming is
+        rejected up front instead of being sent a start mode it ignores; an
+        unreported control version keeps the command allowed.
+        """
+        control_version = self.control_module_version
+        if (
+            control_version is not None
+            and control_version < MIN_EDGE_TRIM_CONTROL_VERSION
+        ):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="edge_trim_unsupported_firmware",
+                translation_placeholders={"control_version": str(control_version)},
+            )
         self._ensure_command_allowed()
 
         _LOGGER.info("START EDGE TRIM : Sending edge trim command")
