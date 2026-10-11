@@ -582,6 +582,9 @@
     "command_rate_limited": {
       "message": "Se acaba de enviar otro comando al robot cortacésped. Espera un momento e inténtalo de nuevo."
     },
+    "edge_trim_unsupported_firmware": {
+      "message": "Edge trimming requires mower firmware with control module version 8 or later (current: {control_version}). Please update the mower firmware."
+    },
     "command_rejected": {
       "message": "El cortacésped rechazó el comando (código de error {code})."
     },

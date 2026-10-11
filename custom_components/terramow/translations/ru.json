@@ -582,6 +582,9 @@
     "command_rate_limited": {
       "message": "Газонокосилке только что была отправлена другая команда. Подождите немного и повторите попытку."
     },
+    "edge_trim_unsupported_firmware": {
+      "message": "Edge trimming requires mower firmware with control module version 8 or later (current: {control_version}). Please update the mower firmware."
+    },
     "command_rejected": {
       "message": "Газонокосилка отклонила команду (код ошибки {code})."
     },

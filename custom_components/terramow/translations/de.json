@@ -582,6 +582,9 @@
     "command_rate_limited": {
       "message": "Es wurde gerade ein anderer Befehl an den Mäher gesendet. Bitte warte einen Moment und versuche es erneut."
     },
+    "edge_trim_unsupported_firmware": {
+      "message": "Kantenschnitt erfordert eine Mäher-Firmware mit Steuermodul-Version 8 oder neuer (aktuell: {control_version}). Bitte aktualisiere die Mäher-Firmware."
+    },
     "command_rejected": {
       "message": "Der Mäher hat den Befehl abgelehnt (Fehlercode {code})."
     },

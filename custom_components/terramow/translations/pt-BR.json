@@ -582,6 +582,9 @@
     "command_rate_limited": {
       "message": "Acabou de ser enviado outro comando ao robô cortador de grama. Aguarde um momento e tente novamente."
     },
+    "edge_trim_unsupported_firmware": {
+      "message": "Edge trimming requires mower firmware with control module version 8 or later (current: {control_version}). Please update the mower firmware."
+    },
     "command_rejected": {
       "message": "O cortador rejeitou o comando (código de erro {code})."
     },

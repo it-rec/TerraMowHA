@@ -119,6 +119,22 @@ def _battery_enum(field: str) -> Callable[[TerraMowHub], StateType]:
     return value_fn
 
 
+def _battery_temperature_state(hub: TerraMowHub) -> StateType:
+    """dp_108 ``tempreture`` enum, accepting both device spellings.
+
+    Firmware reports ``BATTERY_TEMPRETURE_*`` (typo preserved); the vendor
+    integration also accepts the corrected ``BATTERY_TEMPERATURE_*``. Both map
+    to the same option token so a firmware fix cannot produce a state outside
+    the sensor's options.
+    """
+    raw = hub.battery_status.get("tempreture") if hub.battery_status else None
+    if not isinstance(raw, str):
+        return None
+    return to_ha_enum_state(
+        raw.replace("BATTERY_TEMPERATURE_", "BATTERY_TEMPRETURE_", 1)
+    )
+
+
 def _statistics_field(field: str) -> Callable[[TerraMowHub], StateType]:
     """Raw field from the dp_124 lifetime statistics block."""
 
@@ -744,7 +760,7 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         push_dp_ids=(108,),
         # Firmware reports the field as 'tempreture' (typo preserved).
-        value_fn=_battery_enum("tempreture"),
+        value_fn=_battery_temperature_state,
     ),
     # Lifetime statistics (dp_124)
     TerraMowSensorEntityDescription(

@@ -109,7 +109,11 @@ optimistic success after `COMMAND_REPLY_TIMEOUT`). Replies arrive as
 pause, dp_106 resume — `COMMAND_REPLY_DPS`) or as a dp_119 `code`; the
 lawn-mower start/pause/dock actions and the edge-trim button use the same
 confirmed path (`hub.async_start_mowing` / `async_pause` / `async_dock` /
-`async_start_edge_trim`).
+`async_start_edge_trim`). Edge trim is rejected up front with a translated
+`edge_trim_unsupported_firmware` validation error when dp_127 reports a
+`module.control` version below `MIN_EDGE_TRIM_CONTROL_VERSION` (8, per the
+vendor integration); an unreported control version keeps it allowed
+(`hub.control_module_version`).
 
 `async_unload_entry`:
 
@@ -241,7 +245,7 @@ properties (mostly through `PushUpdateMixin._push_dp_ids`).
 | --- | --- | --- | --- | --- | --- |
 | 8 | in | `on_battery_level` | `battery_level` | `BatterySensor` (push) | Battery percentage |
 | 102 | in | `on_device_info` | `firmware_version_name`, `_robot_info` | firmware `UpdateEntity` (installed/latest version), device `sw_version` | Device/network info; carries the real app firmware version (`version`, e.g. "9.9.210") plus SN/MAC/IP (kept private) |
-| 103 | **out** | — (`_start_normal_mow`, `start_select_region_clean`, `_start_edge_trim`, `_start_normal_recharge`) | — | lawn_mower, button, service | Start-mode command (global/select-region/edge-trim/return) |
+| 103 | **out** | — (`_start_normal_mow`, `start_select_region_clean`, `_start_edge_trim`, `_start_normal_recharge`) | — | lawn_mower, button, service | Start-mode command (global/select-region/edge-trim/return); edge-trim needs dp_127 `module.control` ≥ 8 |
 | 105 | **out** | `_send_pause_command` | — | lawn_mower pause | Pause command |
 | 106 | **out** | `_resume_mow` / `_resume_recharge` | — | lawn_mower resume | Resume command |
 | 107 | in | `on_mission_status` | `task_status`, `mission`, `sub_mission`, `mission_state`, `power_mode`, `is_robot_navi_located`, `is_upgrading`, `has_error`, `back_to_station_reason`, `is_saving_data`, `is_data_conversion_in_progress` | lawn_mower, event, mission/sub-mission/state/active-job sensors (raw enum kept as their `protocol_value` attribute), power-mode, back-to-station, problem/rain/navigation/upgrading/saving/conversion binary sensors | Mission status (drives the whole activity model); fires state listeners |

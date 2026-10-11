@@ -582,6 +582,9 @@
     "command_rate_limited": {
       "message": "刚刚已向割草机发送了另一条命令。请稍候片刻再试。"
     },
+    "edge_trim_unsupported_firmware": {
+      "message": "沿边作业需要控制模块版本 8 或更高的割草机固件（当前：{control_version}）。请升级割草机固件。"
+    },
     "command_rejected": {
       "message": "割草机拒绝了该命令（错误代码 {code}）。"
     },

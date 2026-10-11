@@ -582,6 +582,9 @@
     "command_rate_limited": {
       "message": "Tocmai a fost trimisă o altă comandă către mașina de tuns iarba. Așteptați un moment și încercați din nou."
     },
+    "edge_trim_unsupported_firmware": {
+      "message": "Edge trimming requires mower firmware with control module version 8 or later (current: {control_version}). Please update the mower firmware."
+    },
     "command_rejected": {
       "message": "Mașina de tuns a respins comanda (cod de eroare {code})."
     },

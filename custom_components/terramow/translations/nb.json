@@ -582,6 +582,9 @@
     "command_rate_limited": {
       "message": "Det ble nettopp sendt en annen kommando til gressklipperen. Vent et øyeblikk og prøv igjen."
     },
+    "edge_trim_unsupported_firmware": {
+      "message": "Edge trimming requires mower firmware with control module version 8 or later (current: {control_version}). Please update the mower firmware."
+    },
     "command_rejected": {
       "message": "Gressklipperen avviste kommandoen (feilkode {code})."
     },
