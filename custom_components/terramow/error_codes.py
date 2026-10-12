@@ -31,6 +31,10 @@ ERROR_CODES: dict[int, str] = {
     # Issue #171 comment 6063032089: app said the mower was not able to
     # leave the charging station.
     911: "Not able to leave station",
+    # Issue #171 comment 6096184591: a second code the app shows with the
+    # same "not able to leave station" message as 911. Which cause each
+    # code stands for (e.g. one generic, one specific) is not known yet.
+    913: "Not able to leave station",
     # Vendor (upstream issue #34): anti-theft boundary crossed.
     1409: "Anti-theft boundary crossed",
 }
