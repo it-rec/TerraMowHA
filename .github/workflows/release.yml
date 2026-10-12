@@ -97,17 +97,18 @@ jobs:
           cd custom_components/terramow
           zip -r "${{ github.workspace }}/terramow.zip" .
 
-      # GitHub's auto-generated notes only list merged PULL REQUESTS between
-      # the tags; commits pushed directly to main produce an empty body. Build
-      # the notes from the commit messages instead (subject as heading, body
-      # as detail), and keep generate_release_notes for the compare link.
-      # The generated notes are appended below this body under their own
-      # "## What's Changed" heading, so this section uses a different one --
-      # naming both the same rendered as a duplicate heading up to v1.62.0.
+      # Summary first, detail second: GitHub's generated notes ("## What's
+      # Changed" PR list + "Full Changelog" compare link) open the release,
+      # followed by the commit messages (subject as heading, body as detail)
+      # under "## Details". The generated notes are fetched via the API rather
+      # than generate_release_notes, which can only append them below the
+      # body. They only list merged PULL REQUESTS, hence the commit section
+      # for anything pushed directly to main.
       - name: Build release notes from commits
         if: steps.meta.outputs.skip != 'true'
         env:
           TAG: ${{ steps.meta.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
             END="${TAG}"
@@ -121,7 +122,15 @@ jobs:
           else
             RANGE="${END}"
           fi
+          GENERATE_ARGS=(-f "tag_name=${TAG}" -f "target_commitish=${GITHUB_SHA}")
+          if [ -n "${PREV}" ]; then
+            GENERATE_ARGS+=(-f "previous_tag_name=${PREV}")
+          fi
           {
+            gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+              "${GENERATE_ARGS[@]}" --jq .body
+            echo
+            echo
             echo "## Details"
             echo
             git log --no-merges --reverse \
@@ -138,6 +147,6 @@ jobs:
           tag_name: ${{ steps.meta.outputs.tag }}
           name: ${{ steps.meta.outputs.tag }}
           body_path: release_notes.md
-          generate_release_notes: true
+          generate_release_notes: false
           files: |
             terramow.zip
