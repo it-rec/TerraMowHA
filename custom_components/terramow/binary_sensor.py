@@ -16,7 +16,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowBasicData, TerraMowConfigEntry
 from .entity import TerraMowEntity
-from .entity_utils import PushUpdateMixin
+from .entity_utils import PushUpdateMixin, safe_write_ha_state
 from .error_codes import describe_error
 from .hub import TerraMowHub
 
@@ -33,12 +33,15 @@ class TerraMowBinarySensorEntityDescription(BinarySensorEntityDescription):
     ``push_dp_ids`` are the data point IDs whose pushes refresh the entity
     (see ``PushUpdateMixin``). ``is_on_fn`` (and the optional
     ``attributes_fn``) receive the hub; the generic entity already handles
-    the hub-is-None case.
+    the hub-is-None case. ``refresh_on_connection`` additionally refreshes
+    the entity on hub state changes (connect/disconnect), for states that
+    reset with the connection rather than with a data point push.
     """
 
     push_dp_ids: tuple[int, ...]
     is_on_fn: Callable[[TerraMowHub], bool | None]
     attributes_fn: Callable[[TerraMowHub], dict[str, Any]] | None = None
+    refresh_on_connection: bool = False
 
 
 class TerraMowBinarySensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
@@ -56,6 +59,15 @@ class TerraMowBinarySensor(PushUpdateMixin, TerraMowEntity, BinarySensorEntity):
         self.entity_description = description
         self._unique_id_suffix = description.key
         self._push_dp_ids = description.push_dp_ids
+
+    async def async_added_to_hass(self) -> None:
+        """Also follow connection changes when the description asks for it."""
+        await super().async_added_to_hass()
+        hub = self.hub
+        if hub is not None and self.entity_description.refresh_on_connection:
+            self.async_on_remove(
+                hub.register_state_listener(lambda: safe_write_ha_state(self))
+            )
 
     @property
     def is_on(self) -> bool | None:
@@ -118,6 +130,24 @@ def _problem_attributes(hub: TerraMowHub) -> dict[str, Any]:
         # (issue #171); unknown codes echo "Error <code>".
         "error_descriptions": [describe_error(code) for code in codes],
     }
+
+
+def _fault_alarm(*codes: int) -> Callable[[TerraMowHub], bool | None]:
+    """Alarm that is on while the current dp_116 fault list holds ``codes``.
+
+    Unknown (None) until a complete fault list has arrived on the current
+    connection, so neither a pre-reconnect list nor the dp_115/dp_123
+    single-code channels can switch it.
+    """
+    wanted = frozenset(codes)
+
+    def is_on_fn(hub: TerraMowHub) -> bool | None:
+        snapshot = hub.fault_snapshot_codes
+        if snapshot is None:
+            return None
+        return not wanted.isdisjoint(snapshot)
+
+    return is_on_fn
 
 
 def _rain_detected(hub: TerraMowHub) -> bool:
@@ -264,6 +294,26 @@ BINARY_SENSORS: tuple[TerraMowBinarySensorEntityDescription, ...] = (
         push_dp_ids=(107, 116),
         is_on_fn=_problem,
         attributes_fn=_problem_attributes,
+    ),
+    # Security alarms from the dp_116 fault list (vendor codes, upstream
+    # issue #34): drive wheels lifted off the ground (201/202) and the
+    # anti-theft boundary crossed (1409). Main device section (no entity
+    # category) so they are easy to pick for automations.
+    TerraMowBinarySensorEntityDescription(
+        key="lift_alarm",
+        translation_key="lift_alarm",
+        device_class=BinarySensorDeviceClass.TAMPER,
+        push_dp_ids=(116,),
+        is_on_fn=_fault_alarm(201, 202),
+        refresh_on_connection=True,
+    ),
+    TerraMowBinarySensorEntityDescription(
+        key="anti_theft_boundary_alarm",
+        translation_key="anti_theft_boundary_alarm",
+        device_class=BinarySensorDeviceClass.TAMPER,
+        push_dp_ids=(116,),
+        is_on_fn=_fault_alarm(1409),
+        refresh_on_connection=True,
     ),
     # Signals when the robot returns due to rain.
     TerraMowBinarySensorEntityDescription(

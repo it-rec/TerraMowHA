@@ -375,6 +375,12 @@
       "problem": {
         "name": "Problém"
       },
+      "lift_alarm": {
+        "name": "Lift Alarm"
+      },
+      "anti_theft_boundary_alarm": {
+        "name": "Anti-Theft Boundary Alarm"
+      },
       "rain_detected": {
         "name": "Zistený dážď"
       },

@@ -581,6 +581,21 @@ def _decompress_and_parse(raw: bytes) -> Any:
     return json.loads(raw.decode("utf-8"))
 
 
+def _error_codes(errors: list[Any]) -> list[int]:
+    """Integer codes from a dp_116 ``error_list``, skipping malformed entries.
+
+    The list is undocumented, so anything that is not a ``{"code": int}``
+    mapping is dropped rather than trusted.
+    """
+    codes: list[int] = []
+    for entry in errors:
+        if isinstance(entry, dict):
+            code = entry.get("code")
+            if isinstance(code, int) and not isinstance(code, bool):
+                codes.append(code)
+    return codes
+
+
 def _make_unsubscriber[CallbackT](
     callbacks: list[CallbackT], callback: CallbackT
 ) -> Callable[[], None]:
@@ -959,6 +974,9 @@ class TerraMowHub:
         self._robot_info: dict[str, Any] = {}  # Store dp_102 device/network info
         self._component_versions: dict[str, Any] = {}  # Store dp_129 component firmware versions
         self._error_list: list[Any] = []  # Store dp_116 active error list
+        # Codes of the last complete dp_116 list received on the *current*
+        # connection; None until one arrives (see fault_snapshot_codes).
+        self._fault_snapshot_codes: frozenset[int] | None = None
         self._active_error_code: int | None = None  # Store dp_115 latest error code
         self._event_list: list[Any] = []  # Store dp_123 event log
         self._cellular_info: dict[str, Any] = {}  # Store dp_135 cellular/4G info
@@ -1605,8 +1623,13 @@ class TerraMowHub:
             _LOGGER.error("Invalid JSON payload for dp_116: %s", payload)
             return
         if isinstance(data, dict):
-            errors = data.get("error_list")
+            # The firmware serialises protobuf to JSON, which omits an empty
+            # repeated field: a bare ``{}`` is an explicit "no active faults"
+            # report (vendor fix for issue #34). Any other object lacking the
+            # key is not a list report and is ignored.
+            errors = data.get("error_list", [] if not data else None)
             if isinstance(errors, list):
+                self._fault_snapshot_codes = frozenset(_error_codes(errors))
                 changed = errors != self._error_list
                 self._record_fault_hotspots(errors)
                 if changed and errors:
@@ -2558,7 +2581,9 @@ class TerraMowHub:
                 # back off instead of spinning.
                 consecutive_failures += 1
                 _LOGGER.debug("MQTT message stream ended; reconnecting")
-            # Set the error state
+            # Set the error state; a fault list from the lost connection is no
+            # longer current.
+            self._fault_snapshot_codes = None
             self._set_connection_error(True)
             # The listeners were notified when the connection dropped; tell
             # them again once an expected firmware reboot outlives its grace
@@ -2626,6 +2651,8 @@ class TerraMowHub:
         # in response to a GET; without this the schedule calendar is empty)
         self._request_full_schedule()
 
+        # Wait for this connection's own dp_116 report before alarms resolve.
+        self._fault_snapshot_codes = None
         self.connection_error = False
         self._notify_state_listeners()
 
@@ -4967,13 +4994,20 @@ class TerraMowHub:
         Entries are parsed defensively: the list is undocumented, so anything
         that is not a ``{"code": int}`` mapping is skipped rather than trusted.
         """
-        codes: list[int] = []
-        for entry in self._error_list:
-            if isinstance(entry, dict):
-                code = entry.get("code")
-                if isinstance(code, int) and not isinstance(code, bool):
-                    codes.append(code)
-        return codes
+        return _error_codes(self._error_list)
+
+    @property
+    def fault_snapshot_codes(self) -> frozenset[int] | None:
+        """Error codes of the last complete dp_116 list on this connection.
+
+        Same source as ``active_error_codes`` but tracks *whether* the list is
+        current: it is ``None`` until the first dp_116 report after each
+        (re)connect and is cleared again when the connection drops, so alarm
+        entities show unknown instead of carrying a fault (or an all-clear)
+        over from an earlier connection. Only the complete list counts — the
+        dp_115 newest-fault code and the dp_123 event log never set it.
+        """
+        return self._fault_snapshot_codes
 
     @property
     def has_active_error(self) -> bool:

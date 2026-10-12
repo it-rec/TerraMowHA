@@ -375,6 +375,12 @@
       "problem": {
         "name": "Problem"
       },
+      "lift_alarm": {
+        "name": "Anhebealarm"
+      },
+      "anti_theft_boundary_alarm": {
+        "name": "Diebstahlalarm bei Grenzübertritt"
+      },
       "rain_detected": {
         "name": "Regen erkannt"
       },
