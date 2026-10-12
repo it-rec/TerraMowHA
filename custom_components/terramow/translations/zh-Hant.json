@@ -375,6 +375,12 @@
       "problem": {
         "name": "故障"
       },
+      "lift_alarm": {
+        "name": "抬起警報"
+      },
+      "anti_theft_boundary_alarm": {
+        "name": "防盜越界警報"
+      },
       "rain_detected": {
         "name": "偵測到降雨"
       },

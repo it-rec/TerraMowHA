@@ -20,6 +20,8 @@ ERROR_CODES: dict[int, str] = {
     # S1200 fw 9.9.210, issue #171 comment 5048257950: app said the mower
     # was lifted off the ground while mowing.
     201: "Mower lifted",
+    # Vendor (upstream issue #34): second drive-wheel lift code.
+    202: "Mower lifted",
     # S1200 fw 9.9.210, issue #171 comment 5061068395: app said the mower
     # got stuck and could not free itself.
     903: "Mower stuck",
@@ -29,6 +31,8 @@ ERROR_CODES: dict[int, str] = {
     # Issue #171 comment 6063032089: app said the mower was not able to
     # leave the charging station.
     911: "Not able to leave station",
+    # Vendor (upstream issue #34): anti-theft boundary crossed.
+    1409: "Anti-theft boundary crossed",
 }
 
 

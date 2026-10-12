@@ -77,7 +77,7 @@ def _run_setup(setup, hub) -> list:
 
 
 def test_platform_setups_create_entities() -> None:
-    assert len(_run_setup(binary_setup, _hub())) == 25
+    assert len(_run_setup(binary_setup, _hub())) == 27
     assert len(_run_setup(button_setup, _hub())) == 3
 
 

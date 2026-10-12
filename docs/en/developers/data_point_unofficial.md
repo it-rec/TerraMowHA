@@ -42,7 +42,7 @@ setting), then export **once** and line the timestamps up with what you did.
 | ID | Meaning | Observed payload | Surfaced as |
 |----|---------|------------------|-------------|
 | 102 | Device / network info; carries the real app firmware version | `{"version":"9.9.210","sn":"…","wifi_mac":"…","ip":"…","ssid":"…","warranty":{…}}` | firmware `update` entity version + device `sw_version` (identifiers kept private) |
-| 116 | Active-error list | `{"error_list":[{"code":…}]}` (empty on the reference device) | **Active errors** sensor (count + `errors` attribute) and the **Fault** sensor (the active fault as readable text via `error_codes.py`, `error_codes` attribute); also drives the **Problem** binary sensor / lawn-mower **error** state / mower **error** event (any non-empty list is a fault, `error_codes` attribute), because dp_107 `has_error` alone misses some faults (issue [#171]) |
+| 116 | Active-error list | `{"error_list":[{"code":…}]}` (empty on the reference device) | **Active errors** sensor (count + `errors` attribute) and the **Fault** sensor (the active fault as readable text via `error_codes.py`, `error_codes` attribute); also drives the **Problem** binary sensor / lawn-mower **error** state / mower **error** event (any non-empty list is a fault, `error_codes` attribute), because dp_107 `has_error` alone misses some faults (issue [#171]); and the **Lift alarm** (`201`/`202`) / **Anti-theft boundary alarm** (`1409`) binary sensors. A bare `{}` is an empty list (protobuf JSON omits empty repeated fields) |
 | 118 | Map-save / upload progress (0–100 %). Ramps while the device saves its map after a mow (`SUB_MISSION_SAVING_MAP` / "map is being saved"), confirmed by watching it climb `1 → … → 100` in lock-step with the app's on-screen "map saving %" | `{"int_value":42}` | **Map save progress** sensor (`%`; diagnostic, **disabled by default**) |
 | 119 | Command acknowledgement — echoes a command's `seq` with `code:0` (= OK) or a non-zero error code. **Field finding (V1000 fw28):** the device does *not* ack commands sent over local MQTT by this integration — dp_119 acks observed there carry epoch-like seqs belonging to the mower's internal (BLE/cloud) commander, and unparseable dp_122 payloads are dropped silently (no rejection code). Schedule-write negotiation therefore relies on `GET` verification | `{"seq":1783335426,"code":0}` | **Confirmed commands** also resolve from dp_119, but on fw28 the same-dp replies of dp_103/105/106 (below) are what actually confirm local commands; rejected fire-and-forget commands log a warning; last ack/reply in diagnostics |
 | 109 | **Wi-Fi signal strength** of the mower's own link, in percent (~= `2 * (RSSI dBm + 100)`). Identified empirically: pinned at 98 right next to an access point (router-side −42 dBm), a noisy 52–68 on the lawn through a wall (router-side −75…−80 dBm), 98 inside a concrete cellar (rules out the earlier GNSS-quality guess) and uncorrelated with the battery level. Note the FRITZ!Box-style router-side reading measures the *other* end of the asymmetric link and differs by up to ~10 dBm, more across mesh-AP roaming / 2.4↔5 GHz switches | `{"int_value":62}` | **Wi-Fi signal** sensor (%; diagnostic) |
@@ -220,10 +220,21 @@ this went unnoticed. The `error_list` clears when the fault resolves.
 - *Entry structure confirmed* (S1200 fw `9.9.210`, live captures in issue
   [#171]): `{"error_list": [{"code": int, "time": "<RFC3339>"}]}` — the same
   shape as the dp_123 event log. Each fault also fires dp_115 with the bare
-  code (see the table above).
+  code (see the table above). The firmware serialises protobuf to JSON, so an
+  empty list may arrive as a bare `{}` — that is an all-clear report, not a
+  malformed one (vendor, upstream issue #34).
+- *Security alarms* (vendor, upstream issue #34): the **Lift alarm** binary
+  sensor is on while the list holds `201` or `202`, the **Anti-theft boundary
+  alarm** while it holds `1409`. Both live in the main device section (device
+  class `tamper`) for automations. Only a complete dp_116 list switches them —
+  dp_115 and the dp_123 event log never do — and the hub's
+  `fault_snapshot_codes` is reset on every connect and connection loss, so the
+  alarms read *unknown* until the current connection's first list arrives
+  (and *unavailable* while disconnected) instead of carrying an old state over.
 - *Known codes* (community-sourced, catalog in `error_codes.py`): `201` mower
   lifted, `903` and `909` mower stuck (two distinct stuck-type codes), `911`
-  not able to leave station. The codes surface with
+  not able to leave station; vendor-supplied (upstream issue #34): `202` mower
+  lifted (second drive-wheel code), `1409` anti-theft boundary crossed. The codes surface with
   readable text on the **Active errors** sensor (`errors[].text`), the
   **Problem** binary sensor (`error_descriptions`), the **error** event, and —
   as the entity state itself — the **Fault** sensor, which reads the joined
