@@ -122,6 +122,17 @@ jobs:
           else
             RANGE="${END}"
           fi
+          # Vendor commits enter main's history through the empty-diff
+          # "record upstream sync" ours-merges; none of their code is in the
+          # release, so keep them out of the Details section.
+          EXCLUDE=()
+          if git fetch --quiet --no-tags \
+            https://github.com/TerraMow/TerraMowHA.git \
+            +main:refs/remotes/upstream/main; then
+            EXCLUDE=(--not refs/remotes/upstream/main)
+          else
+            echo "::warning::Could not fetch TerraMow/TerraMowHA; vendor commits are not filtered"
+          fi
           GENERATE_ARGS=(-f "tag_name=${TAG}" -f "target_commitish=${GITHUB_SHA}")
           if [ -n "${PREV}" ]; then
             GENERATE_ARGS+=(-f "previous_tag_name=${PREV}")
@@ -134,7 +145,7 @@ jobs:
             echo "## Details"
             echo
             git log --no-merges --reverse \
-              --pretty=format:'### %s%n%n%b%n' "${RANGE}" \
+              --pretty=format:'### %s%n%n%b%n' "${RANGE}" "${EXCLUDE[@]}" \
               | sed -E '/^Co-Authored-By:/d; /^Claude-Session:/d'
             echo
           } > release_notes.md
