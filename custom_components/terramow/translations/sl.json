@@ -67,7 +67,7 @@
   "entity": {
     "lawn_mower": {
       "lawn_mower": {
-        "name": "Robotska kosilnica"
+        "name": "Kosilnica"
       }
     },
     "event": {
@@ -115,20 +115,20 @@
         "name": "Višina košnje"
       },
       "mow_speed": {
-        "name": "Hitrost košnje",
+        "name": "Hitrost gibanja",
         "state": {
-          "mow_speed_type_low": "Nizka",
-          "mow_speed_type_medium": "Srednja",
-          "mow_speed_type_adaptive_high": "Prilagodljiva visoka",
+          "mow_speed_type_low": "Natančno",
+          "mow_speed_type_medium": "Privzeto",
+          "mow_speed_type_adaptive_high": "Prilagodljivo",
           "mow_speed_type_auto": "Samodejna"
         }
       },
       "clean_mode": {
-        "name": "Način delovanja",
+        "name": "Način košnje",
         "state": {
-          "map_clean_info_mode_global": "Košnja celotne površine",
-          "map_clean_info_mode_select_region": "Košnja izbranega območja",
-          "map_clean_info_mode_draw_region": "Košnja narisanega območja",
+          "map_clean_info_mode_global": "Samodejna košnja",
+          "map_clean_info_mode_select_region": "Cone košnje",
+          "map_clean_info_mode_draw_region": "Košnja z MowBoxom",
           "map_clean_info_mode_move_to_target_point": "Premik na ciljno točko"
         }
       },
@@ -187,9 +187,9 @@
       "main_direction_status": {
         "name": "Stanje glavne smeri",
         "state": {
-          "main_direction_mode_single": "Ena smer",
-          "main_direction_mode_multiple": "Več smeri",
-          "main_direction_mode_auto_rotate": "Samodejno vrtenje smeri",
+          "main_direction_mode_single": "Enojna smer",
+          "main_direction_mode_multiple": "Dvojna smer",
+          "main_direction_mode_auto_rotate": "Samodejno vrtenje",
           "unavailable": "Ni na voljo",
           "no_config": "Brez konfiguracije"
         }
@@ -219,22 +219,22 @@
         "state": {
           "mission_idle": "Nedejavna",
           "mission_recharge": "Polnjenje",
-          "mission_global_clean": "Košnja celotne površine",
-          "mission_build_map": "Izdelava zemljevida",
+          "mission_global_clean": "Samodejna košnja",
+          "mission_build_map": "Kartiranje",
           "mission_build_map_and_clean": "Izdelava zemljevida in košnja",
           "mission_temporary_clean": "Začasna košnja",
           "mission_back_to_starting_point": "Vračanje na izhodiščno točko",
           "mission_remote_control_clean": "Košnja z daljinskim upravljanjem",
           "mission_schedule_global_clean": "Načrtovana košnja celotne površine",
           "mission_schedule_build_map_and_clean": "Načrtovana izdelava zemljevida in košnja",
-          "mission_select_region_clean": "Košnja območij",
+          "mission_select_region_clean": "Cone košnje",
           "mission_create_custom_passage": "Ustvarjanje prehoda po meri",
           "mission_backup_map": "Varnostno kopiranje zemljevida",
           "mission_relocate_base_station": "Premeščanje bazne postaje",
           "mission_user_auto_calibration": "Samodejna kalibracija",
           "mission_restore_backup_map": "Obnavljanje varnostne kopije zemljevida",
           "mission_schedule_select_region_clean": "Načrtovana košnja območij",
-          "mission_draw_region_clean": "Košnja narisanega območja",
+          "mission_draw_region_clean": "Košnja z MowBoxom",
           "mission_edge_trim_clean": "Košnja robov",
           "mission_update_backup_map": "Posodabljanje varnostne kopije zemljevida"
         }
@@ -244,22 +244,22 @@
         "state": {
           "mission_idle": "Nedejavna",
           "mission_recharge": "Polnjenje",
-          "mission_global_clean": "Košnja celotne površine",
-          "mission_build_map": "Izdelava zemljevida",
+          "mission_global_clean": "Samodejna košnja",
+          "mission_build_map": "Kartiranje",
           "mission_build_map_and_clean": "Izdelava zemljevida in košnja",
           "mission_temporary_clean": "Začasna košnja",
           "mission_back_to_starting_point": "Vračanje na izhodiščno točko",
           "mission_remote_control_clean": "Košnja z daljinskim upravljanjem",
           "mission_schedule_global_clean": "Načrtovana košnja celotne površine",
           "mission_schedule_build_map_and_clean": "Načrtovana izdelava zemljevida in košnja",
-          "mission_select_region_clean": "Košnja območij",
+          "mission_select_region_clean": "Cone košnje",
           "mission_create_custom_passage": "Ustvarjanje prehoda po meri",
           "mission_backup_map": "Varnostno kopiranje zemljevida",
           "mission_relocate_base_station": "Premeščanje bazne postaje",
           "mission_user_auto_calibration": "Samodejna kalibracija",
           "mission_restore_backup_map": "Obnavljanje varnostne kopije zemljevida",
           "mission_schedule_select_region_clean": "Načrtovana košnja območij",
-          "mission_draw_region_clean": "Košnja narisanega območja",
+          "mission_draw_region_clean": "Košnja z MowBoxom",
           "mission_edge_trim_clean": "Košnja robov",
           "mission_update_backup_map": "Posodabljanje varnostne kopije zemljevida"
         }
@@ -376,7 +376,7 @@
         "name": "Težava"
       },
       "lift_alarm": {
-        "name": "Lift Alarm"
+        "name": "Alarm dviga"
       },
       "anti_theft_boundary_alarm": {
         "name": "Anti-Theft Boundary Alarm"
@@ -462,11 +462,11 @@
         }
       },
       "mow_speed_setting": {
-        "name": "Nastavitev hitrosti košnje",
+        "name": "Hitrost gibanja",
         "state": {
-          "mow_speed_type_low": "Nizka hitrost",
-          "mow_speed_type_medium": "Srednja hitrost",
-          "mow_speed_type_adaptive_high": "Prilagodljiva visoka hitrost",
+          "mow_speed_type_low": "Natančno",
+          "mow_speed_type_medium": "Privzeto",
+          "mow_speed_type_adaptive_high": "Prilagodljivo",
           "mow_speed_type_auto": "Samodejna hitrost"
         }
       },
@@ -481,9 +481,9 @@
       "main_direction_mode": {
         "name": "Način glavne smeri",
         "state": {
-          "main_direction_mode_single": "Ena smer",
-          "main_direction_mode_multiple": "Več smeri",
-          "main_direction_mode_auto_rotate": "Samodejno vrtenje smeri"
+          "main_direction_mode_single": "Enojna smer",
+          "main_direction_mode_multiple": "Dvojna smer",
+          "main_direction_mode_auto_rotate": "Samodejno vrtenje"
         }
       },
       "high_grass_edge_trim_mode": {

@@ -50,7 +50,7 @@ Esta é uma integração para o Home Assistant destinada aos corta-relvas robót
 - Fluxo de reconfiguração (alterar host/IP sem voltar a adicionar) e fluxo de reautenticação
 - **Avisos de reparação** — cartões de painel acionáveis para firmware incompatível e para a manutenção pendente da lâmina / da estação base
 - Descarregamento de diagnósticos para facilitar os relatórios de erro
-- Traduzida em 33 idiomas (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
+- Traduzida em 34 idiomas (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, nn, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - **Comandos confirmados** — o corte por zonas aguarda a confirmação dp_119 do dispositivo e comunica as rejeições em vez de «ter êxito» silenciosamente
 - Comunicação local push baseada em MQTT — sem necessidade de nuvem
 
@@ -241,7 +241,7 @@ O TerraMow é uma integração **local push**. O robô executa um broker MQTT a 
 
 ### Idiomas
 
-A integração está traduzida em: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
+A integração está traduzida em: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Norsk (nynorsk) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Notas de atualização
 

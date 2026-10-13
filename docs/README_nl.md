@@ -50,7 +50,7 @@ Dit is een Home Assistant-integratie voor TerraMow-robotmaaiers.
 - Herconfiguratie-flow (host/IP wijzigen zonder opnieuw toevoegen) en herauthenticatie-flow
 - **Reparatiemeldingen** — bruikbare dashboardkaarten voor incompatibele firmware en voor verlopen onderhoud van mes / basisstation
 - Diagnostiek-download voor eenvoudige bugrapporten
-- Vertaald in 33 talen (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
+- Vertaald in 34 talen (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, nn, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - **Bevestigde opdrachten** — zone-maaien wacht op de dp_119-bevestiging van het apparaat en meldt afwijzingen in plaats van stil te "slagen"
 - Lokale push-communicatie via MQTT — geen cloud nodig
 
@@ -243,7 +243,7 @@ TerraMow is een **local push**-integratie. De maaier draait een MQTT-broker op h
 
 ### Talen
 
-De integratie is vertaald in: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
+De integratie is vertaald in: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Norsk (nynorsk) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Upgrade-opmerkingen
 

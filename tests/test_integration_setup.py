@@ -181,7 +181,7 @@ async def test_key_entities_get_the_expected_stable_entity_ids(
 
     # The suffix-less unique_id belongs to the lawn mower itself.
     assert (
-        resolve_entity_id(hass, "lawn_mower") == "lawn_mower.terramow_lawn_mower"
+        resolve_entity_id(hass, "lawn_mower") == "lawn_mower.terramow_mower"
     )
     expected = {
         ("select", "main_direction_mode"): "select.terramow_main_direction_mode",

@@ -67,7 +67,7 @@
   "entity": {
     "lawn_mower": {
       "lawn_mower": {
-        "name": "Robottiruohonleikkuri"
+        "name": "Leikkuri"
       }
     },
     "event": {
@@ -115,20 +115,20 @@
         "name": "Leikkuukorkeus"
       },
       "mow_speed": {
-        "name": "Leikkuunopeus",
+        "name": "Liikkumisnopeus",
         "state": {
-          "mow_speed_type_low": "Hidas",
-          "mow_speed_type_medium": "Keskitaso",
-          "mow_speed_type_adaptive_high": "Mukautuva nopea",
+          "mow_speed_type_low": "Hieno",
+          "mow_speed_type_medium": "Oletus",
+          "mow_speed_type_adaptive_high": "Mukautuva",
           "mow_speed_type_auto": "Automaattinen"
         }
       },
       "clean_mode": {
-        "name": "Toimintatila",
+        "name": "Leikkuutila",
         "state": {
-          "map_clean_info_mode_global": "Koko alueen leikkuu",
-          "map_clean_info_mode_select_region": "Valitun alueen leikkuu",
-          "map_clean_info_mode_draw_region": "Piirretyn alueen leikkuu",
+          "map_clean_info_mode_global": "Automaattinen leikkuu",
+          "map_clean_info_mode_select_region": "Alueleikkuu",
+          "map_clean_info_mode_draw_region": "MowBox-leikkuu",
           "map_clean_info_mode_move_to_target_point": "Siirtyminen kohdepisteeseen"
         }
       },
@@ -187,8 +187,8 @@
       "main_direction_status": {
         "name": "Pääsuunnan tila",
         "state": {
-          "main_direction_mode_single": "Yksi suunta",
-          "main_direction_mode_multiple": "Useita suuntia",
+          "main_direction_mode_single": "Yksi",
+          "main_direction_mode_multiple": "Kaksois",
           "main_direction_mode_auto_rotate": "Automaattinen kierto",
           "unavailable": "Ei saatavilla",
           "no_config": "Ei määritystä"
@@ -219,7 +219,7 @@
         "state": {
           "mission_idle": "Toimeton",
           "mission_recharge": "Latautuu",
-          "mission_global_clean": "Koko alueen leikkuu",
+          "mission_global_clean": "Automaattinen leikkuu",
           "mission_build_map": "Kartoitus",
           "mission_build_map_and_clean": "Kartoitus ja leikkuu",
           "mission_temporary_clean": "Tilapäinen leikkuu",
@@ -234,8 +234,8 @@
           "mission_user_auto_calibration": "Automaattinen kalibrointi",
           "mission_restore_backup_map": "Kartan palautus",
           "mission_schedule_select_region_clean": "Ajastettu alueleikkuu",
-          "mission_draw_region_clean": "Piirretyn alueen leikkuu",
-          "mission_edge_trim_clean": "Reunojen leikkuu",
+          "mission_draw_region_clean": "MowBox-leikkuu",
+          "mission_edge_trim_clean": "Reunaleikkuu",
           "mission_update_backup_map": "Karttavarmuuskopion päivitys"
         }
       },
@@ -244,7 +244,7 @@
         "state": {
           "mission_idle": "Toimeton",
           "mission_recharge": "Latautuu",
-          "mission_global_clean": "Koko alueen leikkuu",
+          "mission_global_clean": "Automaattinen leikkuu",
           "mission_build_map": "Kartoitus",
           "mission_build_map_and_clean": "Kartoitus ja leikkuu",
           "mission_temporary_clean": "Tilapäinen leikkuu",
@@ -259,8 +259,8 @@
           "mission_user_auto_calibration": "Automaattinen kalibrointi",
           "mission_restore_backup_map": "Kartan palautus",
           "mission_schedule_select_region_clean": "Ajastettu alueleikkuu",
-          "mission_draw_region_clean": "Piirretyn alueen leikkuu",
-          "mission_edge_trim_clean": "Reunojen leikkuu",
+          "mission_draw_region_clean": "MowBox-leikkuu",
+          "mission_edge_trim_clean": "Reunaleikkuu",
           "mission_update_backup_map": "Karttavarmuuskopion päivitys"
         }
       },
@@ -376,7 +376,7 @@
         "name": "Ongelma"
       },
       "lift_alarm": {
-        "name": "Lift Alarm"
+        "name": "Nostoalarm"
       },
       "anti_theft_boundary_alarm": {
         "name": "Anti-Theft Boundary Alarm"
@@ -462,11 +462,11 @@
         }
       },
       "mow_speed_setting": {
-        "name": "Leikkuunopeuden asetus",
+        "name": "Liikkumisnopeus",
         "state": {
-          "mow_speed_type_low": "Hidas nopeus",
-          "mow_speed_type_medium": "Keskinopeus",
-          "mow_speed_type_adaptive_high": "Mukautuva suuri nopeus",
+          "mow_speed_type_low": "Hieno",
+          "mow_speed_type_medium": "Oletus",
+          "mow_speed_type_adaptive_high": "Mukautuva",
           "mow_speed_type_auto": "Automaattinen nopeus"
         }
       },
@@ -481,8 +481,8 @@
       "main_direction_mode": {
         "name": "Pääsuuntatila",
         "state": {
-          "main_direction_mode_single": "Yksi suunta",
-          "main_direction_mode_multiple": "Useita suuntia",
+          "main_direction_mode_single": "Yksi",
+          "main_direction_mode_multiple": "Kaksois",
           "main_direction_mode_auto_rotate": "Automaattinen kierto"
         }
       },

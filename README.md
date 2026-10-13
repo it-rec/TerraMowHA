@@ -65,7 +65,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - **Mower on the Home Assistant map** — set the base station's real coordinates and the compass bearing of the map's top edge in the options, and a `device_tracker` projects the mower's live pose onto GPS coordinates: zone triggers, proximity and "the mower left the property" all work. Throttled (1 m / 10 s) so a 2 Hz pose stream doesn't flood the recorder; no tracker is created until the anchor is set
 - **Repair issues** — actionable dashboard cards for incompatible firmware and for due blade / base-station maintenance
 - Diagnostics download for easy bug reports
-- Translated into 33 languages (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
+- Translated into 34 languages (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, nn, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - **Confirmed commands** — zone mowing waits for the device's dp_119 acknowledgement and reports rejections instead of silently "succeeding"
 - MQTT based local push communication — no cloud required
 
@@ -268,7 +268,7 @@ TerraMow is a **local push** integration. The mower runs an on-device MQTT broke
 
 ### Languages
 
-The integration is translated into: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
+The integration is translated into: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Norsk (nynorsk) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Upgrade notes
 

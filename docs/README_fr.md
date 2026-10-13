@@ -50,7 +50,7 @@ Ceci est une intégration Home Assistant pour les robots tondeuses TerraMow.
 - Flux de reconfiguration (changer l'hôte/IP sans réinstaller) et flux de réauthentification
 - **Signalements de réparation** — cartes de tableau de bord exploitables pour un micrologiciel incompatible et pour l'entretien dû de la lame / de la station de base
 - Téléchargement des diagnostics pour faciliter les rapports de bug
-- Traduit en 33 langues (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
+- Traduit en 34 langues (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, nn, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - **Commandes confirmées** — la tonte par zone attend l'accusé de réception dp_119 de l'appareil et signale les rejets au lieu de « réussir » silencieusement
 - Communication locale en push basée sur MQTT — aucun cloud requis
 
@@ -242,7 +242,7 @@ TerraMow est une intégration **local push**. La tondeuse héberge un broker MQT
 
 ### Langues
 
-L'intégration est traduite en : Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
+L'intégration est traduite en : Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Norsk (nynorsk) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Notes de mise à niveau
 

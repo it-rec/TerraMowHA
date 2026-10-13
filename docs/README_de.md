@@ -54,7 +54,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 - Rekonfigurations-Flow (Host/IP ändern ohne erneutes Hinzufügen) und Reauthentifizierungs-Flow
 - **Reparaturhinweise** — handlungsorientierte Dashboard-Karten für inkompatible Firmware und für fällige Wartung von Messer / Basisstation
 - Diagnose-Download für einfache Fehlerberichte
-- In 33 Sprachen übersetzt (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
+- In 34 Sprachen übersetzt (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, nn, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - **Bestätigte Befehle** — das Zonenmähen wartet auf die dp_119-Bestätigung des Geräts und meldet Ablehnungen, anstatt stillschweigend „Erfolg“ zu melden
 - Lokale Push-Kommunikation auf MQTT-Basis — keine Cloud erforderlich
 
@@ -247,7 +247,7 @@ TerraMow ist eine **Local-Push**-Integration. Der Mäher betreibt einen MQTT-Bro
 
 ### Sprachen
 
-Die Integration ist übersetzt in: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
+Die Integration ist übersetzt in: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Norsk (nynorsk) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Hinweise zum Upgrade
 

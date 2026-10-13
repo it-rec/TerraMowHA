@@ -183,7 +183,7 @@ sections:
         title: Settings
         entities:
           - entity: number.terramow_mowing_height
-          - entity: select.terramow_mow_speed
+          - entity: select.terramow_moving_speed
           - entity: select.terramow_blade_speed
           - entity: switch.terramow_thorough_corner_cutting
 ```

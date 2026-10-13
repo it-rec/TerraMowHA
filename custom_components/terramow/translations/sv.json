@@ -67,7 +67,7 @@
   "entity": {
     "lawn_mower": {
       "lawn_mower": {
-        "name": "Robotgräsklippare"
+        "name": "Gräsklippare"
       }
     },
     "event": {
@@ -115,20 +115,20 @@
         "name": "Klipphöjd"
       },
       "mow_speed": {
-        "name": "Klipphastighet",
+        "name": "Förflyttningshastighet",
         "state": {
-          "mow_speed_type_low": "Låg",
-          "mow_speed_type_medium": "Medel",
-          "mow_speed_type_adaptive_high": "Adaptiv hög",
+          "mow_speed_type_low": "Fin",
+          "mow_speed_type_medium": "Standard",
+          "mow_speed_type_adaptive_high": "Adaptiv",
           "mow_speed_type_auto": "Auto"
         }
       },
       "clean_mode": {
-        "name": "Driftläge",
+        "name": "Klippläge",
         "state": {
-          "map_clean_info_mode_global": "Fullständig klippning",
-          "map_clean_info_mode_select_region": "Klippning av vald zon",
-          "map_clean_info_mode_draw_region": "Klippning av ritad zon",
+          "map_clean_info_mode_global": "Automatisk klippning",
+          "map_clean_info_mode_select_region": "Zonklippning",
+          "map_clean_info_mode_draw_region": "Boxklippning",
           "map_clean_info_mode_move_to_target_point": "Kör till målpunkt"
         }
       },
@@ -187,9 +187,9 @@
       "main_direction_status": {
         "name": "Status för huvudriktning",
         "state": {
-          "main_direction_mode_single": "En riktning",
-          "main_direction_mode_multiple": "Flera riktningar",
-          "main_direction_mode_auto_rotate": "Automatisk rotation",
+          "main_direction_mode_single": "Enkel",
+          "main_direction_mode_multiple": "Dubbel",
+          "main_direction_mode_auto_rotate": "Självroterande",
           "unavailable": "Ej tillgänglig",
           "no_config": "Ingen konfiguration"
         }
@@ -219,7 +219,7 @@
         "state": {
           "mission_idle": "Inaktiv",
           "mission_recharge": "Laddar",
-          "mission_global_clean": "Fullständig klippning",
+          "mission_global_clean": "Automatisk klippning",
           "mission_build_map": "Kartläggning",
           "mission_build_map_and_clean": "Kartläggning och klippning",
           "mission_temporary_clean": "Tillfällig klippning",
@@ -234,7 +234,7 @@
           "mission_user_auto_calibration": "Automatisk kalibrering",
           "mission_restore_backup_map": "Återställer karta",
           "mission_schedule_select_region_clean": "Schemalagd zonklippning",
-          "mission_draw_region_clean": "Klippning av ritad zon",
+          "mission_draw_region_clean": "Boxklippning",
           "mission_edge_trim_clean": "Kantklippning",
           "mission_update_backup_map": "Uppdaterar kartsäkerhetskopia"
         }
@@ -244,7 +244,7 @@
         "state": {
           "mission_idle": "Inaktiv",
           "mission_recharge": "Laddar",
-          "mission_global_clean": "Fullständig klippning",
+          "mission_global_clean": "Automatisk klippning",
           "mission_build_map": "Kartläggning",
           "mission_build_map_and_clean": "Kartläggning och klippning",
           "mission_temporary_clean": "Tillfällig klippning",
@@ -259,7 +259,7 @@
           "mission_user_auto_calibration": "Automatisk kalibrering",
           "mission_restore_backup_map": "Återställer karta",
           "mission_schedule_select_region_clean": "Schemalagd zonklippning",
-          "mission_draw_region_clean": "Klippning av ritad zon",
+          "mission_draw_region_clean": "Boxklippning",
           "mission_edge_trim_clean": "Kantklippning",
           "mission_update_backup_map": "Uppdaterar kartsäkerhetskopia"
         }
@@ -376,7 +376,7 @@
         "name": "Problem"
       },
       "lift_alarm": {
-        "name": "Lift Alarm"
+        "name": "Lyftlarm"
       },
       "anti_theft_boundary_alarm": {
         "name": "Anti-Theft Boundary Alarm"
@@ -462,11 +462,11 @@
         }
       },
       "mow_speed_setting": {
-        "name": "Inställning av klipphastighet",
+        "name": "Förflyttningshastighet",
         "state": {
-          "mow_speed_type_low": "Låg hastighet",
-          "mow_speed_type_medium": "Medelhastighet",
-          "mow_speed_type_adaptive_high": "Adaptiv hög hastighet",
+          "mow_speed_type_low": "Fin",
+          "mow_speed_type_medium": "Standard",
+          "mow_speed_type_adaptive_high": "Adaptiv",
           "mow_speed_type_auto": "Automatisk hastighet"
         }
       },
@@ -481,9 +481,9 @@
       "main_direction_mode": {
         "name": "Huvudriktningsläge",
         "state": {
-          "main_direction_mode_single": "En riktning",
-          "main_direction_mode_multiple": "Flera riktningar",
-          "main_direction_mode_auto_rotate": "Automatisk rotation"
+          "main_direction_mode_single": "Enkel",
+          "main_direction_mode_multiple": "Dubbel",
+          "main_direction_mode_auto_rotate": "Självroterande"
         }
       },
       "high_grass_edge_trim_mode": {

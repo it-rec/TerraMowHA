@@ -50,7 +50,7 @@
 - 重新配置流程（无需重新添加即可更改主机/IP）和重新认证流程
 - **修复提示** — 针对固件不兼容以及刀片 / 基站维护到期的可操作仪表板卡片
 - 诊断下载，便于提交错误报告
-- 已翻译为 33 种语言（bg、ca、cs、da、de、el、en、es、et、fi、fr、hr、hu、it、ja、ko、lt、lv、nb、nl、pl、pt、pt-BR、ro、ru、sk、sl、sr、sv、tr、uk、zh-Hans、zh-Hant）
+- 已翻译为 34 种语言（bg、ca、cs、da、de、el、en、es、et、fi、fr、hr、hu、it、ja、ko、lt、lv、nb、nl、nn、pl、pt、pt-BR、ro、ru、sk、sl、sr、sv、tr、uk、zh-Hans、zh-Hant）
 - **命令确认** — 分区割草会等待设备的 dp_119 确认，并在被拒绝时上报，而不是静默地“成功”
 - 基于 MQTT 的本地推送通信——无需云端
 
@@ -236,7 +236,7 @@ TerraMow 是一个**本地推送**集成。割草机在设备上运行 MQTT brok
 
 ### 语言
 
-本集成已翻译为：Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文。
+本集成已翻译为：Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Norsk (nynorsk) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文。
 
 ### 升级说明
 

@@ -67,7 +67,7 @@
   "entity": {
     "lawn_mower": {
       "lawn_mower": {
-        "name": "Robotická kosačka"
+        "name": "Kosačka"
       }
     },
     "event": {
@@ -112,23 +112,23 @@
         "name": "Plocha mapy"
       },
       "mow_height": {
-        "name": "Výška kosenia"
+        "name": "Výška rezu"
       },
       "mow_speed": {
-        "name": "Rýchlosť kosenia",
+        "name": "Rýchlosť pohybu",
         "state": {
-          "mow_speed_type_low": "Nízka",
-          "mow_speed_type_medium": "Stredná",
-          "mow_speed_type_adaptive_high": "Adaptívna vysoká",
+          "mow_speed_type_low": "Jemné",
+          "mow_speed_type_medium": "Predvolené nastavenie",
+          "mow_speed_type_adaptive_high": "Adaptívny",
           "mow_speed_type_auto": "Automatická"
         }
       },
       "clean_mode": {
-        "name": "Režim prevádzky",
+        "name": "Režim kosenia",
         "state": {
-          "map_clean_info_mode_global": "Kosenie celej plochy",
-          "map_clean_info_mode_select_region": "Kosenie vybranej zóny",
-          "map_clean_info_mode_draw_region": "Kosenie nakreslenej zóny",
+          "map_clean_info_mode_global": "Auto kosenie",
+          "map_clean_info_mode_select_region": "Kosenie zóny",
+          "map_clean_info_mode_draw_region": "Kosenie Mowboxom",
           "map_clean_info_mode_move_to_target_point": "Presun na cieľový bod"
         }
       },
@@ -187,9 +187,9 @@
       "main_direction_status": {
         "name": "Stav hlavného smeru",
         "state": {
-          "main_direction_mode_single": "Jeden smer",
-          "main_direction_mode_multiple": "Viacero smerov",
-          "main_direction_mode_auto_rotate": "Automatické otáčanie smeru",
+          "main_direction_mode_single": "Jednoduchý",
+          "main_direction_mode_multiple": "Dvojitý",
+          "main_direction_mode_auto_rotate": "Automaticky sa otáčajúci",
           "unavailable": "Nedostupné",
           "no_config": "Bez konfigurácie"
         }
@@ -219,23 +219,23 @@
         "state": {
           "mission_idle": "Nečinná",
           "mission_recharge": "Nabíjanie",
-          "mission_global_clean": "Kosenie celej plochy",
-          "mission_build_map": "Vytváranie mapy",
+          "mission_global_clean": "Auto kosenie",
+          "mission_build_map": "Mapovanie",
           "mission_build_map_and_clean": "Vytváranie mapy a kosenie",
           "mission_temporary_clean": "Dočasné kosenie",
           "mission_back_to_starting_point": "Návrat na východiskový bod",
           "mission_remote_control_clean": "Kosenie na diaľkové ovládanie",
           "mission_schedule_global_clean": "Plánované kosenie celej plochy",
           "mission_schedule_build_map_and_clean": "Plánované mapovanie a kosenie",
-          "mission_select_region_clean": "Kosenie zón",
+          "mission_select_region_clean": "Kosenie zóny",
           "mission_create_custom_passage": "Vytváranie vlastného priechodu",
           "mission_backup_map": "Zálohovanie mapy",
           "mission_relocate_base_station": "Premiestňovanie základňovej stanice",
           "mission_user_auto_calibration": "Automatická kalibrácia",
           "mission_restore_backup_map": "Obnovovanie zálohy mapy",
           "mission_schedule_select_region_clean": "Plánované kosenie zón",
-          "mission_draw_region_clean": "Kosenie nakreslenej zóny",
-          "mission_edge_trim_clean": "Kosenie okrajov",
+          "mission_draw_region_clean": "Kosenie Mowboxom",
+          "mission_edge_trim_clean": "Košenie okrajov",
           "mission_update_backup_map": "Aktualizácia zálohy mapy"
         }
       },
@@ -244,23 +244,23 @@
         "state": {
           "mission_idle": "Nečinná",
           "mission_recharge": "Nabíjanie",
-          "mission_global_clean": "Kosenie celej plochy",
-          "mission_build_map": "Vytváranie mapy",
+          "mission_global_clean": "Auto kosenie",
+          "mission_build_map": "Mapovanie",
           "mission_build_map_and_clean": "Vytváranie mapy a kosenie",
           "mission_temporary_clean": "Dočasné kosenie",
           "mission_back_to_starting_point": "Návrat na východiskový bod",
           "mission_remote_control_clean": "Kosenie na diaľkové ovládanie",
           "mission_schedule_global_clean": "Plánované kosenie celej plochy",
           "mission_schedule_build_map_and_clean": "Plánované mapovanie a kosenie",
-          "mission_select_region_clean": "Kosenie zón",
+          "mission_select_region_clean": "Kosenie zóny",
           "mission_create_custom_passage": "Vytváranie vlastného priechodu",
           "mission_backup_map": "Zálohovanie mapy",
           "mission_relocate_base_station": "Premiestňovanie základňovej stanice",
           "mission_user_auto_calibration": "Automatická kalibrácia",
           "mission_restore_backup_map": "Obnovovanie zálohy mapy",
           "mission_schedule_select_region_clean": "Plánované kosenie zón",
-          "mission_draw_region_clean": "Kosenie nakreslenej zóny",
-          "mission_edge_trim_clean": "Kosenie okrajov",
+          "mission_draw_region_clean": "Kosenie Mowboxom",
+          "mission_edge_trim_clean": "Košenie okrajov",
           "mission_update_backup_map": "Aktualizácia zálohy mapy"
         }
       },
@@ -376,7 +376,7 @@
         "name": "Problém"
       },
       "lift_alarm": {
-        "name": "Lift Alarm"
+        "name": "Alarm zdvihnutia"
       },
       "anti_theft_boundary_alarm": {
         "name": "Anti-Theft Boundary Alarm"
@@ -462,11 +462,11 @@
         }
       },
       "mow_speed_setting": {
-        "name": "Nastavenie rýchlosti kosenia",
+        "name": "Rýchlosť pohybu",
         "state": {
-          "mow_speed_type_low": "Nízka rýchlosť",
-          "mow_speed_type_medium": "Stredná rýchlosť",
-          "mow_speed_type_adaptive_high": "Adaptívna vysoká rýchlosť",
+          "mow_speed_type_low": "Jemné",
+          "mow_speed_type_medium": "Predvolené nastavenie",
+          "mow_speed_type_adaptive_high": "Adaptívny",
           "mow_speed_type_auto": "Automatická rýchlosť"
         }
       },
@@ -481,9 +481,9 @@
       "main_direction_mode": {
         "name": "Režim hlavného smeru",
         "state": {
-          "main_direction_mode_single": "Jeden smer",
-          "main_direction_mode_multiple": "Viacero smerov",
-          "main_direction_mode_auto_rotate": "Automatické otáčanie smeru"
+          "main_direction_mode_single": "Jednoduchý",
+          "main_direction_mode_multiple": "Dvojitý",
+          "main_direction_mode_auto_rotate": "Automaticky sa otáčajúci"
         }
       },
       "high_grass_edge_trim_mode": {

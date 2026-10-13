@@ -67,7 +67,7 @@
   "entity": {
     "lawn_mower": {
       "lawn_mower": {
-        "name": "Robotická sekačka"
+        "name": "Sekačka"
       }
     },
     "event": {
@@ -115,20 +115,20 @@
         "name": "Výška sečení"
       },
       "mow_speed": {
-        "name": "Rychlost sečení",
+        "name": "Rychlost pohybu",
         "state": {
-          "mow_speed_type_low": "Nízká",
-          "mow_speed_type_medium": "Střední",
-          "mow_speed_type_adaptive_high": "Adaptivní vysoká",
+          "mow_speed_type_low": "Precizní",
+          "mow_speed_type_medium": "Výchozí",
+          "mow_speed_type_adaptive_high": "Adaptivní",
           "mow_speed_type_auto": "Automatická"
         }
       },
       "clean_mode": {
-        "name": "Provozní režim",
+        "name": "Režim sekání",
         "state": {
-          "map_clean_info_mode_global": "Kompletní sečení",
-          "map_clean_info_mode_select_region": "Sečení vybrané zóny",
-          "map_clean_info_mode_draw_region": "Sečení nakreslené zóny",
+          "map_clean_info_mode_global": "Automatické sečení",
+          "map_clean_info_mode_select_region": "Sekání zóny",
+          "map_clean_info_mode_draw_region": "MowBox sečení",
           "map_clean_info_mode_move_to_target_point": "Přesun na cílový bod"
         }
       },
@@ -187,8 +187,8 @@
       "main_direction_status": {
         "name": "Stav hlavního směru",
         "state": {
-          "main_direction_mode_single": "Jeden směr",
-          "main_direction_mode_multiple": "Více směrů",
+          "main_direction_mode_single": "Jednoduchý",
+          "main_direction_mode_multiple": "Dvojitý",
           "main_direction_mode_auto_rotate": "Automatické otáčení",
           "unavailable": "Nedostupný",
           "no_config": "Žádná konfigurace"
@@ -219,7 +219,7 @@
         "state": {
           "mission_idle": "Nečinná",
           "mission_recharge": "Nabíjení",
-          "mission_global_clean": "Kompletní sečení",
+          "mission_global_clean": "Automatické sečení",
           "mission_build_map": "Mapování",
           "mission_build_map_and_clean": "Mapování a sečení",
           "mission_temporary_clean": "Dočasné sečení",
@@ -227,15 +227,15 @@
           "mission_remote_control_clean": "Dálkově ovládané sečení",
           "mission_schedule_global_clean": "Plánované kompletní sečení",
           "mission_schedule_build_map_and_clean": "Plánované mapování a sečení",
-          "mission_select_region_clean": "Sečení zón",
+          "mission_select_region_clean": "Sekání zóny",
           "mission_create_custom_passage": "Vytváření vlastního průchodu",
           "mission_backup_map": "Zálohování mapy",
           "mission_relocate_base_station": "Přemístění nabíjecí stanice",
           "mission_user_auto_calibration": "Automatická kalibrace",
           "mission_restore_backup_map": "Obnovování mapy",
           "mission_schedule_select_region_clean": "Plánované sečení zón",
-          "mission_draw_region_clean": "Sečení nakreslené zóny",
-          "mission_edge_trim_clean": "Sečení okrajů",
+          "mission_draw_region_clean": "MowBox sečení",
+          "mission_edge_trim_clean": "Sekání okrajů",
           "mission_update_backup_map": "Aktualizace zálohy mapy"
         }
       },
@@ -244,7 +244,7 @@
         "state": {
           "mission_idle": "Nečinná",
           "mission_recharge": "Nabíjení",
-          "mission_global_clean": "Kompletní sečení",
+          "mission_global_clean": "Automatické sečení",
           "mission_build_map": "Mapování",
           "mission_build_map_and_clean": "Mapování a sečení",
           "mission_temporary_clean": "Dočasné sečení",
@@ -252,15 +252,15 @@
           "mission_remote_control_clean": "Dálkově ovládané sečení",
           "mission_schedule_global_clean": "Plánované kompletní sečení",
           "mission_schedule_build_map_and_clean": "Plánované mapování a sečení",
-          "mission_select_region_clean": "Sečení zón",
+          "mission_select_region_clean": "Sekání zóny",
           "mission_create_custom_passage": "Vytváření vlastního průchodu",
           "mission_backup_map": "Zálohování mapy",
           "mission_relocate_base_station": "Přemístění nabíjecí stanice",
           "mission_user_auto_calibration": "Automatická kalibrace",
           "mission_restore_backup_map": "Obnovování mapy",
           "mission_schedule_select_region_clean": "Plánované sečení zón",
-          "mission_draw_region_clean": "Sečení nakreslené zóny",
-          "mission_edge_trim_clean": "Sečení okrajů",
+          "mission_draw_region_clean": "MowBox sečení",
+          "mission_edge_trim_clean": "Sekání okrajů",
           "mission_update_backup_map": "Aktualizace zálohy mapy"
         }
       },
@@ -376,7 +376,7 @@
         "name": "Problém"
       },
       "lift_alarm": {
-        "name": "Lift Alarm"
+        "name": "Alarm zvednutí"
       },
       "anti_theft_boundary_alarm": {
         "name": "Anti-Theft Boundary Alarm"
@@ -462,11 +462,11 @@
         }
       },
       "mow_speed_setting": {
-        "name": "Nastavení rychlosti sečení",
+        "name": "Rychlost pohybu",
         "state": {
-          "mow_speed_type_low": "Nízká rychlost",
-          "mow_speed_type_medium": "Střední rychlost",
-          "mow_speed_type_adaptive_high": "Adaptivní vysoká rychlost",
+          "mow_speed_type_low": "Precizní",
+          "mow_speed_type_medium": "Výchozí",
+          "mow_speed_type_adaptive_high": "Adaptivní",
           "mow_speed_type_auto": "Automatická rychlost"
         }
       },
@@ -481,8 +481,8 @@
       "main_direction_mode": {
         "name": "Režim hlavního směru",
         "state": {
-          "main_direction_mode_single": "Jeden směr",
-          "main_direction_mode_multiple": "Více směrů",
+          "main_direction_mode_single": "Jednoduchý",
+          "main_direction_mode_multiple": "Dvojitý",
           "main_direction_mode_auto_rotate": "Automatické otáčení"
         }
       },
