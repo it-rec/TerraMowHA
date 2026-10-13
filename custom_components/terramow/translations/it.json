@@ -67,7 +67,7 @@
   "entity": {
     "lawn_mower": {
       "lawn_mower": {
-        "name": "Robot tagliaerba"
+        "name": "Rasaerba"
       }
     },
     "event": {
@@ -115,20 +115,20 @@
         "name": "Altezza di taglio"
       },
       "mow_speed": {
-        "name": "Velocità di taglio",
+        "name": "Velocità di movimento",
         "state": {
-          "mow_speed_type_low": "Bassa",
-          "mow_speed_type_medium": "Media",
-          "mow_speed_type_adaptive_high": "Alta adattiva",
+          "mow_speed_type_low": "Fine",
+          "mow_speed_type_medium": "Predefinito",
+          "mow_speed_type_adaptive_high": "Adattiva",
           "mow_speed_type_auto": "Auto"
         }
       },
       "clean_mode": {
-        "name": "Modalità di funzionamento",
+        "name": "Modalità di taglio",
         "state": {
-          "map_clean_info_mode_global": "Taglio globale",
-          "map_clean_info_mode_select_region": "Taglio zona selezionata",
-          "map_clean_info_mode_draw_region": "Taglio zona disegnata",
+          "map_clean_info_mode_global": "Falciatura automatica",
+          "map_clean_info_mode_select_region": "Falciatura per zone",
+          "map_clean_info_mode_draw_region": "Falciatura del box",
           "map_clean_info_mode_move_to_target_point": "Spostamento verso punto di destinazione"
         }
       },
@@ -187,9 +187,9 @@
       "main_direction_status": {
         "name": "Stato direzione principale",
         "state": {
-          "main_direction_mode_single": "Direzione singola",
-          "main_direction_mode_multiple": "Direzioni multiple",
-          "main_direction_mode_auto_rotate": "Rotazione automatica",
+          "main_direction_mode_single": "Singolo",
+          "main_direction_mode_multiple": "Doppio",
+          "main_direction_mode_auto_rotate": "Auto-rotante",
           "unavailable": "Non disponibile",
           "no_config": "Nessuna configurazione"
         }
@@ -219,7 +219,7 @@
         "state": {
           "mission_idle": "Inattivo",
           "mission_recharge": "In ricarica",
-          "mission_global_clean": "Taglio globale",
+          "mission_global_clean": "Falciatura automatica",
           "mission_build_map": "Mappatura",
           "mission_build_map_and_clean": "Mappatura e taglio",
           "mission_temporary_clean": "Taglio temporaneo",
@@ -227,15 +227,15 @@
           "mission_remote_control_clean": "Taglio telecomandato",
           "mission_schedule_global_clean": "Taglio globale programmato",
           "mission_schedule_build_map_and_clean": "Mappatura e taglio programmati",
-          "mission_select_region_clean": "Taglio a zone",
+          "mission_select_region_clean": "Falciatura per zone",
           "mission_create_custom_passage": "Creazione passaggio personalizzato",
           "mission_backup_map": "Backup della mappa",
           "mission_relocate_base_station": "Riposizionamento stazione base",
           "mission_user_auto_calibration": "Calibrazione automatica",
           "mission_restore_backup_map": "Ripristino della mappa",
           "mission_schedule_select_region_clean": "Taglio a zone programmato",
-          "mission_draw_region_clean": "Taglio zona disegnata",
-          "mission_edge_trim_clean": "Taglio bordi",
+          "mission_draw_region_clean": "Falciatura del box",
+          "mission_edge_trim_clean": "Falciatura dei bordi",
           "mission_update_backup_map": "Aggiornamento backup mappa"
         }
       },
@@ -244,7 +244,7 @@
         "state": {
           "mission_idle": "Inattivo",
           "mission_recharge": "In ricarica",
-          "mission_global_clean": "Taglio globale",
+          "mission_global_clean": "Falciatura automatica",
           "mission_build_map": "Mappatura",
           "mission_build_map_and_clean": "Mappatura e taglio",
           "mission_temporary_clean": "Taglio temporaneo",
@@ -252,15 +252,15 @@
           "mission_remote_control_clean": "Taglio telecomandato",
           "mission_schedule_global_clean": "Taglio globale programmato",
           "mission_schedule_build_map_and_clean": "Mappatura e taglio programmati",
-          "mission_select_region_clean": "Taglio a zone",
+          "mission_select_region_clean": "Falciatura per zone",
           "mission_create_custom_passage": "Creazione passaggio personalizzato",
           "mission_backup_map": "Backup della mappa",
           "mission_relocate_base_station": "Riposizionamento stazione base",
           "mission_user_auto_calibration": "Calibrazione automatica",
           "mission_restore_backup_map": "Ripristino della mappa",
           "mission_schedule_select_region_clean": "Taglio a zone programmato",
-          "mission_draw_region_clean": "Taglio zona disegnata",
-          "mission_edge_trim_clean": "Taglio bordi",
+          "mission_draw_region_clean": "Falciatura del box",
+          "mission_edge_trim_clean": "Falciatura dei bordi",
           "mission_update_backup_map": "Aggiornamento backup mappa"
         }
       },
@@ -376,7 +376,7 @@
         "name": "Problema"
       },
       "lift_alarm": {
-        "name": "Lift Alarm"
+        "name": "Allarme sollevamento"
       },
       "anti_theft_boundary_alarm": {
         "name": "Anti-Theft Boundary Alarm"
@@ -462,11 +462,11 @@
         }
       },
       "mow_speed_setting": {
-        "name": "Impostazione velocità di taglio",
+        "name": "Velocità di movimento",
         "state": {
-          "mow_speed_type_low": "Velocità bassa",
-          "mow_speed_type_medium": "Velocità media",
-          "mow_speed_type_adaptive_high": "Velocità alta adattiva",
+          "mow_speed_type_low": "Fine",
+          "mow_speed_type_medium": "Predefinito",
+          "mow_speed_type_adaptive_high": "Adattiva",
           "mow_speed_type_auto": "Velocità automatica"
         }
       },
@@ -481,9 +481,9 @@
       "main_direction_mode": {
         "name": "Modalità direzione principale",
         "state": {
-          "main_direction_mode_single": "Direzione singola",
-          "main_direction_mode_multiple": "Direzioni multiple",
-          "main_direction_mode_auto_rotate": "Rotazione automatica"
+          "main_direction_mode_single": "Singolo",
+          "main_direction_mode_multiple": "Doppio",
+          "main_direction_mode_auto_rotate": "Auto-rotante"
         }
       },
       "high_grass_edge_trim_mode": {

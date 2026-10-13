@@ -50,7 +50,7 @@ Tämä on Home Assistant -integraatio TerraMow-robottiruohonleikkureille.
 - Uudelleenmääritysvirta (isännän/IP:n vaihto ilman uudelleenlisäystä) ja uudelleentodennusvirta
 - **Korjausilmoitukset** — toimintaan ohjaavat koontinäyttökortit yhteensopimattomasta laiteohjelmistosta sekä erääntyneestä terän / tukiaseman huollosta
 - Diagnostiikan lataus vikailmoitusten helpottamiseksi
-- Käännetty 33 kielelle (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
+- Käännetty 34 kielelle (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, nn, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - **Vahvistetut komennot** — vyöhykeleikkuu odottaa laitteen dp_119-kuittausta ja ilmoittaa hylkäyksistä sen sijaan, että "onnistuisi" hiljaisesti
 - Paikallinen push-tiedonsiirto MQTT:llä — pilveä ei tarvita
 
@@ -241,7 +241,7 @@ TerraMow on **local push** -integraatio. Leikkuri ylläpitää MQTT-välittäjä
 
 ### Kielet
 
-Integraatio on käännetty kielille: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
+Integraatio on käännetty kielille: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Norsk (nynorsk) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Päivitysohjeet
 

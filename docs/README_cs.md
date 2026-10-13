@@ -50,7 +50,7 @@ Toto je integrace pro Home Assistant určená pro robotické sekačky TerraMow.
 - Rekonfigurační tok (změna hostitele/IP bez opětovného přidání) a tok opětovného ověření
 - **Hlášení opravy** — konkrétní karty v panelu pro nekompatibilní firmware a pro dlužnou údržbu nože / základnové stanice
 - Stažení diagnostiky pro snadné hlášení chyb
-- Přeloženo do 33 jazyků (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
+- Přeloženo do 34 jazyků (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, nn, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - **Potvrzené příkazy** — sečení po zónách čeká na potvrzení dp_119 ze zařízení a hlásí odmítnutí, místo aby tiše „uspělo“
 - Lokální push komunikace přes MQTT — cloud není potřeba
 
@@ -241,7 +241,7 @@ TerraMow je integrace typu **local push**. Sekačka provozuje MQTT broker přím
 
 ### Jazyky
 
-Integrace je přeložena do: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
+Integrace je přeložena do: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Norsk (nynorsk) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Poznámky k aktualizaci
 

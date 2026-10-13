@@ -1,0 +1,610 @@
+{
+  "config": {
+    "flow_title": "TerraMow ({host})",
+    "abort": {
+      "already_configured": "Enheten er allerede konfigurert",
+      "cannot_connect": "Tilkobling mislyktes",
+      "reauth_successful": "Ny autentisering vellykket",
+      "reconfigure_successful": "Omkonfigurasjonen var vellykket"
+    },
+    "error": {
+      "cannot_connect": "Tilkobling mislyktes",
+      "invalid_auth": "Ugyldig autentisering",
+      "unknown": "Uventet feil"
+    },
+    "step": {
+      "user": {
+        "data": {
+          "host": "Vert",
+          "password": "Passord",
+          "username": "Brukernavn"
+        }
+      },
+      "user_pass": {
+        "title": "TerraMow",
+        "description": "TerraMow funnet på {host}. Skriv inn MQTT-passordet for å fullføre oppsettet.",
+        "data": {
+          "password": "Passord"
+        }
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "Passord"
+        }
+      },
+      "reconfigure": {
+        "title": "Omkonfigurer TerraMow",
+        "description": "Oppdater IP-adressen/vertsnavnet eller passordet til din TerraMow.",
+        "data": {
+          "host": "Vert",
+          "password": "Passord"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "TerraMow-alternativer",
+        "data": {
+          "map_resolution": "Kartets utdataoppløsning (px)",
+          "map_theme": "Karttema",
+          "map_show_coverage": "Vis klippet område",
+          "assume_job_complete": "Behandle enhver fullført jobb som 100 % ferdig",
+          "gps_latitude": "Basestasjonens breddegrad",
+          "gps_longitude": "Basestasjonens lengdegrad",
+          "gps_heading": "Kompasskurs for kartets overkant (°)"
+        },
+        "data_description": {
+          "map_resolution": "Sidelengde på kartkameraets PNG. Høyere verdier gir et skarpere bilde i dashbord, men øker båndbredde og CPU-belastning ved hver gjengivelse.",
+          "map_theme": "Fargetema for det gjengitte kartkamerabildet. «dark» passer til mørke dashbord.",
+          "map_show_coverage": "Skyggelegger det allerede klipte området i reell klippebredde under rutelinjen.",
+          "assume_job_complete": "Noen fastvareversjoner avslutter en jobb uten fullføringssignal, slik at øktens fremdrift aldri når 100 %. Slå på for å behandle enhver avsluttet jobb som ferdig (100 %), slik appen gjør; la den være av for å beholde den reelle tellerverdien."
+        }
+      }
+    }
+  },
+  "entity": {
+    "lawn_mower": {
+      "lawn_mower": {
+        "name": "Gressklipper"
+      }
+    },
+    "event": {
+      "mower_event": {
+        "name": "Gressklipperhendelse"
+      }
+    },
+    "calendar": {
+      "schedule": {
+        "name": "Klippeplan"
+      }
+    },
+    "sensor": {
+      "battery": {
+        "name": "Batteri"
+      },
+      "battery_state": {
+        "name": "Batteristatus",
+        "state": {
+          "battery_state_discharge": "Utlading",
+          "battery_state_charging": "Lader",
+          "battery_state_charged": "Fulladet"
+        }
+      },
+      "battery_temperature_state": {
+        "name": "Batteritemperaturstatus",
+        "state": {
+          "battery_tempreture_normal": "Normal",
+          "battery_tempreture_overheat": "Overopphetet",
+          "battery_tempreture_underheat": "For kaldt"
+        }
+      },
+      "map_status": {
+        "name": "Kartstatus",
+        "state": {
+          "map_state_empty": "Ingen kart",
+          "map_state_incomplete": "Kart ufullstendig",
+          "map_state_complete": "Kart fullstendig"
+        }
+      },
+      "map_area": {
+        "name": "Kartareal"
+      },
+      "mow_height": {
+        "name": "Klipping høyde"
+      },
+      "mow_speed": {
+        "name": "Bevegelseshastighet",
+        "state": {
+          "mow_speed_type_low": "Fin",
+          "mow_speed_type_medium": "Standard",
+          "mow_speed_type_adaptive_high": "Adaptiv",
+          "mow_speed_type_auto": "Auto"
+        }
+      },
+      "clean_mode": {
+        "name": "Klippemodus",
+        "state": {
+          "map_clean_info_mode_global": "Automatisk klipping",
+          "map_clean_info_mode_select_region": "Soneklipping",
+          "map_clean_info_mode_draw_region": "MowBox-klipping",
+          "map_clean_info_mode_move_to_target_point": "Kjører til målpunkt"
+        }
+      },
+      "pose": {
+        "name": "Posisjon"
+      },
+      "total_mowing_time": {
+        "name": "Total klippetid"
+      },
+      "total_mowing_jobs": {
+        "name": "Totalt antall klippinger"
+      },
+      "total_mowed_area": {
+        "name": "Totalt klippet areal"
+      },
+      "current_session_area": {
+        "name": "Areal for gjeldende økt"
+      },
+      "current_session_progress": {
+        "name": "Fremdrift for gjeldende økt"
+      },
+      "current_session_time": {
+        "name": "Varighet for gjeldende økt"
+      },
+      "current_job_type": {
+        "name": "Gjeldende oppgavetype",
+        "state": {
+          "map_area_type_none": "Ingen",
+          "map_area_type_build_map": "Kartlegging",
+          "map_area_type_cleaning": "Klipping",
+          "map_area_type_build_map_and_cleaning": "Kartlegging og klipping",
+          "map_area_type_select_region_cleaning": "Klipping av valgt sone",
+          "map_area_type_draw_region_cleaning": "Klipping av tegnet sone",
+          "map_area_type_edge_trim_cleaning": "Kantklipping"
+        }
+      },
+      "remaining_blade_time": {
+        "name": "Gjenstående knivtid"
+      },
+      "remaining_base_station_time": {
+        "name": "Gjenstående tid for basestasjon"
+      },
+      "next_scheduled_start": {
+        "name": "Neste planlagte start"
+      },
+      "version_compatibility": {
+        "name": "Versjonskompatibilitet",
+        "state": {
+          "compatible": "Kompatibel",
+          "upgrade_required": "Oppgradering kreves",
+          "downgrade_recommended": "Nedgradering anbefales",
+          "incompatible": "Inkompatibel",
+          "unknown": "Ukjent"
+        }
+      },
+      "main_direction_status": {
+        "name": "Status for hovedretning",
+        "state": {
+          "main_direction_mode_single": "Enkel",
+          "main_direction_mode_multiple": "Dobbel",
+          "main_direction_mode_auto_rotate": "Auto-roterer",
+          "unavailable": "Ikke tilgjengelig",
+          "no_config": "Ingen konfigurasjon"
+        }
+      },
+      "power_mode": {
+        "name": "Strømmodus",
+        "state": {
+          "power_mode_running": "I drift",
+          "power_mode_standby": "Ventemodus",
+          "power_mode_hibernate": "Dvale"
+        }
+      },
+      "back_to_station_reason": {
+        "name": "Årsak til retur til stasjon",
+        "state": {
+          "back_to_station_reason_none": "Ingen",
+          "back_to_station_reason_low_battery": "Lavt batteri",
+          "back_to_station_reason_raining": "Regn",
+          "back_to_station_reason_mow_motor_overheat": "Klippemotor overopphetet",
+          "back_to_station_reason_wheel_overheat": "Hjulmotor overopphetet",
+          "back_to_station_reason_night_time": "Mørke",
+          "back_to_station_reason_wait_after_rain_stop": "Venter etter regn"
+        }
+      },
+      "mission": {
+        "name": "Oppdrag",
+        "state": {
+          "mission_idle": "Inaktiv",
+          "mission_recharge": "Lader",
+          "mission_global_clean": "Automatisk klipping",
+          "mission_build_map": "Kartlegging",
+          "mission_build_map_and_clean": "Kartlegging og klipping",
+          "mission_temporary_clean": "Midlertidig klipping",
+          "mission_back_to_starting_point": "Returnerer til startpunkt",
+          "mission_remote_control_clean": "Fjernstyrt klipping",
+          "mission_schedule_global_clean": "Planlagt full klipping",
+          "mission_schedule_build_map_and_clean": "Planlagt kartlegging og klipping",
+          "mission_select_region_clean": "Soneklipping",
+          "mission_create_custom_passage": "Oppretter egendefinert passasje",
+          "mission_backup_map": "Sikkerhetskopierer kart",
+          "mission_relocate_base_station": "Flytter basestasjon",
+          "mission_user_auto_calibration": "Automatisk kalibrering",
+          "mission_restore_backup_map": "Gjenoppretter kart",
+          "mission_schedule_select_region_clean": "Planlagt soneklipping",
+          "mission_draw_region_clean": "MowBox-klipping",
+          "mission_edge_trim_clean": "Kantklipping",
+          "mission_update_backup_map": "Oppdaterer kartsikkerhetskopi"
+        }
+      },
+      "active_job": {
+        "name": "Aktiv jobb",
+        "state": {
+          "mission_idle": "Inaktiv",
+          "mission_recharge": "Lader",
+          "mission_global_clean": "Automatisk klipping",
+          "mission_build_map": "Kartlegging",
+          "mission_build_map_and_clean": "Kartlegging og klipping",
+          "mission_temporary_clean": "Midlertidig klipping",
+          "mission_back_to_starting_point": "Returnerer til startpunkt",
+          "mission_remote_control_clean": "Fjernstyrt klipping",
+          "mission_schedule_global_clean": "Planlagt full klipping",
+          "mission_schedule_build_map_and_clean": "Planlagt kartlegging og klipping",
+          "mission_select_region_clean": "Soneklipping",
+          "mission_create_custom_passage": "Oppretter egendefinert passasje",
+          "mission_backup_map": "Sikkerhetskopierer kart",
+          "mission_relocate_base_station": "Flytter basestasjon",
+          "mission_user_auto_calibration": "Automatisk kalibrering",
+          "mission_restore_backup_map": "Gjenoppretter kart",
+          "mission_schedule_select_region_clean": "Planlagt soneklipping",
+          "mission_draw_region_clean": "MowBox-klipping",
+          "mission_edge_trim_clean": "Kantklipping",
+          "mission_update_backup_map": "Oppdaterer kartsikkerhetskopi"
+        }
+      },
+      "sub_mission": {
+        "name": "Deloppdrag",
+        "state": {
+          "sub_mission_idle": "Inaktiv",
+          "sub_mission_relocation": "Relokaliserer",
+          "sub_mission_return_to_base": "Returnerer til basen",
+          "sub_mission_out_of_station": "Forlater basestasjonen",
+          "sub_mission_remote_control": "Fjernstyring",
+          "sub_mission_saving_map": "Lagrer kart",
+          "sub_mission_setting_blade_height": "Justerer knivhøyde",
+          "sub_mission_charging": "Lader",
+          "sub_mission_remote_control_clean": "Fjernstyrt klipping",
+          "sub_mission_defogging": "Avdugger",
+          "sub_mission_wait_for_daylight": "Venter på dagslys",
+          "sub_mission_cooling_down_motor": "Kjøler ned motoren",
+          "sub_mission_wait_for_rain_to_stop": "Venter på at regnet skal stoppe",
+          "sub_mission_flexible_station_wait": "Venter ved basestasjonen"
+        }
+      },
+      "mission_state": {
+        "name": "Oppdragsstatus",
+        "state": {
+          "mission_state_idle": "Inaktiv",
+          "mission_state_running": "Pågår",
+          "mission_state_pause": "Pauset",
+          "mission_state_abort": "Avbrutt",
+          "mission_state_complete": "Fullført"
+        }
+      },
+      "active_errors": {
+        "name": "Aktive feil"
+      },
+      "fault": {
+        "name": "Feil"
+      },
+      "last_event": {
+        "name": "Siste hendelse"
+      },
+      "cellular_signal_rsrp": {
+        "name": "Mobilnett RSRP"
+      },
+      "cellular_signal_rsrq": {
+        "name": "Mobilnett RSRQ"
+      },
+      "cellular_connection_type": {
+        "name": "Mobilnett type"
+      },
+      "sunrise": {
+        "name": "Soloppgang"
+      },
+      "sunset": {
+        "name": "Solnedgang"
+      },
+      "move_mode": {
+        "name": "Bevegelse modus"
+      },
+      "map_mode": {
+        "name": "Kart modus"
+      },
+      "mow_mode": {
+        "name": "Klipping modus"
+      },
+      "rain_sensor_threshold": {
+        "name": "Regnsensorterskel"
+      },
+      "after_rain_resume_delay": {
+        "name": "Gjenopptaksforsinkelse etter regn"
+      },
+      "map_save_progress": {
+        "name": "Fremdrift for kartlagring"
+      },
+      "wifi_signal": {
+        "name": "Wi-Fi-signal"
+      },
+      "firmware_capabilities": {
+        "name": "Fastvarefunksjoner"
+      },
+      "zone_last_mowed": {
+        "name": "{zone} sist klippet"
+      },
+      "blade_service_forecast": {
+        "name": "Knivservice forfaller"
+      },
+      "base_station_service_forecast": {
+        "name": "Basestasjonsservice forfaller"
+      }
+    },
+    "camera": {
+      "map_camera": {
+        "name": "Kart"
+      },
+      "map_camera_clean": {
+        "name": "Kart (rent)"
+      }
+    },
+    "binary_sensor": {
+      "charging_state": {
+        "name": "Ladestatus"
+      },
+      "navigation_located": {
+        "name": "Navigasjon lokalisert"
+      },
+      "firmware_upgrading": {
+        "name": "Fastvareoppdatering pågår"
+      },
+      "power_switch": {
+        "name": "Strømbryter"
+      },
+      "problem": {
+        "name": "Problem"
+      },
+      "lift_alarm": {
+        "name": "Robot løftet varsel"
+      },
+      "anti_theft_boundary_alarm": {
+        "name": "Tyverisikringens grensealarm"
+      },
+      "rain_detected": {
+        "name": "Regn oppdaget"
+      },
+      "map_detected": {
+        "name": "Kart oppdaget"
+      },
+      "map_buildable": {
+        "name": "Kart kan opprettes"
+      },
+      "map_backing_up": {
+        "name": "Kartsikkerhetskopiering pågår"
+      },
+      "saving_data": {
+        "name": "Lagrer data"
+      },
+      "data_conversion": {
+        "name": "Datakonvertering pågår"
+      },
+      "cellular_enabled": {
+        "name": "Mobilnett aktivert"
+      },
+      "defogger_heating": {
+        "name": "Defogger oppvarming"
+      },
+      "illumination_light": {
+        "name": "Belysning"
+      },
+      "daylight": {
+        "name": "Dagslys"
+      },
+      "extreme_weather": {
+        "name": "Ekstremvær"
+      },
+      "cliff_detection": {
+        "name": "Kantregistrering"
+      },
+      "slope_detection": {
+        "name": "Helningsregistrering"
+      },
+      "after_rain_auto_resume": {
+        "name": "Auto-gjenopptak etter regn"
+      },
+      "force_single_base_station": {
+        "name": "Tving enkelt basestasjon"
+      },
+      "force_cellular_network": {
+        "name": "Tving mobilnett"
+      },
+      "manual_mapping_relocation": {
+        "name": "Relokalisering nødvendig"
+      },
+      "manual_mapping_takeover": {
+        "name": "Overtakelse nødvendig"
+      },
+      "manual_mapping_boundary_closed": {
+        "name": "Grense lukket"
+      },
+      "state_flag_134": {
+        "name": "Statusflagg 134"
+      }
+    },
+    "button": {
+      "reset_blade_timer": {
+        "name": "Nullstill knivteller"
+      },
+      "reset_base_station_timer": {
+        "name": "Nullstill basestasjonsteller"
+      },
+      "edge_trim": {
+        "name": "Kantklipping"
+      }
+    },
+    "select": {
+      "region_select": {
+        "name": "Sonevalg",
+        "state": {
+          "no_zones_available": "Ingen soner tilgjengelige",
+          "all_zones": "Alle soner"
+        }
+      },
+      "mow_speed_setting": {
+        "name": "Bevegelseshastighet",
+        "state": {
+          "mow_speed_type_low": "Fin",
+          "mow_speed_type_medium": "Standard",
+          "mow_speed_type_adaptive_high": "Adaptiv",
+          "mow_speed_type_auto": "Automatisk hastighet"
+        }
+      },
+      "blade_speed": {
+        "name": "Innstilling av knivhastighet",
+        "state": {
+          "blade_disk_speed_type_low": "Lav hastighet",
+          "blade_disk_speed_type_medium": "Middels hastighet",
+          "blade_disk_speed_type_high": "Høy hastighet"
+        }
+      },
+      "main_direction_mode": {
+        "name": "Hovedretningsmodus",
+        "state": {
+          "main_direction_mode_single": "Enkel",
+          "main_direction_mode_multiple": "Dobbel",
+          "main_direction_mode_auto_rotate": "Auto-roterer"
+        }
+      },
+      "high_grass_edge_trim_mode": {
+        "name": "Kantklippingsmodus for høyt gress",
+        "state": {
+          "high_grass_edge_trim_standard": "Standard",
+          "high_grass_edge_trim_intensive": "Intensiv"
+        }
+      }
+    },
+    "switch": {
+      "thorough_corner_cutting": {
+        "name": "Grundig hjørneklipping"
+      }
+    },
+    "number": {
+      "mowing_height": {
+        "name": "Innstilling av klippehøyde"
+      },
+      "edge_cutting_distance": {
+        "name": "Kantklippingsavstand"
+      },
+      "mowing_spacing": {
+        "name": "Innstilling av klippeavstand"
+      },
+      "main_direction_single_angle": {
+        "name": "Vinkel for én retning"
+      },
+      "main_direction_auto_rotate_interval": {
+        "name": "Vinkelintervall for automatisk rotasjon"
+      },
+      "multiple_direction_angle1": {
+        "name": "Vinkel for første retning"
+      },
+      "multiple_direction_angle2": {
+        "name": "Vinkel for andre retning"
+      }
+    },
+    "update": {
+      "firmware": {
+        "name": "Fastvare"
+      }
+    },
+    "todo": {
+      "maintenance": {
+        "name": "Vedlikehold"
+      }
+    },
+    "image": {
+      "mow_report": {
+        "name": "Klipperapport"
+      }
+    },
+    "device_tracker": {
+      "mower_position": {
+        "name": "Posisjon"
+      }
+    }
+  },
+  "services": {
+    "start_select_region": {
+      "name": "Start klipping av valgte soner",
+      "description": "Starter klipping for de angitte undersone-ID-ene.",
+      "fields": {
+        "region_ids": {
+          "name": "Sone-ID-er",
+          "description": "Liste over undersone-ID-er som skal klippes."
+        }
+      }
+    }
+  },
+  "issues": {
+    "firmware_ha_module_too_low": {
+      "title": "Oppdatering av TerraMow-fastvare kreves",
+      "description": "HA-modulversjonen i TerraMow-fastvaren ({firmware_version}) er for gammel for denne integrasjonen, som krever versjon {required_version}. Oppdater gressklipperens fastvare fra TerraMow-appen for å gjenopprette full funksjonalitet."
+    },
+    "firmware_overall_too_low": {
+      "title": "Oppdatering av TerraMow-fastvare kreves",
+      "description": "TerraMow-fastvaren er eldre enn den laveste støttede versjonen ({required_version}). Oppdater gressklipperens fastvare fra TerraMow-appen for å bruke denne integrasjonen."
+    },
+    "firmware_incompatible": {
+      "title": "Inkompatibel TerraMow-fastvare",
+      "description": "Integrasjonen kunne ikke bekrefte at TerraMow-fastvaren er kompatibel. Kontroller at både gressklipperens fastvare og denne integrasjonen er oppdatert, last deretter ned diagnostikken og opprett et issue hvis problemet vedvarer."
+    },
+    "plugin_downgrade_recommended": {
+      "title": "Oppdatering av TerraMow-integrasjonen anbefales",
+      "description": "HA-modulversjonen i TerraMow-fastvaren ({firmware_version}) er nyere enn det denne integrasjonen støtter ({plugin_version}). Oppdater integrasjonen i HACS for å få de nyeste funksjonene."
+    },
+    "blade_maintenance_due": {
+      "title": "Vedlikehold av TerraMow-kniver kreves",
+      "description": "TerraMows knivskive har nådd det anbefalte serviceintervallet på {hours} timer. Rengjør eller bytt knivene, og tilbakestill deretter knivtidtakeren for å fjerne denne påminnelsen."
+    },
+    "base_station_maintenance_due": {
+      "title": "Vedlikehold av TerraMow-basestasjon kreves",
+      "description": "TerraMows basestasjon har nådd det anbefalte serviceintervallet på {days} dager. Rengjør basestasjonen, og tilbakestill deretter basestasjonstidtakeren for å fjerne denne påminnelsen."
+    }
+  },
+  "exceptions": {
+    "command_not_delivered": {
+      "message": "Kommandoen kunne ikke sendes til gressklipperen — den er frakoblet eller utilgjengelig via MQTT. Kontroller at gressklipperen er slått på og koblet til nettverket, og prøv igjen."
+    },
+    "command_rate_limited": {
+      "message": "Det ble nettopp sendt en annen kommando til gressklipperen. Vent et øyeblikk og prøv igjen."
+    },
+    "edge_trim_unsupported_firmware": {
+      "message": "Edge trimming requires mower firmware with control module version 8 or later (current: {control_version}). Please update the mower firmware."
+    },
+    "command_rejected": {
+      "message": "Gressklipperen avviste kommandoen (feilkode {code})."
+    },
+    "entity_not_registered": {
+      "message": "{entity_id} er ikke en registrert TerraMow-enhet."
+    },
+    "lawn_mower_not_ready": {
+      "message": "TerraMow-gressklipperen for {entity_id} er ikke klar ennå."
+    },
+    "schedule_item_not_found": {
+      "message": "Det finnes ingen planoppføring med item id {item_id} på gressklipperen."
+    },
+    "schedule_write_failed": {
+      "message": "Gressklipperen godtok ikke endringen i planen (forsøk: {attempts}). Gjeldende TerraMow-fastvare godtar ikke skriving av planer over det lokale nettverket – produsentens app bruker Bluetooth/sky i stedet. Bruk blueprinten for værtilpasset klipping til planlegging fra Home Assistant; disse tjenestene vil fungere når fastvaren støtter lokal skriving."
+    }
+  }
+}

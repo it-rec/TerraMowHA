@@ -50,7 +50,7 @@ Questa è un'integrazione di Home Assistant per i robot tagliaerba TerraMow.
 - Flusso di riconfigurazione (cambio di host/IP senza reinstallare) e flusso di riautenticazione
 - **Segnalazioni di riparazione** — schede della dashboard utilizzabili per firmware incompatibile e per la manutenzione dovuta della lama / della stazione base
 - Download della diagnostica per semplificare le segnalazioni di bug
-- Tradotta in 33 lingue (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
+- Tradotta in 34 lingue (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, nn, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - **Comandi confermati** — il taglio per zone attende la conferma dp_119 del dispositivo e segnala i rifiuti invece di «riuscire» in silenzio
 - Comunicazione locale push basata su MQTT — nessun cloud richiesto
 
@@ -242,7 +242,7 @@ TerraMow è un'integrazione **local push**. Il robot esegue un broker MQTT a bor
 
 ### Lingue
 
-L'integrazione è tradotta in: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
+L'integrazione è tradotta in: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Norsk (nynorsk) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Note sull'aggiornamento
 

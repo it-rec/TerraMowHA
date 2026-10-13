@@ -50,7 +50,7 @@ To jest integracja Home Assistant dla robotów koszących TerraMow.
 - Przepływ rekonfiguracji (zmiana hosta/IP bez ponownego dodawania) i przepływ ponownego uwierzytelnienia
 - **Zgłoszenia naprawy** — konkretne karty w panelu dla niezgodnego oprogramowania oraz zaległej konserwacji noża / stacji bazowej
 - Pobieranie diagnostyki dla łatwiejszego zgłaszania błędów
-- Przetłumaczona na 33 języki (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
+- Przetłumaczona na 34 języki (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, nn, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - **Potwierdzone polecenia** — koszenie strefowe czeka na potwierdzenie dp_119 z urządzenia i raportuje odrzucenia, zamiast po cichu „kończyć się sukcesem”
 - Lokalna komunikacja push oparta na MQTT — chmura nie jest potrzebna
 
@@ -242,7 +242,7 @@ TerraMow to integracja typu **local push**. Kosiarka udostępnia broker MQTT na 
 
 ### Języki
 
-Integracja jest przetłumaczona na: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
+Integracja jest przetłumaczona na: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Norsk (nynorsk) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Uwagi dotyczące aktualizacji
 

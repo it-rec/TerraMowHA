@@ -78,7 +78,7 @@ synced point are already covered by the fork:
 - **Assist intent** (`intent.py`): "mow the front lawn" resolved against the
   mower's own zone names, with ready-made sentence files for en/de.
 - **Automation blueprints** and a **dashboard guide**.
-- **Full localization** across 33 languages.
+- **Full localization** across 34 languages.
 
 ## Architecture & quality
 
@@ -110,7 +110,7 @@ synced point are already covered by the fork:
 - **v0.8.5** — Platinum (strict typing, injected websession, `py.typed`).
 - **v0.8.6** — `hass.data` → `entry.runtime_data` migration.
 - **v0.8.7** — event entity, mowing-schedule calendar, maintenance repair
-  issues, all localized across 33 languages.
+  issues, all localized across 34 languages.
 - **v1.0.0** — documentation completeness, clean-up and the first stable release.
 - **v1.15.0** — interactive Lovelace map card: live vector map with
   tap-to-mow zones and an auto-registered Lovelace resource.

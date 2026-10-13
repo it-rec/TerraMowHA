@@ -67,7 +67,7 @@
   "entity": {
     "lawn_mower": {
       "lawn_mower": {
-        "name": "Robot tondeuse"
+        "name": "Tondeuse"
       }
     },
     "event": {
@@ -115,20 +115,20 @@
         "name": "Hauteur de coupe"
       },
       "mow_speed": {
-        "name": "Vitesse de tonte",
+        "name": "Vitesse de déplacement",
         "state": {
-          "mow_speed_type_low": "Lente",
-          "mow_speed_type_medium": "Moyenne",
-          "mow_speed_type_adaptive_high": "Rapide adaptative",
+          "mow_speed_type_low": "Fin",
+          "mow_speed_type_medium": "Par défaut",
+          "mow_speed_type_adaptive_high": "Adaptatif",
           "mow_speed_type_auto": "Auto"
         }
       },
       "clean_mode": {
-        "name": "Mode de fonctionnement",
+        "name": "Mode de tonte",
         "state": {
-          "map_clean_info_mode_global": "Tonte globale",
-          "map_clean_info_mode_select_region": "Tonte de zone sélectionnée",
-          "map_clean_info_mode_draw_region": "Tonte de zone dessinée",
+          "map_clean_info_mode_global": "Tonte automatique",
+          "map_clean_info_mode_select_region": "Tonte par zone",
+          "map_clean_info_mode_draw_region": "Tonte MowBox",
           "map_clean_info_mode_move_to_target_point": "Déplacement vers un point cible"
         }
       },
@@ -187,8 +187,8 @@
       "main_direction_status": {
         "name": "État de la direction principale",
         "state": {
-          "main_direction_mode_single": "Direction unique",
-          "main_direction_mode_multiple": "Directions multiples",
+          "main_direction_mode_single": "Unique",
+          "main_direction_mode_multiple": "Double",
           "main_direction_mode_auto_rotate": "Rotation automatique",
           "unavailable": "Indisponible",
           "no_config": "Aucune configuration"
@@ -219,7 +219,7 @@
         "state": {
           "mission_idle": "Inactif",
           "mission_recharge": "En charge",
-          "mission_global_clean": "Tonte globale",
+          "mission_global_clean": "Tonte automatique",
           "mission_build_map": "Cartographie",
           "mission_build_map_and_clean": "Cartographie et tonte",
           "mission_temporary_clean": "Tonte temporaire",
@@ -227,14 +227,14 @@
           "mission_remote_control_clean": "Tonte télécommandée",
           "mission_schedule_global_clean": "Tonte globale programmée",
           "mission_schedule_build_map_and_clean": "Cartographie et tonte programmées",
-          "mission_select_region_clean": "Tonte de zone",
+          "mission_select_region_clean": "Tonte par zone",
           "mission_create_custom_passage": "Création d'un passage personnalisé",
           "mission_backup_map": "Sauvegarde de la carte",
           "mission_relocate_base_station": "Déplacement de la station de base",
           "mission_user_auto_calibration": "Calibration automatique",
           "mission_restore_backup_map": "Restauration de la carte",
           "mission_schedule_select_region_clean": "Tonte de zone programmée",
-          "mission_draw_region_clean": "Tonte de zone dessinée",
+          "mission_draw_region_clean": "Tonte MowBox",
           "mission_edge_trim_clean": "Tonte des bordures",
           "mission_update_backup_map": "Mise à jour de la sauvegarde de carte"
         }
@@ -244,7 +244,7 @@
         "state": {
           "mission_idle": "Inactif",
           "mission_recharge": "En charge",
-          "mission_global_clean": "Tonte globale",
+          "mission_global_clean": "Tonte automatique",
           "mission_build_map": "Cartographie",
           "mission_build_map_and_clean": "Cartographie et tonte",
           "mission_temporary_clean": "Tonte temporaire",
@@ -252,14 +252,14 @@
           "mission_remote_control_clean": "Tonte télécommandée",
           "mission_schedule_global_clean": "Tonte globale programmée",
           "mission_schedule_build_map_and_clean": "Cartographie et tonte programmées",
-          "mission_select_region_clean": "Tonte de zone",
+          "mission_select_region_clean": "Tonte par zone",
           "mission_create_custom_passage": "Création d'un passage personnalisé",
           "mission_backup_map": "Sauvegarde de la carte",
           "mission_relocate_base_station": "Déplacement de la station de base",
           "mission_user_auto_calibration": "Calibration automatique",
           "mission_restore_backup_map": "Restauration de la carte",
           "mission_schedule_select_region_clean": "Tonte de zone programmée",
-          "mission_draw_region_clean": "Tonte de zone dessinée",
+          "mission_draw_region_clean": "Tonte MowBox",
           "mission_edge_trim_clean": "Tonte des bordures",
           "mission_update_backup_map": "Mise à jour de la sauvegarde de carte"
         }
@@ -376,7 +376,7 @@
         "name": "Problème"
       },
       "lift_alarm": {
-        "name": "Lift Alarm"
+        "name": "Alarme de soulèvement"
       },
       "anti_theft_boundary_alarm": {
         "name": "Anti-Theft Boundary Alarm"
@@ -462,11 +462,11 @@
         }
       },
       "mow_speed_setting": {
-        "name": "Réglage de la vitesse de tonte",
+        "name": "Vitesse de déplacement",
         "state": {
-          "mow_speed_type_low": "Vitesse lente",
-          "mow_speed_type_medium": "Vitesse moyenne",
-          "mow_speed_type_adaptive_high": "Vitesse rapide adaptative",
+          "mow_speed_type_low": "Fin",
+          "mow_speed_type_medium": "Par défaut",
+          "mow_speed_type_adaptive_high": "Adaptatif",
           "mow_speed_type_auto": "Vitesse automatique"
         }
       },
@@ -481,8 +481,8 @@
       "main_direction_mode": {
         "name": "Mode de direction principale",
         "state": {
-          "main_direction_mode_single": "Direction unique",
-          "main_direction_mode_multiple": "Directions multiples",
+          "main_direction_mode_single": "Unique",
+          "main_direction_mode_multiple": "Double",
           "main_direction_mode_auto_rotate": "Rotation automatique"
         }
       },

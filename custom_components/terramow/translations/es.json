@@ -67,7 +67,7 @@
   "entity": {
     "lawn_mower": {
       "lawn_mower": {
-        "name": "Robot cortacésped"
+        "name": "Cortacésped"
       }
     },
     "event": {
@@ -115,20 +115,20 @@
         "name": "Altura de corte"
       },
       "mow_speed": {
-        "name": "Velocidad de corte",
+        "name": "Velocidad de movimiento",
         "state": {
-          "mow_speed_type_low": "Baja",
-          "mow_speed_type_medium": "Media",
-          "mow_speed_type_adaptive_high": "Alta adaptativa",
+          "mow_speed_type_low": "Preciso.",
+          "mow_speed_type_medium": "Estándar",
+          "mow_speed_type_adaptive_high": "Adaptativo",
           "mow_speed_type_auto": "Automática"
         }
       },
       "clean_mode": {
-        "name": "Modo de funcionamiento",
+        "name": "Modo de corte",
         "state": {
-          "map_clean_info_mode_global": "Corte global",
-          "map_clean_info_mode_select_region": "Corte de zona seleccionada",
-          "map_clean_info_mode_draw_region": "Corte de zona dibujada",
+          "map_clean_info_mode_global": "Corte auto.",
+          "map_clean_info_mode_select_region": "Corte por zonas.",
+          "map_clean_info_mode_draw_region": "Corte MowBox",
           "map_clean_info_mode_move_to_target_point": "Desplazamiento al punto objetivo"
         }
       },
@@ -187,9 +187,9 @@
       "main_direction_status": {
         "name": "Estado de la dirección principal",
         "state": {
-          "main_direction_mode_single": "Dirección única",
-          "main_direction_mode_multiple": "Direcciones múltiples",
-          "main_direction_mode_auto_rotate": "Rotación automática",
+          "main_direction_mode_single": "Individual",
+          "main_direction_mode_multiple": "Dual",
+          "main_direction_mode_auto_rotate": "Auto-rotante",
           "unavailable": "No disponible",
           "no_config": "Sin configuración"
         }
@@ -219,23 +219,23 @@
         "state": {
           "mission_idle": "Inactivo",
           "mission_recharge": "Recargando",
-          "mission_global_clean": "Corte global",
-          "mission_build_map": "Creando mapa",
+          "mission_global_clean": "Corte auto.",
+          "mission_build_map": "Mapeo",
           "mission_build_map_and_clean": "Creando mapa y cortando",
           "mission_temporary_clean": "Corte temporal",
           "mission_back_to_starting_point": "Regresando al punto de inicio",
           "mission_remote_control_clean": "Corte por control remoto",
           "mission_schedule_global_clean": "Corte global programado",
           "mission_schedule_build_map_and_clean": "Mapeo y corte programados",
-          "mission_select_region_clean": "Corte por zonas",
+          "mission_select_region_clean": "Corte por zonas.",
           "mission_create_custom_passage": "Creando pasaje personalizado",
           "mission_backup_map": "Copia de seguridad del mapa",
           "mission_relocate_base_station": "Reubicando la estación base",
           "mission_user_auto_calibration": "Calibración automática",
           "mission_restore_backup_map": "Restaurando el mapa",
           "mission_schedule_select_region_clean": "Corte por zonas programado",
-          "mission_draw_region_clean": "Corte de zona dibujada",
-          "mission_edge_trim_clean": "Corte de bordes",
+          "mission_draw_region_clean": "Corte MowBox",
+          "mission_edge_trim_clean": "Corte de bordes.",
           "mission_update_backup_map": "Actualizando copia del mapa"
         }
       },
@@ -244,23 +244,23 @@
         "state": {
           "mission_idle": "Inactivo",
           "mission_recharge": "Recargando",
-          "mission_global_clean": "Corte global",
-          "mission_build_map": "Creando mapa",
+          "mission_global_clean": "Corte auto.",
+          "mission_build_map": "Mapeo",
           "mission_build_map_and_clean": "Creando mapa y cortando",
           "mission_temporary_clean": "Corte temporal",
           "mission_back_to_starting_point": "Regresando al punto de inicio",
           "mission_remote_control_clean": "Corte por control remoto",
           "mission_schedule_global_clean": "Corte global programado",
           "mission_schedule_build_map_and_clean": "Mapeo y corte programados",
-          "mission_select_region_clean": "Corte por zonas",
+          "mission_select_region_clean": "Corte por zonas.",
           "mission_create_custom_passage": "Creando pasaje personalizado",
           "mission_backup_map": "Copia de seguridad del mapa",
           "mission_relocate_base_station": "Reubicando la estación base",
           "mission_user_auto_calibration": "Calibración automática",
           "mission_restore_backup_map": "Restaurando el mapa",
           "mission_schedule_select_region_clean": "Corte por zonas programado",
-          "mission_draw_region_clean": "Corte de zona dibujada",
-          "mission_edge_trim_clean": "Corte de bordes",
+          "mission_draw_region_clean": "Corte MowBox",
+          "mission_edge_trim_clean": "Corte de bordes.",
           "mission_update_backup_map": "Actualizando copia del mapa"
         }
       },
@@ -376,7 +376,7 @@
         "name": "Problema"
       },
       "lift_alarm": {
-        "name": "Lift Alarm"
+        "name": "Alarma de elevación"
       },
       "anti_theft_boundary_alarm": {
         "name": "Anti-Theft Boundary Alarm"
@@ -462,11 +462,11 @@
         }
       },
       "mow_speed_setting": {
-        "name": "Ajuste de velocidad de corte",
+        "name": "Velocidad de movimiento",
         "state": {
-          "mow_speed_type_low": "Velocidad baja",
-          "mow_speed_type_medium": "Velocidad media",
-          "mow_speed_type_adaptive_high": "Velocidad alta adaptativa",
+          "mow_speed_type_low": "Preciso.",
+          "mow_speed_type_medium": "Estándar",
+          "mow_speed_type_adaptive_high": "Adaptativo",
           "mow_speed_type_auto": "Velocidad automática"
         }
       },
@@ -481,9 +481,9 @@
       "main_direction_mode": {
         "name": "Modo de dirección principal",
         "state": {
-          "main_direction_mode_single": "Dirección única",
-          "main_direction_mode_multiple": "Direcciones múltiples",
-          "main_direction_mode_auto_rotate": "Rotación automática"
+          "main_direction_mode_single": "Individual",
+          "main_direction_mode_multiple": "Dual",
+          "main_direction_mode_auto_rotate": "Auto-rotante"
         }
       },
       "high_grass_edge_trim_mode": {

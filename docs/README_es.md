@@ -50,7 +50,7 @@ Esta es una integración de Home Assistant para los robots cortacésped TerraMow
 - Flujo de reconfiguración (cambiar host/IP sin volver a añadirla) y flujo de reautenticación
 - **Avisos de reparación** — tarjetas de panel accionables para firmware incompatible y para el mantenimiento pendiente de la cuchilla / la estación base
 - Descarga de diagnósticos para facilitar los informes de errores
-- Traducida a 33 idiomas (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
+- Traducida a 34 idiomas (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, nn, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - **Órdenes confirmadas** — la siega por zonas espera la confirmación dp_119 del dispositivo e informa de los rechazos en lugar de «tener éxito» en silencio
 - Comunicación local push basada en MQTT — sin necesidad de nube
 
@@ -242,7 +242,7 @@ TerraMow es una integración **local push**. El robot ejecuta un broker MQTT en 
 
 ### Idiomas
 
-La integración está traducida a: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
+La integración está traducida a: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Norsk (nynorsk) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Notas de actualización
 

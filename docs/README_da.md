@@ -50,7 +50,7 @@ Dette er en Home Assistant-integration til TerraMow robotplæneklippere.
 - Rekonfigurationsflow (skift vært/IP uden at tilføje igen) og genautentificeringsflow
 - **Reparationssager** — handlingsrettede dashboardkort for inkompatibel firmware og for forfalden vedligeholdelse af kniv / basestation
 - Download af diagnostik til lettere fejlrapporter
-- Oversat til 33 sprog (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
+- Oversat til 34 sprog (bg, ca, cs, da, de, el, en, es, et, fi, fr, hr, hu, it, ja, ko, lt, lv, nb, nl, nn, pl, pt, pt-BR, ro, ru, sk, sl, sr, sv, tr, uk, zh-Hans, zh-Hant)
 - **Bekræftede kommandoer** — zoneklipning venter på enhedens dp_119-bekræftelse og rapporterer afvisninger i stedet for stille at "lykkes"
 - Lokal push-kommunikation via MQTT — ingen sky nødvendig
 
@@ -240,7 +240,7 @@ TerraMow er en **local push**-integration. Klipperen kører en MQTT-broker på e
 
 ### Sprog
 
-Integrationen er oversat til: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
+Integrationen er oversat til: Български · Català · Čeština · Dansk · Deutsch · Eesti · Ελληνικά · English · Español · Français · Hrvatski · Italiano · 日本語 · 한국어 · Latviešu · Lietuvių · Magyar · Nederlands · Norsk (bokmål) · Norsk (nynorsk) · Polski · Português · Português (Brasil) · Română · Русский · Slovenčina · Slovenščina · Српски · Suomi · Svenska · Türkçe · Українська · 简体中文 · 繁體中文.
 
 ### Opgraderingsnoter
 
