@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Тщательное скашивание углов"
+      },
+      "schedule": {
+        "name": "Schedule"
+      },
+      "schedule_monday": {
+        "name": "Monday Schedule"
+      },
+      "schedule_tuesday": {
+        "name": "Tuesday Schedule"
+      },
+      "schedule_wednesday": {
+        "name": "Wednesday Schedule"
+      },
+      "schedule_thursday": {
+        "name": "Thursday Schedule"
+      },
+      "schedule_friday": {
+        "name": "Friday Schedule"
+      },
+      "schedule_saturday": {
+        "name": "Saturday Schedule"
+      },
+      "schedule_sunday": {
+        "name": "Sunday Schedule"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "Газонокосилка не приняла изменение расписания (попыток: {attempts}). Текущая прошивка TerraMow не принимает запись расписания по локальной сети — приложение производителя использует Bluetooth/облако. Для планирования из Home Assistant используйте блупринт кошения с учётом погоды; эти сервисы заработают, когда прошивка добавит поддержку локальной записи."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }

@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Kruopštus kampų pjovimas"
+      },
+      "schedule": {
+        "name": "Pjovimo tvarkaraštis"
+      },
+      "schedule_monday": {
+        "name": "Pjovimo tvarkaraštis - pirmadienis"
+      },
+      "schedule_tuesday": {
+        "name": "Pjovimo tvarkaraštis - antradienis"
+      },
+      "schedule_wednesday": {
+        "name": "Pjovimo tvarkaraštis - trečiadienis"
+      },
+      "schedule_thursday": {
+        "name": "Pjovimo tvarkaraštis - ketvirtadienis"
+      },
+      "schedule_friday": {
+        "name": "Pjovimo tvarkaraštis - penktadienis"
+      },
+      "schedule_saturday": {
+        "name": "Pjovimo tvarkaraštis - šeštadienis"
+      },
+      "schedule_sunday": {
+        "name": "Pjovimo tvarkaraštis - sekmadienis"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "Vejapjovė nepriėmė tvarkaraščio pakeitimo (bandymų: {attempts}). Dabartinė TerraMow programinė aparatinė įranga nepriima tvarkaraščio įrašymo per vietinį tinklą – gamintojo programėlė vietoje to naudoja „Bluetooth“/debesį. Planavimui iš Home Assistant naudokite orams prisitaikančio pjovimo planą (blueprint); šios paslaugos veiks, kai programinė aparatinė įranga pridės vietinio įrašymo palaikymą."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }

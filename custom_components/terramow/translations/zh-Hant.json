@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "徹底貼邊切角"
+      },
+      "schedule": {
+        "name": "Schedule"
+      },
+      "schedule_monday": {
+        "name": "Monday Schedule"
+      },
+      "schedule_tuesday": {
+        "name": "Tuesday Schedule"
+      },
+      "schedule_wednesday": {
+        "name": "Wednesday Schedule"
+      },
+      "schedule_thursday": {
+        "name": "Thursday Schedule"
+      },
+      "schedule_friday": {
+        "name": "Friday Schedule"
+      },
+      "schedule_saturday": {
+        "name": "Saturday Schedule"
+      },
+      "schedule_sunday": {
+        "name": "Sunday Schedule"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "割草機未接受此排程變更（嘗試次數：{attempts}）。目前的 TerraMow 韌體不支援透過本機網路寫入排程——原廠 App 改用藍牙/雲端。請使用隨天氣調整的割草藍圖在 Home Assistant 中排程；待韌體支援本機寫入後，這些服務即可使用。"
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }

@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Temeljito rezanje kutova"
+      },
+      "schedule": {
+        "name": "Raspored košnje"
+      },
+      "schedule_monday": {
+        "name": "Raspored košnje - ponedjeljak"
+      },
+      "schedule_tuesday": {
+        "name": "Raspored košnje - utorak"
+      },
+      "schedule_wednesday": {
+        "name": "Raspored košnje - srijeda"
+      },
+      "schedule_thursday": {
+        "name": "Raspored košnje - četvrtak"
+      },
+      "schedule_friday": {
+        "name": "Raspored košnje - petak"
+      },
+      "schedule_saturday": {
+        "name": "Raspored košnje - subota"
+      },
+      "schedule_sunday": {
+        "name": "Raspored košnje - nedjelja"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "Kosilica nije prihvatila promjenu rasporeda (pokušaja: {attempts}). Trenutni TerraMow firmver ne prihvaća zapisivanje rasporeda putem lokalne mreže – aplikacija proizvođača umjesto toga koristi Bluetooth/oblak. Za raspoređivanje iz Home Assistanta upotrijebite blueprint za košnju prilagođenu vremenu; ove će usluge raditi kada firmver dobije podršku za lokalno zapisivanje."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }

@@ -83,7 +83,15 @@
       "clean_mode": { "default": "mdi:broom" }
     },
     "switch": {
-      "thorough_corner_cutting": { "default": "mdi:vector-polyline" }
+      "thorough_corner_cutting": { "default": "mdi:vector-polyline" },
+      "schedule": { "default": "mdi:calendar-clock" },
+      "schedule_monday": { "default": "mdi:calendar-week" },
+      "schedule_tuesday": { "default": "mdi:calendar-week" },
+      "schedule_wednesday": { "default": "mdi:calendar-week" },
+      "schedule_thursday": { "default": "mdi:calendar-week" },
+      "schedule_friday": { "default": "mdi:calendar-week" },
+      "schedule_saturday": { "default": "mdi:calendar-week" },
+      "schedule_sunday": { "default": "mdi:calendar-week" }
     }
   }
 }

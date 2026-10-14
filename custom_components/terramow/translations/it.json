@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Taglio accurato degli angoli"
+      },
+      "schedule": {
+        "name": "Programma di taglio"
+      },
+      "schedule_monday": {
+        "name": "Programma di taglio - lunedì"
+      },
+      "schedule_tuesday": {
+        "name": "Programma di taglio - martedì"
+      },
+      "schedule_wednesday": {
+        "name": "Programma di taglio - mercoledì"
+      },
+      "schedule_thursday": {
+        "name": "Programma di taglio - giovedì"
+      },
+      "schedule_friday": {
+        "name": "Programma di taglio - venerdì"
+      },
+      "schedule_saturday": {
+        "name": "Programma di taglio - sabato"
+      },
+      "schedule_sunday": {
+        "name": "Programma di taglio - domenica"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "Il robot tosaerba non ha accettato la modifica della pianificazione (tentativi: {attempts}). Il firmware TerraMow attuale non accetta la scrittura delle pianificazioni sulla rete locale: l'app del produttore usa invece Bluetooth/cloud. Usa il blueprint di taglio adattivo al meteo per pianificare da Home Assistant; questi servizi funzioneranno quando il firmware supporterà la scrittura locale."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }

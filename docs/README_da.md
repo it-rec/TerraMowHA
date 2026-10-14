@@ -64,7 +64,7 @@ Dette er en Home Assistant-integration til TerraMow robotplæneklippere.
 | Binær sensor | Oplader, navigation lokaliseret, firmwareopdatering i gang, tændknap, problem, løftealarm, tyverigrænsealarm, regn registreret, kort registreret / kan bygges / sikkerhedskopiering i gang, gemmer data, datakonvertering i gang. *Diagnostik:* mobilnet aktiveret, dugfjernende varme, belysning, dagslys, ekstremt vejr, niveauforskels- / hældningsregistrering, automatisk fortsættelse efter regn, tving én basestation, tving mobilnet, manuel kortlægning genplacering / overtagelse / grænse lukket, statusflag 134 (uafkodet) |
 | Valg | Zonevalg, klippehastighed, knivhastighed, hovedretningstilstand, kantklipningstilstand til højt græs |
 | Tal | Klippehøjde, kantklipningsafstand, baneafstand, vinkel for enkeltretning, interval for automatisk vinkelrotation, vinkel for første / anden retning |
-| Kontakt | Grundig hjørneklipning |
+| Kontakt | Grundig hjørneklipning, Klippeplan, Klippeplan - mandag … Klippeplan - søndag |
 | Knap | Kantklipning, nulstil knivtimer, nulstil basestationstimer |
 | Opdatering | Firmwareversion |
 | Hændelse | Klipperhændelse (klipning startet / sat på pause / vender tilbage / ved stationen / fuldført / fejl) |

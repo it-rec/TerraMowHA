@@ -64,7 +64,7 @@ Ceci est une intégration Home Assistant pour les robots tondeuses TerraMow.
 | Capteur binaire | En charge, navigation localisée, mise à jour du micrologiciel en cours, interrupteur d'alimentation, problème, alarme de soulèvement, alarme antivol de limite, pluie détectée, carte détectée / constructible / sauvegarde en cours, enregistrement des données, conversion des données en cours. *Diagnostic :* cellulaire activé, chauffage antibuée, éclairage, lumière du jour, météo extrême, détection de vide / de pente, reprise automatique après la pluie, forcer une station de base unique, forcer le réseau cellulaire, cartographie manuelle repositionnement / reprise / périmètre fermé, indicateur d'état 134 (non décodé) |
 | Sélection | Sélection de zone, vitesse de tonte, vitesse de lame, mode de direction principale, mode de tonte de bordure pour herbe haute |
 | Nombre | Hauteur de coupe, distance de coupe de bordure, espacement de tonte, angle de direction unique, intervalle de rotation automatique de l'angle, angle de la première / deuxième direction |
-| Interrupteur | Coupe soignée des angles |
+| Interrupteur | Coupe soignée des angles, Programme de tonte, Programme de tonte - lundi … Programme de tonte - dimanche |
 | Bouton | Tonte des bordures, réinitialiser le minuteur de lame, réinitialiser le minuteur de la station de base |
 | Mise à jour | Version du micrologiciel |
 | Événement | Événement de la tondeuse (tonte démarrée / en pause / retour / à la base / terminée / erreur) |

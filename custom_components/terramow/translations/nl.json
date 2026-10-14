@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Grondig hoeken maaien"
+      },
+      "schedule": {
+        "name": "Maaischema"
+      },
+      "schedule_monday": {
+        "name": "Maaischema - maandag"
+      },
+      "schedule_tuesday": {
+        "name": "Maaischema - dinsdag"
+      },
+      "schedule_wednesday": {
+        "name": "Maaischema - woensdag"
+      },
+      "schedule_thursday": {
+        "name": "Maaischema - donderdag"
+      },
+      "schedule_friday": {
+        "name": "Maaischema - vrijdag"
+      },
+      "schedule_saturday": {
+        "name": "Maaischema - zaterdag"
+      },
+      "schedule_sunday": {
+        "name": "Maaischema - zondag"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "De maaier heeft de schemawijziging niet geaccepteerd (pogingen: {attempts}). De huidige TerraMow-firmware accepteert geen schemaschrijfacties via het lokale netwerk - de app van de fabrikant gebruikt in plaats daarvan Bluetooth/cloud. Gebruik de blueprint voor weersafhankelijk maaien om vanuit Home Assistant te plannen; deze services werken zodra de firmware lokaal schrijven ondersteunt."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }

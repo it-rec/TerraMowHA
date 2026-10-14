@@ -64,7 +64,7 @@ Toto je integrace pro Home Assistant určená pro robotické sekačky TerraMow.
 | Binární senzor | Nabíjení, navigace lokalizována, probíhá aktualizace firmwaru, vypínač, problém, alarm zvednutí, alarm překročení hranice proti krádeži, detekován déšť, mapa detekována / lze vytvořit / probíhá záloha, ukládání dat, probíhá konverze dat. *Diagnostika:* mobilní síť zapnuta, vyhřívání proti zamlžení, osvětlení, denní světlo, extrémní počasí, detekce hran / sklonu, automatické pokračování po dešti, vynutit jednu základnovou stanici, vynutit mobilní síť, ruční mapování přesunutí / převzetí / hranice uzavřena, stavový příznak 134 (nedekódovaný) |
 | Výběr | Výběr zóny, rychlost sečení, otáčky nože, režim hlavního směru, režim sečení okrajů pro vysokou trávu |
 | Číslo | Výška sečení, vzdálenost pro sečení okrajů, rozestup pásů, úhel pro jeden směr, interval automatického otáčení úhlu, úhel prvního / druhého směru |
-| Přepínač | Důkladné sečení rohů |
+| Přepínač | Důkladné sečení rohů, Plán sečení, Plán sečení - pondělí … Plán sečení - neděle |
 | Tlačítko | Sečení okrajů, vynulovat časovač nože, vynulovat časovač základnové stanice |
 | Aktualizace | Verze firmwaru |
 | Událost | Událost sekačky (sečení spuštěno / pauza / návrat / ve stanici / dokončeno / chyba) |

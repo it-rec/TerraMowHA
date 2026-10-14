@@ -64,7 +64,7 @@ Tämä on Home Assistant -integraatio TerraMow-robottiruohonleikkureille.
 | Binääritunnistin | Lataa, navigointi paikannettu, laiteohjelmiston päivitys käynnissä, virtakytkin, ongelma, nostohälytys, varkaudenestorajan hälytys, sade havaittu, kartta havaittu / rakennettavissa / varmuuskopiointi käynnissä, tallentaa tietoja, tiedon muunnos käynnissä. *Diagnostiikka:* mobiiliverkko käytössä, huurteenpoiston lämmitys, valaistus, päivänvalo, äärimmäinen sää, pudotus- / kaltevuustunnistus, automaattinen jatkaminen sateen jälkeen, pakota yksi tukiasema, pakota mobiiliverkko, manuaalinen kartoitus uudelleensijoitus / haltuunotto / raja suljettu, tilalippu 134 (purkamaton) |
 | Valinta | Vyöhykevalinta, leikkuunopeus, terän nopeus, pääsuunnan tila, korkean ruohon reunaleikkuutila |
 | Numero | Leikkuukorkeus, reunaleikkuuetäisyys, kaistaväli, yhden suunnan kulma, kulman automaattisen kierron väli, ensimmäisen / toisen suunnan kulma |
-| Kytkin | Huolellinen kulmien leikkuu |
+| Kytkin | Huolellinen kulmien leikkuu, Leikkuuaikataulu, Leikkuuaikataulu - maanantai … Leikkuuaikataulu - sunnuntai |
 | Painike | Reunaleikkuu, nollaa terän ajastin, nollaa tukiaseman ajastin |
 | Päivitys | Laiteohjelmiston versio |
 | Tapahtuma | Leikkurin tapahtuma (leikkuu aloitettu / tauolla / palaa / asemalla / valmis / virhe) |

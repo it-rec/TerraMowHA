@@ -80,7 +80,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 | Binary sensor | Charging, navigation located, firmware upgrading, power switch, problem, lift alarm, anti-theft boundary alarm, rain detected, map detected / buildable / backing up, saving data, data conversion in progress. *Diagnostic:* cellular enabled, defogger heating, illumination, daylight, extreme weather, cliff / slope detection, after-rain auto-resume, force single base station, force cellular network, manual-mapping relocation / takeover / boundary-closed, state flag 134 (undecoded) |
 | Select | Zone select, mow speed, blade speed, main direction mode, high-grass edge trim mode |
 | Number | Mowing height, edge cutting distance, mowing spacing, single direction angle, auto-rotate angle interval, first / second direction angle |
-| Switch | Thorough corner cutting |
+| Switch | Thorough corner cutting, schedule (pause/resume all schedules), Monday … Sunday schedule (time-slot schedules per weekday) |
 | Button | Edge trim, reset blade timer, reset base station timer |
 | Update | Firmware version |
 | Event | Mower event (mowing started / paused / returning / docked / completed / error) |

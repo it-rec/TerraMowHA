@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Dokładne koszenie narożników"
+      },
+      "schedule": {
+        "name": "Harmonogram koszenia"
+      },
+      "schedule_monday": {
+        "name": "Harmonogram koszenia - poniedziałek"
+      },
+      "schedule_tuesday": {
+        "name": "Harmonogram koszenia - wtorek"
+      },
+      "schedule_wednesday": {
+        "name": "Harmonogram koszenia - środa"
+      },
+      "schedule_thursday": {
+        "name": "Harmonogram koszenia - czwartek"
+      },
+      "schedule_friday": {
+        "name": "Harmonogram koszenia - piątek"
+      },
+      "schedule_saturday": {
+        "name": "Harmonogram koszenia - sobota"
+      },
+      "schedule_sunday": {
+        "name": "Harmonogram koszenia - niedziela"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "Kosiarka nie przyjęła zmiany harmonogramu (próby: {attempts}). Obecne oprogramowanie układowe TerraMow nie obsługuje zapisu harmonogramu przez sieć lokalną – aplikacja producenta używa zamiast tego Bluetooth/chmury. Do planowania z Home Assistanta użyj blueprintu koszenia dostosowanego do pogody; te usługi zadziałają, gdy oprogramowanie układowe doda obsługę zapisu lokalnego."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }
