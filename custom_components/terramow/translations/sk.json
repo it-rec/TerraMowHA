@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Dôkladné kosenie rohov"
+      },
+      "schedule": {
+        "name": "Plán kosenia"
+      },
+      "schedule_monday": {
+        "name": "Plán kosenia - pondelok"
+      },
+      "schedule_tuesday": {
+        "name": "Plán kosenia - utorok"
+      },
+      "schedule_wednesday": {
+        "name": "Plán kosenia - streda"
+      },
+      "schedule_thursday": {
+        "name": "Plán kosenia - štvrtok"
+      },
+      "schedule_friday": {
+        "name": "Plán kosenia - piatok"
+      },
+      "schedule_saturday": {
+        "name": "Plán kosenia - sobota"
+      },
+      "schedule_sunday": {
+        "name": "Plán kosenia - nedeľa"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "Kosačka neprijala zmenu plánu (pokusov: {attempts}). Súčasný firmvér TerraMow neumožňuje zápis plánu cez lokálnu sieť – aplikácia výrobcu namiesto toho používa Bluetooth/cloud. Na plánovanie z Home Assistant použite blueprint kosenia podľa počasia; tieto služby budú fungovať, keď firmvér doplní podporu lokálneho zápisu."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }

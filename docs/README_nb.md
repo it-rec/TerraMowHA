@@ -64,7 +64,7 @@ Dette er en Home Assistant-integrasjon for TerraMow robotgressklippere.
 | Binær sensor | Lader, navigasjon lokalisert, fastvareoppdatering pågår, strømbryter, problem, løftealarm, tyverigrensealarm, regn registrert, kart oppdaget / byggbart / sikkerhetskopiering pågår, lagrer data, datakonvertering pågår. *Diagnostikk:* mobilnett aktivert, dugghindrende varme, belysning, dagslys, ekstremvær, nivåforskjells- / helningsregistrering, automatisk fortsettelse etter regn, tving én basestasjon, tving mobilnett, manuell kartlegging reposisjonering / overtakelse / grense lukket, statusflagg 134 (udekodet) |
 | Valg | Sonevalg, klippehastighet, knivhastighet, hovedretningsmodus, kantklippemodus for høyt gress |
 | Tall | Klippehøyde, kantklippeavstand, baneavstand, vinkel for enkeltretning, intervall for automatisk vinkelrotasjon, vinkel for første / andre retning |
-| Bryter | Grundig hjørneklipping |
+| Bryter | Grundig hjørneklipping, Schedule, Monday Schedule … Sunday Schedule |
 | Knapp | Kantklipping, nullstill knivtimer, nullstill basestasjonstimer |
 | Oppdatering | Fastvareversjon |
 | Hendelse | Klipperhendelse (klipping startet / satt på pause / returnerer / ved stasjonen / fullført / feil) |

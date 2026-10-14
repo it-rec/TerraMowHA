@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Noggrann hörnklippning"
+      },
+      "schedule": {
+        "name": "Klippningsschema"
+      },
+      "schedule_monday": {
+        "name": "Klippningsschema - måndag"
+      },
+      "schedule_tuesday": {
+        "name": "Klippningsschema - tisdag"
+      },
+      "schedule_wednesday": {
+        "name": "Klippningsschema - onsdag"
+      },
+      "schedule_thursday": {
+        "name": "Klippningsschema - torsdag"
+      },
+      "schedule_friday": {
+        "name": "Klippningsschema - fredag"
+      },
+      "schedule_saturday": {
+        "name": "Klippningsschema - lördag"
+      },
+      "schedule_sunday": {
+        "name": "Klippningsschema - söndag"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "Gräsklipparen accepterade inte schemaändringen (försök: {attempts}). Nuvarande TerraMow-fastvara accepterar inte schemaskrivningar över det lokala nätverket – tillverkarens app använder Bluetooth/moln i stället. Använd blueprinten för väderanpassad klippning för schemaläggning från Home Assistant; dessa tjänster fungerar när fastvaran stöder lokal skrivning."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }

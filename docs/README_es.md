@@ -64,7 +64,7 @@ Esta es una integración de Home Assistant para los robots cortacésped TerraMow
 | Sensor binario | Cargando, navegación localizada, actualizando firmware, interruptor de alimentación, problema, alarma de elevación, alarma antirrobo de límite, lluvia detectada, mapa detectado / construible / copia de seguridad en curso, guardando datos, conversión de datos en curso. *Diagnóstico:* móvil activado, calefacción antivaho, iluminación, luz diurna, meteorología extrema, detección de desniveles / de pendiente, reanudación automática tras la lluvia, forzar una sola estación base, forzar red móvil, cartografía manual reposicionamiento / intervención / perímetro cerrado, indicador de estado 134 (sin decodificar) |
 | Selección | Selección de zona, velocidad de siega, velocidad de la cuchilla, modo de dirección principal, modo de siega de bordes para hierba alta |
 | Número | Altura de corte, distancia de corte de bordes, separación de siega, ángulo de dirección única, intervalo de rotación automática del ángulo, ángulo de la primera / segunda dirección |
-| Interruptor | Corte esmerado de esquinas |
+| Interruptor | Corte esmerado de esquinas, Programa de corte, Programa de corte - lunes … Programa de corte - domingo |
 | Botón | Siega de bordes, reiniciar temporizador de la cuchilla, reiniciar temporizador de la estación base |
 | Actualización | Versión del firmware |
 | Evento | Evento del robot (siega iniciada / pausada / regresando / en la base / completada / error) |

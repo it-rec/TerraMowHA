@@ -64,7 +64,7 @@ Esta é uma integração para o Home Assistant destinada aos corta-relvas robót
 | Sensor binário | A carregar, navegação localizada, atualização de firmware em curso, interruptor de alimentação, problema, alarme de elevação, alarme antirroubo de limite, chuva detetada, mapa detetado / construível / cópia de segurança em curso, a gravar dados, conversão de dados em curso. *Diagnóstico:* móvel ativado, aquecimento antiembaciamento, iluminação, luz do dia, meteorologia extrema, deteção de desníveis / de inclinação, retoma automática após a chuva, forçar uma só estação base, forçar rede móvel, cartografia manual reposicionamento / intervenção / perímetro fechado, indicador de estado 134 (não descodificado) |
 | Seleção | Seleção de zona, velocidade de corte, velocidade da lâmina, modo de direção principal, modo de corte de bordas para erva alta |
 | Número | Altura de corte, distância de corte de bordas, espaçamento de corte, ângulo de direção única, intervalo de rotação automática do ângulo, ângulo da primeira / segunda direção |
-| Interruptor | Corte cuidado dos cantos |
+| Interruptor | Corte cuidado dos cantos, Schedule, Monday Schedule … Sunday Schedule |
 | Botão | Corte de bordas, repor temporizador da lâmina, repor temporizador da estação base |
 | Atualização | Versão do firmware |
 | Evento | Evento do robô (corte iniciado / pausado / a regressar / na base / concluído / erro) |

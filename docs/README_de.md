@@ -69,7 +69,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 | Binärsensor | Wird geladen, Navigation lokalisiert, Firmware-Aktualisierung läuft, Netzschalter, Problem, Anhebealarm, Diebstahlalarm bei Grenzübertritt, Regen erkannt, Karte erkannt / erstellbar / Sicherung läuft, Daten werden gespeichert, Datenkonvertierung läuft. *Diagnose:* Mobilfunk aktiviert, Beschlagheizung, Beleuchtung, Tageslicht, Extremwetter, Absturz- / Neigungserkennung, automatische Fortsetzung nach Regen, einzelne Basisstation erzwingen, Mobilfunknetz erzwingen, manuelle Kartierung Neupositionierung / Übernahme / Grenze geschlossen, Zustandsflag 134 (nicht dekodiert) |
 | Auswahl | Zonenauswahl, Mähgeschwindigkeit, Messerdrehzahl, Hauptrichtungsmodus, Kantenschnittmodus für hohes Gras |
 | Zahl | Mähhöhe, Kantenschnittabstand, Bahnabstand, Winkel für Einzelrichtung, Intervall für automatische Winkeldrehung, Winkel der ersten / zweiten Richtung |
-| Schalter | Gründliches Eckenmähen |
+| Schalter | Gründliches Eckenmähen, Zeitplan, Zeitplan - Montag … Zeitplan - Sonntag |
 | Taste | Kantenschnitt, Messer-Timer zurücksetzen, Basisstations-Timer zurücksetzen |
 | Update | Firmware-Version |
 | Ereignis | Mäher-Ereignis (Mähen gestartet / pausiert / Rückkehr / angedockt / abgeschlossen / Fehler) |

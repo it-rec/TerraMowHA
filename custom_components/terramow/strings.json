@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Thorough Corner Cutting"
+      },
+      "schedule": {
+        "name": "Schedule"
+      },
+      "schedule_monday": {
+        "name": "Monday Schedule"
+      },
+      "schedule_tuesday": {
+        "name": "Tuesday Schedule"
+      },
+      "schedule_wednesday": {
+        "name": "Wednesday Schedule"
+      },
+      "schedule_thursday": {
+        "name": "Thursday Schedule"
+      },
+      "schedule_friday": {
+        "name": "Friday Schedule"
+      },
+      "schedule_saturday": {
+        "name": "Saturday Schedule"
+      },
+      "schedule_sunday": {
+        "name": "Sunday Schedule"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "The mower did not accept the schedule change (attempts: {attempts}). Current TerraMow firmware does not accept schedule writes over the local network - the vendor app uses Bluetooth/cloud instead. Use the weather-adaptive mowing blueprint for scheduling from Home Assistant; these services will work once firmware adds local write support."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }

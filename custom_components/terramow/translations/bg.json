@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Щателно косене на ъглите"
+      },
+      "schedule": {
+        "name": "Schedule"
+      },
+      "schedule_monday": {
+        "name": "Monday Schedule"
+      },
+      "schedule_tuesday": {
+        "name": "Tuesday Schedule"
+      },
+      "schedule_wednesday": {
+        "name": "Wednesday Schedule"
+      },
+      "schedule_thursday": {
+        "name": "Thursday Schedule"
+      },
+      "schedule_friday": {
+        "name": "Friday Schedule"
+      },
+      "schedule_saturday": {
+        "name": "Saturday Schedule"
+      },
+      "schedule_sunday": {
+        "name": "Sunday Schedule"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "Косачката не прие промяната в графика (опити: {attempts}). Текущият фърмуер на TerraMow не приема запис на графици през локалната мрежа – приложението на производителя използва Bluetooth/облак вместо това. Използвайте блупринта за косене според времето, за да планирате от Home Assistant; тези услуги ще работят, когато фърмуерът добави поддръжка за локален запис."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }

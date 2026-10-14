@@ -150,7 +150,7 @@ async def test_setup_loads_and_creates_all_platform_entities(
         "image": 1,
         "update": 1,
         "button": 3,
-        "switch": 1,
+        "switch": 9,
         "event": 1,
         "calendar": 1,
         "todo": 1,

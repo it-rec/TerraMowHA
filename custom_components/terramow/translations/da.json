@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Grundig hjørneklipning"
+      },
+      "schedule": {
+        "name": "Klippeplan"
+      },
+      "schedule_monday": {
+        "name": "Klippeplan - mandag"
+      },
+      "schedule_tuesday": {
+        "name": "Klippeplan - tirsdag"
+      },
+      "schedule_wednesday": {
+        "name": "Klippeplan - onsdag"
+      },
+      "schedule_thursday": {
+        "name": "Klippeplan - torsdag"
+      },
+      "schedule_friday": {
+        "name": "Klippeplan - fredag"
+      },
+      "schedule_saturday": {
+        "name": "Klippeplan - lørdag"
+      },
+      "schedule_sunday": {
+        "name": "Klippeplan - søndag"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "Plæneklipperen accepterede ikke ændringen af planen (forsøg: {attempts}). Den nuværende TerraMow-firmware accepterer ikke skrivning af planer over det lokale netværk – producentens app bruger i stedet Bluetooth/sky. Brug blueprintet til vejrtilpasset klipning til planlægning fra Home Assistant; disse tjenester virker, når firmwaren understøtter lokal skrivning."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }

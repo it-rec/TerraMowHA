@@ -64,7 +64,7 @@ Detta är en Home Assistant-integration för TerraMow robotgräsklippare.
 | Binär sensor | Laddar, navigering lokaliserad, firmwareuppdatering pågår, strömbrytare, problem, lyftlarm, stöldskyddsgränslarm, regn upptäckt, karta upptäckt / byggbar / säkerhetskopiering pågår, sparar data, datakonvertering pågår. *Diagnostik:* mobilnät aktiverat, imskyddsvärme, belysning, dagsljus, extremt väder, nivåskillnads- / lutningsdetektering, automatisk fortsättning efter regn, tvinga en enda basstation, tvinga mobilnät, manuell kartläggning ompositionering / övertagande / gräns stängd, statusflagga 134 (oavkodad) |
 | Val | Zonval, klipphastighet, knivhastighet, huvudriktningsläge, kantklippningsläge för högt gräs |
 | Tal | Klipphöjd, kantklippningsavstånd, banavstånd, vinkel för enkelriktning, intervall för automatisk vinkelrotation, vinkel för första / andra riktningen |
-| Strömbrytare | Noggrann hörnklippning |
+| Strömbrytare | Noggrann hörnklippning, Klippningsschema, Klippningsschema - måndag … Klippningsschema - söndag |
 | Knapp | Kantklippning, återställ knivtimer, återställ basstationstimer |
 | Uppdatering | Firmwareversion |
 | Händelse | Klipparhändelse (klippning startad / pausad / återvänder / vid stationen / slutförd / fel) |

@@ -59,7 +59,14 @@ from .const import (
     PATH_HISTORY_META_TOPIC,
     PATH_META_TOPIC,
     POSE_TOPIC,
+    SCHEDULE_CMD_GET,
+    SCHEDULE_CMD_SET_DISABLED_WEEK_DAYS,
+    SCHEDULE_CMD_SET_GLOBAL_DISABLED,
     SCHEDULE_DP,
+    SCHEDULE_MODE_TIME_SLOT,
+    SCHEDULE_SWITCH_CMDS,
+    SCHEDULE_SWITCH_MIN_VERSION,
+    WEEKDAY_TO_DEVICE,
     ZONE_PRESENCE_SAMPLE_SECONDS,
     CompatibilityStatus,
 )
@@ -985,6 +992,13 @@ class TerraMowHub:
         self._operating_modes: dict[str, Any] = {}  # Store dp_154 operating modes
         self._advanced_settings: dict[str, Any] = {}  # Store dp_150 advanced settings
         self._full_schedule: dict[str, Any] = {}  # Store dp_122 full weekly schedule list
+        # protobuf JSON may report an all-default (empty) schedule list, so
+        # "no list yet" needs its own flag rather than ``not _full_schedule``.
+        self._full_schedule_received = False
+        # seqs of our own in-flight dp_122 switch/GET requests, so their
+        # replies are not mistaken for another client's change.
+        self._schedule_own_seqs: set[int] = set()
+        self._schedule_switch_lock = asyncio.Lock()
         self._state_flag_134: dict[str, Any] = {}  # Store dp_134 undecoded binary flag
         self._map_save_progress: dict[str, Any] = {}  # Store dp_118 map-save progress %
         self._wifi_signal: int | None = None  # Store dp_109 Wi-Fi signal %
@@ -1717,6 +1731,15 @@ class TerraMowHub:
             schedule_list = data.get("schedule_list")
             if isinstance(schedule_list, dict):
                 self._full_schedule = schedule_list
+                self._full_schedule_received = True
+            elif (
+                data.get("cmd_type") in SCHEDULE_SWITCH_CMDS
+                and data.get("code", 0) == 0
+                and data.get("seq") not in self._schedule_own_seqs
+            ):
+                # Another client (the app) changed a schedule switch; the SET
+                # reply carries no state, so read the list again.
+                self._request_full_schedule()
 
     # ------------------------------------------------------------------
     # Writable schedule (dp_122 ADD/DELETE)
@@ -1760,6 +1783,191 @@ class TerraMowHub:
             return self._full_schedule
         finally:
             unsub()
+
+    # ------------------------------------------------------------------
+    # Schedule switches (dp_122 SET_GLOBAL_DISABLED / SET_DISABLED_WEEK_DAYS)
+    #
+    # Vendor-documented ("Schedule Control" in docs/en/developers/
+    # data_point.md) for firmware reporting ``module.schedule >= 2``. Each
+    # change waits for its own dp_122 reply (matched by seq + cmd_type) and
+    # is then confirmed by a fresh GET: a successful SET reply carries no
+    # state, so the switches only ever show what the device reports.
+    # ------------------------------------------------------------------
+
+    @property
+    def schedule_module_version(self) -> int | None:
+        """dp_127 ``module.schedule`` version, or None when not (validly) reported."""
+        return self._module_version("schedule")
+
+    @property
+    def schedule_switch_supported(self) -> bool:
+        """Whether the firmware supports the dp_122 schedule switches."""
+        version = self.schedule_module_version
+        return version is not None and version >= SCHEDULE_SWITCH_MIN_VERSION
+
+    @property
+    def schedule_enabled(self) -> bool | None:
+        """Master schedule switch from the last dp_122 GET reply.
+
+        Raw mirror of ``schedule_list.global_disabled`` (inverted); protobuf
+        JSON omits a false value, so a missing field means enabled. None
+        until a schedule list has been read.
+        """
+        if not self._full_schedule_received:
+            return None
+        disabled = self._full_schedule.get("global_disabled", False)
+        return not disabled if isinstance(disabled, bool) else None
+
+    def _schedule_disabled_week_days(self) -> frozenset[str] | None:
+        """``schedule_list.disabled_week_days``, or None when unknown/invalid."""
+        if not self._full_schedule_received:
+            return None
+        raw = self._full_schedule.get("disabled_week_days", [])
+        valid = set(WEEKDAY_TO_DEVICE.values())
+        if isinstance(raw, list) and all(day in valid for day in raw):
+            return frozenset(raw)
+        return None
+
+    @property
+    def schedule_weekdays_configurable(self) -> bool:
+        """Whether the per-weekday switches apply to the reported schedule.
+
+        Only time-slot schedules use the disabled-weekday list; frequency
+        schedules ignore it, so the weekday switches are offered only in
+        time-slot mode (the protobuf default when ``schedule_mode`` is
+        omitted) with a valid disabled-weekday list.
+        """
+        mode = self._full_schedule.get("schedule_mode", SCHEDULE_MODE_TIME_SLOT)
+        return (
+            mode == SCHEDULE_MODE_TIME_SLOT
+            and self._schedule_disabled_week_days() is not None
+        )
+
+    def schedule_weekday_enabled(self, week_day: str) -> bool | None:
+        """Whether time-slot schedules may run on ``week_day`` (device enum).
+
+        A day absent from ``disabled_week_days`` is enabled; None while the
+        list is unknown (an unread list is not "all enabled").
+        """
+        disabled = self._schedule_disabled_week_days()
+        return None if disabled is None else week_day not in disabled
+
+    async def _async_schedule_command(
+        self, cmd_type: str, params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """Send one dp_122 request and wait for its own reply.
+
+        The reply is matched by ``seq`` and ``cmd_type`` (GET's zero-valued
+        ``cmd_type`` may be omitted). A missing reply or a non-zero ``code``
+        raises ``HomeAssistantError``.
+        """
+        # The schedule protocol uses an int32 seq; the shared counter is uint32.
+        seq = (self.get_cmd_seq() & 0x7FFFFFFF) or 1
+        future: asyncio.Future[dict[str, Any]] = self.hass.loop.create_future()
+
+        async def _on_reply(payload: str) -> None:
+            if future.done():
+                return
+            try:
+                data = json.loads(payload)
+            except json.JSONDecodeError:
+                return
+            if (
+                isinstance(data, dict)
+                and data.get("seq") == seq
+                and data.get("cmd_type", SCHEDULE_CMD_GET) == cmd_type
+            ):
+                future.set_result(data)
+
+        unsub = self.register_callback(SCHEDULE_DP, _on_reply)
+        self._schedule_own_seqs.add(seq)
+        try:
+            self.publish_data_point(
+                SCHEDULE_DP, {"cmd_type": cmd_type, "seq": seq, **(params or {})}
+            )
+            try:
+                reply = await asyncio.wait_for(future, COMMAND_REPLY_TIMEOUT)
+            except TimeoutError as err:
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN,
+                    translation_key="schedule_switch_unconfirmed",
+                ) from err
+        finally:
+            unsub()
+            self._schedule_own_seqs.discard(seq)
+        code = reply.get("code", 0)
+        if code != 0:
+            _LOGGER.warning(
+                "Device rejected %s seq=%s with code=%s", cmd_type, seq, code
+            )
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="command_rejected",
+                translation_placeholders={"code": str(code)},
+            )
+        return reply
+
+    async def _async_schedule_switch(
+        self, cmd_type: str, params: dict[str, Any]
+    ) -> None:
+        """Send a schedule SET, then always re-read the list.
+
+        The GET also runs when the SET failed: a SET whose reply was lost may
+        still have applied, so the cached list is refreshed either way.
+        """
+        if not self.schedule_switch_supported:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="schedule_switch_unsupported",
+                translation_placeholders={
+                    "schedule_version": str(self.schedule_module_version)
+                },
+            )
+        self._ensure_command_allowed()
+        async with self._schedule_switch_lock:
+            try:
+                await self._async_schedule_command(cmd_type, params)
+            finally:
+                await self._async_schedule_command(SCHEDULE_CMD_GET)
+
+    async def async_set_schedule_enabled(self, enabled: bool) -> None:
+        """Enable or pause all schedules (``global_disabled``), device-confirmed.
+
+        Pausing keeps the schedules and does not dock a job already running.
+        """
+        await self._async_schedule_switch(
+            SCHEDULE_CMD_SET_GLOBAL_DISABLED,
+            {"set_global_disabled_param": {"global_disabled": not enabled}},
+        )
+        if self.schedule_enabled is not enabled:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="schedule_switch_unconfirmed",
+            )
+
+    async def async_set_schedule_weekday_enabled(
+        self, week_day: str, enabled: bool
+    ) -> None:
+        """Allow or block time-slot schedules on one weekday (device enum)."""
+        if not self.schedule_weekdays_configurable:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="schedule_weekday_unavailable",
+            )
+        await self._async_schedule_switch(
+            SCHEDULE_CMD_SET_DISABLED_WEEK_DAYS,
+            {
+                "set_disabled_week_days_param": {
+                    "week_day": week_day,
+                    "disabled": not enabled,
+                }
+            },
+        )
+        if self.schedule_weekday_enabled(week_day) is not enabled:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="schedule_switch_unconfirmed",
+            )
 
     @staticmethod
     def build_schedule_item(
@@ -5246,8 +5454,12 @@ class TerraMowHub:
     @property
     def control_module_version(self) -> int | None:
         """dp_127 ``module.control`` version, or None when not (validly) reported."""
+        return self._module_version("control")
+
+    def _module_version(self, name: str) -> int | None:
+        """dp_127 ``module.<name>`` version, or None when not (validly) reported."""
         module = self.firmware_version_info.get("module")
-        raw = module.get("control") if isinstance(module, dict) else None
+        raw = module.get(name) if isinstance(module, dict) else None
         if isinstance(raw, bool):
             return None
         if isinstance(raw, int):

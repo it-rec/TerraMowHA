@@ -64,7 +64,7 @@ Dit is een Home Assistant-integratie voor TerraMow-robotmaaiers.
 | Binaire sensor | Aan het laden, navigatie gelokaliseerd, firmware wordt bijgewerkt, aan/uit-schakelaar, probleem, optilalarm, antidiefstal-grensalarm, regen gedetecteerd, kaart gedetecteerd / bouwbaar / back-up bezig, gegevens opslaan, gegevensconversie bezig. *Diagnostisch:* mobiel ingeschakeld, antibeslagverwarming, verlichting, daglicht, extreem weer, klif- / hellingdetectie, automatisch hervatten na regen, één basisstation forceren, mobiel netwerk forceren, handmatig karteren herpositionering / overname / grens gesloten, statusvlag 134 (niet gedecodeerd) |
 | Keuzelijst | Zonekeuze, maaisnelheid, mesbladsnelheid, hoofdrichtingsmodus, kantenmaaimodus voor hoog gras |
 | Getal | Maaihoogte, kantsnijafstand, baanafstand, hoek voor enkele richting, interval voor automatisch draaien van de hoek, hoek van de eerste / tweede richting |
-| Schakelaar | Grondig hoeken maaien |
+| Schakelaar | Grondig hoeken maaien, Maaischema, Maaischema - maandag … Maaischema - zondag |
 | Knop | Kantenmaaien, mestimer resetten, basisstationtimer resetten |
 | Update | Firmwareversie |
 | Gebeurtenis | Maaier-gebeurtenis (maaien gestart / gepauzeerd / terugkerend / gedockt / voltooid / fout) |

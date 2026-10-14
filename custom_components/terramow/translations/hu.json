@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Alapos Sarokvágás"
+      },
+      "schedule": {
+        "name": "Nyírási ütemterv"
+      },
+      "schedule_monday": {
+        "name": "Nyírási ütemterv - hétfő"
+      },
+      "schedule_tuesday": {
+        "name": "Nyírási ütemterv - kedd"
+      },
+      "schedule_wednesday": {
+        "name": "Nyírási ütemterv - szerda"
+      },
+      "schedule_thursday": {
+        "name": "Nyírási ütemterv - csütörtök"
+      },
+      "schedule_friday": {
+        "name": "Nyírási ütemterv - péntek"
+      },
+      "schedule_saturday": {
+        "name": "Nyírási ütemterv - szombat"
+      },
+      "schedule_sunday": {
+        "name": "Nyírási ütemterv - vasárnap"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "A fűnyíró nem fogadta el az ütemterv módosítását (próbálkozások: {attempts}). A jelenlegi TerraMow firmware nem fogad el ütemterv-írást a helyi hálózaton keresztül – a gyártói alkalmazás helyette Bluetooth-t/felhőt használ. A Home Assistantból való ütemezéshez használja az időjáráshoz igazodó nyírás blueprintet; ezek a szolgáltatások akkor működnek majd, ha a firmware támogatja a helyi írást."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }

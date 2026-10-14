@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Corte minucioso de esquinas"
+      },
+      "schedule": {
+        "name": "Programa de corte"
+      },
+      "schedule_monday": {
+        "name": "Programa de corte - lunes"
+      },
+      "schedule_tuesday": {
+        "name": "Programa de corte - martes"
+      },
+      "schedule_wednesday": {
+        "name": "Programa de corte - miércoles"
+      },
+      "schedule_thursday": {
+        "name": "Programa de corte - jueves"
+      },
+      "schedule_friday": {
+        "name": "Programa de corte - viernes"
+      },
+      "schedule_saturday": {
+        "name": "Programa de corte - sábado"
+      },
+      "schedule_sunday": {
+        "name": "Programa de corte - domingo"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "El robot cortacésped no aceptó el cambio de programación (intentos: {attempts}). El firmware actual de TerraMow no acepta escrituras de programación por la red local: la aplicación del fabricante usa Bluetooth/nube. Usa el blueprint de corte adaptado al tiempo para programar desde Home Assistant; estos servicios funcionarán cuando el firmware admita la escritura local."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }

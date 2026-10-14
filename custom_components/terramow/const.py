@@ -107,6 +107,19 @@ COMMAND_REPLY_TIMEOUT = 5.0
 # dp_122: full weekly schedule channel (GET/ADD/DELETE commands).
 SCHEDULE_DP = 122
 
+# dp_122 schedule-control commands (vendor-documented, "Schedule Control").
+SCHEDULE_CMD_GET = "SCHEDULE_CMD_TYPE_GET"
+SCHEDULE_CMD_SET_GLOBAL_DISABLED = "SCHEDULE_CMD_TYPE_SET_GLOBAL_DISABLED"
+SCHEDULE_CMD_SET_DISABLED_WEEK_DAYS = "SCHEDULE_CMD_TYPE_SET_DISABLED_WEEK_DAYS"
+SCHEDULE_SWITCH_CMDS = (
+    SCHEDULE_CMD_SET_GLOBAL_DISABLED,
+    SCHEDULE_CMD_SET_DISABLED_WEEK_DAYS,
+)
+# The disabled-weekday list only applies to time-slot schedules.
+SCHEDULE_MODE_TIME_SLOT = "SCHEDULE_MODE_TIME_SLOT"
+# Minimum dp_127 ``module.schedule`` version supporting the schedule switches.
+SCHEDULE_SWITCH_MIN_VERSION = 2
+
 # Service weekday tokens -> device protocol enum values (dp_122 week_days).
 WEEKDAY_TO_DEVICE = {
     "monday": "WEEK_DAY_MONDAY",

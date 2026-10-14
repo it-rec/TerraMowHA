@@ -64,7 +64,7 @@ To jest integracja Home Assistant dla robotów koszących TerraMow.
 | Czujnik binarny | Ładowanie, nawigacja zlokalizowana, aktualizacja oprogramowania w toku, wyłącznik zasilania, problem, alarm podniesienia, alarm antykradzieżowy granicy, wykryto deszcz, mapa wykryta / możliwa do zbudowania / kopia zapasowa w toku, zapis danych, konwersja danych w toku. *Diagnostyka:* sieć komórkowa włączona, ogrzewanie przeciwmgielne, oświetlenie, światło dzienne, ekstremalna pogoda, wykrywanie uskoków / nachylenia, automatyczne wznowienie po deszczu, wymuś jedną stację bazową, wymuś sieć komórkową, mapowanie ręczne przepozycjonowanie / przejęcie / granica zamknięta, flaga stanu 134 (nierozszyfrowana) |
 | Wybór | Wybór strefy, prędkość koszenia, prędkość noża, tryb kierunku głównego, tryb koszenia krawędzi dla wysokiej trawy |
 | Liczba | Wysokość koszenia, odległość cięcia krawędzi, odstęp pasów, kąt dla jednego kierunku, interwał automatycznego obrotu kąta, kąt pierwszego / drugiego kierunku |
-| Przełącznik | Dokładne koszenie narożników |
+| Przełącznik | Dokładne koszenie narożników, Harmonogram koszenia, Harmonogram koszenia - poniedziałek … Harmonogram koszenia - niedziela |
 | Przycisk | Koszenie krawędzi, zeruj licznik noża, zeruj licznik stacji bazowej |
 | Aktualizacja | Wersja oprogramowania |
 | Zdarzenie | Zdarzenie kosiarki (koszenie rozpoczęte / pauza / powrót / w stacji / zakończone / błąd) |

@@ -64,7 +64,7 @@ Questa è un'integrazione di Home Assistant per i robot tagliaerba TerraMow.
 | Sensore binario | In carica, navigazione localizzata, aggiornamento firmware in corso, interruttore di alimentazione, problema, allarme sollevamento, allarme antifurto di confine, pioggia rilevata, mappa rilevata / costruibile / backup in corso, salvataggio dati, conversione dati in corso. *Diagnostica:* cellulare attivo, riscaldamento antiappannamento, illuminazione, luce diurna, meteo estremo, rilevamento dislivelli / pendenza, ripresa automatica dopo la pioggia, forza stazione base singola, forza rete cellulare, mappatura manuale riposizionamento / intervento / perimetro chiuso, flag di stato 134 (non decodificato) |
 | Selezione | Selezione zona, velocità di taglio, velocità della lama, modalità direzione principale, modalità taglio bordi per erba alta |
 | Numero | Altezza di taglio, distanza di taglio dei bordi, distanza tra le passate, angolo per direzione singola, intervallo di rotazione automatica dell'angolo, angolo della prima / seconda direzione |
-| Interruttore | Taglio accurato degli angoli |
+| Interruttore | Taglio accurato degli angoli, Programma di taglio, Programma di taglio - lunedì … Programma di taglio - domenica |
 | Pulsante | Taglio dei bordi, azzera timer lama, azzera timer stazione base |
 | Aggiornamento | Versione del firmware |
 | Evento | Evento del robot (taglio avviato / in pausa / rientro / alla base / completato / errore) |

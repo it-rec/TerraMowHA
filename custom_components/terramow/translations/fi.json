@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Perusteellinen kulmien leikkuu"
+      },
+      "schedule": {
+        "name": "Leikkuuaikataulu"
+      },
+      "schedule_monday": {
+        "name": "Leikkuuaikataulu - maanantai"
+      },
+      "schedule_tuesday": {
+        "name": "Leikkuuaikataulu - tiistai"
+      },
+      "schedule_wednesday": {
+        "name": "Leikkuuaikataulu - keskiviikko"
+      },
+      "schedule_thursday": {
+        "name": "Leikkuuaikataulu - torstai"
+      },
+      "schedule_friday": {
+        "name": "Leikkuuaikataulu - perjantai"
+      },
+      "schedule_saturday": {
+        "name": "Leikkuuaikataulu - lauantai"
+      },
+      "schedule_sunday": {
+        "name": "Leikkuuaikataulu - sunnuntai"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "Ruohonleikkuri ei hyväksynyt aikataulumuutosta (yritykset: {attempts}). Nykyinen TerraMow-laiteohjelmisto ei hyväksy aikataulujen kirjoittamista lähiverkon kautta – valmistajan sovellus käyttää sen sijaan Bluetoothia/pilveä. Käytä sään mukaan mukautuvan leikkuun blueprintiä ajastukseen Home Assistantista; nämä palvelut toimivat, kun laiteohjelmisto tukee paikallista kirjoitusta."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "The mower did not confirm the schedule change. Check the switch state and try again."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     }
   }
 }

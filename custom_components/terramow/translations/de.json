@@ -497,6 +497,30 @@
     "switch": {
       "thorough_corner_cutting": {
         "name": "Gründliches Eckenmähen"
+      },
+      "schedule": {
+        "name": "Zeitplan"
+      },
+      "schedule_monday": {
+        "name": "Zeitplan - Montag"
+      },
+      "schedule_tuesday": {
+        "name": "Zeitplan - Dienstag"
+      },
+      "schedule_wednesday": {
+        "name": "Zeitplan - Mittwoch"
+      },
+      "schedule_thursday": {
+        "name": "Zeitplan - Donnerstag"
+      },
+      "schedule_friday": {
+        "name": "Zeitplan - Freitag"
+      },
+      "schedule_saturday": {
+        "name": "Zeitplan - Samstag"
+      },
+      "schedule_sunday": {
+        "name": "Zeitplan - Sonntag"
       }
     },
     "number": {
@@ -605,6 +629,15 @@
     },
     "schedule_write_failed": {
       "message": "Der Mäher hat die Zeitplanänderung nicht übernommen (Versuche: {attempts}). Die aktuelle TerraMow-Firmware akzeptiert keine Zeitplan-Schreibzugriffe über das lokale Netzwerk - die Hersteller-App nutzt stattdessen Bluetooth/Cloud. Verwende das Blueprint \"Weather-adaptive mowing\" für Zeitpläne aus Home Assistant; diese Dienste funktionieren, sobald die Firmware lokales Schreiben unterstützt."
+    },
+    "schedule_switch_unsupported": {
+      "message": "Zeitplan-Schalter erfordern eine Mäher-Firmware mit Zeitplan-Protokollversion 2 oder neuer (aktuell: {schedule_version}). Bitte aktualisiere die Firmware des Mähers."
+    },
+    "schedule_switch_unconfirmed": {
+      "message": "Der Mäher hat die Zeitplanänderung nicht bestätigt. Prüfe den Schalterzustand und versuche es erneut."
+    },
+    "schedule_weekday_unavailable": {
+      "message": "Wochentags-Zeitplanschalter sind nur für Zeitfenster-Zeitpläne verfügbar, sobald der Mäher seinen Zeitplan gemeldet hat."
     }
   }
 }
