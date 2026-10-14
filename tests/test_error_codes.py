@@ -6,6 +6,7 @@ from custom_components.terramow.error_codes import ERROR_CODES, describe_error
 def test_known_codes_resolve_to_text() -> None:
     assert describe_error(103) == "Cutting height adjustment stuck"
     assert describe_error(201) == "Mower lifted"
+    assert describe_error(701) == "Bad charging connection"
     assert describe_error(903) == "Mower stuck"
     assert describe_error(909) == "Mower stuck"
     assert describe_error(911) == "Not able to leave station"

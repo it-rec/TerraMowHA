@@ -22,6 +22,9 @@ ERROR_CODES: dict[int, str] = {
     201: "Mower lifted",
     # Vendor (upstream issue #34): second drive-wheel lift code.
     202: "Mower lifted",
+    # S1200, issue #171 comment 6168424647: app showed warning E0701 "bad
+    # charging connection" (station power supply / charging contacts).
+    701: "Bad charging connection",
     # S1200 fw 9.9.210, issue #171 comment 5061068395: app said the mower
     # got stuck and could not free itself.
     903: "Mower stuck",

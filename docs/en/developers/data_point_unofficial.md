@@ -232,7 +232,7 @@ this went unnoticed. The `error_list` clears when the fault resolves.
   alarms read *unknown* until the current connection's first list arrives
   (and *unavailable* while disconnected) instead of carrying an old state over.
 - *Known codes* (community-sourced, catalog in `error_codes.py`): `201` mower
-  lifted, `903` and `909` mower stuck (two distinct stuck-type codes), `911`
+  lifted, `701` bad charging connection, `903` and `909` mower stuck (two distinct stuck-type codes), `911`
   and `913` not able to leave station (two distinct codes, same app message); vendor-supplied (upstream issue #34): `202` mower
   lifted (second drive-wheel code), `1409` anti-theft boundary crossed. The codes surface with
   readable text on the **Active errors** sensor (`errors[].text`), the
