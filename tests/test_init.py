@@ -132,6 +132,7 @@ async def test_unload_entry_stops_hub_and_clears_data(hass: HomeAssistant) -> No
     )
     basic_data.lawn_mower = hub
     entry.runtime_data = basic_data
+    _async_register_services(hass)
     await async_setup_intents(hass)
 
     with patch("custom_components.terramow.async_clear_compatibility_issue") as clear:
@@ -140,8 +141,9 @@ async def test_unload_entry_stops_hub_and_clears_data(hass: HomeAssistant) -> No
     assert result is True
     hub.async_stop.assert_awaited_once()
     clear.assert_called_once()
-    # It was the only entry, so the shared service is removed.
-    assert not hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION)
+    # Actions belong to the integration, not the entry: they stay registered
+    # so automations referencing them never see an unknown action.
+    assert hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION)
     # ...and so is the Assist intent, or the next setup would register it over
     # itself and Home Assistant would log a warning (issue #358).
     assert not any(

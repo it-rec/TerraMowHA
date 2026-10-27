@@ -580,13 +580,6 @@ def test_push_update_mixin_noop_without_lawn_mower() -> None:
 USER_INPUT = {CONF_HOST: "192.0.2.10", CONF_PASSWORD: "secret"}
 
 
-async def test_register_services_is_idempotent(hass: HomeAssistant) -> None:
-    _async_register_services(hass)
-    # a second call returns early because the service already exists
-    _async_register_services(hass)
-    assert hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION)
-
-
 async def test_service_raises_when_lawn_mower_not_ready(hass: HomeAssistant) -> None:
     from homeassistant.helpers import entity_registry as er
 
@@ -609,7 +602,7 @@ async def test_service_raises_when_lawn_mower_not_ready(hass: HomeAssistant) -> 
         )
 
 
-async def test_unload_without_lawn_mower_removes_service(hass: HomeAssistant) -> None:
+async def test_unload_without_lawn_mower_keeps_service(hass: HomeAssistant) -> None:
     entry = MockConfigEntry(domain=DOMAIN, data=USER_INPUT, unique_id="192.0.2.10")
     entry.add_to_hass(hass)
     entry.runtime_data = TerraMowBasicData(host="192.0.2.10", password="secret")
@@ -624,8 +617,8 @@ async def test_unload_without_lawn_mower_removes_service(hass: HomeAssistant) ->
         result = await async_unload_entry(hass, entry)
 
     assert result is True
-    # it was the only entry, so the shared service is gone
-    assert not hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION)
+    # actions are integration-level and outlive the last entry
+    assert hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION)
 
 
 # ---------------------------------------------------------------------------
