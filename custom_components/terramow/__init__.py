@@ -23,6 +23,7 @@ from homeassistant.exceptions import (
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.typing import ConfigType
 
 from .config_flow import CannotConnect, InvalidAuth, validate_input
 from .const import (
@@ -208,6 +209,21 @@ class TerraMowBasicData:
 # firmware) in its runtime_data instead of hass.data.
 type TerraMowConfigEntry = ConfigEntry[TerraMowBasicData]
 
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the integration's actions once, independent of any entry.
+
+    Actions must exist even while no mower entry is loaded (setup retry while
+    the mower is offline, a reload in progress). Otherwise Home Assistant
+    validates automations against a missing action and raises an "unknown
+    action" repair. The handlers already reject entities whose entry is not
+    ready.
+    """
+    _async_register_services(hass)
+    return True
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> bool:
     host = entry.data[CONF_HOST]
@@ -341,7 +357,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
 
     entry.async_on_unload(entry.add_update_listener(_async_options_updated))
 
-    _async_register_services(hass)
+    # The Assist intent needs a loaded mower to act on, so it lives with the
+    # entries (registered idempotently, dropped with the last one).
+    await async_setup_intents(hass)
 
     # A retained dp_102 usually arrives while the platforms are still being
     # set up, so the serial adoption parks itself in the hub. Consume it now
@@ -358,10 +376,7 @@ async def _async_options_updated(hass: HomeAssistant, entry: TerraMowConfigEntry
 
 
 def _async_register_services(hass: HomeAssistant) -> None:
-    """Register integration-level services (idempotent)."""
-    if hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION):
-        return
-
+    """Register integration-level services."""
     def _resolve_hubs(entity_ids: list[str]) -> list[TerraMowHub]:
         registry = er.async_get(hass)
         targets: list[TerraMowHub] = []
@@ -465,9 +480,6 @@ def _async_register_services(hass: HomeAssistant) -> None:
         schema=ZONE_PLAN_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
-    # Assist intents live alongside the services: both are integration-level
-    # and both are registered exactly once.
-    hass.async_create_task(async_setup_intents(hass))
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> bool:
@@ -481,24 +493,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) ->
         basic_data = entry.runtime_data
         if basic_data.lawn_mower is not None:
             await basic_data.lawn_mower.async_stop()
-        # Drop the shared service once the last entry is gone.
+        # The actions stay registered (see async_setup). The Assist intent
+        # goes with the last entry; leaving it behind made the next setup
+        # register it over itself (issue #358).
         remaining = [
             other
             for other in hass.config_entries.async_loaded_entries(DOMAIN)
             if other.entry_id != entry.entry_id
         ]
         if not remaining:
-            for service in (
-                SERVICE_START_SELECT_REGION,
-                SERVICE_ADD_SCHEDULE,
-                SERVICE_DELETE_SCHEDULE,
-                SERVICE_PLAN_DUE_ZONES,
-                SERVICE_START_DUE_ZONES,
-            ):
-                if hass.services.has_service(DOMAIN, service):
-                    hass.services.async_remove(DOMAIN, service)
-            # The Assist intent is integration-level too; leaving it behind
-            # made the next setup register it over itself (issue #358).
             async_remove_intents(hass)
 
     return unload_ok

@@ -162,7 +162,7 @@ async def test_setup_loads_and_creates_all_platform_entities(
         "sensor": 9 + len(SENSORS),
     }
 
-    # The integration-level service is registered while an entry is loaded.
+    # The integration-level service is registered.
     assert hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION)
 
     # Real states exist for every enabled entity (nothing failed to add);
@@ -512,7 +512,7 @@ async def test_zone_select_populates_from_map_info_push(hass: HomeAssistant) -> 
 # ---------------------------------------------------------------------------
 
 
-async def test_unload_entry_stops_hub_and_removes_service(
+async def test_unload_entry_stops_hub_and_keeps_service(
     hass: HomeAssistant,
 ) -> None:
     entry = await setup_terramow(hass)
@@ -526,8 +526,9 @@ async def test_unload_entry_stops_hub_and_removes_service(
     # The hub was stopped: shutdown signalled, no connection task left behind.
     assert hub._stop_event.is_set()
     assert hub._mqtt_task is None
-    # The shared service is dropped with the last loaded entry.
-    assert not hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION)
+    # The actions are integration-level and stay after the last entry
+    # unloads, so automations never reference an unknown action.
+    assert hass.services.has_service(DOMAIN, SERVICE_START_SELECT_REGION)
     # The entity is torn down; only a restored unavailable state remains.
     state = hass.states.get(mower)
     assert state is not None and state.state == STATE_UNAVAILABLE

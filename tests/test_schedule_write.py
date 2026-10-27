@@ -390,15 +390,15 @@ async def test_refresh_ignores_noise_payloads(hass: HomeAssistant) -> None:
     assert await task == {"items": []}
 
 
-async def test_unload_removes_services_tolerates_missing(
+async def test_unload_keeps_schedule_services(
     hass: HomeAssistant,
 ) -> None:
-    """Unload removes all services, skipping any already gone."""
+    """Unloading the last entry leaves the schedule actions registered."""
     entry = await setup_terramow(hass)
-    hass.services.async_remove(DOMAIN, SERVICE_ADD_SCHEDULE)
 
     assert await hass.config_entries.async_unload(entry.entry_id)
-    assert not hass.services.has_service(DOMAIN, SERVICE_DELETE_SCHEDULE)
+    assert hass.services.has_service(DOMAIN, SERVICE_ADD_SCHEDULE)
+    assert hass.services.has_service(DOMAIN, SERVICE_DELETE_SCHEDULE)
 
 
 async def test_unload_keeps_services_while_other_entry_loaded(

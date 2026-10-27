@@ -94,11 +94,14 @@ state is carried in `entry.runtime_data`, not `hass.data`.
    `basic_data.lawn_mower`).
 5. `async_forward_entry_setups(entry, PLATFORMS)`, then registers an update
    listener (`_async_options_updated` reloads the entry on options change) and
-   the shared service.
+   the Assist intent (idempotent across entries).
 
-`_async_register_services` — registers the domain-level `start_select_region`,
-`add_schedule` and `delete_schedule` services **idempotently** (`has_service`
-guard), so they are registered once even with multiple entries. The handler resolves target entities via the entity
+`async_setup` calls `_async_register_services` once per Home Assistant start.
+It registers the domain-level actions (`start_select_region`, `add_schedule`,
+`delete_schedule`, `plan_due_zones`, `start_due_zones`) **independent of any
+config entry**, so they exist while an entry retries setup (mower offline) or
+reloads. Without that, Home Assistant flags automations that use them with an
+"unknown action" repair. The handler resolves target entities via the entity
 registry, validates each resolves to a loaded `runtime_data` with a ready
 `lawn_mower`, then awaits
 `basic_data.lawn_mower.async_start_select_region_clean()` — the confirmed
@@ -121,8 +124,8 @@ vendor integration); an unreported control version keeps it allowed
 2. clears the compatibility and both maintenance **repair issues**
    (`async_clear_compatibility_issue` / `async_clear_maintenance_issues`),
 3. stops the hub (`await basic_data.lawn_mower.async_stop()`),
-4. removes the shared `start_select_region` service **only when no other loaded
-   entry remains** (`async_loaded_entries` minus this one).
+4. removes the Assist intent **only when no other loaded entry remains**
+   (`async_loaded_entries` minus this one). The actions stay registered.
 
 `TerraMowBasicData` also owns the firmware-version compatibility logic
 (`check_version_compatibility`, `get_compatibility_message`), producing a
