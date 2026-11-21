@@ -406,13 +406,26 @@ def test_weekly_picks_earliest_across_items() -> None:
     assert event.uid == "1"
 
 
-def test_weekly_uid_none_without_id() -> None:
+def test_weekly_omitted_id_is_item_zero() -> None:
+    # Protobuf omits a zero id: the slot is device item 0, with its RRULE.
     hub = _hub()
     cal = _cal(hub)
     _feed_weekly(hub, _schedule([_item(ALL_DAYS, (9, 30), (11, 0), item_id=None)]))
     event = _event_at(cal, NOW)
     assert event is not None
-    assert event.uid is None
+    assert event.uid == "0"
+    assert event.rrule == "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR,SA,SU"
+
+
+def test_weekly_run_once_slot_has_no_rrule() -> None:
+    hub = _hub()
+    cal = _cal(hub)
+    item = _item(ALL_DAYS, (9, 30), (11, 0), item_id=2)
+    item["global_schedule_v2"]["basic_config"]["run_once"] = True
+    _feed_weekly(hub, _schedule([item]))
+    event = _event_at(cal, NOW)
+    assert event is not None
+    assert event.rrule is None
 
 
 def test_weekly_skips_only_scheduled_weekdays() -> None:

@@ -29,7 +29,7 @@ Data Point Definition
 | 108 | [Battery Status](#battery-status) | Robot→HA | Battery status information (charging state, temperature, etc.) |
 | 113 | [Current Operation Data](#current-operation-data) | Robot→HA | Current operation data (area, progress, etc.) |
 | 117 | [Map Status](#map-status) | Robot→HA | Map status (ID, state, count, etc.) |
-| 122 | [Schedule Control](#schedule-control) | Robot↔HA | Read schedules and control their master / weekday switches |
+| 122 | [Schedule Control](#schedule-control) | Robot↔HA | Global schedule CRUD and master/weekday switches |
 | 124 | [Operation Statistics](#operation-statistics) | Robot→HA | Operation statistics (total duration, area, count) |
 | 125 | [Base Station Usage Time](#base-station-usage-time) | Robot↔HA | Base station usage time |
 | 126 | [Mowing Blade Disk Usage Time](#mowing-blade-disk-usage-time) | Robot↔HA | Mowing blade disk usage time |
@@ -208,7 +208,11 @@ Data Point Definition
 
 - **ID**: 122
 - Data Direction: Robot↔HA
-- Supported on firmware with `compatibility.module.schedule >= 2` (dp_127).
+- Global disable and weekday controls are defined for schedule module version 2
+  and later (dp_127 `compatibility.module.schedule`); the reported version is
+  **not** an availability gate. The integration reads DP122 directly after the
+  MQTT connection; a valid GET establishes readable state, and writes still
+  require their reply plus a verification GET.
 - Send `SCHEDULE_CMD_TYPE_GET` to read the schedule list. The successful reply
   includes `schedule_list.global_disabled` (`true` means all schedules are
   paused). A missing `global_disabled` in a successful protobuf JSON reply
@@ -229,8 +233,73 @@ Data Point Definition
   reply does not include the new state, so read it again with GET.
 - In this integration: the **Schedule** switch (master) and seven
   configuration switches **Monday … Sunday Schedule**. Each change waits for
-  its own reply and is confirmed by a fresh GET; a successful SET reply from
-  another client (the app) triggers a GET so the switches follow it.
+  its own reply and is confirmed by a fresh GET; a successful SET (or
+  ADD/MODIFY/DELETE) reply from another client (the app) triggers a GET so the
+  switches and the calendar follow it.
+
+### Global time-slot schedules (ADD / MODIFY / DELETE)
+
+Vendor-documented upstream (`docs/en/developers/schedule.md` in
+TerraMow/TerraMowHA). Items of type `SCHEDULE_TYPE_GLOBAL_V2` carry a
+`global_schedule_v2.basic_config`:
+
+| Path within `global_schedule_v2` | Type and constraints |
+| --- | --- |
+| `basic_config.week_days` | Nonempty weekday list `WEEK_DAY_MONDAY` … `WEEK_DAY_SUNDAY`; a set |
+| `basic_config.start_time.hour` / `.minute` | 0…23 / 0…59 (local wall-clock time, no date or time zone) |
+| `basic_config.end_time.hour` / `.minute` | 0…23 / 0…59 |
+| `basic_config.disabled` | Disables this item |
+| `basic_config.run_once` | Schedule module v3+: one execution; omit on v2 |
+| `repeat_until_end_time` | Schedule module v4+: repeat mowing within the window |
+
+| Operation | `cmd_type` | Numeric | Parameter |
+| --- | --- | --- | --- |
+| Read | `SCHEDULE_CMD_TYPE_GET` | 0 | none |
+| Create | `SCHEDULE_CMD_TYPE_ADD` | 1 | `add_param` (`schedule_type` + `global_schedule_v2`) |
+| Delete | `SCHEDULE_CMD_TYPE_DELETE` | 2 | `delete_param.id` |
+| Update | `SCHEDULE_CMD_TYPE_MODIFY` | 3 | `modify_param` (`id` + complete replacement) |
+
+`UPDATE` and `SAVE` are not command names, and the parameters are not a GET
+`schedule_list` wrapper. Replies arrive on `data_point/122/robot` (not dp_119)
+with the request's `seq` and `cmd_type`; an omitted `code` means 0. The ADD
+reply carries **no** assigned id. Protobuf omits zero values: a missing item
+`id` is item 0, a missing boolean is false.
+
+```json
+{"cmd_type":"SCHEDULE_CMD_TYPE_ADD","seq":1002,"add_param":{"schedule_type":"SCHEDULE_TYPE_GLOBAL_V2","global_schedule_v2":{"basic_config":{"week_days":["WEEK_DAY_WEDNESDAY","WEEK_DAY_FRIDAY"],"start_time":{"hour":9,"minute":0},"end_time":{"hour":10,"minute":0},"disabled":false}}}}
+```
+
+```json
+{"cmd_type":"SCHEDULE_CMD_TYPE_MODIFY","seq":1004,"modify_param":{"id":7,"schedule_type":"SCHEDULE_TYPE_GLOBAL_V2","global_schedule_v2":{"basic_config":{"week_days":["WEEK_DAY_WEDNESDAY","WEEK_DAY_FRIDAY"],"start_time":{"hour":9,"minute":0},"end_time":{"hour":11,"minute":0},"disabled":false}}}}
+```
+
+```json
+{"cmd_type":"SCHEDULE_CMD_TYPE_DELETE","seq":1006,"delete_param":{"id":7}}
+```
+
+In this integration (`TerraMowHub.async_add_schedule` /
+`async_modify_schedule` / `async_delete_schedule`, used by the calendar and the
+`terramow.add_schedule` / `terramow.delete_schedule` services) every edit holds
+the schedule lock and runs **baseline GET → edit → verification GET**:
+
+- ADD succeeds only with exactly one new id whose content matches; several new
+  ids (a concurrent edit) are reported as unconfirmed instead of guessed.
+- MODIFY sends the item's current `global_schedule_v2` overlaid with the new
+  `basic_config` (unknown fields such as `repeat_until_end_time` and the
+  item's own `disabled` flag are preserved) and requires the same id/type with
+  the intended content.
+- DELETE requires the id to be absent afterwards.
+- A rejected (non-zero `code`) or unanswered edit is never retried or rolled
+  back; a fresh GET is requested so the calendar shows the device's real state.
+
+The **Mowing schedule** calendar maps HA events onto this subset: one local day
+at whole minutes (end after start) or a single all-day day (00:00–23:59); no
+repeat → `run_once` for the next occurrence only (within 7 days, starting in
+the future); `FREQ=DAILY` (all weekdays) or `FREQ=WEEKLY` with an optional
+`BYDAY` set containing the start day, `INTERVAL=1`, no `COUNT`/`UNTIL`. Edits
+always apply to the whole item (series). Event titles, descriptions and
+locations are not part of DP122 and are not stored. It is editable only in
+time-slot mode (`schedule_mode` omitted or `SCHEDULE_MODE_TIME_SLOT`).
 
 ```json
 {"cmd_type":"SCHEDULE_CMD_TYPE_SET_GLOBAL_DISABLED","seq":1,"set_global_disabled_param":{"global_disabled":true}}

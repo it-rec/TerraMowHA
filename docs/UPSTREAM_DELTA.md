@@ -25,7 +25,7 @@ synced point are already covered by the fork:
 |---|---|
 | **Event** (`event.py`) | A mower event entity firing `mowing_started`, `paused`, `returning`, `docked`, `mowing_completed`, `error`, each with the raw mission fields as attributes. Lets automations react to transitions without polling. |
 | **Todo** (`todo.py`) | A maintenance list generated from the blade / base-station counters: an item exists while the device reports the interval as reached, and completing it resets that counter on the mower. |
-| **Calendar** (`calendar.py`) | A read-only mowing-schedule calendar: the full weekly schedule when dp_122 is available, otherwise the dp_138 next scheduled mow, with active/upcoming/next-day and past-midnight handling. |
+| **Calendar** (`calendar.py`) | A mowing-schedule calendar: the full weekly schedule when dp_122 is available, otherwise the dp_138 next scheduled mow, with active/upcoming/next-day and past-midnight handling. Editable through dp_122 `ADD`/`MODIFY`/`DELETE`, without upstream's HA-side title / one-time-date store. |
 | **Device tracker** (`device_tracker.py`) | The mower's live pose projected onto real coordinates through a configured anchor, so it appears on Home Assistant's map and works with zones/proximity. |
 | Camera | A second, default-disabled *clean* map-only camera for dashboards, plus a configurable output resolution. |
 | **Image** (`image.py`) | A mow-report image: the last finished session frozen as a PNG (its mow track plus a ribbon with area, duration and outcome), rendered once per session so it still shows that session after the device has reset its counters. |
@@ -65,8 +65,9 @@ synced point are already covered by the fork:
   acknowledgement and raises on rejection (rejected fire-and-forget commands
   are logged; the last ack ships in diagnostics).
 - **Writable mowing schedule**: `terramow.add_schedule` / `terramow.delete_schedule`
-  services (dp_122 `ADD`/`DELETE`) with per-firmware payload negotiation —
-  every write is judged by its dp_119 ack and verified against a fresh `GET`.
+  services (dp_122 `ADD`/`DELETE` with the vendor-documented `add_param` /
+  `delete_param`): every write is confirmed by its dp_122 reply and verified
+  against a fresh `GET`.
 - **Community-sourced error-code catalog** (`error_codes.py`): device fault
   codes are resolved to readable text for the Fault sensor and the card's fault
   pins, and the undocumented dp_115 latest-error code is decoded.

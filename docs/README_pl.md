@@ -15,7 +15,7 @@ To jest integracja Home Assistant dla robotów koszących TerraMow.
 **Sterowanie**
 - Encja kosiarki: start, pauza i powrót do stacji
 - Koszenie strefowe: encja wyboru strefy oraz usługa `terramow.start_select_region`
-- **Edycja harmonogramu** — usługi `terramow.add_schedule` / `terramow.delete_schedule` zapisują cotygodniowe okna koszenia w kosiarce i weryfikują je przez odczyt zwrotny. *Uwaga:* obecne oprogramowanie sprzedażne nie przyjmuje jeszcze zapisu harmonogramu przez lokalne MQTT (aplikacja producenta korzysta z Bluetooth/chmury) — do czasu wsparcia w firmware użyj **blueprintu koszenia zależnego od pogody** do planowania po stronie HA
+- **Edycja harmonogramu** — usługi `terramow.add_schedule` / `terramow.delete_schedule` zapisują cotygodniowe okna koszenia w kosiarce i weryfikują je przez odczyt zwrotny. Edytowalny jest też **kalendarz harmonogramu koszenia** (tworzenie, zmiana i usuwanie okien cotygodniowych lub jednorazowych); oba korzystają z udokumentowanych przez producenta poleceń dp_122
 - **Interaktywna karta mapy** — wektorowa mapa trawnika z przesuwaniem i powiększaniem dla paneli: pozycja robota na żywo (barwiona zgodnie z aktywnością, z trybem podążania), przyciski start / pauza / stacja bezpośrednio na karcie, plakietki akumulatora / postępu / pozostałego czasu, cieniowanie skoszonej powierzchni z postępem dla każdej strefy, ścieżka koszenia, stacja bazowa, strefy z wyborem przez dotknięcie do koszenia, strefy zakazane i wirtualne ściany, aktywne usterki oznaczone w miejscu wystąpienia oraz **mapa cieplna Wi-Fi** trawnika; **przycisk widoku** przełącza Oba / Ścieżka / Powierzchnia / Wi-Fi. Zgodna z motywami, rejestruje się sama, z edytorem graficznym (`custom:terramow-map-card`)
 - Przycisk koszenia krawędzi
 - Ustawienia z Home Assistant: wysokość koszenia, prędkość, odstęp pasów, prędkość noża, odległość cięcia krawędzi, tryb i kąty kierunku głównego, dokładne koszenie narożników, tryb koszenia krawędzi dla wysokiej trawy
@@ -29,7 +29,7 @@ To jest integracja Home Assistant dla robotów koszących TerraMow.
 - **Czujnik usterki** — aktywna usterka jako czytelny tekst (np. *Kosiarka zablokowana*, *Kosiarka podniesiona* albo *OK*), aby powiadomienie lub asystent głosowy mógł powiedzieć, co jest nie tak, bez przetwarzania atrybutu szablonem
 - Czujnik trwającego zadania (utrzymuje aktywną misję również podczas przerw w sygnale obecności) oraz czujnik siły sygnału Wi-Fi po stronie kosiarki
 - Mapa: stan, powierzchnia, flagi wykryta / możliwa do zbudowania / kopia zapasowa w toku
-- Harmonogram: czujnik najbliższego zaplanowanego startu oraz **kalendarz harmonogramu koszenia** tylko do odczytu (najbliższe koszenie pojawia się na karcie kalendarza)
+- Harmonogram: czujnik najbliższego zaplanowanego startu oraz edytowalny **kalendarz harmonogramu koszenia** (wszystkie okna cotygodniowe; tworzenie, zmiana lub usuwanie okien codziennych, cotygodniowych i jednorazowych)
 - Encja aktualizacji oprogramowania, wersja oprogramowania na stronie urządzenia oraz czujnik zgodności wersji
 - Wszystkie encje aktualizują się natychmiast po wysyłce z urządzenia — bez opóźnienia odpytywania
 
@@ -130,7 +130,7 @@ data:
 #### `terramow.add_schedule` / `terramow.delete_schedule`
 
 Tworzy lub usuwa cotygodniowe okno koszenia w kosiarce. Każdy zapis jest
-potwierdzany przez urządzenie (potwierdzenie dp_119 oraz odczyt zwrotny
+potwierdzany przez urządzenie (potwierdzenie dp_122 oraz odczyt zwrotny
 harmonogramu).
 
 ```yaml
@@ -146,10 +146,14 @@ data:
 `delete_schedule` przyjmuje `item_id` okna (wyświetlane jako uid zdarzenia
 kalendarza i zwracane przy dodaniu okna).
 
-> **Uwaga:** obecne oprogramowanie sprzedażne nie przyjmuje jeszcze zapisu
-> harmonogramu przez lokalne MQTT (aplikacja producenta korzysta z
-> Bluetooth/chmury). Do czasu wsparcia w firmware użyj **blueprintu koszenia
-> zależnego od pogody** do planowania po stronie HA.
+> **Edycja w kalendarzu:** kosiarka zapisuje tylko dni tygodnia i czas lokalny,
+> więc wydarzenie musi zaczynać się i kończyć tego samego dnia (lub obejmować
+> jeden cały dzień), powtarzanie musi być codzienne lub cotygodniowe z
+> interwałem 1 i bez daty końca, a wydarzenie jednorazowe musi być najbliższym
+> wystąpieniem (w ciągu 7 dni). Zmiany dotyczą zawsze całej serii; tytuły i
+> opisy nie są zapisywane w kosiarce. Każda zmiana jest potwierdzana odpowiedzią
+> kosiarki i odczytem zwrotnym harmonogramu. Używaj tej samej strefy czasowej w
+> Home Assistant i w kosiarce.
 
 ### Interaktywna karta mapy
 

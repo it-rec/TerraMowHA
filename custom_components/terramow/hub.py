@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import copy
 import gzip
 import json
 import logging
@@ -59,13 +60,16 @@ from .const import (
     PATH_HISTORY_META_TOPIC,
     PATH_META_TOPIC,
     POSE_TOPIC,
+    SCHEDULE_CMD_ADD,
+    SCHEDULE_CMD_DELETE,
     SCHEDULE_CMD_GET,
+    SCHEDULE_CMD_MODIFY,
     SCHEDULE_CMD_SET_DISABLED_WEEK_DAYS,
     SCHEDULE_CMD_SET_GLOBAL_DISABLED,
     SCHEDULE_DP,
     SCHEDULE_MODE_TIME_SLOT,
-    SCHEDULE_SWITCH_CMDS,
-    SCHEDULE_SWITCH_MIN_VERSION,
+    SCHEDULE_REFRESH_CMDS,
+    SCHEDULE_TYPE_GLOBAL_V2,
     WEEKDAY_TO_DEVICE,
     ZONE_PRESENCE_SAMPLE_SECONDS,
     CompatibilityStatus,
@@ -1055,9 +1059,6 @@ class TerraMowHub:
         # Captured app-direction writes (epoch, topic, payload) — source
         # material for documenting undocumented write formats (schedule etc.).
         self._app_dp_captures: deque[tuple[float, str, str]] = deque(maxlen=50)
-        # The dp_122 write payload shape proven to work on this device, once
-        # a schedule write has succeeded (see async_add_schedule).
-        self._schedule_write_field: str | None = None
         # Messages seen on topics outside the documented namespace (via the
         # "#" discovery subscription): (epoch, topic, payload) — bounded.
         self._unknown_topic_captures: deque[tuple[float, str, str]] = deque(maxlen=50)
@@ -1718,7 +1719,7 @@ class TerraMowHub:
         """Handle the full weekly schedule (dp_122, undocumented).
 
         Only ``SCHEDULE_CMD_TYPE_GET`` responses carry a ``schedule_list``; the
-        ADD/DELETE acknowledgements do not, so only a payload that actually
+        SET/ADD/MODIFY/DELETE replies do not, so only a payload that actually
         contains a schedule list updates the cache. The device does not push
         this on its own — it is requested via ``_request_full_schedule``.
         """
@@ -1733,77 +1734,45 @@ class TerraMowHub:
                 self._full_schedule = schedule_list
                 self._full_schedule_received = True
             elif (
-                data.get("cmd_type") in SCHEDULE_SWITCH_CMDS
+                data.get("cmd_type") in SCHEDULE_REFRESH_CMDS
                 and data.get("code", 0) == 0
                 and data.get("seq") not in self._schedule_own_seqs
             ):
-                # Another client (the app) changed a schedule switch; the SET
-                # reply carries no state, so read the list again.
+                # Another client (the app) changed a schedule switch or slot;
+                # the reply carries no state, so read the list again.
                 self._request_full_schedule()
-
-    # ------------------------------------------------------------------
-    # Writable schedule (dp_122 ADD/DELETE)
-    #
-    # The GET/response format is documented from real traffic; the write
-    # format is not. Instead of guessing blindly, writes negotiate: each
-    # plausible payload shape is sent in turn, judged by its dp_119 ack and
-    # verified against a fresh GET. A wrong shape is harmless (the device
-    # rejects it with a non-zero code); the first shape that demonstrably
-    # lands is cached for subsequent writes. Every attempt is logged so a
-    # fully-rejecting firmware still produces the evidence needed to fix
-    # the candidates.
-    # ------------------------------------------------------------------
-
-    async def async_refresh_full_schedule(
-        self, timeout: float = COMMAND_ACK_TIMEOUT
-    ) -> dict[str, Any]:
-        """Send a dp_122 GET and wait for the fresh schedule list."""
-        future: asyncio.Future[dict[str, Any]] = self.hass.loop.create_future()
-
-        async def _on_schedule(payload: str) -> None:
-            if future.done():
-                return
-            try:
-                data = json.loads(payload)
-            except json.JSONDecodeError:
-                return
-            schedule_list = data.get("schedule_list") if isinstance(data, dict) else None
-            if isinstance(schedule_list, dict):
-                future.set_result(schedule_list)
-
-        unsub = self.register_callback(SCHEDULE_DP, _on_schedule)
-        try:
-            self.publish_data_point(
-                SCHEDULE_DP,
-                {"cmd_type": "SCHEDULE_CMD_TYPE_GET", "seq": self.get_cmd_seq()},
-            )
-            return await asyncio.wait_for(future, timeout)
-        except TimeoutError:
-            _LOGGER.debug("dp_122 GET got no response; using the cached schedule")
-            return self._full_schedule
-        finally:
-            unsub()
 
     # ------------------------------------------------------------------
     # Schedule switches (dp_122 SET_GLOBAL_DISABLED / SET_DISABLED_WEEK_DAYS)
     #
     # Vendor-documented ("Schedule Control" in docs/en/developers/
-    # data_point.md) for firmware reporting ``module.schedule >= 2``. Each
+    # data_point.md); available once a valid schedule list was read. Each
     # change waits for its own dp_122 reply (matched by seq + cmd_type) and
     # is then confirmed by a fresh GET: a successful SET reply carries no
     # state, so the switches only ever show what the device reports.
     # ------------------------------------------------------------------
 
     @property
-    def schedule_module_version(self) -> int | None:
-        """dp_127 ``module.schedule`` version, or None when not (validly) reported."""
-        return self._module_version("schedule")
+    def schedule_switch_supported(self) -> bool:
+        """Whether a valid dp_122 schedule list has been read.
+
+        The vendor protocol defines the switches for schedule module
+        version 2+, but the reported dp_127 version is explicitly *not* an
+        availability gate: a successful GET establishes readable state, and
+        every write is still confirmed by its own reply plus a fresh GET.
+        """
+        return self._full_schedule_received
 
     @property
-    def schedule_switch_supported(self) -> bool:
-        """Whether the firmware supports the dp_122 schedule switches."""
-        version = self.schedule_module_version
-        return version is not None and version >= SCHEDULE_SWITCH_MIN_VERSION
+    def schedule_editable(self) -> bool:
+        """Whether global time-slot items can be edited (calendar CRUD).
+
+        Requires a valid schedule list in time-slot mode (the protobuf
+        default when ``schedule_mode`` is omitted); frequency mode is out of
+        scope and is never switched automatically.
+        """
+        mode = self._full_schedule.get("schedule_mode", SCHEDULE_MODE_TIME_SLOT)
+        return self._full_schedule_received and mode == SCHEDULE_MODE_TIME_SLOT
 
     @property
     def schedule_enabled(self) -> bool | None:
@@ -1853,7 +1822,10 @@ class TerraMowHub:
         return None if disabled is None else week_day not in disabled
 
     async def _async_schedule_command(
-        self, cmd_type: str, params: dict[str, Any] | None = None
+        self,
+        cmd_type: str,
+        params: dict[str, Any] | None = None,
+        timeout_key: str = "schedule_switch_unconfirmed",
     ) -> dict[str, Any]:
         """Send one dp_122 request and wait for its own reply.
 
@@ -1890,7 +1862,7 @@ class TerraMowHub:
             except TimeoutError as err:
                 raise HomeAssistantError(
                     translation_domain=DOMAIN,
-                    translation_key="schedule_switch_unconfirmed",
+                    translation_key=timeout_key,
                 ) from err
         finally:
             unsub()
@@ -1918,10 +1890,7 @@ class TerraMowHub:
         if not self.schedule_switch_supported:
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
-                translation_key="schedule_switch_unsupported",
-                translation_placeholders={
-                    "schedule_version": str(self.schedule_module_version)
-                },
+                translation_key="schedule_unavailable",
             )
         self._ensure_command_allowed()
         async with self._schedule_switch_lock:
@@ -1976,21 +1945,28 @@ class TerraMowHub:
         start_minute: int,
         end_hour: int,
         end_minute: int,
-        disabled: bool = False,
+        disabled: bool | None = False,
         run_once: bool = False,
     ) -> dict[str, Any]:
-        """Build a dp_122 schedule item (documented GET-response shape)."""
+        """Build a global time-slot schedule (``SCHEDULE_TYPE_GLOBAL_V2``).
+
+        ``run_once`` exists only from schedule module v3, so a false value is
+        omitted (the vendor protocol omits unused optional fields on new
+        weekly schedules). ``disabled=None`` omits the flag so a MODIFY keeps
+        the item's current value.
+        """
+        basic_config: dict[str, Any] = {
+            "week_days": list(week_days),
+            "start_time": {"hour": start_hour, "minute": start_minute},
+            "end_time": {"hour": end_hour, "minute": end_minute},
+        }
+        if disabled is not None:
+            basic_config["disabled"] = disabled
+        if run_once:
+            basic_config["run_once"] = True
         return {
-            "schedule_type": "SCHEDULE_TYPE_GLOBAL_V2",
-            "global_schedule_v2": {
-                "basic_config": {
-                    "week_days": list(week_days),
-                    "start_time": {"hour": start_hour, "minute": start_minute},
-                    "end_time": {"hour": end_hour, "minute": end_minute},
-                    "disabled": disabled,
-                    "run_once": run_once,
-                }
-            },
+            "schedule_type": SCHEDULE_TYPE_GLOBAL_V2,
+            "global_schedule_v2": {"basic_config": basic_config},
         }
 
     @staticmethod
@@ -1998,209 +1974,187 @@ class TerraMowHub:
         """Extract the basic_config of a schedule item, if any."""
         if not isinstance(item, dict):
             return None
-        config = item.get("global_schedule_v2", {}).get("basic_config")
+        schedule_v2 = item.get("global_schedule_v2")
+        config = (
+            schedule_v2.get("basic_config") if isinstance(schedule_v2, dict) else None
+        )
         return config if isinstance(config, dict) else None
 
     @classmethod
     def _schedule_items_match(cls, item_a: Any, item_b: Any) -> bool:
-        """Whether two schedule items describe the same slot."""
+        """Whether two items describe the same slot (omitted defaults normalized).
+
+        Weekdays compare as a set; omitted protobuf zero values (hour/minute
+        0, false booleans) equal their explicit defaults.
+        """
         config_a = cls._schedule_config(item_a)
         config_b = cls._schedule_config(item_b)
         if config_a is None or config_b is None:
             return False
+
         def _norm(config: dict[str, Any]) -> tuple[Any, ...]:
             start = config.get("start_time") or {}
             end = config.get("end_time") or {}
             return (
                 frozenset(config.get("week_days") or []),
-                start.get("hour", 0), start.get("minute", 0),
-                end.get("hour", 0), end.get("minute", 0),
+                start.get("hour", 0),
+                start.get("minute", 0),
+                end.get("hour", 0),
+                end.get("minute", 0),
+                bool(config.get("disabled")),
                 bool(config.get("run_once")),
             )
+
         return _norm(config_a) == _norm(config_b)
 
-    def _find_schedule_item(
-        self, schedule_list: dict[str, Any], item: dict[str, Any]
-    ) -> int | None:
-        """Find a matching slot in a schedule list; return its id."""
-        for existing in schedule_list.get("items") or []:
-            if self._schedule_items_match(existing, item):
-                item_id = existing.get("id")
-                return int(item_id) if item_id is not None else -1
-        return None
+    # ------------------------------------------------------------------
+    # Schedule editing (dp_122 ADD / MODIFY / DELETE)
+    #
+    # Vendor-documented (see "Schedule Control" in docs/en/developers/
+    # data_point.md): ``add_param`` and ``modify_param`` carry
+    # ``schedule_type`` plus its ``global_schedule_v2`` object (MODIFY adds
+    # the existing ``id``), ``delete_param`` only the id. The device's own
+    # dp_122 reply (seq + cmd_type) confirms processing but never carries
+    # the assigned id, so every edit holds the schedule lock and runs
+    # baseline GET -> edit -> verification GET; only a readback showing
+    # exactly the intended result is a confirmed save. A failed edit is
+    # never retried or rolled back; it requests a fresh GET so the cache
+    # shows what the device really holds.
+    # ------------------------------------------------------------------
 
-    def _ordered_candidates(
-        self, candidates: list[tuple[str, str | int, dict[str, Any]]]
-    ) -> list[tuple[str, str | int, dict[str, Any]]]:
-        """Move a previously-proven payload shape to the front."""
-        preferred = self._schedule_write_field
-        if preferred is None:
-            return candidates
-        return sorted(candidates, key=lambda c: c[0] != preferred)
+    async def _async_read_schedule_items(self) -> dict[int, dict[str, Any]]:
+        """GET the schedule list and index its items by device id.
 
-    async def async_add_schedule(self, item: dict[str, Any]) -> int:
-        """Add a weekly schedule slot; returns the device-assigned item id.
-
-        Negotiates the undocumented ADD payload shape (see the section
-        comment above). Field evidence (V1000 fw28): the device never acks
-        this integration's commands on dp_119 and silently drops payloads it
-        cannot parse, so an unknown wrapper field and an unknown cmd enum
-        both look like "no ack" — the GET verification is the only reliable
-        judge. The candidates therefore include inline item fields (one
-        shared proto message), full-list replacement shapes (existing slots
-        preserved) and alternative command verbs.
+        Protobuf omits a zero id, so a missing ``id`` is item 0. A reply
+        without a well-formed item list cannot confirm anything and raises.
         """
-        self._ensure_command_allowed()
-        current = await self.async_refresh_full_schedule()
-        existing_items = [
-            entry for entry in current.get("items") or [] if isinstance(entry, dict)
-        ]
-        full_items = [*existing_items, {"id": 0, **item}]
-        candidates = self._ordered_candidates(
-            [
-                ("add_inline", "SCHEDULE_CMD_TYPE_ADD", dict(item)),
-                (
-                    "add_schedule_list",
-                    "SCHEDULE_CMD_TYPE_ADD",
-                    {"schedule_list": {"items": [{"id": 0, **item}]}},
-                ),
-                (
-                    "set_schedule_list",
-                    "SCHEDULE_CMD_TYPE_SET",
-                    {"schedule_list": {"items": full_items}},
-                ),
-                (
-                    "update_schedule_list",
-                    "SCHEDULE_CMD_TYPE_UPDATE",
-                    {"schedule_list": {"items": full_items}},
-                ),
-                (
-                    "save_schedule_list",
-                    "SCHEDULE_CMD_TYPE_SAVE",
-                    {"schedule_list": {"items": full_items}},
-                ),
-                ("add_item", "SCHEDULE_CMD_TYPE_ADD", {"item": item}),
-                (
-                    "add_schedule_item",
-                    "SCHEDULE_CMD_TYPE_ADD",
-                    {"schedule_item": item},
-                ),
-                ("add_schedule", "SCHEDULE_CMD_TYPE_ADD", {"schedule": item}),
-                # GET doubling as SET when a list is present — worst case it
-                # behaves as a plain read, so this shape is always safe.
-                (
-                    "get_with_list",
-                    "SCHEDULE_CMD_TYPE_GET",
-                    {"schedule_list": {"items": full_items}},
-                ),
-                # Numeric verb probing: protobuf-JSON accepts enum NUMBERS,
-                # so unknown enum NAMES (silently dropped) can be bypassed by
-                # probing the values around GET. Gated on an EMPTY schedule —
-                # an unknown verb given a list could have delete semantics,
-                # which must never run against real slots.
-                *(
-                    (
-                        f"cmd{verb}_schedule_list",
-                        verb,
-                        {"schedule_list": {"items": [{"id": 0, **item}]}},
-                    )
-                    for verb in (1, 2, 3, 4, 5, 6)
-                    if not existing_items
-                ),
-            ]
+        reply = await self._async_schedule_command(
+            SCHEDULE_CMD_GET, timeout_key="schedule_edit_unconfirmed"
         )
-        codes: list[str] = []
-        for label, cmd_type, fragment in candidates:
-            command: dict[str, Any] = {
-                "cmd_type": cmd_type,
-                "seq": self.get_cmd_seq(),
-                **fragment,
-            }
-            code = await self._async_wait_ack(SCHEDULE_DP, command)
-            _LOGGER.info("Schedule ADD attempt (%s): ack=%s", label, code)
-            codes.append(f"{label}={code}")
-            if code is not None and code != 0:
-                continue  # clean rejection — try the next shape
-            schedule_list = await self.async_refresh_full_schedule()
-            item_id = self._find_schedule_item(schedule_list, item)
-            if item_id is not None:
-                _LOGGER.info(
-                    "Schedule ADD succeeded with %s (item id %s)", label, item_id
-                )
-                self._schedule_write_field = label
-                return item_id
-        raise HomeAssistantError(
+        schedule_list = reply.get("schedule_list")
+        items = (
+            schedule_list.get("items", []) if isinstance(schedule_list, dict) else None
+        )
+        indexed: dict[int, dict[str, Any]] = {}
+        if isinstance(items, list):
+            for entry in items:
+                item_id = entry.get("id", 0) if isinstance(entry, dict) else None
+                if type(item_id) is not int or item_id in indexed:
+                    break
+                indexed[item_id] = entry
+            else:
+                return indexed
+        raise self._schedule_edit_unconfirmed()
+
+    async def _async_schedule_edit(
+        self, cmd_type: str, params: dict[str, Any]
+    ) -> dict[int, dict[str, Any]]:
+        """Send one edit (lock already held) and return the verification GET."""
+        try:
+            await self._async_schedule_command(
+                cmd_type, params, timeout_key="schedule_edit_unconfirmed"
+            )
+        except HomeAssistantError:
+            # A lost reply can follow a successful write: refresh the cache
+            # so the calendar shows the device's actual state.
+            self._request_full_schedule()
+            raise
+        return await self._async_read_schedule_items()
+
+    @staticmethod
+    def _schedule_edit_unconfirmed() -> HomeAssistantError:
+        return HomeAssistantError(
             translation_domain=DOMAIN,
-            translation_key="schedule_write_failed",
-            translation_placeholders={"attempts": ", ".join(codes)},
+            translation_key="schedule_edit_unconfirmed",
         )
 
-    async def async_delete_schedule(self, item_id: int) -> None:
-        """Delete a schedule slot by its id (same negotiation as ADD)."""
-        self._ensure_command_allowed()
-        schedule_list = await self.async_refresh_full_schedule()
-        known_ids = {
-            entry.get("id")
-            for entry in schedule_list.get("items") or []
-            if isinstance(entry, dict)
-        }
-        if item_id not in known_ids:
-            raise HomeAssistantError(
+    async def _async_existing_item(self, item_id: int) -> dict[str, Any]:
+        """Baseline GET; return item ``item_id`` or raise when it is unknown."""
+        existing = (await self._async_read_schedule_items()).get(item_id)
+        if existing is None:
+            raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="schedule_item_not_found",
                 translation_placeholders={"item_id": str(item_id)},
             )
-        remaining_items = [
-            entry
-            for entry in schedule_list.get("items") or []
-            if isinstance(entry, dict) and entry.get("id") != item_id
-        ]
-        candidates: list[tuple[str, str | int, dict[str, Any]]] = [
-            ("delete_id", "SCHEDULE_CMD_TYPE_DELETE", {"id": item_id}),
-            ("delete_item_id", "SCHEDULE_CMD_TYPE_DELETE", {"item_id": item_id}),
-            ("delete_ids", "SCHEDULE_CMD_TYPE_DELETE", {"ids": [item_id]}),
-            ("delete_item", "SCHEDULE_CMD_TYPE_DELETE", {"item": {"id": item_id}}),
-            (
-                "set_schedule_list",
-                "SCHEDULE_CMD_TYPE_SET",
-                {"schedule_list": {"items": remaining_items}},
-            ),
-        ]
-        # A numeric verb proven by a successful ADD very likely has
-        # replace-list semantics — reuse it with the target removed.
-        proven = self._schedule_write_field
-        if proven and proven.startswith("cmd") and "_schedule_list" in proven:
-            verb = int(proven.removeprefix("cmd").split("_")[0])
-            candidates.insert(
-                0,
-                (proven, verb, {"schedule_list": {"items": remaining_items}}),
+        return existing
+
+    async def async_add_schedule(self, item: dict[str, Any]) -> int:
+        """Add a global time-slot item; return its device-assigned id.
+
+        The ADD reply carries no id, so the id is the single new one in the
+        verification GET, which must also match the requested content. Zero
+        or several new ids (a concurrent edit) are reported as unconfirmed
+        rather than guessed.
+        """
+        self._ensure_command_allowed()
+        async with self._schedule_switch_lock:
+            before = await self._async_read_schedule_items()
+            after = await self._async_schedule_edit(
+                SCHEDULE_CMD_ADD,
+                {
+                    "add_param": {
+                        "schedule_type": item["schedule_type"],
+                        "global_schedule_v2": item["global_schedule_v2"],
+                    }
+                },
             )
-        codes: list[str] = []
-        for label, cmd_type, fragment in candidates:
-            command = {
-                "cmd_type": cmd_type,
-                "seq": self.get_cmd_seq(),
-                **fragment,
+        new_ids = [item_id for item_id in after if item_id not in before]
+        if len(new_ids) != 1 or not self._schedule_items_match(after[new_ids[0]], item):
+            raise self._schedule_edit_unconfirmed()
+        _LOGGER.debug("Schedule ADD confirmed (item id %s)", new_ids[0])
+        return new_ids[0]
+
+    async def async_modify_schedule(self, item_id: int, item: dict[str, Any]) -> None:
+        """Replace a global time-slot item's settings, keeping unknown fields.
+
+        MODIFY sends the complete replacement: the item's current
+        ``global_schedule_v2`` (including fields this integration does not
+        manage, e.g. ``repeat_until_end_time``) overlaid with ``item``'s
+        ``basic_config``. Confirmed only when the same id and type read back
+        with the intended content.
+        """
+        self._ensure_command_allowed()
+        async with self._schedule_switch_lock:
+            existing = await self._async_existing_item(item_id)
+            if existing.get("schedule_type") != SCHEDULE_TYPE_GLOBAL_V2:
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN,
+                    translation_key="schedule_item_not_editable",
+                    translation_placeholders={"item_id": str(item_id)},
+                )
+            schedule_v2 = copy.deepcopy(existing.get("global_schedule_v2") or {})
+            basic_config = schedule_v2.setdefault("basic_config", {})
+            new_config = item["global_schedule_v2"]["basic_config"]
+            basic_config.update(new_config)
+            run_once = bool(new_config.get("run_once"))
+            if run_once or "run_once" in basic_config:
+                basic_config["run_once"] = run_once
+            replacement = {
+                "schedule_type": SCHEDULE_TYPE_GLOBAL_V2,
+                "global_schedule_v2": schedule_v2,
             }
-            code = await self._async_wait_ack(SCHEDULE_DP, command)
-            _LOGGER.info("Schedule DELETE attempt (%s): ack=%s", label, code)
-            codes.append(f"{label}={code}")
-            if code is not None and code != 0:
-                continue
-            schedule_list = await self.async_refresh_full_schedule()
-            remaining = {
-                entry.get("id")
-                for entry in schedule_list.get("items") or []
-                if isinstance(entry, dict)
-            }
-            if item_id not in remaining:
-                _LOGGER.info("Schedule DELETE succeeded with %s", label)
-                return
-        raise HomeAssistantError(
-            translation_domain=DOMAIN,
-            translation_key="schedule_write_failed",
-            translation_placeholders={"attempts": ", ".join(codes)},
-        )
+            after = await self._async_schedule_edit(
+                SCHEDULE_CMD_MODIFY, {"modify_param": {"id": item_id, **replacement}}
+            )
+        updated = after.get(item_id)
+        if (
+            updated is None
+            or updated.get("schedule_type") != SCHEDULE_TYPE_GLOBAL_V2
+            or not self._schedule_items_match(updated, replacement)
+        ):
+            raise self._schedule_edit_unconfirmed()
+
+    async def async_delete_schedule(self, item_id: int) -> None:
+        """Delete a schedule item by id; confirmed once it reads back absent."""
+        self._ensure_command_allowed()
+        async with self._schedule_switch_lock:
+            await self._async_existing_item(item_id)
+            after = await self._async_schedule_edit(
+                SCHEDULE_CMD_DELETE, {"delete_param": {"id": item_id}}
+            )
+        if item_id in after:
+            raise self._schedule_edit_unconfirmed()
 
     async def on_state_flag_134(self, payload: str) -> None:
         """Handle the undecoded binary flag (dp_134, undocumented).

@@ -20,7 +20,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 **Control**
 - Lawn mower entity: start, pause and dock
 - Zone mowing: zone select entity and `terramow.start_select_region` service
-- **Schedule editing** — `terramow.add_schedule` / `terramow.delete_schedule` services write weekly mowing slots to the mower with read-back verification. *Note:* current retail firmware does not yet accept schedule writes over local MQTT (the vendor app uses Bluetooth/cloud) — until firmware adds it, use the **weather-adaptive mowing blueprint** for HA-side scheduling
+- **Schedule editing** — `terramow.add_schedule` / `terramow.delete_schedule` services write weekly mowing slots to the mower with read-back verification. The **mowing-schedule calendar** is editable too (create, change and delete weekly or one-time slots); both use the vendor-documented dp_122 commands
 - **Interactive map card** — pan/zoom vector lawn map for dashboards: live robot position (activity-tinted, with follow mode), on-card start / pause / dock controls, battery / job-progress / ETA chips, mowed-coverage shading with per-zone progress, mowing path, base station, zones with tap-to-mow selection, forbidden areas and virtual walls, active faults pinned on the map, and a **Wi-Fi heatmap** of the lawn; a **view-mode button** cycles Both / Path / Area / Wi-Fi, and a **maintenance button** holds the blade / base-station counters with their reset buttons and warns in colour when one runs out. Theme-aware, self-registering, with a UI editor (`custom:terramow-map-card`)
 - Edge trim mowing button
 - Settings from Home Assistant: mowing height, speed, spacing, blade speed, edge cutting distance, main direction mode and angles, thorough corner cutting, high-grass edge trim mode
@@ -38,7 +38,7 @@ This is a Home Assistant integration for TerraMow robotic lawn mowers.
 - **Season heatmap** — a map-card view (`Season`) shading how many *finished cycles* have reached each patch of lawn. A strip the mower skips every second run looks fine in any single cycle and only shows up once the cycles are stacked; pale means rarely reached. Each cycle counts once per cell however often it drove through, persists across restarts and resets with the map
 - Map: status, area, detected / buildable / backing-up flags
 - **Per-zone "last mowed"** — one timestamp sensor per map zone, stamped with the last time the mower was reported *inside* that zone, with the running cycle's coverage as an attribute. Makes "the terrace hasn't been mowed in ten days" an automation trigger instead of something you notice by eye
-- Schedule: next-scheduled-start sensor and a read-only **mowing-schedule calendar** (the next mow appears on the calendar card)
+- Schedule: next-scheduled-start sensor and an editable **mowing-schedule calendar** (every weekly slot; create, change or delete daily, weekly and one-time slots — see the calendar notes below)
 - **Service forecasts** — two timestamp sensors projecting when the blade and base-station counters will reach their service interval. The rate is *measured* from the device's own readings, not assumed, so the sensors stay `unknown` until there is at least a day of observation and the counter has actually moved
 - Firmware update entity, firmware version on the device page, and version compatibility sensor
 - All entities update instantly on device pushes — no polling delay
@@ -149,7 +149,7 @@ data:
 #### `terramow.add_schedule` / `terramow.delete_schedule`
 
 Write or remove a weekly mowing slot on the mower. Each write is confirmed
-against the device (dp_119 acknowledgement plus a schedule read-back).
+against the device (dp_122 acknowledgement plus a schedule read-back).
 
 ```yaml
 service: terramow.add_schedule
@@ -164,9 +164,13 @@ data:
 `delete_schedule` takes the `item_id` of the slot (shown as the calendar
 event's uid and returned when a slot is added).
 
-> **Note:** current retail firmware does not yet accept schedule writes over
-> local MQTT (the vendor app uses Bluetooth/cloud). Until firmware adds it, use
-> the **weather-adaptive mowing blueprint** for HA-side scheduling.
+> **Calendar editing:** the mower stores weekdays and local times only, so
+> events must start and end on the same day (or be a single all-day day),
+> repeats must be daily or weekly with interval 1 and no end date, and a
+> one-time event must be the next occurrence (within 7 days). Edits always
+> apply to the whole series; titles and descriptions are not stored on the
+> mower. Every edit is confirmed by the mower's reply plus a schedule
+> read-back. Keep Home Assistant and the mower on the same time zone.
 
 ### Interactive map card
 

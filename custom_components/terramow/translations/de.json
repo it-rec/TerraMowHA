@@ -627,17 +627,35 @@
     "schedule_item_not_found": {
       "message": "Auf dem Mäher existiert kein Zeitplan-Eintrag mit der Item-ID {item_id}."
     },
-    "schedule_write_failed": {
-      "message": "Der Mäher hat die Zeitplanänderung nicht übernommen (Versuche: {attempts}). Die aktuelle TerraMow-Firmware akzeptiert keine Zeitplan-Schreibzugriffe über das lokale Netzwerk - die Hersteller-App nutzt stattdessen Bluetooth/Cloud. Verwende das Blueprint \"Weather-adaptive mowing\" für Zeitpläne aus Home Assistant; diese Dienste funktionieren, sobald die Firmware lokales Schreiben unterstützt."
-    },
-    "schedule_switch_unsupported": {
-      "message": "Zeitplan-Schalter erfordern eine Mäher-Firmware mit Zeitplan-Protokollversion 2 oder neuer (aktuell: {schedule_version}). Bitte aktualisiere die Firmware des Mähers."
-    },
     "schedule_switch_unconfirmed": {
       "message": "Der Mäher hat die Zeitplanänderung nicht bestätigt. Prüfe den Schalterzustand und versuche es erneut."
     },
     "schedule_weekday_unavailable": {
       "message": "Wochentags-Zeitplanschalter sind nur für Zeitfenster-Zeitpläne verfügbar, sobald der Mäher seinen Zeitplan gemeldet hat."
+    },
+    "schedule_unavailable": {
+      "message": "The mower has not reported its schedule yet. Wait until it is connected and try again."
+    },
+    "schedule_edit_unconfirmed": {
+      "message": "The mower did not confirm the schedule edit. Refresh the calendar before trying again."
+    },
+    "schedule_item_not_editable": {
+      "message": "Schedule slot {item_id} is not a global time-slot schedule and cannot be edited here."
+    },
+    "calendar_invalid_window": {
+      "message": "Mowing schedule events must start and end on the same day at whole minutes, with the end after the start; an all-day event must cover exactly one day."
+    },
+    "calendar_unsupported_rule": {
+      "message": "Only daily or weekly repeats with interval 1 and no end are supported, and a weekly repeat must include the start day."
+    },
+    "calendar_one_time_window": {
+      "message": "A one-time event must start in the future, within the next 7 days."
+    },
+    "calendar_whole_series_only": {
+      "message": "Only the whole series of a mowing schedule can be edited or deleted."
+    },
+    "calendar_invalid_uid": {
+      "message": "This calendar event is not a mower schedule slot."
     }
   }
 }

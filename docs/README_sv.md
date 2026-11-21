@@ -15,7 +15,7 @@ Detta är en Home Assistant-integration för TerraMow robotgräsklippare.
 **Styrning**
 - Gräsklipparentitet: starta, pausa och åka till laddstationen
 - Zonklippning: zonvalsentitet och tjänsten `terramow.start_select_region`
-- **Redigering av schema** — tjänsterna `terramow.add_schedule` / `terramow.delete_schedule` skriver veckovisa klippfönster till klipparen och verifierar dem genom återläsning. *Observera:* nuvarande butiksfirmware accepterar ännu inte schemaskrivningar via lokal MQTT (tillverkarens app använder Bluetooth/moln) — använd tills dess **ritningen för väderanpassad klippning** för schemaläggning på HA-sidan
+- **Redigering av schema** — tjänsterna `terramow.add_schedule` / `terramow.delete_schedule` skriver veckovisa klippfönster till klipparen och verifierar dem genom återläsning. Även **kalendern för klippschemat** kan redigeras (skapa, ändra och ta bort veckovisa eller engångsfönster); båda använder tillverkarens dokumenterade dp_122-kommandon
 - **Interaktivt kartkort** — vektorkarta över gräsmattan med panorering och zoom för instrumentpaneler: robotens position i realtid (färgad efter aktivitet, med följläge), knappar för start / paus / station direkt på kortet, brickor för batteri / förlopp / återstående tid, skuggning av den klippta ytan med förlopp per zon, klippspår, basstation, zoner med tryckval för klippning, förbjudna zoner och virtuella väggar, aktiva fel markerade där de uppstod, samt en **Wi-Fi-värmekarta** över gräsmattan; en **vyknapp** växlar mellan Båda / Spår / Yta / Wi-Fi. Temamedvetet, registrerar sig självt, med ett gränssnittsredigeringsverktyg (`custom:terramow-map-card`)
 - Knapp för kantklippning
 - Inställningar från Home Assistant: klipphöjd, hastighet, banavstånd, knivhastighet, kantklippningsavstånd, huvudriktningsläge och -vinklar, noggrann hörnklippning, kantklippningsläge för högt gräs
@@ -29,7 +29,7 @@ Detta är en Home Assistant-integration för TerraMow robotgräsklippare.
 - **Felsensor** — det aktiva felet som läsbar text (t.ex. *Klipparen har fastnat*, *Klipparen har lyfts* eller *OK*), så att en avisering eller röstassistent kan säga vad som är fel utan att bearbeta ett attribut med en mall
 - Sensor för pågående jobb (behåller det aktiva uppdraget även vid avbrott i närvarosignalen) och en sensor för klipparens Wi-Fi-signalstyrka
 - Karta: status, yta, flaggor för upptäckt / byggbar / säkerhetskopiering pågår
-- Schema: sensor för nästa schemalagda start och en **kalender för klippschemat** som endast går att läsa (nästa klippning visas på kalenderkortet)
+- Schema: sensor för nästa schemalagda start och en redigerbar **kalender för klippschemat** (alla veckovisa fönster; skapa, ändra eller ta bort dagliga, veckovisa och engångsfönster)
 - Entitet för firmwareuppdatering, firmwareversion på enhetssidan och sensor för versionskompatibilitet
 - Alla entiteter uppdateras direkt vid utskick från enheten — ingen pollningsfördröjning
 
@@ -130,7 +130,7 @@ data:
 #### `terramow.add_schedule` / `terramow.delete_schedule`
 
 Skapar eller tar bort ett veckovis klippfönster i klipparen. Varje skrivning
-bekräftas mot enheten (dp_119-bekräftelse samt en återläsning av schemat).
+bekräftas mot enheten (dp_122-bekräftelse samt en återläsning av schemat).
 
 ```yaml
 service: terramow.add_schedule
@@ -145,9 +145,13 @@ data:
 `delete_schedule` tar fönstrets `item_id` (visas som kalenderhändelsens uid och
 returneras när ett fönster läggs till).
 
-> **Observera:** nuvarande butiksfirmware accepterar ännu inte schemaskrivningar
-> via lokal MQTT (tillverkarens app använder Bluetooth/moln). Använd tills dess
-> **ritningen för väderanpassad klippning** för schemaläggning på HA-sidan.
+> **Redigering i kalendern:** klipparen sparar bara veckodagar och lokala
+> klockslag, så en händelse måste börja och sluta samma dag (eller vara en hel
+> dag), upprepningar måste vara dagliga eller veckovisa med intervall 1 utan
+> slutdatum, och en engångshändelse måste vara nästa förekomst (inom 7 dagar).
+> Ändringar gäller alltid hela serien; titlar och beskrivningar sparas inte i
+> klipparen. Varje ändring bekräftas av klipparens svar och en återläsning av
+> schemat. Använd samma tidszon i Home Assistant och i klipparen.
 
 ### Interaktivt kartkort
 

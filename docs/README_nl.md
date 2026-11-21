@@ -15,7 +15,7 @@ Dit is een Home Assistant-integratie voor TerraMow-robotmaaiers.
 **Besturing**
 - Grasmaaier-entiteit: starten, pauzeren en naar het dockstation
 - Zone-maaien: zonekeuze-entiteit en de service `terramow.start_select_region`
-- **Schema bewerken** — de services `terramow.add_schedule` / `terramow.delete_schedule` schrijven wekelijkse maaivensters naar de maaier en verifiëren ze door terug te lezen. *Let op:* de huidige winkelfirmware accepteert schemawijzigingen via lokale MQTT nog niet (de app van de fabrikant gebruikt Bluetooth/cloud) — gebruik tot die tijd de **blueprint voor weersafhankelijk maaien** voor planning aan de HA-kant
+- **Schema bewerken** — de services `terramow.add_schedule` / `terramow.delete_schedule` schrijven wekelijkse maaivensters naar de maaier en verifiëren ze door terug te lezen. Ook de **maaischema-agenda** is bewerkbaar (wekelijkse of eenmalige vensters aanmaken, wijzigen en verwijderen); beide gebruiken de door de fabrikant gedocumenteerde dp_122-opdrachten
 - **Interactieve kaartkaart** — vectorkaart van het gazon met pannen/zoomen voor dashboards: live robotpositie (getint op activiteit, met volgmodus), bediening voor starten / pauzeren / docken op de kaart zelf, chips voor accu / voortgang / resterende tijd, arcering van het gemaaide oppervlak met voortgang per zone, maaipad, basisstation, zones met tikken-om-te-maaien, verboden zones en virtuele wanden, actieve storingen op hun plek gemarkeerd, en een **wifi-heatmap** van het gazon; een **weergaveknop** wisselt tussen Beide / Pad / Oppervlak / Wifi. Thema-bewust, registreert zichzelf, met een UI-editor (`custom:terramow-map-card`)
 - Knop voor kantenmaaien
 - Instellingen vanuit Home Assistant: maaihoogte, snelheid, baanafstand, mesbladsnelheid, kantsnijafstand, hoofdrichtingsmodus en -hoeken, grondig hoeken maaien, kantenmaaimodus voor hoog gras
@@ -29,7 +29,7 @@ Dit is een Home Assistant-integratie voor TerraMow-robotmaaiers.
 - **Storingssensor** — de actieve storing als leesbare tekst (bijv. *Maaier vastgelopen*, *Maaier opgetild* of *OK*), zodat een melding of spraakassistent kan zeggen wat er mis is zonder een attribuut via een template uit te lezen
 - Sensor voor de lopende taak (houdt de actieve missie vast over onderbrekingen in de heartbeat) en een sensor voor de wifi-signaalsterkte van de maaier
 - Kaart: status, oppervlak, vlaggen voor gedetecteerd / bouwbaar / back-up bezig
-- Schema: sensor voor de volgende geplande start en een alleen-lezen **maaischema-agenda** (de volgende maaibeurt verschijnt op de agendakaart)
+- Schema: sensor voor de volgende geplande start en een bewerkbare **maaischema-agenda** (alle wekelijkse vensters; dagelijkse, wekelijkse en eenmalige vensters aanmaken, wijzigen of verwijderen)
 - Firmware-update-entiteit, firmwareversie op de apparaatpagina en een sensor voor versiecompatibiliteit
 - Alle entiteiten werken direct bij op pushes van het apparaat — geen pollingvertraging
 
@@ -130,7 +130,7 @@ data:
 #### `terramow.add_schedule` / `terramow.delete_schedule`
 
 Schrijf of verwijder een wekelijks maaivenster op de maaier. Elke schrijfactie
-wordt bevestigd tegen het apparaat (dp_119-bevestiging plus het teruglezen van
+wordt bevestigd tegen het apparaat (dp_122-bevestiging plus het teruglezen van
 het schema).
 
 ```yaml
@@ -147,10 +147,14 @@ data:
 de uid van de agendagebeurtenis en teruggegeven wanneer een venster wordt
 toegevoegd).
 
-> **Let op:** de huidige winkelfirmware accepteert schemawijzigingen via lokale
-> MQTT nog niet (de app van de fabrikant gebruikt Bluetooth/cloud). Gebruik tot
-> die tijd de **blueprint voor weersafhankelijk maaien** voor planning aan de
-> HA-kant.
+> **Bewerken in de agenda:** de maaier slaat alleen weekdagen en lokale tijden
+> op, dus een afspraak moet op dezelfde dag beginnen en eindigen (of precies
+> één hele dag zijn), herhalingen moeten dagelijks of wekelijks zijn met
+> interval 1 en zonder einddatum, en een eenmalige afspraak moet de
+> eerstvolgende zijn (binnen 7 dagen). Wijzigingen gelden altijd voor de hele
+> reeks; titels en beschrijvingen worden niet op de maaier opgeslagen. Elke
+> wijziging wordt bevestigd door het antwoord van de maaier plus het teruglezen
+> van het schema. Gebruik dezelfde tijdzone in Home Assistant en op de maaier.
 
 ### Interactieve kaartkaart
 

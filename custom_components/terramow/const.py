@@ -111,14 +111,23 @@ SCHEDULE_DP = 122
 SCHEDULE_CMD_GET = "SCHEDULE_CMD_TYPE_GET"
 SCHEDULE_CMD_SET_GLOBAL_DISABLED = "SCHEDULE_CMD_TYPE_SET_GLOBAL_DISABLED"
 SCHEDULE_CMD_SET_DISABLED_WEEK_DAYS = "SCHEDULE_CMD_TYPE_SET_DISABLED_WEEK_DAYS"
-SCHEDULE_SWITCH_CMDS = (
+# Global time-slot item edits (add_param / modify_param / delete_param).
+SCHEDULE_CMD_ADD = "SCHEDULE_CMD_TYPE_ADD"
+SCHEDULE_CMD_DELETE = "SCHEDULE_CMD_TYPE_DELETE"
+SCHEDULE_CMD_MODIFY = "SCHEDULE_CMD_TYPE_MODIFY"
+# Successful replies to these carry no state: one from another client (the
+# app) triggers a fresh GET so switches and calendar follow it.
+SCHEDULE_REFRESH_CMDS = (
     SCHEDULE_CMD_SET_GLOBAL_DISABLED,
     SCHEDULE_CMD_SET_DISABLED_WEEK_DAYS,
+    SCHEDULE_CMD_ADD,
+    SCHEDULE_CMD_DELETE,
+    SCHEDULE_CMD_MODIFY,
 )
 # The disabled-weekday list only applies to time-slot schedules.
 SCHEDULE_MODE_TIME_SLOT = "SCHEDULE_MODE_TIME_SLOT"
-# Minimum dp_127 ``module.schedule`` version supporting the schedule switches.
-SCHEDULE_SWITCH_MIN_VERSION = 2
+# The global time-slot schedule type editable through the calendar.
+SCHEDULE_TYPE_GLOBAL_V2 = "SCHEDULE_TYPE_GLOBAL_V2"
 
 # Service weekday tokens -> device protocol enum values (dp_122 week_days).
 WEEKDAY_TO_DEVICE = {
