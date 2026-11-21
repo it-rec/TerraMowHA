@@ -15,7 +15,7 @@ Dette er en Home Assistant-integration til TerraMow robotplæneklippere.
 **Styring**
 - Plæneklipperentitet: start, pause og retur til ladestationen
 - Zoneklipning: zonevalgsentitet og tjenesten `terramow.start_select_region`
-- **Redigering af tidsplan** — tjenesterne `terramow.add_schedule` / `terramow.delete_schedule` skriver ugentlige klippevinduer til klipperen og verificerer dem ved tilbagelæsning. *Bemærk:* den nuværende butiksfirmware accepterer endnu ikke skrivning af tidsplan via lokal MQTT (producentens app bruger Bluetooth/sky) — brug indtil da **planen for vejrafhængig klipning** til planlægning på HA-siden
+- **Redigering af tidsplan** — tjenesterne `terramow.add_schedule` / `terramow.delete_schedule` skriver ugentlige klippevinduer til klipperen og verificerer dem ved tilbagelæsning. **Klippetidsplan-kalenderen** kan også redigeres (opret, ændr og slet ugentlige eller engangsvinduer); begge bruger producentens dokumenterede dp_122-kommandoer
 - **Interaktivt kortkort** — vektorkort over plænen med panorering og zoom til dashboards: robottens position i realtid (farvet efter aktivitet, med følgetilstand), knapper til start / pause / station direkte på kortet, brikker for batteri / fremdrift / resterende tid, skyggelægning af det klippede areal med fremdrift pr. zone, klippespor, basestation, zoner med tryk-for-at-klippe, forbudte zoner og virtuelle vægge, aktive fejl markeret dér hvor de opstod, samt et **Wi-Fi-varmekort** over plænen; en **visningsknap** skifter mellem Begge / Spor / Areal / Wi-Fi. Temabevidst, registrerer sig selv, med et grænsefladeredigeringsværktøj (`custom:terramow-map-card`)
 - Knap til kantklipning
 - Indstillinger fra Home Assistant: klippehøjde, hastighed, baneafstand, knivhastighed, kantklipningsafstand, hovedretningstilstand og -vinkler, grundig hjørneklipning, kantklipningstilstand til højt græs
@@ -29,7 +29,7 @@ Dette er en Home Assistant-integration til TerraMow robotplæneklippere.
 - **Fejlsensor** — den aktive fejl som læsbar tekst (fx *Klipperen sidder fast*, *Klipperen er løftet* eller *OK*), så en notifikation eller en taleassistent kan sige, hvad der er galt, uden at behandle en attribut med en skabelon
 - Sensor for igangværende job (fastholder den aktive mission også ved huller i tilstedeværelsessignalet) og en sensor for klipperens Wi-Fi-signalstyrke
 - Kort: status, areal, flag for registreret / kan bygges / sikkerhedskopiering i gang
-- Tidsplan: sensor for næste planlagte start og en **kalender over klippetidsplanen**, som kun kan læses (den næste klipning vises på kalenderkortet)
+- Tidsplan: sensor for næste planlagte start og en redigerbar **kalender over klippetidsplanen** (alle ugentlige vinduer; opret, ændr eller slet daglige, ugentlige og engangsvinduer)
 - Entitet til firmwareopdatering, firmwareversion på enhedssiden og sensor for versionskompatibilitet
 - Alle entiteter opdateres øjeblikkeligt ved udsendelser fra enheden — ingen pollingforsinkelse
 
@@ -130,7 +130,7 @@ data:
 #### `terramow.add_schedule` / `terramow.delete_schedule`
 
 Opretter eller fjerner et ugentligt klippevindue i klipperen. Hver skrivning
-bekræftes mod enheden (dp_119-bekræftelse plus en tilbagelæsning af tidsplanen).
+bekræftes mod enheden (dp_122-bekræftelse plus en tilbagelæsning af tidsplanen).
 
 ```yaml
 service: terramow.add_schedule
@@ -145,9 +145,13 @@ data:
 `delete_schedule` tager vinduets `item_id` (vises som kalenderhændelsens uid og
 returneres, når et vindue tilføjes).
 
-> **Bemærk:** den nuværende butiksfirmware accepterer endnu ikke skrivning af
-> tidsplan via lokal MQTT (producentens app bruger Bluetooth/sky). Brug indtil da
-> **planen for vejrafhængig klipning** til planlægning på HA-siden.
+> **Redigering i kalenderen:** klipperen gemmer kun ugedage og lokale tider,
+> så en begivenhed skal starte og slutte samme dag (eller være én heldagsdag),
+> gentagelser skal være daglige eller ugentlige med interval 1 uden slutdato,
+> og en engangsbegivenhed skal være den næste forekomst (inden for 7 dage).
+> Ændringer gælder altid hele serien; titler og beskrivelser gemmes ikke på
+> klipperen. Hver ændring bekræftes af klipperens svar og en tilbagelæsning
+> af tidsplanen. Brug samme tidszone i Home Assistant og på klipperen.
 
 ### Interaktivt kortkort
 

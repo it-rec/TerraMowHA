@@ -627,17 +627,35 @@
     "schedule_item_not_found": {
       "message": "Muruniidukil pole ajakava kirjet item id-ga {item_id}."
     },
-    "schedule_write_failed": {
-      "message": "Muruniiduk ei võtnud ajakava muudatust vastu (katseid: {attempts}). Praegune TerraMow püsivara ei luba ajakava kirjutamist kohtvõrgu kaudu – tootja rakendus kasutab selleks Bluetoothi/pilve. Home Assistantist ajastamiseks kasuta ilmapõhise niitmise blueprinti; need teenused hakkavad tööle, kui püsivara lisab kohaliku kirjutamise toe."
-    },
-    "schedule_switch_unsupported": {
-      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
-    },
     "schedule_switch_unconfirmed": {
       "message": "The mower did not confirm the schedule change. Check the switch state and try again."
     },
     "schedule_weekday_unavailable": {
       "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
+    },
+    "schedule_unavailable": {
+      "message": "The mower has not reported its schedule yet. Wait until it is connected and try again."
+    },
+    "schedule_edit_unconfirmed": {
+      "message": "The mower did not confirm the schedule edit. Refresh the calendar before trying again."
+    },
+    "schedule_item_not_editable": {
+      "message": "Schedule slot {item_id} is not a global time-slot schedule and cannot be edited here."
+    },
+    "calendar_invalid_window": {
+      "message": "Mowing schedule events must start and end on the same day at whole minutes, with the end after the start; an all-day event must cover exactly one day."
+    },
+    "calendar_unsupported_rule": {
+      "message": "Only daily or weekly repeats with interval 1 and no end are supported, and a weekly repeat must include the start day."
+    },
+    "calendar_one_time_window": {
+      "message": "A one-time event must start in the future, within the next 7 days."
+    },
+    "calendar_whole_series_only": {
+      "message": "Only the whole series of a mowing schedule can be edited or deleted."
+    },
+    "calendar_invalid_uid": {
+      "message": "This calendar event is not a mower schedule slot."
     }
   }
 }

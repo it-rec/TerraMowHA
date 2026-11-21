@@ -15,7 +15,7 @@ Esta é uma integração para o Home Assistant destinada aos corta-relvas robót
 **Controlo**
 - Entidade corta-relva: iniciar, pausar e regressar à base
 - Corte por zonas: entidade de seleção de zona e serviço `terramow.start_select_region`
-- **Edição do agendamento** — os serviços `terramow.add_schedule` / `terramow.delete_schedule` escrevem intervalos de corte semanais no robô e verificam-nos por releitura. *Nota:* o firmware comercial atual ainda não aceita escritas do agendamento por MQTT local (a aplicação do fabricante usa Bluetooth/nuvem) — até que o firmware o permita, use o **blueprint de corte adaptado ao tempo** para agendar do lado do HA
+- **Edição do agendamento** — os serviços `terramow.add_schedule` / `terramow.delete_schedule` escrevem intervalos de corte semanais no robô e verificam-nos por releitura. O **calendário do agendamento de corte** também é editável (criar, alterar e eliminar intervalos semanais ou únicos); ambos usam os comandos dp_122 documentados pelo fabricante
 - **Cartão de mapa interativo** — mapa vetorial do relvado com deslocamento e zoom para painéis: posição do robô em direto (colorida conforme a atividade, com modo de seguimento), comandos de iniciar / pausar / base no próprio cartão, indicadores de bateria / progresso / tempo restante, sombreado da área cortada com progresso por zona, trajeto de corte, estação base, zonas com seleção por toque para cortar, zonas proibidas e paredes virtuais, falhas ativas marcadas no local onde ocorreram, e um **mapa de calor de Wi-Fi** do relvado; um **botão de vista** alterna entre Ambos / Trajeto / Área / Wi-Fi. Compatível com temas, registando-se automaticamente e com editor gráfico (`custom:terramow-map-card`)
 - Botão de corte de bordas
 - Definições a partir do Home Assistant: altura de corte, velocidade, espaçamento, velocidade da lâmina, distância de corte de bordas, modo e ângulos da direção principal, corte cuidado dos cantos, modo de corte de bordas para erva alta
@@ -29,7 +29,7 @@ Esta é uma integração para o Home Assistant destinada aos corta-relvas robót
 - **Sensor de falha** — a falha ativa como texto legível (por ex. *Robô encalhado*, *Robô levantado* ou *OK*), para que uma notificação ou assistente de voz possa dizer o que se passa sem processar um atributo com um template
 - Sensor de tarefa em curso (mantém a missão ativa ao longo de falhas no sinal de presença) e um sensor da intensidade do sinal Wi-Fi do robô
 - Mapa: estado, área, indicadores de detetado / construível / cópia de segurança em curso
-- Agendamento: sensor do próximo início agendado e um **calendário do agendamento de corte** somente de leitura (o próximo corte aparece no cartão de calendário)
+- Agendamento: sensor do próximo início agendado e um **calendário do agendamento de corte** editável (todos os intervalos semanais; criar, alterar ou eliminar intervalos diários, semanais e únicos)
 - Entidade de atualização de firmware, versão do firmware na página do dispositivo e sensor de compatibilidade de versão
 - Todas as entidades atualizam de imediato com os envios do dispositivo — sem atraso de sondagem
 
@@ -130,7 +130,7 @@ data:
 #### `terramow.add_schedule` / `terramow.delete_schedule`
 
 Cria ou remove um intervalo de corte semanal no robô. Cada escrita é confirmada
-junto do dispositivo (confirmação dp_119 mais uma releitura do agendamento).
+junto do dispositivo (confirmação dp_122 mais uma releitura do agendamento).
 
 ```yaml
 service: terramow.add_schedule
@@ -145,10 +145,14 @@ data:
 `delete_schedule` recebe o `item_id` do intervalo (mostrado como uid do evento de
 calendário e devolvido quando um intervalo é adicionado).
 
-> **Nota:** o firmware comercial atual ainda não aceita escritas do agendamento
-> por MQTT local (a aplicação do fabricante usa Bluetooth/nuvem). Até que o
-> firmware o permita, use o **blueprint de corte adaptado ao tempo** para agendar
-> do lado do HA.
+> **Edição no calendário:** o robô guarda apenas dias da semana e horas locais,
+> por isso um evento tem de começar e terminar no mesmo dia (ou ser um único dia
+> inteiro), as repetições têm de ser diárias ou semanais com intervalo 1 e sem
+> data de fim, e um evento único tem de ser a próxima ocorrência (dentro de 7
+> dias). As alterações aplicam-se sempre a toda a série; títulos e descrições
+> não são guardados no robô. Cada alteração é confirmada pela resposta do robô
+> e por uma releitura do agendamento. Use o mesmo fuso horário no Home
+> Assistant e no robô.
 
 ### Cartão de mapa interativo
 

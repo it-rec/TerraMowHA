@@ -15,7 +15,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 **Steuerung**
 - Rasenmäher-Entität: Starten, Pausieren und Andocken
 - Zonenmähen: Zonenauswahl-Entität und der Dienst `terramow.start_select_region`
-- **Zeitplan bearbeiten** — die Dienste `terramow.add_schedule` / `terramow.delete_schedule` schreiben wöchentliche Mähfenster auf den Mäher und verifizieren sie durch Rücklesen. *Hinweis:* Die aktuelle Seriennummern-Firmware akzeptiert Zeitplan-Schreibvorgänge über lokales MQTT noch nicht (die Hersteller-App nutzt Bluetooth/Cloud) — bis die Firmware das unterstützt, verwenden Sie das **Blueprint für wetterabhängiges Mähen** für die Planung auf HA-Seite
+- **Zeitplan bearbeiten** — die Dienste `terramow.add_schedule` / `terramow.delete_schedule` schreiben wöchentliche Mähfenster auf den Mäher und verifizieren sie durch Rücklesen. Auch der **Mähzeitplan-Kalender** ist bearbeitbar (wöchentliche oder einmalige Fenster anlegen, ändern und löschen); beides nutzt die vom Hersteller dokumentierten dp_122-Befehle
 - **Interaktive Kartenkarte** — Vektorkarte des Rasens mit Verschieben/Zoomen für Dashboards: Live-Roboterposition (nach Aktivität eingefärbt, mit Folgemodus), Bedienelemente für Starten / Pausieren / Andocken direkt auf der Karte, Chips für Akku / Auftragsfortschritt / Restzeit, Schattierung der gemähten Fläche mit Fortschritt pro Zone, Mähpfad, Basisstation, Zonen mit Antippen-zum-Mähen, Sperrzonen und virtuelle Wände, aktive Störungen an ihrem Ort markiert sowie eine **WLAN-Heatmap** des Rasens; eine **Ansichtsschaltfläche** wechselt zwischen Beides / Weg / Fläche / WLAN. Theme-fähig, selbstregistrierend, mit UI-Editor (`custom:terramow-map-card`)
 - Taste für Kantenschnitt
 - Einstellungen aus Home Assistant: Mähhöhe, Geschwindigkeit, Bahnabstand, Messerdrehzahl, Kantenschnittabstand, Hauptrichtungsmodus und -winkel, gründliches Eckenmähen, Kantenschnittmodus für hohes Gras
@@ -32,7 +32,7 @@ Dies ist eine Home-Assistant-Integration für TerraMow-Mähroboter.
 - **Saison-Heatmap** — eine Kartenansicht (`Saison`), die einfärbt, wie viele *abgeschlossene Zyklen* jede Rasenstelle erreicht haben. Ein Streifen, den der Mäher jeden zweiten Lauf auslässt, sieht in einem einzelnen Zyklus unauffällig aus und wird erst durch das Stapeln sichtbar; blass heißt selten erreicht. Jeder Zyklus zählt pro Zelle einmal, egal wie oft er durchgefahren ist, bleibt über Neustarts erhalten und wird beim Kartenwechsel zurückgesetzt
 - **Pro Zone "zuletzt gemäht"** — ein Zeitstempel-Sensor je Kartenzone, gesetzt beim letzten Mal, an dem der Mäher *in* dieser Zone gemeldet wurde, mit der Abdeckung des laufenden Zyklus als Attribut. Macht "die Terrasse wurde seit zehn Tagen nicht gemäht" zum Automatisierungs-Trigger
 - Karte: Status, Fläche, Flags für erkannt / erstellbar / Sicherung läuft
-- Zeitplan: Sensor für den nächsten geplanten Start und ein schreibgeschützter **Mähzeitplan-Kalender** (der nächste Mähvorgang erscheint auf der Kalenderkarte)
+- Zeitplan: Sensor für den nächsten geplanten Start und ein bearbeitbarer **Mähzeitplan-Kalender** (alle wöchentlichen Fenster; tägliche, wöchentliche und einmalige Fenster anlegen, ändern oder löschen)
 - **Wartungsprognosen** — zwei Zeitstempel-Sensoren, die vorhersagen, wann Messer- und Basisstationszähler ihr Wartungsintervall erreichen. Die Rate wird aus den Meldungen des Geräts *gemessen*, nicht angenommen; bis mindestens ein Tag beobachtet wurde und der Zähler sich bewegt hat, bleiben die Sensoren `unbekannt`
 - Firmware-Update-Entität, Firmware-Version auf der Geräteseite und Sensor für die Versionskompatibilität
 - Alle Entitäten werden bei Geräte-Pushes sofort aktualisiert — keine Polling-Verzögerung
@@ -135,7 +135,7 @@ data:
 #### `terramow.add_schedule` / `terramow.delete_schedule`
 
 Legt ein wöchentliches Mähfenster auf dem Mäher an oder entfernt es. Jeder
-Schreibvorgang wird gegen das Gerät bestätigt (dp_119-Quittung plus Rücklesen
+Schreibvorgang wird gegen das Gerät bestätigt (dp_122-Quittung plus Rücklesen
 des Zeitplans).
 
 ```yaml
@@ -151,10 +151,15 @@ data:
 `delete_schedule` erwartet die `item_id` des Fensters (wird als UID des
 Kalenderereignisses angezeigt und beim Anlegen eines Fensters zurückgegeben).
 
-> **Hinweis:** Die aktuelle Seriennummern-Firmware akzeptiert Zeitplan-Schreibvorgänge
-> über lokales MQTT noch nicht (die Hersteller-App nutzt Bluetooth/Cloud). Bis die
-> Firmware das unterstützt, verwenden Sie das **Blueprint für wetterabhängiges Mähen**
-> für die Planung auf HA-Seite.
+> **Bearbeiten im Kalender:** Der Mäher speichert nur Wochentage und lokale
+> Uhrzeiten. Ereignisse müssen daher am selben Tag beginnen und enden (oder
+> genau einen ganzen Tag umfassen), Wiederholungen täglich oder wöchentlich
+> mit Intervall 1 und ohne Enddatum sein, und ein einmaliges Ereignis muss
+> das nächste Vorkommen sein (innerhalb von 7 Tagen). Änderungen gelten immer
+> für die ganze Serie; Titel und Beschreibungen werden nicht auf dem Mäher
+> gespeichert. Jede Änderung wird durch die Antwort des Mähers plus Rücklesen
+> des Zeitplans bestätigt. Home Assistant und Mäher sollten dieselbe Zeitzone
+> verwenden.
 
 ### Interaktive Kartenkarte
 

@@ -15,7 +15,7 @@ Ceci est une intégration Home Assistant pour les robots tondeuses TerraMow.
 **Commande**
 - Entité tondeuse : démarrer, mettre en pause et retourner à la base
 - Tonte par zone : entité de sélection de zone et service `terramow.start_select_region`
-- **Modification du planning** — les services `terramow.add_schedule` / `terramow.delete_schedule` écrivent des créneaux de tonte hebdomadaires sur la tondeuse et les vérifient par relecture. *Remarque :* le micrologiciel commercial actuel n'accepte pas encore l'écriture du planning via MQTT local (l'application du fabricant utilise Bluetooth/cloud) — en attendant, utilisez le **blueprint de tonte adaptée à la météo** pour planifier côté HA
+- **Modification du planning** — les services `terramow.add_schedule` / `terramow.delete_schedule` écrivent des créneaux de tonte hebdomadaires sur la tondeuse et les vérifient par relecture. Le **calendrier du planning de tonte** est aussi modifiable (créer, modifier et supprimer des créneaux hebdomadaires ou uniques) ; les deux utilisent les commandes dp_122 documentées par le fabricant
 - **Carte interactive** — carte vectorielle de la pelouse avec déplacement/zoom pour les tableaux de bord : position en direct du robot (teintée selon l'activité, avec mode suivi), commandes démarrer / pause / base directement sur la carte, pastilles batterie / progression / temps restant, ombrage de la surface tondue avec progression par zone, trajet de tonte, station de base, zones avec sélection par appui pour tondre, zones interdites et murs virtuels, défauts actifs épinglés à leur emplacement, et une **carte de chaleur Wi-Fi** de la pelouse ; un **bouton de vue** fait défiler Les deux / Trajet / Surface / Wi-Fi. Compatible avec les thèmes, auto-enregistrée, avec un éditeur d'interface (`custom:terramow-map-card`)
 - Bouton de tonte des bordures
 - Réglages depuis Home Assistant : hauteur de coupe, vitesse, espacement, vitesse de lame, distance de coupe de bordure, mode et angles de direction principale, coupe soignée des angles, mode de tonte de bordure pour herbe haute
@@ -29,7 +29,7 @@ Ceci est une intégration Home Assistant pour les robots tondeuses TerraMow.
 - **Capteur de défaut** — le défaut actif sous forme de texte lisible (par ex. *Tondeuse bloquée*, *Tondeuse soulevée* ou *OK*), pour qu'une notification ou un assistant vocal puisse dire ce qui ne va pas sans exploiter un attribut via un modèle
 - Capteur de tâche en cours (conserve la mission active malgré les interruptions du signal de présence) et capteur de puissance du signal Wi-Fi côté tondeuse
 - Carte : état, surface, indicateurs détectée / constructible / sauvegarde en cours
-- Planning : capteur du prochain départ programmé et **calendrier du planning de tonte** en lecture seule (la prochaine tonte apparaît sur la carte calendrier)
+- Planning : capteur du prochain départ programmé et **calendrier du planning de tonte** modifiable (tous les créneaux hebdomadaires ; créer, modifier ou supprimer des créneaux quotidiens, hebdomadaires et uniques)
 - Entité de mise à jour du micrologiciel, version du micrologiciel sur la page de l'appareil et capteur de compatibilité de version
 - Toutes les entités se mettent à jour instantanément lors des envois de l'appareil — aucun délai d'interrogation
 
@@ -130,7 +130,7 @@ data:
 #### `terramow.add_schedule` / `terramow.delete_schedule`
 
 Écrit ou supprime un créneau de tonte hebdomadaire sur la tondeuse. Chaque
-écriture est confirmée auprès de l'appareil (accusé de réception dp_119 plus une
+écriture est confirmée auprès de l'appareil (accusé de réception dp_122 plus une
 relecture du planning).
 
 ```yaml
@@ -146,10 +146,15 @@ data:
 `delete_schedule` attend l'`item_id` du créneau (affiché comme uid de
 l'événement de calendrier et renvoyé lors de l'ajout d'un créneau).
 
-> **Remarque :** le micrologiciel commercial actuel n'accepte pas encore
-> l'écriture du planning via MQTT local (l'application du fabricant utilise
-> Bluetooth/cloud). En attendant, utilisez le **blueprint de tonte adaptée à la
-> météo** pour planifier côté HA.
+> **Modification dans le calendrier :** la tondeuse ne stocke que des jours de
+> la semaine et des heures locales ; un événement doit donc commencer et finir
+> le même jour (ou couvrir une seule journée entière), une répétition doit être
+> quotidienne ou hebdomadaire avec un intervalle de 1 et sans date de fin, et
+> un événement unique doit être la prochaine occurrence (sous 7 jours). Les
+> modifications portent toujours sur toute la série ; titres et descriptions ne
+> sont pas stockés sur la tondeuse. Chaque modification est confirmée par la
+> réponse de la tondeuse et une relecture du planning. Utilisez le même fuseau
+> horaire dans Home Assistant et sur la tondeuse.
 
 ### Carte interactive
 

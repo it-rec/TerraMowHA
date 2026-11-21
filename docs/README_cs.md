@@ -15,7 +15,7 @@ Toto je integrace pro Home Assistant určená pro robotické sekačky TerraMow.
 **Ovládání**
 - Entita sekačky: spuštění, pauza a návrat do stanice
 - Sečení po zónách: entita výběru zóny a služba `terramow.start_select_region`
-- **Úprava rozvrhu** — služby `terramow.add_schedule` / `terramow.delete_schedule` zapisují týdenní okna sečení do sekačky a ověřují je zpětným čtením. *Poznámka:* současný prodejní firmware zápis rozvrhu přes lokální MQTT zatím nepřijímá (aplikace výrobce používá Bluetooth/cloud) — dokud to firmware neumožní, použijte pro plánování na straně HA **blueprint sečení podle počasí**
+- **Úprava rozvrhu** — služby `terramow.add_schedule` / `terramow.delete_schedule` zapisují týdenní okna sečení do sekačky a ověřují je zpětným čtením. Upravitelný je i **kalendář rozvrhu sečení** (vytváření, změna a mazání týdenních či jednorázových oken); obojí využívá výrobcem zdokumentované příkazy dp_122
 - **Interaktivní karta mapy** — vektorová mapa trávníku s posunem a přiblížením pro panely: poloha robota v reálném čase (obarvená podle aktivity, s režimem sledování), ovládání spuštění / pauzy / návratu přímo na kartě, štítky baterie / průběhu / zbývajícího času, vyšrafování posečené plochy s průběhem po zónách, trasa sečení, základnová stanice, zóny s výběrem klepnutím pro sečení, zakázané zóny a virtuální stěny, aktivní závady vyznačené na místě výskytu a **teplotní mapa Wi-Fi** trávníku; **tlačítko zobrazení** přepíná Obojí / Trasa / Plocha / Wi-Fi. Respektuje motivy, registruje se sama a má editor rozhraní (`custom:terramow-map-card`)
 - Tlačítko pro sečení okrajů
 - Nastavení z Home Assistant: výška sečení, rychlost, rozestup pásů, otáčky nože, vzdálenost pro sečení okrajů, režim a úhly hlavního směru, důkladné sečení rohů, režim sečení okrajů pro vysokou trávu
@@ -29,7 +29,7 @@ Toto je integrace pro Home Assistant určená pro robotické sekačky TerraMow.
 - **Senzor závady** — aktivní závada jako čitelný text (např. *Sekačka uvízla*, *Sekačka zvednuta* nebo *OK*), takže oznámení nebo hlasový asistent může říct, co se děje, bez zpracování atributu šablonou
 - Senzor probíhající úlohy (drží aktivní misii i přes mezery v signálu přítomnosti) a senzor síly signálu Wi-Fi na straně sekačky
 - Mapa: stav, plocha, příznaky detekována / lze vytvořit / probíhá záloha
-- Rozvrh: senzor nejbližšího naplánovaného spuštění a **kalendář rozvrhu sečení** pouze pro čtení (nejbližší sečení se zobrazí na kartě kalendáře)
+- Rozvrh: senzor nejbližšího naplánovaného spuštění a upravitelný **kalendář rozvrhu sečení** (všechna týdenní okna; vytváření, změna a mazání denních, týdenních i jednorázových oken)
 - Entita aktualizace firmwaru, verze firmwaru na stránce zařízení a senzor kompatibility verzí
 - Všechny entity se aktualizují okamžitě při odeslání ze zařízení — bez prodlevy dotazování
 
@@ -130,7 +130,7 @@ data:
 #### `terramow.add_schedule` / `terramow.delete_schedule`
 
 Vytvoří nebo odebere týdenní okno sečení v sekačce. Každý zápis je potvrzen
-zařízením (potvrzení dp_119 plus zpětné čtení rozvrhu).
+zařízením (potvrzení dp_122 plus zpětné čtení rozvrhu).
 
 ```yaml
 service: terramow.add_schedule
@@ -145,10 +145,13 @@ data:
 `delete_schedule` očekává `item_id` okna (zobrazuje se jako uid kalendářní
 události a vrací se při přidání okna).
 
-> **Poznámka:** současný prodejní firmware zápis rozvrhu přes lokální MQTT zatím
-> nepřijímá (aplikace výrobce používá Bluetooth/cloud). Dokud to firmware
-> neumožní, použijte pro plánování na straně HA **blueprint sečení podle
-> počasí**.
+> **Úpravy v kalendáři:** sekačka ukládá jen dny v týdnu a místní časy, takže
+> událost musí začít i skončit ve stejný den (nebo být jeden celodenní den),
+> opakování jen denní či týdenní s intervalem 1 bez konce a jednorázová
+> událost jen nejbližší výskyt (do 7 dnů). Úpravy platí vždy pro celou řadu;
+> názvy a popisy se do sekačky neukládají. Každá úprava je potvrzena odpovědí
+> sekačky a zpětným čtením rozvrhu. Home Assistant a sekačka musí mít stejné
+> časové pásmo.
 
 ### Interaktivní karta mapy
 

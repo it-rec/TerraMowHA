@@ -15,7 +15,7 @@ Questa è un'integrazione di Home Assistant per i robot tagliaerba TerraMow.
 **Controllo**
 - Entità tagliaerba: avvio, pausa e rientro alla base
 - Taglio per zone: entità di selezione zona e servizio `terramow.start_select_region`
-- **Modifica della pianificazione** — i servizi `terramow.add_schedule` / `terramow.delete_schedule` scrivono fasce di taglio settimanali sul robot e le verificano rileggendole. *Nota:* il firmware commerciale attuale non accetta ancora scritture della pianificazione via MQTT locale (l'app del produttore usa Bluetooth/cloud) — nel frattempo usa il **blueprint per il taglio adattato al meteo** per pianificare lato HA
+- **Modifica della pianificazione** — i servizi `terramow.add_schedule` / `terramow.delete_schedule` scrivono fasce di taglio settimanali sul robot e le verificano rileggendole. Anche il **calendario della pianificazione di taglio** è modificabile (creare, modificare ed eliminare fasce settimanali o singole); entrambi usano i comandi dp_122 documentati dal produttore
 - **Scheda mappa interattiva** — mappa vettoriale del prato con panoramica e zoom per le dashboard: posizione del robot in tempo reale (colorata in base all'attività, con modalità inseguimento), comandi avvio / pausa / base direttamente sulla scheda, indicatori di batteria / avanzamento / tempo rimanente, ombreggiatura della superficie tagliata con avanzamento per zona, percorso di taglio, stazione base, zone con selezione a tocco per il taglio, zone vietate e muri virtuali, guasti attivi segnalati nel punto in cui si sono verificati, e una **mappa di calore Wi-Fi** del prato; un **pulsante di vista** alterna Entrambi / Percorso / Superficie / Wi-Fi. Compatibile con i temi, si registra da sola, con editor grafico (`custom:terramow-map-card`)
 - Pulsante per il taglio dei bordi
 - Impostazioni da Home Assistant: altezza di taglio, velocità, distanza tra le passate, velocità della lama, distanza di taglio dei bordi, modalità e angoli della direzione principale, taglio accurato degli angoli, modalità taglio bordi per erba alta
@@ -29,7 +29,7 @@ Questa è un'integrazione di Home Assistant per i robot tagliaerba TerraMow.
 - **Sensore di guasto** — il guasto attivo come testo leggibile (ad es. *Robot bloccato*, *Robot sollevato* oppure *OK*), così una notifica o un assistente vocale può dire cosa non va senza elaborare un attributo con un template
 - Sensore del lavoro in corso (mantiene la missione attiva anche in caso di interruzioni del segnale di presenza) e un sensore della potenza del segnale Wi-Fi del robot
 - Mappa: stato, superficie, flag rilevata / costruibile / backup in corso
-- Pianificazione: sensore del prossimo avvio programmato e un **calendario della pianificazione di taglio** in sola lettura (il prossimo taglio compare sulla scheda calendario)
+- Pianificazione: sensore del prossimo avvio programmato e un **calendario della pianificazione di taglio** modificabile (tutte le fasce settimanali; creare, modificare o eliminare fasce giornaliere, settimanali e singole)
 - Entità di aggiornamento del firmware, versione del firmware nella pagina del dispositivo e sensore di compatibilità di versione
 - Tutte le entità si aggiornano immediatamente agli invii del dispositivo — nessun ritardo di polling
 
@@ -130,7 +130,7 @@ data:
 #### `terramow.add_schedule` / `terramow.delete_schedule`
 
 Crea o rimuove una fascia di taglio settimanale sul robot. Ogni scrittura viene
-confermata dal dispositivo (conferma dp_119 più una rilettura della
+confermata dal dispositivo (conferma dp_122 più una rilettura della
 pianificazione).
 
 ```yaml
@@ -146,10 +146,14 @@ data:
 `delete_schedule` richiede l'`item_id` della fascia (mostrato come uid
 dell'evento di calendario e restituito quando una fascia viene aggiunta).
 
-> **Nota:** il firmware commerciale attuale non accetta ancora scritture della
-> pianificazione via MQTT locale (l'app del produttore usa Bluetooth/cloud). Nel
-> frattempo usa il **blueprint per il taglio adattato al meteo** per pianificare
-> lato HA.
+> **Modifica dal calendario:** il robot memorizza solo giorni della settimana e
+> orari locali, quindi un evento deve iniziare e finire nello stesso giorno (o
+> essere un unico giorno intero), le ripetizioni devono essere giornaliere o
+> settimanali con intervallo 1 e senza data di fine, e un evento singolo deve
+> essere la prossima occorrenza (entro 7 giorni). Le modifiche valgono sempre
+> per l'intera serie; titoli e descrizioni non vengono salvati sul robot. Ogni
+> modifica è confermata dalla risposta del robot e da una rilettura della
+> pianificazione. Usa lo stesso fuso orario in Home Assistant e sul robot.
 
 ### Scheda mappa interattiva
 

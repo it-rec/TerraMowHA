@@ -15,7 +15,7 @@ Tämä on Home Assistant -integraatio TerraMow-robottiruohonleikkureille.
 **Ohjaus**
 - Ruohonleikkuriolio: käynnistys, tauko ja paluu asemalle
 - Vyöhykeleikkuu: vyöhykevalintaolio ja palvelu `terramow.start_select_region`
-- **Aikataulun muokkaus** — palvelut `terramow.add_schedule` / `terramow.delete_schedule` kirjoittavat viikoittaisia leikkuuaikoja leikkuriin ja varmistavat ne takaisinluvulla. *Huomio:* nykyinen myyntilaiteohjelmisto ei vielä hyväksy aikataulun kirjoitusta paikallisen MQTT:n kautta (valmistajan sovellus käyttää Bluetoothia/pilveä) — kunnes laiteohjelmisto tukee sitä, käytä HA-puolen ajastukseen **sään mukaan sopeutuvan leikkuun blueprintiä**
+- **Aikataulun muokkaus** — palvelut `terramow.add_schedule` / `terramow.delete_schedule` kirjoittavat viikoittaisia leikkuuaikoja leikkuriin ja varmistavat ne takaisinluvulla. Myös **leikkuuaikataulun kalenteria** voi muokata (viikoittaisten tai kertaluonteisten aikojen luonti, muutos ja poisto); molemmat käyttävät valmistajan dokumentoimia dp_122-komentoja
 - **Interaktiivinen karttakortti** — vektorimuotoinen nurmikkokartta panoroinnilla ja zoomilla koontinäyttöihin: robotin sijainti reaaliaikaisesti (väritettynä toiminnan mukaan, seurantatilalla), käynnistys- / tauko- / asemapainikkeet suoraan kortilla, akun / edistymisen / jäljellä olevan ajan merkit, leikatun alueen varjostus vyöhykekohtaisella edistymisellä, leikkuureitti, tukiasema, vyöhykkeet napautusvalinnalla leikkuuta varten, kieltoalueet ja virtuaaliseinät, aktiiviset viat merkittynä esiintymispaikkaansa sekä nurmikon **Wi-Fi-lämpökartta**; **näkymäpainike** vaihtaa Molemmat / Reitti / Alue / Wi-Fi. Teemat huomioiva, itsensä rekisteröivä, käyttöliittymämuokkaimella (`custom:terramow-map-card`)
 - Reunaleikkuupainike
 - Asetukset Home Assistantista: leikkuukorkeus, nopeus, kaistaväli, terän nopeus, reunaleikkuuetäisyys, pääsuunnan tila ja kulmat, huolellinen kulmien leikkuu, korkean ruohon reunaleikkuutila
@@ -29,7 +29,7 @@ Tämä on Home Assistant -integraatio TerraMow-robottiruohonleikkureille.
 - **Vikatunnistin** — aktiivinen vika luettavana tekstinä (esim. *Leikkuri jumissa*, *Leikkuri nostettu* tai *OK*), jotta ilmoitus tai puheavustaja voi kertoa, mikä on vialla, ilman attribuutin käsittelyä mallipohjalla
 - Käynnissä olevan työn tunnistin (säilyttää aktiivisen tehtävän myös sykeviestien katkoksissa) ja leikkurin Wi-Fi-signaalin voimakkuuden tunnistin
 - Kartta: tila, pinta-ala, liput havaittu / rakennettavissa / varmuuskopiointi käynnissä
-- Aikataulu: seuraavan ajastetun käynnistyksen tunnistin ja vain luettava **leikkuuaikataulun kalenteri** (seuraava leikkuu näkyy kalenterikortilla)
+- Aikataulu: seuraavan ajastetun käynnistyksen tunnistin ja muokattava **leikkuuaikataulun kalenteri** (kaikki viikoittaiset ajat; päivittäisten, viikoittaisten ja kertaluonteisten aikojen luonti, muutos ja poisto)
 - Laiteohjelmiston päivitysolio, laiteohjelmiston versio laitesivulla ja versioyhteensopivuuden tunnistin
 - Kaikki oliot päivittyvät välittömästi laitteen lähetyksistä — ei kyselyviivettä
 
@@ -130,7 +130,7 @@ data:
 #### `terramow.add_schedule` / `terramow.delete_schedule`
 
 Luo tai poistaa viikoittaisen leikkuuajan leikkurissa. Jokainen kirjoitus
-varmistetaan laitteelta (dp_119-kuittaus sekä aikataulun takaisinluku).
+varmistetaan laitteelta (dp_122-kuittaus sekä aikataulun takaisinluku).
 
 ```yaml
 service: terramow.add_schedule
@@ -145,10 +145,14 @@ data:
 `delete_schedule` ottaa ajan `item_id`-arvon (näkyy kalenteritapahtuman
 uid-tunnisteena ja palautetaan ajan lisäyksessä).
 
-> **Huomio:** nykyinen myyntilaiteohjelmisto ei vielä hyväksy aikataulun
-> kirjoitusta paikallisen MQTT:n kautta (valmistajan sovellus käyttää
-> Bluetoothia/pilveä). Kunnes laiteohjelmisto tukee sitä, käytä HA-puolen
-> ajastukseen **sään mukaan sopeutuvan leikkuun blueprintiä**.
+> **Muokkaus kalenterissa:** leikkuri tallentaa vain viikonpäivät ja paikalliset
+> kellonajat, joten tapahtuman on alettava ja päätyttävä samana päivänä (tai
+> oltava yksi koko päivä), toiston on oltava päivittäinen tai viikoittainen
+> välillä 1 ilman päättymispäivää, ja kertatapahtuman on oltava seuraava
+> esiintymä (7 päivän sisällä). Muutokset koskevat aina koko sarjaa; otsikoita
+> ja kuvauksia ei tallenneta leikkuriin. Jokainen muutos vahvistetaan leikkurin
+> vastauksella ja aikataulun takaisinluvulla. Käytä samaa aikavyöhykettä Home
+> Assistantissa ja leikkurissa.
 
 ### Interaktiivinen karttakortti
 

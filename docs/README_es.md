@@ -15,7 +15,7 @@ Esta es una integración de Home Assistant para los robots cortacésped TerraMow
 **Control**
 - Entidad cortacésped: iniciar, pausar y volver a la base
 - Siega por zonas: entidad de selección de zona y servicio `terramow.start_select_region`
-- **Edición del programa** — los servicios `terramow.add_schedule` / `terramow.delete_schedule` escriben franjas de siega semanales en el robot y las verifican releyéndolas. *Nota:* el firmware comercial actual todavía no acepta escrituras del programa por MQTT local (la aplicación del fabricante usa Bluetooth/nube) — hasta que el firmware lo permita, usa el **blueprint de siega adaptada al tiempo** para programar desde HA
+- **Edición del programa** — los servicios `terramow.add_schedule` / `terramow.delete_schedule` escriben franjas de siega semanales en el robot y las verifican releyéndolas. El **calendario del programa de siega** también es editable (crear, cambiar y eliminar franjas semanales o únicas); ambos usan los comandos dp_122 documentados por el fabricante
 - **Tarjeta de mapa interactiva** — mapa vectorial del césped con desplazamiento y zoom para paneles: posición del robot en directo (teñida según la actividad, con modo de seguimiento), controles de inicio / pausa / base en la propia tarjeta, indicadores de batería / progreso / tiempo restante, sombreado de la superficie segada con progreso por zona, trayecto de siega, estación base, zonas con selección por toque para segar, zonas prohibidas y paredes virtuales, fallos activos marcados en su ubicación, y un **mapa de calor de Wi-Fi** del césped; un **botón de vista** alterna entre Ambos / Trayecto / Superficie / Wi-Fi. Compatible con temas, se registra sola y trae editor de interfaz (`custom:terramow-map-card`)
 - Botón de siega de bordes
 - Ajustes desde Home Assistant: altura de corte, velocidad, separación, velocidad de la cuchilla, distancia de corte de bordes, modo y ángulos de dirección principal, corte esmerado de esquinas, modo de siega de bordes para hierba alta
@@ -29,7 +29,7 @@ Esta es una integración de Home Assistant para los robots cortacésped TerraMow
 - **Sensor de fallo** — el fallo activo como texto legible (por ej. *Robot atascado*, *Robot levantado* u *OK*), para que una notificación o un asistente de voz pueda decir qué ocurre sin procesar un atributo con una plantilla
 - Sensor de trabajo en curso (mantiene la misión activa a través de huecos en la señal de actividad) y un sensor de intensidad de señal Wi-Fi del robot
 - Mapa: estado, superficie, indicadores de detectado / construible / copia de seguridad en curso
-- Programa: sensor del próximo inicio programado y un **calendario del programa de siega** de solo lectura (la próxima siega aparece en la tarjeta de calendario)
+- Programa: sensor del próximo inicio programado y un **calendario del programa de siega** editable (todas las franjas semanales; crear, cambiar o eliminar franjas diarias, semanales y únicas)
 - Entidad de actualización de firmware, versión del firmware en la página del dispositivo y sensor de compatibilidad de versión
 - Todas las entidades se actualizan al instante con los envíos del dispositivo — sin retardo de sondeo
 
@@ -130,7 +130,7 @@ data:
 #### `terramow.add_schedule` / `terramow.delete_schedule`
 
 Crea o elimina una franja de siega semanal en el robot. Cada escritura se
-confirma contra el dispositivo (confirmación dp_119 más una relectura del
+confirma contra el dispositivo (confirmación dp_122 más una relectura del
 programa).
 
 ```yaml
@@ -146,10 +146,14 @@ data:
 `delete_schedule` espera el `item_id` de la franja (se muestra como uid del
 evento de calendario y se devuelve al añadir una franja).
 
-> **Nota:** el firmware comercial actual todavía no acepta escrituras del
-> programa por MQTT local (la aplicación del fabricante usa Bluetooth/nube).
-> Hasta que el firmware lo permita, usa el **blueprint de siega adaptada al
-> tiempo** para programar desde HA.
+> **Edición en el calendario:** el robot solo guarda días de la semana y horas
+> locales, así que un evento debe empezar y terminar el mismo día (o ser un
+> único día completo), las repeticiones deben ser diarias o semanales con
+> intervalo 1 y sin fecha de fin, y un evento único debe ser la próxima
+> ocurrencia (en 7 días). Los cambios afectan siempre a toda la serie; los
+> títulos y descripciones no se guardan en el robot. Cada cambio se confirma
+> con la respuesta del robot y una relectura del programa. Usa la misma zona
+> horaria en Home Assistant y en el robot.
 
 ### Tarjeta de mapa interactiva
 

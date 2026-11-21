@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowBasicData, TerraMowConfigEntry
-from .const import COMPATIBILITY_INFO_DP, SCHEDULE_DP, WEEKDAY_TO_DEVICE
+from .const import SCHEDULE_DP, WEEKDAY_TO_DEVICE
 from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin
 
@@ -103,11 +103,11 @@ class ScheduleSwitch(PushUpdateMixin, TerraMowEntity, SwitchEntity):
     Off pauses all schedules without deleting them; it does not dock a job
     already running. The state is the device's own report from the last
     dp_122 GET (unknown until read); a change waits for the device reply and
-    is confirmed by reading the list again. Unavailable on firmware below
-    schedule protocol version 2 (dp_127 ``module.schedule``).
+    is confirmed by reading the list again. Unavailable until a valid
+    schedule list has been read (the dp_127 version is not a gate).
     """
 
-    _push_dp_ids = (SCHEDULE_DP, COMPATIBILITY_INFO_DP)
+    _push_dp_ids = (SCHEDULE_DP,)
 
     _attr_translation_key = "schedule"
 

@@ -627,17 +627,35 @@
     "schedule_item_not_found": {
       "message": "잔디깎이에 item id가 {item_id}인 일정 항목이 없습니다."
     },
-    "schedule_write_failed": {
-      "message": "잔디깎이가 일정 변경을 수락하지 않았습니다(시도: {attempts}). 현재 TerraMow 펌웨어는 로컬 네트워크를 통한 일정 쓰기를 지원하지 않으며, 제조사 앱은 대신 블루투스/클라우드를 사용합니다. Home Assistant에서 일정을 관리하려면 날씨 적응형 예초 블루프린트를 사용하세요. 펌웨어가 로컬 쓰기를 지원하면 이 서비스도 동작합니다."
-    },
-    "schedule_switch_unsupported": {
-      "message": "Schedule switches require mower firmware with schedule protocol version 2 or later (current: {schedule_version}). Please update the mower firmware."
-    },
     "schedule_switch_unconfirmed": {
       "message": "The mower did not confirm the schedule change. Check the switch state and try again."
     },
     "schedule_weekday_unavailable": {
       "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
+    },
+    "schedule_unavailable": {
+      "message": "The mower has not reported its schedule yet. Wait until it is connected and try again."
+    },
+    "schedule_edit_unconfirmed": {
+      "message": "The mower did not confirm the schedule edit. Refresh the calendar before trying again."
+    },
+    "schedule_item_not_editable": {
+      "message": "Schedule slot {item_id} is not a global time-slot schedule and cannot be edited here."
+    },
+    "calendar_invalid_window": {
+      "message": "Mowing schedule events must start and end on the same day at whole minutes, with the end after the start; an all-day event must cover exactly one day."
+    },
+    "calendar_unsupported_rule": {
+      "message": "Only daily or weekly repeats with interval 1 and no end are supported, and a weekly repeat must include the start day."
+    },
+    "calendar_one_time_window": {
+      "message": "A one-time event must start in the future, within the next 7 days."
+    },
+    "calendar_whole_series_only": {
+      "message": "Only the whole series of a mowing schedule can be edited or deleted."
+    },
+    "calendar_invalid_uid": {
+      "message": "This calendar event is not a mower schedule slot."
     }
   }
 }

@@ -71,7 +71,7 @@ class FakeDevice:
     and omit default-false / empty fields, exactly like the device.
     """
 
-    def __init__(self, hub: TerraMowHub, schedule_version: Any = 5) -> None:
+    def __init__(self, hub: TerraMowHub, initial_read: bool = True) -> None:
         self.hub = hub
         self.global_disabled = False
         self.disabled_days: set[str] = set()
@@ -82,9 +82,11 @@ class FakeDevice:
         self.answer_gets = True
         self.duplicate_replies = False
         self.requests: list[dict[str, Any]] = []
-        hub.basic_data.firmware_version = {"module": {"schedule": schedule_version}}
         hub._last_control_time -= 10  # step past the command rate limiter
         hub.mqtt_client.publish.side_effect = self._on_publish
+        if initial_read:  # state left by the connect-time GET reply
+            hub._full_schedule = self.schedule_list()
+            hub._full_schedule_received = True
 
     def reply(self, payload: Any) -> None:
         raw = payload if isinstance(payload, str) else json.dumps(payload)
@@ -150,22 +152,27 @@ def short_timeout():
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    ("version", "expected_version", "supported"),
-    [(5, 5, True), ("2", 2, True), (1, 1, False), ("x", None, False), (None, None, False)],
-)
-async def test_schedule_switch_capability_gate(
-    hass: HomeAssistant, version: Any, expected_version: int | None, supported: bool
-) -> None:
+async def test_schedule_switch_gate_is_a_valid_read(hass: HomeAssistant) -> None:
+    """The dp_127 schedule version is no gate; only a valid GET is."""
     hub = await setup_terramow(hass)
-    FakeDevice(hub, schedule_version=version)
-    assert hub.schedule_module_version == expected_version
-    assert hub.schedule_switch_supported is supported
+    device = FakeDevice(hub, initial_read=False)
+    hub.basic_data.firmware_version = {"module": {"schedule": 1}}
+    assert hub.schedule_switch_supported is False
+    assert hub.schedule_editable is False
+    device.reply({"seq": 1, "schedule_list": {}})
+    await hass.async_block_till_done()
+    assert hub.schedule_switch_supported is True
+    assert hub.schedule_editable is True
+    # Frequency mode keeps the switches but is not calendar-editable.
+    device.reply({"schedule_list": {"schedule_mode": "SCHEDULE_MODE_FREQUENCY"}})
+    await hass.async_block_till_done()
+    assert hub.schedule_switch_supported is True
+    assert hub.schedule_editable is False
 
 
 async def test_schedule_state_unknown_until_read(hass: HomeAssistant) -> None:
     hub = await setup_terramow(hass)
-    device = FakeDevice(hub)
+    device = FakeDevice(hub, initial_read=False)
     assert hub.schedule_enabled is None
     assert hub.schedule_weekday_enabled("WEEK_DAY_MONDAY") is None
     assert hub.schedule_weekdays_configurable is False
@@ -236,13 +243,12 @@ async def test_set_schedule_enabled_confirmed(hass: HomeAssistant) -> None:
     assert hub.schedule_enabled is True
 
 
-async def test_set_schedule_unsupported_firmware(hass: HomeAssistant) -> None:
+async def test_set_schedule_before_first_read(hass: HomeAssistant) -> None:
     hub = await setup_terramow(hass)
-    device = FakeDevice(hub, schedule_version=1)
+    device = FakeDevice(hub, initial_read=False)
     with pytest.raises(ServiceValidationError) as err:
         await hub.async_set_schedule_enabled(False)
-    assert err.value.translation_key == "schedule_switch_unsupported"
-    assert err.value.translation_placeholders == {"schedule_version": "1"}
+    assert err.value.translation_key == "schedule_unavailable"
     assert device.requests == []
 
 
@@ -350,6 +356,7 @@ async def test_set_weekday_confirmed(hass: HomeAssistant) -> None:
 async def test_set_weekday_requires_time_slot_list(hass: HomeAssistant) -> None:
     hub = await setup_terramow(hass)
     device = FakeDevice(hub)
+    hub._full_schedule = {"schedule_mode": "SCHEDULE_MODE_FREQUENCY"}
     with pytest.raises(ServiceValidationError) as err:
         await hub.async_set_schedule_weekday_enabled("WEEK_DAY_MONDAY", False)
     assert err.value.translation_key == "schedule_weekday_unavailable"
@@ -371,11 +378,18 @@ async def test_other_client_change_triggers_reread(hass: HomeAssistant) -> None:
     hub = await setup_terramow(hass)
     device = FakeDevice(hub)
 
-    # Rejected foreign SETs and GET replies do not trigger a read.
+    # Rejected foreign edits and stateless GET replies do not trigger a read.
     device.reply({"cmd_type": SET_GLOBAL, "seq": 99, "code": 4})
-    device.reply({"cmd_type": "SCHEDULE_CMD_TYPE_ADD", "seq": 98})
+    device.reply({"cmd_type": "SCHEDULE_CMD_TYPE_ADD", "seq": 98, "code": -1})
+    device.reply({"seq": 97})
     await hass.async_block_till_done()
     assert device.requests == []
+
+    # A foreign slot edit (the app) re-reads the list like a SET does.
+    device.reply({"cmd_type": "SCHEDULE_CMD_TYPE_MODIFY", "seq": 96})
+    await hass.async_block_till_done()
+    assert device.commands == [GET]
+    device.requests.clear()
 
     device.global_disabled = True
     device.reply({"cmd_type": SET_GLOBAL, "seq": 99})
@@ -392,7 +406,7 @@ async def test_other_client_change_triggers_reread(hass: HomeAssistant) -> None:
 
 async def test_switch_entities_follow_device(hass: HomeAssistant) -> None:
     hub = await setup_terramow(hass)
-    assert hass.states.get(MASTER).state == STATE_UNAVAILABLE  # no dp_127 yet
+    assert hass.states.get(MASTER).state == STATE_UNAVAILABLE  # no GET yet
     assert hass.states.get(MONDAY).state == STATE_UNAVAILABLE
 
     device = FakeDevice(hub)
