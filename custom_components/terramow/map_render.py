@@ -670,10 +670,13 @@ class MapRenderer:
 
         if scene["map_extent"]:
             pixels = transformer.to_pixels(scene["map_extent"])
+            # The extent frame is a guide for the info view only: the clean
+            # map is meant to be embedded as a bare lawn picture, so it keeps
+            # the extent fill but not the grid frame around it.
             draw.polygon(
                 pixels,
                 fill=pal.map_fill,
-                outline=pal.map_outline,
+                outline=None if self._clean_mode else pal.map_outline,
             )
 
         for region in scene["regions"]:
