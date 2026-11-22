@@ -19,6 +19,12 @@ sys.modules.setdefault("turbojpeg", MagicMock())
 from custom_components.terramow import TerraMowBasicData  # noqa: E402
 from custom_components.terramow.camera import TerraMowMapCamera  # noqa: E402
 from custom_components.terramow.hub import TerraMowHub  # noqa: E402
+from custom_components.terramow.map_render import (  # noqa: E402
+    IMAGE_WIDTH,
+    PALETTES,
+    MapRenderer,
+)
+from custom_components.terramow.map_scene import build_scene  # noqa: E402
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
@@ -637,3 +643,69 @@ def test_draw_summary_panel_breaks_on_overflowing_chips() -> None:
         image, scene, camera._map_data, camera._last_update_label
     )
     assert image.mode == "RGBA"
+
+
+# ---------------------------------------------------------------------------
+# map-extent frame: info view only
+# ---------------------------------------------------------------------------
+
+
+def _render_extent_only(clean_mode: bool) -> tuple[list[object], set[int]]:
+    """Render a map that has an extent but no regions.
+
+    Returns the ``outline`` of every polygon drawn (the extent is the only one
+    in such a scene) and the red channel of the painted pixels on its edges.
+    """
+    map_data = {
+        "id": 1,
+        "width": 200,
+        "height": 100,
+        "resolution": 0.05,
+        "origin": {"x": 0, "y": 0},
+    }
+    renderer = MapRenderer(
+        theme="light",
+        language="en",
+        clean_mode=clean_mode,
+        show_coverage=False,
+        output_resolution=IMAGE_WIDTH,
+    )
+    scene = build_scene(map_data, {}, {}, False)
+    assert scene["map_extent"] and not scene["regions"]
+
+    outlines: list[object] = []
+    real_polygon = ImageDraw.ImageDraw.polygon
+
+    def _spy(self, xy, fill=None, outline=None, width=1):  # type: ignore[no-untyped-def]
+        if fill == PALETTES["light"].map_fill:
+            outlines.append(outline)
+        return real_polygon(self, xy, fill=fill, outline=outline, width=width)
+
+    with patch.object(ImageDraw.ImageDraw, "polygon", _spy):
+        image, transformer = renderer.render_static(scene, map_data, "12:00")
+    assert transformer is not None
+    (left, top), _, (right, bottom), _ = transformer.to_pixels(scene["map_extent"])
+    reds: set[int] = set()
+    for y in range(top + 8, bottom - 8):
+        pixel = image.getpixel((min(left, IMAGE_WIDTH - 1), y))
+        if pixel[3] == 255:
+            reds.add(pixel[0])
+    for x in range(left + 8, right - 8):
+        pixel = image.getpixel((x, top))
+        if pixel[3] == 255:
+            reds.add(pixel[0])
+    return outlines, reds
+
+
+def test_map_extent_frame_drawn_in_info_view() -> None:
+    # the info view frames the map extent with the outline colour
+    outlines, _ = _render_extent_only(clean_mode=False)
+    assert outlines == [PALETTES["light"].map_outline]
+
+
+def test_map_extent_frame_absent_from_clean_map() -> None:
+    # the clean map keeps the extent fill but must not show the grid frame:
+    # the extent is drawn without outline, so its edge is the plain fill
+    outlines, reds = _render_extent_only(clean_mode=True)
+    assert outlines == [None]
+    assert PALETTES["light"].map_fill[0] in reds
