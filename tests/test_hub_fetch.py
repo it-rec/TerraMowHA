@@ -9,9 +9,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+import custom_components.terramow.hub as hub_module
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.const import DOMAIN
-import custom_components.terramow.hub as hub_module
 from custom_components.terramow.hub import TerraMowHub
 
 
@@ -192,7 +192,7 @@ async def test_handle_history_path_meta_success() -> None:
     hub = _hub()
     resp = _FakeResp(status=200, body=b'{"id": 7, "map_id": 1, "points": []}')
     with _patch_session(resp):
-        await hub._async_handle_meta(hub._history_path_channel, 
+        await hub._async_handle_meta(hub._history_path_channel,
             {"seq": 2, "http_port": 1, "http_path": "/h", "token": "t"}
         )
     assert hub.history_path_data["id"] == 7

@@ -13,12 +13,11 @@ import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from custom_components.terramow import DOMAIN, TerraMowBasicData
-from custom_components.terramow.hub import TerraMowHub
-from custom_components.terramow import select as select_mod
+from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.const import (
     MOW_SPEED_TYPE_AUTO,
 )
+from custom_components.terramow.hub import TerraMowHub
 from custom_components.terramow.number import (
     EdgeCuttingDistanceNumber,
     MainDirectionAutoRotateIntervalNumber,

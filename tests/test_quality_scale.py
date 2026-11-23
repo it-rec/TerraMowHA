@@ -1,7 +1,8 @@
 """Assert the quality_scale.yaml is complete and consistent (Platinum audit)."""
 
-import yaml
 from pathlib import Path
+
+import yaml
 
 _GOLD = {
     "devices", "diagnostics", "discovery", "discovery-update-info",

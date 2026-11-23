@@ -12,7 +12,7 @@ import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from custom_components.terramow import DOMAIN, TerraMowBasicData
+from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.hub import TerraMowHub
 from custom_components.terramow.sensor import (
     SENSORS,

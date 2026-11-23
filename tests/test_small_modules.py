@@ -13,17 +13,20 @@ from unittest.mock import AsyncMock, MagicMock
 from homeassistant.components.lawn_mower import LawnMowerActivity
 from homeassistant.const import CONF_HOST, CONF_PASSWORD
 
-from custom_components.terramow import DOMAIN, TerraMowBasicData
+from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.binary_sensor import (
     BINARY_SENSORS,
     TerraMowBinarySensor,
+)
+from custom_components.terramow.binary_sensor import (
     async_setup_entry as binary_setup,
 )
-from custom_components.terramow.switch import ThoroughCornerCuttingSwitch
 from custom_components.terramow.button import (
     EdgeTrimButton,
     ResetBaseStationTimerButton,
     ResetBladeTimerButton,
+)
+from custom_components.terramow.button import (
     async_setup_entry as button_setup,
 )
 from custom_components.terramow.diagnostics import (
@@ -33,12 +36,17 @@ from custom_components.terramow.hub import TerraMowHub
 from custom_components.terramow.issues import _reason_version
 from custom_components.terramow.lawn_mower import (
     TerraMowLawnMowerEntity,
+)
+from custom_components.terramow.lawn_mower import (
     async_setup_entry as lawn_mower_setup,
 )
 from custom_components.terramow.map_sensor import TerraMowMapStatusSensor
+from custom_components.terramow.switch import ThoroughCornerCuttingSwitch
 from custom_components.terramow.switch import async_setup_entry as switch_setup
 from custom_components.terramow.update import (
     TerraMowFirmwareUpdate,
+)
+from custom_components.terramow.update import (
     async_setup_entry as update_setup,
 )
 

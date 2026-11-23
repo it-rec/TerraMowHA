@@ -22,6 +22,8 @@ from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.hub import TerraMowHub
 from custom_components.terramow.image import (
     MowReportImage,
+)
+from custom_components.terramow.image import (
     async_setup_entry as image_setup,
 )
 from custom_components.terramow.map_render import _format_duration, render_mow_report

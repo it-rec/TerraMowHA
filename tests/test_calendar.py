@@ -7,7 +7,7 @@ schedules, past-midnight slots and the get-events window query.
 
 import asyncio
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -19,7 +19,7 @@ from custom_components.terramow.calendar import (
 )
 from custom_components.terramow.hub import TerraMowHub
 
-NOW = datetime(2026, 7, 4, 8, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 7, 4, 8, 0, tzinfo=UTC)
 
 
 def _hub() -> TerraMowHub:
@@ -103,8 +103,8 @@ def test_upcoming_event_today() -> None:
     )
     event = _event_at(cal, NOW)  # 08:00 -> today's 09:05 slot is upcoming
     assert event is not None
-    assert event.start == datetime(2026, 7, 4, 9, 5, tzinfo=timezone.utc)
-    assert event.end == datetime(2026, 7, 4, 11, 30, tzinfo=timezone.utc)
+    assert event.start == datetime(2026, 7, 4, 9, 5, tzinfo=UTC)
+    assert event.end == datetime(2026, 7, 4, 11, 30, tzinfo=UTC)
     assert event.summary == EVENT_SUMMARY
     assert event.uid == "3"
 
@@ -121,9 +121,9 @@ def test_active_event_is_returned_while_running() -> None:
         },
     )
     # 10:00 is inside the window -> the active slot (today) is returned
-    event = _event_at(cal, datetime(2026, 7, 4, 10, 0, tzinfo=timezone.utc))
+    event = _event_at(cal, datetime(2026, 7, 4, 10, 0, tzinfo=UTC))
     assert event is not None
-    assert event.start == datetime(2026, 7, 4, 9, 5, tzinfo=timezone.utc)
+    assert event.start == datetime(2026, 7, 4, 9, 5, tzinfo=UTC)
     assert event.uid is None  # no item_id -> no uid
 
 
@@ -139,9 +139,9 @@ def test_event_rolls_to_tomorrow_after_end() -> None:
         },
     )
     # 12:00 is past today's end -> the next occurrence is tomorrow
-    event = _event_at(cal, datetime(2026, 7, 4, 12, 0, tzinfo=timezone.utc))
+    event = _event_at(cal, datetime(2026, 7, 4, 12, 0, tzinfo=UTC))
     assert event is not None
-    assert event.start == datetime(2026, 7, 5, 9, 5, tzinfo=timezone.utc)
+    assert event.start == datetime(2026, 7, 5, 9, 5, tzinfo=UTC)
 
 
 def test_missing_end_time_defaults_to_one_hour() -> None:
@@ -151,8 +151,8 @@ def test_missing_end_time_defaults_to_one_hour() -> None:
     event = _event_at(cal, NOW)
     assert event is not None
     assert event.end - event.start == (
-        datetime(2026, 7, 4, 10, 0, tzinfo=timezone.utc)
-        - datetime(2026, 7, 4, 9, 0, tzinfo=timezone.utc)
+        datetime(2026, 7, 4, 10, 0, tzinfo=UTC)
+        - datetime(2026, 7, 4, 9, 0, tzinfo=UTC)
     )
 
 
@@ -169,8 +169,8 @@ def test_past_midnight_slot_extends_end_by_a_day() -> None:
     )
     event = _event_at(cal, NOW)  # 08:00 -> tonight 23:00 to 01:00 next day
     assert event is not None
-    assert event.start == datetime(2026, 7, 4, 23, 0, tzinfo=timezone.utc)
-    assert event.end == datetime(2026, 7, 5, 1, 0, tzinfo=timezone.utc)
+    assert event.start == datetime(2026, 7, 4, 23, 0, tzinfo=UTC)
+    assert event.end == datetime(2026, 7, 5, 1, 0, tzinfo=UTC)
 
 
 def test_active_past_midnight_slot_returns_the_running_slot() -> None:
@@ -186,10 +186,10 @@ def test_active_past_midnight_slot_returns_the_running_slot() -> None:
     )
     # 00:30 is inside the slot that *began the previous day* at 23:00; it must be
     # reported as the currently-running event, not tonight's upcoming one.
-    event = _event_at(cal, datetime(2026, 7, 4, 0, 30, tzinfo=timezone.utc))
+    event = _event_at(cal, datetime(2026, 7, 4, 0, 30, tzinfo=UTC))
     assert event is not None
-    assert event.start == datetime(2026, 7, 3, 23, 0, tzinfo=timezone.utc)
-    assert event.end == datetime(2026, 7, 4, 1, 0, tzinfo=timezone.utc)
+    assert event.start == datetime(2026, 7, 3, 23, 0, tzinfo=UTC)
+    assert event.end == datetime(2026, 7, 4, 1, 0, tzinfo=UTC)
 
 
 # ---------------------------------------------------------------------------
@@ -215,8 +215,8 @@ def test_get_events_returns_event_in_window() -> None:
     )
     events = _get_events(
         cal,
-        datetime(2026, 7, 4, 8, 0, tzinfo=timezone.utc),
-        datetime(2026, 7, 4, 10, 0, tzinfo=timezone.utc),
+        datetime(2026, 7, 4, 8, 0, tzinfo=UTC),
+        datetime(2026, 7, 4, 10, 0, tzinfo=UTC),
     )
     assert len(events) == 1
 
@@ -234,8 +234,8 @@ def test_get_events_excludes_event_outside_window() -> None:
     )
     events = _get_events(
         cal,
-        datetime(2026, 7, 4, 12, 0, tzinfo=timezone.utc),
-        datetime(2026, 7, 4, 13, 0, tzinfo=timezone.utc),
+        datetime(2026, 7, 4, 12, 0, tzinfo=UTC),
+        datetime(2026, 7, 4, 13, 0, tzinfo=UTC),
     )
     assert events == []
 
@@ -254,13 +254,13 @@ def test_get_events_returns_one_occurrence_per_day_in_wide_window() -> None:
     # a three-day window yields the daily-recurring slot once per day
     events = _get_events(
         cal,
-        datetime(2026, 7, 4, 0, 0, tzinfo=timezone.utc),
-        datetime(2026, 7, 7, 0, 0, tzinfo=timezone.utc),
+        datetime(2026, 7, 4, 0, 0, tzinfo=UTC),
+        datetime(2026, 7, 7, 0, 0, tzinfo=UTC),
     )
     assert [e.start for e in events] == [
-        datetime(2026, 7, 4, 9, 5, tzinfo=timezone.utc),
-        datetime(2026, 7, 5, 9, 5, tzinfo=timezone.utc),
-        datetime(2026, 7, 6, 9, 5, tzinfo=timezone.utc),
+        datetime(2026, 7, 4, 9, 5, tzinfo=UTC),
+        datetime(2026, 7, 5, 9, 5, tzinfo=UTC),
+        datetime(2026, 7, 6, 9, 5, tzinfo=UTC),
     ]
 
 
@@ -269,8 +269,8 @@ def test_get_events_empty_without_schedule() -> None:
     cal = _cal(hub)
     events = _get_events(
         cal,
-        datetime(2026, 7, 4, 0, 0, tzinfo=timezone.utc),
-        datetime(2026, 7, 5, 0, 0, tzinfo=timezone.utc),
+        datetime(2026, 7, 4, 0, 0, tzinfo=UTC),
+        datetime(2026, 7, 5, 0, 0, tzinfo=UTC),
     )
     assert events == []
 
@@ -372,8 +372,8 @@ def test_weekly_upcoming_event_today() -> None:
     _feed_weekly(hub, _schedule([_item(ALL_DAYS, (9, 30), (11, 0), item_id=7)]))
     event = _event_at(cal, NOW)  # Sat 08:00 -> today's 09:30 slot is upcoming
     assert event is not None
-    assert event.start == datetime(2026, 7, 4, 9, 30, tzinfo=timezone.utc)
-    assert event.end == datetime(2026, 7, 4, 11, 0, tzinfo=timezone.utc)
+    assert event.start == datetime(2026, 7, 4, 9, 30, tzinfo=UTC)
+    assert event.end == datetime(2026, 7, 4, 11, 0, tzinfo=UTC)
     assert event.summary == EVENT_SUMMARY
     assert event.uid == "7"
 
@@ -382,9 +382,9 @@ def test_weekly_active_event_running() -> None:
     hub = _hub()
     cal = _cal(hub)
     _feed_weekly(hub, _schedule([_item(ALL_DAYS, (9, 30), (11, 0))]))
-    event = _event_at(cal, datetime(2026, 7, 4, 10, 0, tzinfo=timezone.utc))
+    event = _event_at(cal, datetime(2026, 7, 4, 10, 0, tzinfo=UTC))
     assert event is not None
-    assert event.start == datetime(2026, 7, 4, 9, 30, tzinfo=timezone.utc)
+    assert event.start == datetime(2026, 7, 4, 9, 30, tzinfo=UTC)
     assert event.uid == "0"
 
 
@@ -402,7 +402,7 @@ def test_weekly_picks_earliest_across_items() -> None:
     )
     event = _event_at(cal, NOW)  # earliest upcoming today is the 09:30 slot
     assert event is not None
-    assert event.start == datetime(2026, 7, 4, 9, 30, tzinfo=timezone.utc)
+    assert event.start == datetime(2026, 7, 4, 9, 30, tzinfo=UTC)
     assert event.uid == "1"
 
 
@@ -438,7 +438,7 @@ def test_weekly_skips_only_scheduled_weekdays() -> None:
     )
     event = _event_at(cal, NOW)
     assert event is not None
-    assert event.start == datetime(2026, 7, 6, 9, 30, tzinfo=timezone.utc)
+    assert event.start == datetime(2026, 7, 6, 9, 30, tzinfo=UTC)
 
 
 def test_weekly_ignores_unknown_weekday_enum() -> None:
@@ -451,7 +451,7 @@ def test_weekly_ignores_unknown_weekday_enum() -> None:
     )
     event = _event_at(cal, NOW)
     assert event is not None
-    assert event.start == datetime(2026, 7, 4, 9, 30, tzinfo=timezone.utc)
+    assert event.start == datetime(2026, 7, 4, 9, 30, tzinfo=UTC)
 
 
 def test_weekly_disabled_config_is_skipped() -> None:
@@ -484,7 +484,7 @@ def test_weekly_disabled_week_day_suppresses_that_day() -> None:
     )
     event = _event_at(cal, NOW)
     assert event is not None
-    assert event.start == datetime(2026, 7, 5, 9, 30, tzinfo=timezone.utc)
+    assert event.start == datetime(2026, 7, 5, 9, 30, tzinfo=UTC)
 
 
 def test_weekly_missing_end_time_defaults_to_one_hour() -> None:
@@ -501,10 +501,10 @@ def test_weekly_past_midnight_active_slot() -> None:
     cal = _cal(hub)
     _feed_weekly(hub, _schedule([_item(ALL_DAYS, (23, 0), (1, 0))]))
     # 00:30 Sat is inside the slot begun 23:00 Friday.
-    event = _event_at(cal, datetime(2026, 7, 4, 0, 30, tzinfo=timezone.utc))
+    event = _event_at(cal, datetime(2026, 7, 4, 0, 30, tzinfo=UTC))
     assert event is not None
-    assert event.start == datetime(2026, 7, 3, 23, 0, tzinfo=timezone.utc)
-    assert event.end == datetime(2026, 7, 4, 1, 0, tzinfo=timezone.utc)
+    assert event.start == datetime(2026, 7, 3, 23, 0, tzinfo=UTC)
+    assert event.end == datetime(2026, 7, 4, 1, 0, tzinfo=UTC)
 
 
 def test_weekly_no_upcoming_returns_none() -> None:
@@ -551,13 +551,13 @@ def test_weekly_get_events_one_per_day() -> None:
     _feed_weekly(hub, _schedule([_item(ALL_DAYS, (9, 30), (11, 0))]))
     events = _get_events(
         cal,
-        datetime(2026, 7, 4, 0, 0, tzinfo=timezone.utc),
-        datetime(2026, 7, 7, 0, 0, tzinfo=timezone.utc),
+        datetime(2026, 7, 4, 0, 0, tzinfo=UTC),
+        datetime(2026, 7, 7, 0, 0, tzinfo=UTC),
     )
     assert [e.start for e in events] == [
-        datetime(2026, 7, 4, 9, 30, tzinfo=timezone.utc),
-        datetime(2026, 7, 5, 9, 30, tzinfo=timezone.utc),
-        datetime(2026, 7, 6, 9, 30, tzinfo=timezone.utc),
+        datetime(2026, 7, 4, 9, 30, tzinfo=UTC),
+        datetime(2026, 7, 5, 9, 30, tzinfo=UTC),
+        datetime(2026, 7, 6, 9, 30, tzinfo=UTC),
     ]
 
 
@@ -575,12 +575,12 @@ def test_weekly_get_events_multiple_slots_same_day() -> None:
     )
     events = _get_events(
         cal,
-        datetime(2026, 7, 4, 0, 0, tzinfo=timezone.utc),
-        datetime(2026, 7, 5, 0, 0, tzinfo=timezone.utc),
+        datetime(2026, 7, 4, 0, 0, tzinfo=UTC),
+        datetime(2026, 7, 5, 0, 0, tzinfo=UTC),
     )
     assert [e.start for e in events] == [
-        datetime(2026, 7, 4, 9, 30, tzinfo=timezone.utc),
-        datetime(2026, 7, 4, 14, 0, tzinfo=timezone.utc),
+        datetime(2026, 7, 4, 9, 30, tzinfo=UTC),
+        datetime(2026, 7, 4, 14, 0, tzinfo=UTC),
     ]
 
 
@@ -590,7 +590,7 @@ def test_weekly_get_events_excludes_outside_window() -> None:
     _feed_weekly(hub, _schedule([_item(ALL_DAYS, (9, 30), (11, 0))]))
     events = _get_events(
         cal,
-        datetime(2026, 7, 4, 12, 0, tzinfo=timezone.utc),
-        datetime(2026, 7, 4, 13, 0, tzinfo=timezone.utc),
+        datetime(2026, 7, 4, 12, 0, tzinfo=UTC),
+        datetime(2026, 7, 4, 13, 0, tzinfo=UTC),
     )
     assert events == []

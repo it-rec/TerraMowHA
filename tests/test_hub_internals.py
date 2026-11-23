@@ -449,7 +449,6 @@ def test_async_stop_clears_state() -> None:
 
 
 def test_diagnostics_redacts_secrets_and_exports_hub_state() -> None:
-    from custom_components.terramow.const import DOMAIN
     from custom_components.terramow.diagnostics import (
         async_get_config_entry_diagnostics,
     )

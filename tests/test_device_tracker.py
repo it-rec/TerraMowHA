@@ -27,8 +27,10 @@ from custom_components.terramow.const import (
 from custom_components.terramow.device_tracker import (
     METERS_PER_DEGREE_LATITUDE,
     TerraMowDeviceTracker,
-    async_setup_entry as tracker_setup,
     project_pose,
+)
+from custom_components.terramow.device_tracker import (
+    async_setup_entry as tracker_setup,
 )
 from custom_components.terramow.hub import TerraMowHub
 
