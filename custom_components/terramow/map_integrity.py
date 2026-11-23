@@ -93,9 +93,7 @@ def snapshot_map_geometry(map_data: dict[str, Any]) -> dict[str, Any]:
     }
     for key in _POLYGON_KEYS:
         snapshot[key] = [
-            _points(polygon)
-            for polygon in scene[key]
-            if len(_points(polygon)) >= 3
+            _points(polygon) for polygon in scene[key] if len(_points(polygon)) >= 3
         ]
 
     tunnel_polygons: list[list[list[float]]] = []
@@ -108,9 +106,7 @@ def snapshot_map_geometry(map_data: dict[str, Any]) -> dict[str, Any]:
                 if len(_points(polygon)) >= 3
             )
             tunnel_lines.extend(
-                _points(line)
-                for line in tunnel["polylines"]
-                if len(_points(line)) >= 2
+                _points(line) for line in tunnel["polylines"] if len(_points(line)) >= 2
             )
     snapshot["tunnel_polygons"] = tunnel_polygons
     snapshot["tunnel_lines"] = tunnel_lines
@@ -144,7 +140,10 @@ def _sequence_close(
             for offset in range(len(candidate))
         ]
     return any(
-        all(math.dist(a, b) <= tolerance_mm for a, b in zip(left, candidate, strict=True))
+        all(
+            math.dist(a, b) <= tolerance_mm
+            for a, b in zip(left, candidate, strict=True)
+        )
         for candidate in candidates
     )
 

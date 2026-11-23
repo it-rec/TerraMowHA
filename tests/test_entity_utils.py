@@ -1,9 +1,11 @@
 """Tests for the shared entity helpers (safe state writes, device lookup)."""
 
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 from custom_components.terramow.entity_utils import (
     async_get_entry_device,
+    device_belongs_to_entry,
     safe_schedule_update_ha_state,
     safe_write_ha_state,
 )
@@ -121,3 +123,20 @@ def test_device_lookup_falls_back_on_older_cores() -> None:
 
     assert async_get_entry_device(registry, ("terramow", "SN1"), "entry-1") is device
     registry.async_get_device.assert_called_once_with({("terramow", "SN1")})
+
+
+def test_entry_ownership_uses_the_single_owner_on_newer_cores() -> None:
+    """Newer cores: read config_entry_id, never the deprecated config_entries."""
+    device = MagicMock(spec=["config_entry_id"])
+    device.config_entry_id = "entry-1"
+
+    assert device_belongs_to_entry(device, "entry-1") is True
+    assert device_belongs_to_entry(device, "entry-2") is False
+
+
+def test_entry_ownership_falls_back_on_older_cores() -> None:
+    """Cores without config_entry_id keep checking config_entries."""
+    device = SimpleNamespace(config_entries={"entry-1", "entry-3"})
+
+    assert device_belongs_to_entry(device, "entry-1") is True
+    assert device_belongs_to_entry(device, "entry-2") is False

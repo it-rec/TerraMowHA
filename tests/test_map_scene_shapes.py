@@ -39,7 +39,9 @@ def _fz_count(item):
 def test_polygon_forms_still_render() -> None:
     assert len(_extract_polygons(_poly((0, 0), (1, 0), (1, 1)))) == 1
     assert len(_extract_polygons({"boundary": _poly((0, 0), (2, 0), (2, 2))})) == 1
-    assert len(_extract_polygons({"polygon": _poly((0, 0), (2, 0), (2, 2), (0, 2))})) == 1
+    assert (
+        len(_extract_polygons({"polygon": _poly((0, 0), (2, 0), (2, 2), (0, 2))})) == 1
+    )
     assert _fz_count(_poly((0, 0), (10, 0), (10, 10), (0, 10))) == 1
 
 
@@ -130,7 +132,14 @@ def test_rectangle_and_square_forms() -> None:
         (-1.0, 1.0),
     ]
     # top_left / bottom_right
-    assert len(_rect_points({"top_left": {"x": -1, "y": 1}, "bottom_right": {"x": 1, "y": -1}})) == 4
+    assert (
+        len(
+            _rect_points(
+                {"top_left": {"x": -1, "y": 1}, "bottom_right": {"x": 1, "y": -1}}
+            )
+        )
+        == 4
+    )
     # degenerate / unrecognized -> []
     assert _rect_points({"center": {"x": 0, "y": 0}, "width": 0, "height": 2}) == []
     assert _rect_points({"center": {"x": 0, "y": 0}}) == []
@@ -152,14 +161,33 @@ def test_rect_alias_and_edge_branches() -> None:
     # degenerate corner pair -> no polygon
     assert _rect_points({"min": {"x": 0, "y": 0}, "max": {"x": 0, "y": 5}}) == []
     # bottom_left / top_right corner pair
-    assert len(_rect_points({"bottom_left": {"x": 0, "y": 0}, "top_right": {"x": 2, "y": 2}})) == 4
+    assert (
+        len(
+            _rect_points(
+                {"bottom_left": {"x": 0, "y": 0}, "top_right": {"x": 2, "y": 2}}
+            )
+        )
+        == 4
+    )
     # explicit half_width / half_height
-    assert len(_rect_points({"center": {"x": 0, "y": 0}, "half_width": 2, "half_height": 1})) == 4
+    assert (
+        len(
+            _rect_points(
+                {"center": {"x": 0, "y": 0}, "half_width": 2, "half_height": 1}
+            )
+        )
+        == 4
+    )
     # size present but both half extents already set -> size is ignored
     assert (
         len(
             _rect_points(
-                {"center": {"x": 0, "y": 0}, "half_width": 2, "half_height": 1, "size": 9}
+                {
+                    "center": {"x": 0, "y": 0},
+                    "half_width": 2,
+                    "half_height": 1,
+                    "size": 9,
+                }
             )
         )
         == 4
@@ -171,9 +199,18 @@ def test_rect_alias_and_edge_branches() -> None:
     assert len(_rect_points({"x": 0, "y": 0, "width": 4, "height": 2})) == 4
     # rotation via "angle" and via a milli-radian "theta"
     assert len(_rect_points({"center": {"x": 0, "y": 0}, "size": 2, "angle": 30})) == 4
-    assert len(_rect_points({"center": {"x": 0, "y": 0}, "size": 2, "theta": 100000})) == 4
+    assert (
+        len(_rect_points({"center": {"x": 0, "y": 0}, "size": 2, "theta": 100000})) == 4
+    )
     # "rectangle" nested sub-object
-    assert len(_extract_polygons({"rectangle": {"min": {"x": 0, "y": 0}, "max": {"x": 2, "y": 2}}})) == 1
+    assert (
+        len(
+            _extract_polygons(
+                {"rectangle": {"min": {"x": 0, "y": 0}, "max": {"x": 2, "y": 2}}}
+            )
+        )
+        == 1
+    )
 
 
 def test_circle_center_from_nested_point() -> None:
@@ -182,10 +219,34 @@ def test_circle_center_from_nested_point() -> None:
 
 
 def test_nested_shape_subobjects_render() -> None:
-    assert len(_extract_polygons({"circle": {"center": {"x": 0, "y": 0}, "radius": 1}})) == 1
-    assert len(_extract_polygons({"rect": {"min": {"x": 0, "y": 0}, "max": {"x": 2, "y": 2}}})) == 1
-    assert len(_extract_polygons({"bbox": {"min_x": 0, "min_y": 0, "max_x": 1, "max_y": 1}})) == 1
-    assert len(_extract_polygons({"bounds": {"min_x": 0, "min_y": 0, "max_x": 1, "max_y": 1}})) == 1
+    assert (
+        len(_extract_polygons({"circle": {"center": {"x": 0, "y": 0}, "radius": 1}}))
+        == 1
+    )
+    assert (
+        len(
+            _extract_polygons(
+                {"rect": {"min": {"x": 0, "y": 0}, "max": {"x": 2, "y": 2}}}
+            )
+        )
+        == 1
+    )
+    assert (
+        len(
+            _extract_polygons(
+                {"bbox": {"min_x": 0, "min_y": 0, "max_x": 1, "max_y": 1}}
+            )
+        )
+        == 1
+    )
+    assert (
+        len(
+            _extract_polygons(
+                {"bounds": {"min_x": 0, "min_y": 0, "max_x": 1, "max_y": 1}}
+            )
+        )
+        == 1
+    )
 
 
 def test_rectangle_wins_over_ellipse_on_width_height() -> None:

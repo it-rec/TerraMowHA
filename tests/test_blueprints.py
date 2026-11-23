@@ -74,9 +74,7 @@ def _load(path: Path) -> Blueprint:
     )
 
 
-@pytest.mark.parametrize(
-    "path", _blueprint_paths(), ids=lambda path: path.name
-)
+@pytest.mark.parametrize("path", _blueprint_paths(), ids=lambda path: path.name)
 def test_blueprint_metadata(path: Path) -> None:
     """Name, description and an importable source_url are all present."""
     blueprint = _load(path)
@@ -90,18 +88,14 @@ def test_blueprint_metadata(path: Path) -> None:
     assert blueprint.inputs, "a blueprint with no inputs is a plain automation"
 
 
-@pytest.mark.parametrize(
-    "path", _blueprint_paths(), ids=lambda path: path.name
-)
+@pytest.mark.parametrize("path", _blueprint_paths(), ids=lambda path: path.name)
 def test_blueprint_inputs_are_all_covered_by_the_test_values(path: Path) -> None:
     """Keeps INPUT_VALUES honest as blueprints gain inputs."""
     missing = [name for name in _load(path).inputs if name not in INPUT_VALUES]
     assert not missing, f"add test values for {missing}"
 
 
-@pytest.mark.parametrize(
-    "path", _blueprint_paths(), ids=lambda path: path.name
-)
+@pytest.mark.parametrize("path", _blueprint_paths(), ids=lambda path: path.name)
 async def test_blueprint_validates_as_an_automation(
     hass: HomeAssistant, path: Path
 ) -> None:
@@ -134,9 +128,7 @@ async def test_blueprint_validates_as_an_automation(
     assert validated.validation_status == "ok", validated.validation_error
 
 
-@pytest.mark.parametrize(
-    "path", _blueprint_paths(), ids=lambda path: path.name
-)
+@pytest.mark.parametrize("path", _blueprint_paths(), ids=lambda path: path.name)
 def test_blueprint_only_calls_known_terramow_services(path: Path) -> None:
     """A typo in a service name would only surface when the automation runs."""
     raw = path.read_text(encoding="utf-8")

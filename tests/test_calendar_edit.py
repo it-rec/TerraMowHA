@@ -10,7 +10,7 @@ preservation on update and the time-slot availability gate.
 from __future__ import annotations
 
 import asyncio
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta, timezone
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -24,14 +24,14 @@ from custom_components.terramow.calendar import TerraMowScheduleCalendar
 from custom_components.terramow.hub import TerraMowHub
 
 # Saturday 08:00 UTC; the HA time zone is pinned to UTC below.
-NOW = datetime(2026, 7, 4, 8, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 7, 4, 8, 0, tzinfo=UTC)
 SAT = "WEEK_DAY_SATURDAY"
 
 
 @pytest.fixture(autouse=True)
 def utc_time_zone():
     previous = dt_util.get_default_time_zone()
-    dt_util.set_default_time_zone(timezone.utc)
+    dt_util.set_default_time_zone(UTC)
     yield
     dt_util.set_default_time_zone(previous)
 
@@ -66,7 +66,7 @@ def _config(mock: AsyncMock) -> dict[str, Any]:
 
 
 def _at(hour: int, minute: int = 0, day: int = 4) -> datetime:
-    return datetime(2026, 7, day, hour, minute, tzinfo=timezone.utc)
+    return datetime(2026, 7, day, hour, minute, tzinfo=UTC)
 
 
 # ---------------------------------------------------------------------------

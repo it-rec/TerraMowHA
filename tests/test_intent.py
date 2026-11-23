@@ -77,12 +77,15 @@ def test_zone_choices_skips_unusable_entries() -> None:
     assert zone_choices({"regions": ["x"]}) == []
     assert zone_choices({"regions": [{"sub_regions": ["x"]}]}) == []
     # Unnamed or blank zones cannot be spoken, so they are not offered.
-    assert zone_choices(
-        {"regions": [{"sub_regions": [{"id": 1, "name": "  "}, {"id": 2}]}]}
-    ) == []
-    assert zone_choices(
-        {"regions": [{"sub_regions": [{"id": True, "name": "x"}]}]}
-    ) == []
+    assert (
+        zone_choices(
+            {"regions": [{"sub_regions": [{"id": 1, "name": "  "}, {"id": 2}]}]}
+        )
+        == []
+    )
+    assert (
+        zone_choices({"regions": [{"sub_regions": [{"id": True, "name": "x"}]}]}) == []
+    )
 
 
 def test_an_exact_match_wins() -> None:
@@ -93,7 +96,7 @@ def test_an_exact_match_wins() -> None:
 
 
 def test_an_exact_match_beats_a_longer_name_containing_it() -> None:
-    """"Back" must mow Back, not Back Terrace."""
+    """ "Back" must mow Back, not Back Terrace."""
     assert match_zone("back", CHOICES)[0] == 3
 
 
@@ -125,7 +128,9 @@ def _hub(hass: HomeAssistant, map_data: dict[str, Any] | None = None) -> TerraMo
     hub.mqtt_client = MagicMock()
     hub.mqtt_client.is_connected.return_value = True
     hub.mqtt_client.publish.return_value = MagicMock(rc=0)
-    hub._map_data = json.loads(json.dumps(map_data if map_data is not None else MAP_DATA))
+    hub._map_data = json.loads(
+        json.dumps(map_data if map_data is not None else MAP_DATA)
+    )
     hub.async_start_select_region_clean = AsyncMock()  # type: ignore[method-assign]
     return hub
 
@@ -191,8 +196,12 @@ async def test_no_connected_mower_says_so(hass: HomeAssistant) -> None:
 
 async def test_the_mower_that_knows_the_zone_is_chosen(hass: HomeAssistant) -> None:
     """With two mowers, the one whose map has the zone is the one meant."""
-    front = _hub(hass, {"id": 1, "regions": [{"sub_regions": [{"id": 7, "name": "Front"}]}]})
-    back = _hub(hass, {"id": 2, "regions": [{"sub_regions": [{"id": 9, "name": "Orchard"}]}]})
+    front = _hub(
+        hass, {"id": 1, "regions": [{"sub_regions": [{"id": 7, "name": "Front"}]}]}
+    )
+    back = _hub(
+        hass, {"id": 2, "regions": [{"sub_regions": [{"id": 9, "name": "Orchard"}]}]}
+    )
     _entries(hass, front, back)
 
     await _handle(hass, "orchard")
@@ -229,9 +238,7 @@ async def test_the_intent_is_removed_and_can_be_registered_again(
     """Unloading the last entry drops the intent; the next setup is clean."""
     await async_setup_intents(hass)
     async_remove_intents(hass)
-    assert not any(
-        h.intent_type == INTENT_MOW_ZONE for h in intent.async_get(hass)
-    )
+    assert not any(h.intent_type == INTENT_MOW_ZONE for h in intent.async_get(hass))
 
     await async_setup_intents(hass)
     assert any(h.intent_type == INTENT_MOW_ZONE for h in intent.async_get(hass))

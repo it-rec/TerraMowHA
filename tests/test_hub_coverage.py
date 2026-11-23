@@ -204,9 +204,7 @@ def test_path_meta_no_seq_throttle_skips_fetch() -> None:
     hub = _hub()
     hub._path_channel.no_seq_last_fetch = time.monotonic()
     no_seq = {"seq": -1, "http_port": 1, "http_path": "/p", "token": "t"}
-    with patch(
-        "custom_components.terramow.hub.async_get_clientsession"
-    ) as session:
+    with patch("custom_components.terramow.hub.async_get_clientsession") as session:
         asyncio.run(hub._async_handle_meta(hub._path_channel, no_seq))
     session.assert_not_called()
 
@@ -215,9 +213,7 @@ def test_history_path_meta_no_seq_throttle_skips_fetch() -> None:
     hub = _hub()
     hub._history_path_channel.no_seq_last_fetch = time.monotonic()
     no_seq = {"seq": -1, "http_port": 1, "http_path": "/h", "token": "t"}
-    with patch(
-        "custom_components.terramow.hub.async_get_clientsession"
-    ) as session:
+    with patch("custom_components.terramow.hub.async_get_clientsession") as session:
         asyncio.run(hub._async_handle_meta(hub._history_path_channel, no_seq))
     session.assert_not_called()
 

@@ -98,9 +98,7 @@ async def test_clear_removes_both_issues(hass: HomeAssistant) -> None:
 
 
 def _hub() -> TerraMowHub:
-    basic_data = TerraMowBasicData(
-        host="192.0.2.170", password="secret", entry_id="e1"
-    )
+    basic_data = TerraMowBasicData(host="192.0.2.170", password="secret", entry_id="e1")
     hub = TerraMowHub(basic_data, MagicMock())
     hub.mqtt_client = MagicMock()
     hub.mqtt_client.is_connected.return_value = True

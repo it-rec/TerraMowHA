@@ -52,9 +52,12 @@ def test_number_and_settings_signature_are_defensive() -> None:
     assert _number("1") is None
     assert _number(float("nan")) is None
     assert _number(float("inf")) is None
-    assert settings_signature(
-        {"mow_speed_type": "low", "unrelated": 1, "mow_spacing": 100}
-    ) == '{"mow_spacing":100,"mow_speed_type":"low"}'
+    assert (
+        settings_signature(
+            {"mow_speed_type": "low", "unrelated": 1, "mow_spacing": 100}
+        )
+        == '{"mow_spacing":100,"mow_speed_type":"low"}'
+    )
 
 
 def test_discharge_metrics_and_relative_trend() -> None:
@@ -66,9 +69,7 @@ def test_discharge_metrics_and_relative_trend() -> None:
         area = 300 + (index - 3) * 50
         _observe(tracker, level, area, index * 600, index * 600)
 
-    metrics = tracker.metrics(
-        map_id=1, settings={"mow_speed_type": "medium"}, now=4000
-    )
+    metrics = tracker.metrics(map_id=1, settings={"mow_speed_type": "medium"}, now=4000)
     assert metrics["discharge_samples"] == 6
     assert metrics["area_m2_per_10_percent"] == 7.5
     assert metrics["mowing_minutes_per_10_percent"] == 10
@@ -109,9 +110,12 @@ def test_discharge_metrics_and_relative_trend() -> None:
         },
         6,
     )
-    assert zero_baseline.metrics(map_id=1, settings={}, now=6)[
-        "area_efficiency_trend_percent"
-    ] is None
+    assert (
+        zero_baseline.metrics(map_id=1, settings={}, now=6)[
+            "area_efficiency_trend_percent"
+        ]
+        is None
+    )
 
 
 def test_partial_incomparable_and_invalid_windows_are_classified() -> None:
@@ -180,7 +184,10 @@ def test_restore_expiry_caps_sources_and_reset() -> None:
         {
             "discharge_records": [
                 {"ended_at": 0},
-                *[dict(fresh, ended_at=fresh["ended_at"] + index) for index in range(40)],
+                *[
+                    dict(fresh, ended_at=fresh["ended_at"] + index)
+                    for index in range(40)
+                ],
                 "bad",
             ],
             "charge_records": "bad",
@@ -190,9 +197,12 @@ def test_restore_expiry_caps_sources_and_reset() -> None:
         BATTERY_HEALTH_MAX_AGE_SECONDS + 10,
     )
     assert len(tracker.discharge_records) == BATTERY_HEALTH_MAX_RECORDS
-    assert tracker.metrics(map_id=1, settings={}, now=BATTERY_HEALTH_MAX_AGE_SECONDS + 10)[
-        "source"
-    ] == "restored"
+    assert (
+        tracker.metrics(map_id=1, settings={}, now=BATTERY_HEALTH_MAX_AGE_SECONDS + 10)[
+            "source"
+        ]
+        == "restored"
+    )
 
     _observe(
         tracker,
@@ -202,9 +212,12 @@ def test_restore_expiry_caps_sources_and_reset() -> None:
         BATTERY_HEALTH_MAX_AGE_SECONDS + 11,
         mowing=False,
     )
-    assert tracker.metrics(
-        map_id=1, settings={}, now=BATTERY_HEALTH_MAX_AGE_SECONDS + 11
-    )["source"] == "revalidated"
+    assert (
+        tracker.metrics(map_id=1, settings={}, now=BATTERY_HEALTH_MAX_AGE_SECONDS + 11)[
+            "source"
+        ]
+        == "revalidated"
+    )
     _observe(
         tracker,
         49,
@@ -213,9 +226,12 @@ def test_restore_expiry_caps_sources_and_reset() -> None:
         BATTERY_HEALTH_MAX_AGE_SECONDS + 12,
         mowing=False,
     )
-    assert tracker.metrics(
-        map_id=1, settings={}, now=BATTERY_HEALTH_MAX_AGE_SECONDS + 12
-    )["source"] == "live"
+    assert (
+        tracker.metrics(map_id=1, settings={}, now=BATTERY_HEALTH_MAX_AGE_SECONDS + 12)[
+            "source"
+        ]
+        == "live"
+    )
 
     dumped = tracker.dump()
     assert len(dumped["discharge_records"]) == BATTERY_HEALTH_MAX_RECORDS

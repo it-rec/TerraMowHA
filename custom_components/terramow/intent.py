@@ -46,9 +46,11 @@ def normalize_name(name: str) -> str:
     """
     decomposed = unicodedata.normalize("NFKD", name.casefold())
     stripped = "".join(char for char in decomposed if not unicodedata.combining(char))
-    return " ".join("".join(
-        char if char.isalnum() or char.isspace() else " " for char in stripped
-    ).split())
+    return " ".join(
+        "".join(
+            char if char.isalnum() or char.isspace() else " " for char in stripped
+        ).split()
+    )
 
 
 def zone_choices(map_data: dict[str, Any]) -> list[tuple[int, str]]:

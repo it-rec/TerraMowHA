@@ -665,7 +665,9 @@ def _main_direction_attributes(hub: TerraMowHub) -> dict[str, Any]:
         multiple_config = main_direction_config.get("multiple_mode_config", {})
         configured_angles = multiple_config.get("angles", [])
         attrs["configured_angles"] = configured_angles
-        attrs["configured_angles_degrees"] = [f"{angle}°" for angle in configured_angles]
+        attrs["configured_angles_degrees"] = [
+            f"{angle}°" for angle in configured_angles
+        ]
         attrs["angles_count"] = len(configured_angles)
         attrs["mode_description"] = "Multiple main directions"
 
@@ -828,9 +830,7 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         push_dp_ids=(113, 107),
         value_fn=_current_session_time,
-        attributes_fn=_session_outcome_attributes(
-            _raw_session_time, "raw_duration"
-        ),
+        attributes_fn=_session_outcome_attributes(_raw_session_time, "raw_duration"),
     ),
     TerraMowSensorEntityDescription(
         key="current_job_type",
@@ -859,9 +859,7 @@ SENSORS: tuple[TerraMowSensorEntityDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         push_dp_ids=(126,),
         # Recommended blade cleaning cycle is 240 hours, i.e. 14400 minutes
-        value_fn=_maintenance_remaining(
-            "blade_time", BLADE_MAINTENANCE_CYCLE_MINUTES
-        ),
+        value_fn=_maintenance_remaining("blade_time", BLADE_MAINTENANCE_CYCLE_MINUTES),
         attributes_fn=_maintenance_attributes(
             "blade_time",
             BLADE_MAINTENANCE_CYCLE_MINUTES,
@@ -1251,8 +1249,8 @@ class TerraMowMowSpeedSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         if not global_params:
             return None
 
-        mow_speed = global_params.get('mow_speed', {})
-        speed_type = mow_speed.get('speed_type')
+        mow_speed = global_params.get("mow_speed", {})
+        speed_type = mow_speed.get("speed_type")
         if not speed_type:
             self._unknown_speed_type = None
             return None
@@ -1285,22 +1283,22 @@ class TerraMowMowSpeedSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         attrs = {}
 
         # Mowing spacing
-        mow_spacing = global_params.get('mow_spacing', {})
-        if 'value' in mow_spacing:
-            attrs['mow_spacing'] = mow_spacing['value']
+        mow_spacing = global_params.get("mow_spacing", {})
+        if "value" in mow_spacing:
+            attrs["mow_spacing"] = mow_spacing["value"]
 
         # Edge cutting distance
-        edge_cutting_distance = global_params.get('edge_cutting_distance', {})
-        if 'value' in edge_cutting_distance:
-            attrs['edge_cutting_distance'] = edge_cutting_distance['value']
+        edge_cutting_distance = global_params.get("edge_cutting_distance", {})
+        if "value" in edge_cutting_distance:
+            attrs["edge_cutting_distance"] = edge_cutting_distance["value"]
 
         # Blade disk speed
-        blade_disk_speed = global_params.get('blade_disk_speed', {})
-        if 'speed_type' in blade_disk_speed:
-            attrs['blade_disk_speed'] = blade_disk_speed['speed_type']
+        blade_disk_speed = global_params.get("blade_disk_speed", {})
+        if "speed_type" in blade_disk_speed:
+            attrs["blade_disk_speed"] = blade_disk_speed["speed_type"]
 
         if self._unknown_speed_type:
-            attrs['unknown_mow_speed_type'] = self._unknown_speed_type
+            attrs["unknown_mow_speed_type"] = self._unknown_speed_type
 
         return attrs
 
@@ -1338,11 +1336,17 @@ class VersionCompatibilitySensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         # Add detailed version information
         firmware_info = self.basic_data.firmware_version
         if firmware_info:
-            attributes["firmware_overall_version"] = firmware_info.get("overall", "unknown")
+            attributes["firmware_overall_version"] = firmware_info.get(
+                "overall", "unknown"
+            )
             module_info = firmware_info.get("module", {})
-            attributes["firmware_ha_version"] = module_info.get("home_assistant", "unknown")
+            attributes["firmware_ha_version"] = module_info.get(
+                "home_assistant", "unknown"
+            )
             attributes["firmware_map_version"] = module_info.get("map", "unknown")
-            attributes["firmware_control_version"] = module_info.get("control", "unknown")
+            attributes["firmware_control_version"] = module_info.get(
+                "control", "unknown"
+            )
 
         attributes["plugin_ha_version"] = CURRENT_HA_VERSION
         attributes["min_required_overall_version"] = MIN_REQUIRED_OVERALL_VERSION
@@ -1459,9 +1463,7 @@ class TerraMowPoseSensor(TerraMowEntity, SensorEntity):
         await super().async_added_to_hass()
         hub = self.hub
         if hub:
-            self.async_on_remove(
-                hub.register_pose_callback(self._on_pose)
-            )
+            self.async_on_remove(hub.register_pose_callback(self._on_pose))
 
     _unique_id_suffix = "pose"
 
@@ -1475,7 +1477,7 @@ class TerraMowPoseSensor(TerraMowEntity, SensorEntity):
         """Return the sensor value (yaw)."""
         if not self._pose:
             return None
-        yaw = self._pose.get('yaw')
+        yaw = self._pose.get("yaw")
         return float(yaw) if yaw is not None else None
 
     @property
@@ -1484,11 +1486,11 @@ class TerraMowPoseSensor(TerraMowEntity, SensorEntity):
         if not self._pose:
             return {}
         return {
-            'x': self._pose.get('x'),
-            'y': self._pose.get('y'),
-            'yaw': self._pose.get('yaw'),
-            'timestamp_ms': self._pose.get('timestamp_ms'),
-            'frame': self._pose.get('frame'),
+            "x": self._pose.get("x"),
+            "y": self._pose.get("y"),
+            "yaw": self._pose.get("yaw"),
+            "timestamp_ms": self._pose.get("timestamp_ms"),
+            "frame": self._pose.get("frame"),
         }
 
 
@@ -1512,18 +1514,14 @@ async def async_setup_entry(
         # Sensors with unique logic
         BatterySensor(basic_data, hass),
         TerraMowPoseSensor(basic_data, hass),
-
         # Map-related sensors
         TerraMowMapStatusSensor(basic_data, hass),
         TerraMowMapAreaSensor(basic_data, hass),
         TerraMowCleanModeSensor(basic_data, hass),
-
         # Mow speed with its unknown-value tracking (dp_155)
         TerraMowMowSpeedSensor(basic_data, hass),
-
         # Version compatibility sensor (historical unique_id format)
         VersionCompatibilitySensor(basic_data, hass),
-
         # Measured-rate service forecasts for the maintenance counters
         BladeWearForecastSensor(basic_data, hass),
         BaseStationWearForecastSensor(basic_data, hass),

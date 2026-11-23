@@ -32,9 +32,7 @@ from custom_components.terramow.map_sensor import (
 from custom_components.terramow.switch import ThoroughCornerCuttingSwitch
 from custom_components.terramow.update import TerraMowFirmwareUpdate
 
-_BINARY_DESCRIPTIONS = {
-    description.key: description for description in BINARY_SENSORS
-}
+_BINARY_DESCRIPTIONS = {description.key: description for description in BINARY_SENSORS}
 
 
 def _binary(hub: TerraMowHub, key: str) -> TerraMowBinarySensor:
@@ -63,23 +61,34 @@ def _feed(handler, payload: dict) -> None:
 def test_lawn_mower_added_to_hass_registers_and_syncs_activity() -> None:
     hub = _hub()
     entity = TerraMowLawnMowerEntity(hub.basic_data, hub.hass)
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_RUNNING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "state": "MISSION_STATE_RUNNING",
+        },
+    )
     asyncio.run(entity.async_added_to_hass())
     # the initial hub state is picked up during add
     assert entity.activity == LawnMowerActivity.MOWING
     # the state listener was registered so future hub changes push through
-    _feed(hub.on_mission_status, {"mission": "MISSION_IDLE", "state": "MISSION_STATE_IDLE"})
+    _feed(
+        hub.on_mission_status,
+        {"mission": "MISSION_IDLE", "state": "MISSION_STATE_IDLE"},
+    )
     assert entity.activity == LawnMowerActivity.DOCKED
 
 
 def test_lawn_mower_on_hub_state_updates_activity() -> None:
     hub = _hub()
     entity = TerraMowLawnMowerEntity(hub.basic_data, hub.hass)
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_PAUSE",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "state": "MISSION_STATE_PAUSE",
+        },
+    )
     entity._on_hub_state()
     assert entity.activity == LawnMowerActivity.PAUSED
 
@@ -91,9 +100,13 @@ def test_lawn_mower_schedules_exactly_one_write_per_hub_state() -> None:
     hub = _hub()
     entity = TerraMowLawnMowerEntity(hub.basic_data, hub.hass)
     entity.entity_id = "lawn_mower.terramow"
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_RUNNING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "state": "MISSION_STATE_RUNNING",
+        },
+    )
     with patch.object(entity, "schedule_update_ha_state") as sched:
         entity._on_hub_state()  # activity changes: DOCKED -> MOWING
     assert entity.activity == LawnMowerActivity.MOWING
@@ -116,9 +129,13 @@ def test_lawn_mower_supported_features() -> None:
 def test_lawn_mower_pause_and_dock_delegate_to_hub() -> None:
     hub = _hub()
     entity = TerraMowLawnMowerEntity(hub.basic_data, hub.hass)
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_RUNNING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "state": "MISSION_STATE_RUNNING",
+        },
+    )
     hub.async_publish_with_ack = AsyncMock(return_value=0)
     hub._last_control_time = 0.0
     asyncio.run(entity.async_pause())
@@ -134,9 +151,13 @@ def test_lawn_mower_recharge_without_returning_falls_back_to_docked() -> None:
     entity = TerraMowLawnMowerEntity(hub.basic_data, hub.hass)
     # simulate an old HA build lacking LawnMowerActivity.RETURNING
     entity._has_returning = False
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_RECHARGE", "state": "MISSION_STATE_RUNNING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_RECHARGE",
+            "state": "MISSION_STATE_RUNNING",
+        },
+    )
     entity.update_activity_from_state()
     assert entity.activity == LawnMowerActivity.DOCKED
 
@@ -253,21 +274,29 @@ def test_clean_mode_sensor_value_and_attributes() -> None:
     assert sensor.extra_state_attributes == {}
 
     # a select-region job exposes the region ids as attributes
-    asyncio.run(sensor._on_map_info({
-        "clean_info": {
-            "mode": "MAP_CLEAN_INFO_MODE_SELECT_REGION",
-            "select_region": {"region_id": [1, 2, 3]},
-        },
-    }))
+    asyncio.run(
+        sensor._on_map_info(
+            {
+                "clean_info": {
+                    "mode": "MAP_CLEAN_INFO_MODE_SELECT_REGION",
+                    "select_region": {"region_id": [1, 2, 3]},
+                },
+            }
+        )
+    )
     assert sensor.native_value == "map_clean_info_mode_select_region"
     attrs = sensor.extra_state_attributes
     assert attrs["selected_regions"] == [1, 2, 3]
     assert attrs["selected_regions_count"] == 3
 
     # a global job (no select_region) yields no extra attributes
-    asyncio.run(sensor._on_map_info({
-        "clean_info": {"mode": "MAP_CLEAN_INFO_MODE_GLOBAL"},
-    }))
+    asyncio.run(
+        sensor._on_map_info(
+            {
+                "clean_info": {"mode": "MAP_CLEAN_INFO_MODE_GLOBAL"},
+            }
+        )
+    )
     assert sensor.native_value == "map_clean_info_mode_global"
     assert sensor.extra_state_attributes == {}
 
@@ -275,7 +304,9 @@ def test_clean_mode_sensor_value_and_attributes() -> None:
 def test_clean_mode_sensor_unknown_mode_is_none() -> None:
     hub = _hub()
     sensor = TerraMowCleanModeSensor(hub.basic_data, hub.hass)
-    asyncio.run(sensor._on_map_info({"clean_info": {"mode": "MAP_CLEAN_INFO_MODE_ALIEN"}}))
+    asyncio.run(
+        sensor._on_map_info({"clean_info": {"mode": "MAP_CLEAN_INFO_MODE_ALIEN"}})
+    )
     assert sensor.native_value is None
 
 

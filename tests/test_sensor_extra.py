@@ -57,12 +57,15 @@ def test_battery_sensor_attributes_and_missing_branches() -> None:
     attrs = sensor.extra_state_attributes
     assert set(attrs) == {"health"}
 
-    _feed(hub.on_battery_status, {
-        "state": "BATTERY_STATE_CHARGING",
-        "tempreture": "BATTERY_TEMPRETURE_NORMAL",
-        "charger_connected": True,
-        "is_switch_on": True,
-    })
+    _feed(
+        hub.on_battery_status,
+        {
+            "state": "BATTERY_STATE_CHARGING",
+            "tempreture": "BATTERY_TEMPRETURE_NORMAL",
+            "charger_connected": True,
+            "is_switch_on": True,
+        },
+    )
     attrs = sensor.extra_state_attributes
     assert attrs["state"] == "BATTERY_STATE_CHARGING"
     # firmware typo is normalised on the way out
@@ -79,12 +82,15 @@ def test_battery_sensor_attributes_survive_null_tempreture() -> None:
     # attribute read (None.replace would raise); it falls back to "unknown".
     hub = _hub()
     sensor = BatterySensor(hub.basic_data, hub.hass)
-    _feed(hub.on_battery_status, {
-        "state": "BATTERY_STATE_CHARGING",
-        "tempreture": None,
-        "charger_connected": True,
-        "is_switch_on": True,
-    })
+    _feed(
+        hub.on_battery_status,
+        {
+            "state": "BATTERY_STATE_CHARGING",
+            "tempreture": None,
+            "charger_connected": True,
+            "is_switch_on": True,
+        },
+    )
     attrs = sensor.extra_state_attributes
     assert attrs["temperature"] == "unknown"
 
@@ -93,10 +99,13 @@ def test_battery_state_and_temperature_unknown_values_are_none() -> None:
     hub = _hub()
     state = _sensor(hub, "battery_state")
     temp = _sensor(hub, "battery_temperature_state")
-    _feed(hub.on_battery_status, {
-        "state": "BATTERY_STATE_ALIEN",
-        "tempreture": "BATTERY_TEMPRETURE_ALIEN",
-    })
+    _feed(
+        hub.on_battery_status,
+        {
+            "state": "BATTERY_STATE_ALIEN",
+            "tempreture": "BATTERY_TEMPRETURE_ALIEN",
+        },
+    )
     assert state.native_value is None
     assert temp.native_value is None
 
@@ -132,11 +141,14 @@ def test_current_session_area_attribute_skip_branches() -> None:
     assert sensor.extra_state_attributes == {}
 
     # data present but every optional attribute is falsy/None -> empty dict
-    _feed(hub.on_current_work_data, {
-        "clean_area": 50,
-        "type": "",
-        "total_area": 0,
-    })
+    _feed(
+        hub.on_current_work_data,
+        {
+            "clean_area": 50,
+            "type": "",
+            "total_area": 0,
+        },
+    )
     assert sensor.extra_state_attributes == {}
 
     # lawn mower dropped -> empty dict
@@ -211,12 +223,15 @@ def test_mow_speed_attributes_skip_and_empty_branches() -> None:
 
     # global_params present (a known speed) but the optional sub-dicts carry no
     # usable keys, and no unknown speed type was recorded -> empty attributes
-    _feed(hub.on_global_params, {
-        "mow_speed": {"speed_type": "MOW_SPEED_TYPE_LOW"},
-        "mow_spacing": {},
-        "edge_cutting_distance": {},
-        "blade_disk_speed": {},
-    })
+    _feed(
+        hub.on_global_params,
+        {
+            "mow_speed": {"speed_type": "MOW_SPEED_TYPE_LOW"},
+            "mow_spacing": {},
+            "edge_cutting_distance": {},
+            "blade_disk_speed": {},
+        },
+    )
     assert sensor.extra_state_attributes == {}
 
     # lawn mower dropped -> empty attributes
@@ -234,13 +249,16 @@ def test_next_scheduled_start_incomplete_time_is_none() -> None:
     sensor = _sensor(hub, "next_scheduled_start")
     # exists but start_time is missing the minute -> None, and end_time missing
     # the minute is skipped from the attributes
-    _feed(hub.on_schedule_data, {
-        "exist": True,
-        "item_id": 1,
-        "shift_id": 2,
-        "start_time": {"hour": 9},
-        "end_time": {"hour": 11},
-    })
+    _feed(
+        hub.on_schedule_data,
+        {
+            "exist": True,
+            "item_id": 1,
+            "shift_id": 2,
+            "start_time": {"hour": 9},
+            "end_time": {"hour": 11},
+        },
+    )
     assert sensor.native_value is None
     attrs = sensor.extra_state_attributes
     assert attrs["has_schedule"] is True
@@ -307,9 +325,12 @@ def test_main_direction_attributes_empty_without_data() -> None:
 def test_main_direction_unknown_mode_uses_raw_name() -> None:
     hub = _hub()
     sensor = _sensor(hub, "main_direction_status")
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MYSTERY"},
-    })
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MYSTERY"},
+        },
+    )
     attrs = sensor.extra_state_attributes
     # unrecognised mode: none of the per-mode blocks add keys, and the friendly
     # name falls back to the raw mode string
@@ -375,12 +396,12 @@ def test_firmware_capabilities_counts_and_lists_the_modules() -> None:
         "dp": 8,
         "module": {
             "home_assistant": 3,
-            "mow_speed": "3",             # numeric strings are versions
-            "overnight_auto_resume": 0,   # a feature this firmware lacks
+            "mow_speed": "3",  # numeric strings are versions
+            "overnight_auto_resume": 0,  # a feature this firmware lacks
             "custom_mowing": 0,
-            "ble_communication": True,    # a bool is not a version
-            "weather": {"nested": 1},     # neither is a structure
-            "map": "sixteen",             # nor unparseable text
+            "ble_communication": True,  # a bool is not a version
+            "weather": {"nested": 1},  # neither is a structure
+            "map": "sixteen",  # nor unparseable text
         },
     }
     sensor = _sensor(hub, "firmware_capabilities")

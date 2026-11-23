@@ -37,6 +37,7 @@ def to_device_enum(value: str | None) -> str | None:
     """
     return value.upper() if isinstance(value, str) and value else None
 
+
 MQTT_PORT = 1883
 
 MQTT_USERNAME = "terramow"
@@ -70,12 +71,14 @@ MIN_SUPPORTED_HA_VERSION = 2
 # Minimum required firmware overall version number
 MIN_REQUIRED_OVERALL_VERSION = 25
 
+
 # Version compatibility check results
 class CompatibilityStatus:
     COMPATIBLE = "compatible"
     UPGRADE_REQUIRED = "upgrade_required"  # firmware upgrade required
     DOWNGRADE_RECOMMENDED = "downgrade_recommended"  # plugin downgrade recommended
     INCOMPATIBLE = "incompatible"  # completely incompatible
+
 
 # Data point ID used to obtain version compatibility information
 COMPATIBILITY_INFO_DP = 127

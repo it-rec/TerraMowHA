@@ -104,7 +104,7 @@ Zařízení v místní síti jsou zjištěna automaticky přes Zeroconf — při
 
 ### Požadavky
 
-- Home Assistant 2024.6.0 nebo novější (CI ověřuje integraci proti aktuálnímu vydání HA Core)
+- Home Assistant 2025.3.0 nebo novější (CI ověřuje integraci proti aktuálnímu vydání HA Core)
 - Firmware TerraMow verze 6.6.0 nebo novější
 - Aplikace TerraMow verze 1.6.0 nebo novější
 - Živá mapa a trasa sečení vyžadují verzi 3 modulu HA ve firmwaru; u verze 2 (např. S800) funguje vše ostatní a senzor kompatibility verzí to hlásí

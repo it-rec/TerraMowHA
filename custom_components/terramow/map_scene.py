@@ -287,8 +287,7 @@ def _rotated_rect(
         (-half_width, half_height),
     ]
     return [
-        (cx + lx * cos_a - ly * sin_a, cy + lx * sin_a + ly * cos_a)
-        for lx, ly in local
+        (cx + lx * cos_a - ly * sin_a, cy + lx * sin_a + ly * cos_a) for lx, ly in local
     ]
 
 
@@ -333,7 +332,12 @@ def _rect_points(rect: Any) -> list[tuple[float, float]]:
     min_y = coerce_float(rect.get("min_y"))
     max_x = coerce_float(rect.get("max_x"))
     max_y = coerce_float(rect.get("max_y"))
-    if min_x is not None and min_y is not None and max_x is not None and max_y is not None:
+    if (
+        min_x is not None
+        and min_y is not None
+        and max_x is not None
+        and max_y is not None
+    ):
         return _axis_aligned_rect(min_x, min_y, max_x, max_y)
 
     half_width = coerce_float(rect.get("half_width"))
@@ -604,9 +608,13 @@ def coverage_ratios_for_zones(
     for segment in segments:
         pts = [(point["x"], point["y"]) for point in segment]
         for a, b in zip(pts, pts[1:], strict=False):
-            edges.append((
-                (a[0] + b[0]) / 2, (a[1] + b[1]) / 2, math.dist(a, b),
-            ))
+            edges.append(
+                (
+                    (a[0] + b[0]) / 2,
+                    (a[1] + b[1]) / 2,
+                    math.dist(a, b),
+                )
+            )
     if not edges:
         return {}
     ratios: dict[int, float] = {}
@@ -733,9 +741,15 @@ def _merge_path_points(
     return [*history_points, *current_points]
 
 
-def _filter_cleaning_path_points(path_points: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _filter_cleaning_path_points(
+    path_points: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     """Keep only mowing path points."""
-    return [point for point in path_points if point.get("type") == "PATH_POINT_TYPE_CLEANING"]
+    return [
+        point
+        for point in path_points
+        if point.get("type") == "PATH_POINT_TYPE_CLEANING"
+    ]
 
 
 def _split_cleaning_runs(
@@ -845,7 +859,9 @@ def _point_line_distance(
     return abs(dy * x0 - dx * y0 + x2 * y1 - y2 * x1) / math.hypot(dx, dy)
 
 
-def _rdp_simplify_pixels(points: list[tuple[int, int]], epsilon: float) -> list[tuple[int, int]]:
+def _rdp_simplify_pixels(
+    points: list[tuple[int, int]], epsilon: float
+) -> list[tuple[int, int]]:
     """Simplify a pixel polyline using the RDP algorithm.
 
     Iterative (explicit stack) rather than recursive so a very long mowing
@@ -982,11 +998,11 @@ def build_scene(
         current_path_runs = _split_cleaning_runs(raw_current_path_points)
         history_path_runs = _split_cleaning_runs(raw_history_path_points)
     else:
-        raw_current_path_points, current_path_points, current_path_runs = (
-            cache.extract("current", path_data)
+        raw_current_path_points, current_path_points, current_path_runs = cache.extract(
+            "current", path_data
         )
-        raw_history_path_points, history_path_points, history_path_runs = (
-            cache.extract("history", history_path_data)
+        raw_history_path_points, history_path_points, history_path_runs = cache.extract(
+            "history", history_path_data
         )
     current_path_map_id = _path_map_id(path_data)
     history_path_map_id = _path_map_id(history_path_data)
@@ -998,17 +1014,31 @@ def build_scene(
             target_map_id = history_path_map_id
 
     path_map_mismatch = False
-    if target_map_id is not None and current_path_map_id is not None and current_path_map_id != target_map_id:
+    if (
+        target_map_id is not None
+        and current_path_map_id is not None
+        and current_path_map_id != target_map_id
+    ):
         current_path_points = []
         current_path_runs = []
         path_map_mismatch = True
-    if target_map_id is not None and history_path_map_id is not None and history_path_map_id != target_map_id:
+    if (
+        target_map_id is not None
+        and history_path_map_id is not None
+        and history_path_map_id != target_map_id
+    ):
         history_path_points = []
         history_path_runs = []
         path_map_mismatch = True
 
     combined_path_points = _merge_path_points(history_path_points, current_path_points)
-    display_path_data = path_data if current_path_points else history_path_data if history_path_points else path_data
+    display_path_data = (
+        path_data
+        if current_path_points
+        else history_path_data
+        if history_path_points
+        else path_data
+    )
     selected_ids: set[int] = set()
     if isinstance(clean_info, dict):
         select_region = clean_info.get("select_region", {})
@@ -1057,9 +1087,13 @@ def build_scene(
         "virtual_walls": [],
         "cross_boundary_tunnels": [],
         "virtual_cross_boundary_tunnels": [],
-        "cross_boundary_markers": _extract_marker_points(map_data.get("cross_boundary_markers", [])),
+        "cross_boundary_markers": _extract_marker_points(
+            map_data.get("cross_boundary_markers", [])
+        ),
         "trapped_points": _extract_marker_points(map_data.get("trapped_points", [])),
-        "maintenance_points": _extract_marker_points(map_data.get("maintenance_points", [])),
+        "maintenance_points": _extract_marker_points(
+            map_data.get("maintenance_points", [])
+        ),
         "draw_region_polygons": [],
         "move_target_point": None,
     }
@@ -1131,7 +1165,9 @@ def build_scene(
                     "center": center,
                     "selected": selected,
                     "order": coerce_int(sub_region.get("selected_for_mow_order")),
-                    "has_custom_param": sub_id in region_param_ids if sub_id is not None else False,
+                    "has_custom_param": sub_id in region_param_ids
+                    if sub_id is not None
+                    else False,
                     "inner_boundaries": inner_boundaries,
                     "edge_lines": edge_lines,
                 }
@@ -1142,7 +1178,12 @@ def build_scene(
 
         scene["regions"].append(region_record)
 
-    for key in ("forbidden_zones", "physical_forbidden_zones", "pass_through_zones", "required_zones"):
+    for key in (
+        "forbidden_zones",
+        "physical_forbidden_zones",
+        "pass_through_zones",
+        "required_zones",
+    ):
         for item in map_data.get(key, []):
             for polygon in _extract_polygons(item):
                 scene[key].append(polygon)
@@ -1332,7 +1373,9 @@ def build_render_metadata(
             )
             if isinstance(clean_info.get("select_region"), dict)
             else 0,
-            "draw_region_count": len(clean_info.get("draw_region", {}).get("regions", []))
+            "draw_region_count": len(
+                clean_info.get("draw_region", {}).get("regions", [])
+            )
             if isinstance(clean_info.get("draw_region"), dict)
             else 0,
             "has_target_point": bool(
@@ -1408,7 +1451,9 @@ def build_render_metadata(
         "backup_summary": backup_summary,
         "path_summary": {
             "id": scene.get("path_display_id"),
-            "map_id": path_data.get("map_id") if scene.get("current_path_points") else history_path_data.get("map_id"),
+            "map_id": path_data.get("map_id")
+            if scene.get("current_path_points")
+            else history_path_data.get("map_id"),
             "type": scene.get("path_display_type"),
             "point_count": len(scene.get("path_points", [])),
         },
@@ -1437,7 +1482,9 @@ def build_render_metadata(
                 len(segment) for segment in scene.get("session_path_segments", [])
             ),
         },
-        "filtered_non_cleaning_point_count": scene.get("filtered_non_cleaning_point_count", {}),
+        "filtered_non_cleaning_point_count": scene.get(
+            "filtered_non_cleaning_point_count", {}
+        ),
         "rotation_angle": scene.get("rotation_deg", 0.0),
         "map_name": map_data.get("name"),
         "map_state": map_data.get("map_state"),

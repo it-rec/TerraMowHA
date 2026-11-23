@@ -10,7 +10,7 @@ import json
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from custom_components.terramow import DOMAIN, TerraMowBasicData
+from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.hub import TerraMowHub
 from custom_components.terramow.select import (
     BladeSpeedSelect,
@@ -80,9 +80,21 @@ def test_mode_select_rejects_invalid_option() -> None:
 
 def test_mode_select_publishes_each_mode_config() -> None:
     for token, mode, cfg_key in (
-        ("main_direction_mode_single", "MAIN_DIRECTION_MODE_SINGLE", "single_mode_config"),
-        ("main_direction_mode_multiple", "MAIN_DIRECTION_MODE_MULTIPLE", "multiple_mode_config"),
-        ("main_direction_mode_auto_rotate", "MAIN_DIRECTION_MODE_AUTO_ROTATE", "auto_rotate_mode_config"),
+        (
+            "main_direction_mode_single",
+            "MAIN_DIRECTION_MODE_SINGLE",
+            "single_mode_config",
+        ),
+        (
+            "main_direction_mode_multiple",
+            "MAIN_DIRECTION_MODE_MULTIPLE",
+            "multiple_mode_config",
+        ),
+        (
+            "main_direction_mode_auto_rotate",
+            "MAIN_DIRECTION_MODE_AUTO_ROTATE",
+            "auto_rotate_mode_config",
+        ),
     ):
         hub = _hub()
         select = _mode_select(hub)
@@ -106,9 +118,12 @@ def test_mode_select_get_effective_mode_priorities() -> None:
     assert select.get_effective_mode() == "MAIN_DIRECTION_MODE_MULTIPLE"
     # otherwise device mode
     select._pending_mode = None
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_AUTO_ROTATE"},
-    })
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_AUTO_ROTATE"},
+        },
+    )
     assert select.get_effective_mode() == "MAIN_DIRECTION_MODE_AUTO_ROTATE"
     # falls back to the last current_option when the device has nothing
     _feed(hub.on_global_params, {})
@@ -153,15 +168,18 @@ def test_mode_select_extra_state_attributes() -> None:
         ("MAIN_DIRECTION_MODE_MULTIPLE", "multiple_angles"),
         ("MAIN_DIRECTION_MODE_AUTO_ROTATE", "auto_rotate_interval"),
     ):
-        _feed(hub.on_global_params, {
-            "main_direction_angle_config": {
-                "mode": mode,
-                "current_angle": 22,
-                "single_mode_config": {"angle": 5},
-                "multiple_mode_config": {"angles": [30, 90]},
-                "auto_rotate_mode_config": {"angle_interval": 15},
+        _feed(
+            hub.on_global_params,
+            {
+                "main_direction_angle_config": {
+                    "mode": mode,
+                    "current_angle": 22,
+                    "single_mode_config": {"angle": 5},
+                    "multiple_mode_config": {"angles": [30, 90]},
+                    "auto_rotate_mode_config": {"angle_interval": 15},
+                },
             },
-        })
+        )
         attrs = select.extra_state_attributes
         assert attrs["status"] == "active"
         assert attrs["current_angle"] == 22
@@ -200,23 +218,31 @@ def test_zone_select_empty_and_populated_options() -> None:
     asyncio.run(select._on_map_info({"regions": []}))
     assert select.options == ["no_zones_available"]
 
-    asyncio.run(select._on_map_info({
-        "id": 2,
-        "regions": [{"id": 1, "sub_regions": [{"id": 7, "name": "Vorne"}]}],
-        "clean_info": {
-            "mode": "MAP_CLEAN_INFO_MODE_SELECT_REGION",
-            "select_region": {"region_id": [7]},
-        },
-    }))
+    asyncio.run(
+        select._on_map_info(
+            {
+                "id": 2,
+                "regions": [{"id": 1, "sub_regions": [{"id": 7, "name": "Vorne"}]}],
+                "clean_info": {
+                    "mode": "MAP_CLEAN_INFO_MODE_SELECT_REGION",
+                    "select_region": {"region_id": [7]},
+                },
+            }
+        )
+    )
     assert "Vorne (ID: 7)" in select.options
     attrs = select.extra_state_attributes
     assert attrs["sub_zones_count"] == 1
     assert attrs["currently_selected_zones"] == [7]
 
     # a sub-zone without an id can never be selected -> not offered
-    asyncio.run(select._on_map_info({
-        "regions": [{"id": 1, "sub_regions": [{"name": "Kaputt"}, {"id": 9}]}],
-    }))
+    asyncio.run(
+        select._on_map_info(
+            {
+                "regions": [{"id": 1, "sub_regions": [{"name": "Kaputt"}, {"id": 9}]}],
+            }
+        )
+    )
     assert select.options == ["all_zones", "Sub-zone 9 (ID: 9)"]
 
 
@@ -224,9 +250,13 @@ def test_zone_select_invalid_option_parsing() -> None:
     hub = _hub()
     select = TerraMowZoneSelect(hub.basic_data, hub.hass)
     select.async_write_ha_state = MagicMock()
-    asyncio.run(select._on_map_info({
-        "regions": [{"id": 1, "sub_regions": [{"id": 7, "name": "Vorne"}]}],
-    }))
+    asyncio.run(
+        select._on_map_info(
+            {
+                "regions": [{"id": 1, "sub_regions": [{"id": 7, "name": "Vorne"}]}],
+            }
+        )
+    )
     # options that pass the membership check but have no "(ID: n)" cannot happen,
     # so exercise the special all_zones no-op branch instead
     asyncio.run(select.async_select_option("all_zones"))

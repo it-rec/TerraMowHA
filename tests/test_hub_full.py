@@ -105,7 +105,9 @@ def test_on_error_list_and_event_data_branches() -> None:
     assert hub.error_list == [] and hub.event_list == []
     # valid payloads are stored
     asyncio.run(hub.on_error_list(json.dumps({"error_list": [{"code": 3}]})))
-    asyncio.run(hub.on_event_data(json.dumps({"event_list": [{"code": 8, "time": "t"}]})))
+    asyncio.run(
+        hub.on_event_data(json.dumps({"event_list": [{"code": 8, "time": "t"}]}))
+    )
     assert hub.error_list == [{"code": 3}]
     assert hub.event_list[-1]["code"] == 8
 
@@ -170,7 +172,9 @@ def test_on_full_schedule_branches() -> None:
     assert hub.full_schedule == {}
     # a GET response with a schedule_list is stored
     asyncio.run(
-        hub.on_full_schedule(json.dumps({"schedule_list": {"items": [], "global_disabled": False}}))
+        hub.on_full_schedule(
+            json.dumps({"schedule_list": {"items": [], "global_disabled": False}})
+        )
     )
     assert hub.full_schedule == {"items": [], "global_disabled": False}
 
@@ -215,7 +219,11 @@ def test_on_advanced_settings_branches() -> None:
     asyncio.run(hub.on_advanced_settings("not-json"))
     asyncio.run(hub.on_advanced_settings(json.dumps([1])))
     assert hub.advanced_settings == {}
-    asyncio.run(hub.on_advanced_settings(json.dumps({"enable_cliff_detection": {"value": True}})))
+    asyncio.run(
+        hub.on_advanced_settings(
+            json.dumps({"enable_cliff_detection": {"value": True}})
+        )
+    )
     assert hub.advanced_settings["enable_cliff_detection"]["value"] is True
 
 
@@ -365,7 +373,9 @@ def test_unknown_dp_history_records_changes_and_dedupes() -> None:
 
 def test_on_mqtt_message_meta_invalid_json_is_swallowed() -> None:
     hub = _hub()
-    hub.on_mqtt_message(None, None, SimpleNamespace(topic=MAP_META_TOPIC, payload=b"not-json"))
+    hub.on_mqtt_message(
+        None, None, SimpleNamespace(topic=MAP_META_TOPIC, payload=b"not-json")
+    )
     # nothing dispatched, no exception
     hub.hass.loop.call_soon_threadsafe.assert_not_called()
 
@@ -395,12 +405,28 @@ def test_handle_model_name_empty_keeps_default() -> None:
 
 def test_global_params_mode_change_fires_event() -> None:
     hub = _hub()
-    asyncio.run(hub.on_global_params(json.dumps({
-        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_SINGLE"},
-    })))
-    asyncio.run(hub.on_global_params(json.dumps({
-        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MULTIPLE"},
-    })))
+    asyncio.run(
+        hub.on_global_params(
+            json.dumps(
+                {
+                    "main_direction_angle_config": {
+                        "mode": "MAIN_DIRECTION_MODE_SINGLE"
+                    },
+                }
+            )
+        )
+    )
+    asyncio.run(
+        hub.on_global_params(
+            json.dumps(
+                {
+                    "main_direction_angle_config": {
+                        "mode": "MAIN_DIRECTION_MODE_MULTIPLE"
+                    },
+                }
+            )
+        )
+    )
     assert hub.hass.bus.fire.called
 
 
@@ -472,9 +498,7 @@ def test_mqtt_runner_dispatches_messages_then_backs_off() -> None:
     )
 
     async def main() -> None:
-        with patch(
-            "custom_components.terramow.hub.aiomqtt.Client", return_value=fake
-        ):
+        with patch("custom_components.terramow.hub.aiomqtt.Client", return_value=fake):
             await _run_runner_until(hub, lambda: hub.connection_error)
 
     asyncio.run(main())
@@ -556,9 +580,7 @@ def test_mqtt_runner_clean_stream_end_counts_as_failure() -> None:
     fake = _FakeAiomqttClient(messages=[])
 
     async def main() -> None:
-        with patch(
-            "custom_components.terramow.hub.aiomqtt.Client", return_value=fake
-        ):
+        with patch("custom_components.terramow.hub.aiomqtt.Client", return_value=fake):
             await _run_runner_until(hub, lambda: hub.connection_error)
 
     asyncio.run(main())

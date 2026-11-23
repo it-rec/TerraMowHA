@@ -87,8 +87,8 @@ class TerraMowNumberBase(PushUpdateMixin, TerraMowEntity, NumberEntity):
         if not global_params:
             return None
 
-        main_direction_config = global_params.get('main_direction_angle_config', {})
-        return str(main_direction_config.get('mode', 'MAIN_DIRECTION_MODE_SINGLE'))
+        main_direction_config = global_params.get("main_direction_angle_config", {})
+        return str(main_direction_config.get("mode", "MAIN_DIRECTION_MODE_SINGLE"))
 
     @property
     def available(self) -> bool:
@@ -107,6 +107,7 @@ class TerraMowNumberBase(PushUpdateMixin, TerraMowEntity, NumberEntity):
         Without it, stale listeners accumulate across reloads and keep writing
         state on removed entities.
         """
+
         async def on_mode_changed(event: Event) -> None:
             if event.data.get("device_host") == self.host:
                 new_mode = event.data.get("new_mode")
@@ -157,8 +158,8 @@ class MowingHeightNumber(TerraMowNumberBase):
         if not global_params:
             return None
 
-        mow_height = global_params.get('mow_height', {})
-        value = mow_height.get('value')
+        mow_height = global_params.get("mow_height", {})
+        value = mow_height.get("value")
         return self._clamp_native(float(value)) if value is not None else None
 
     async def async_set_native_value(self, value: float) -> None:
@@ -169,11 +170,7 @@ class MowingHeightNumber(TerraMowNumberBase):
             return
 
         # Send the set command to dp_155
-        command = {
-            'mow_height': {
-                'value': int(value)
-            }
-        }
+        command = {"mow_height": {"value": int(value)}}
 
         _LOGGER.info("Setting mowing height to %d mm", int(value))
         hub.publish_data_point(155, command)
@@ -204,8 +201,8 @@ class EdgeCuttingDistanceNumber(TerraMowNumberBase):
         if not global_params:
             return None
 
-        edge_cutting_distance = global_params.get('edge_cutting_distance', {})
-        value = edge_cutting_distance.get('value')
+        edge_cutting_distance = global_params.get("edge_cutting_distance", {})
+        value = edge_cutting_distance.get("value")
         return self._clamp_native(float(value)) if value is not None else None
 
     async def async_set_native_value(self, value: float) -> None:
@@ -216,11 +213,7 @@ class EdgeCuttingDistanceNumber(TerraMowNumberBase):
             return
 
         # Send the set command to dp_155
-        command = {
-            'edge_cutting_distance': {
-                'value': int(value)
-            }
-        }
+        command = {"edge_cutting_distance": {"value": int(value)}}
 
         _LOGGER.info("Setting edge cutting distance to %d mm", int(value))
         hub.publish_data_point(155, command)
@@ -251,16 +244,16 @@ class MowingSpacingNumber(TerraMowNumberBase):
         if not global_params:
             return None
 
-        mow_spacing = global_params.get('mow_spacing', {})
-        value = mow_spacing.get('value')
+        mow_spacing = global_params.get("mow_spacing", {})
+        value = mow_spacing.get("value")
         return self._clamp_native(float(value)) if value is not None else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
         attrs: dict[str, Any] = {
-            'valid_range': '80-140mm (8-14cm)',
-            'warning': 'Changing this value will reset mowing progress'
+            "valid_range": "80-140mm (8-14cm)",
+            "warning": "Changing this value will reset mowing progress",
         }
         # dp_155's current_mow_spacing is reported by the robot only and
         # represents the mowing spacing actually in effect (the set value may
@@ -268,9 +261,9 @@ class MowingSpacingNumber(TerraMowNumberBase):
         hub = self.hub
         if hub:
             global_params = hub.global_params or {}
-            current = global_params.get('current_mow_spacing')
+            current = global_params.get("current_mow_spacing")
             if current is not None:
-                attrs['current_mow_spacing'] = current
+                attrs["current_mow_spacing"] = current
         return attrs
 
     async def async_set_native_value(self, value: float) -> None:
@@ -284,13 +277,11 @@ class MowingSpacingNumber(TerraMowNumberBase):
         int_value = int(value)
 
         # Send the set command to dp_155
-        command = {
-            'mow_spacing': {
-                'value': int_value
-            }
-        }
+        command = {"mow_spacing": {"value": int_value}}
 
-        _LOGGER.info("Setting mowing spacing to %d mm (will reset mowing progress)", int_value)
+        _LOGGER.info(
+            "Setting mowing spacing to %d mm (will reset mowing progress)", int_value
+        )
         hub.publish_data_point(155, command)
 
 
@@ -305,7 +296,7 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
     _attr_native_max_value = 359
     _attr_native_step = 1
     _listens_for_mode_change = True
-    _required_mode = 'MAIN_DIRECTION_MODE_SINGLE'
+    _required_mode = "MAIN_DIRECTION_MODE_SINGLE"
 
     _unique_id_suffix = "main_direction_single_angle"
 
@@ -320,9 +311,9 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
         if not global_params:
             return None
 
-        main_direction_config = global_params.get('main_direction_angle_config', {})
-        single_config = main_direction_config.get('single_mode_config', {})
-        angle = single_config.get('angle')
+        main_direction_config = global_params.get("main_direction_angle_config", {})
+        single_config = main_direction_config.get("single_mode_config", {})
+        angle = single_config.get("angle")
         return float(angle) if angle is not None else None
 
     async def async_set_native_value(self, value: float) -> None:
@@ -336,11 +327,9 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
 
         # Send the set command to dp_155
         command = {
-            'main_direction_angle_config': {
-                'mode': 'MAIN_DIRECTION_MODE_SINGLE',
-                'single_mode_config': {
-                    'angle': angle_value
-                }
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_SINGLE",
+                "single_mode_config": {"angle": angle_value},
             }
         }
 
@@ -351,8 +340,8 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
         attrs = {
-            'valid_range': '0-359 degrees',
-            'description': 'Angle for single main direction mode'
+            "valid_range": "0-359 degrees",
+            "description": "Angle for single main direction mode",
         }
 
         # Add the current angle information
@@ -360,10 +349,12 @@ class MainDirectionSingleAngleNumber(TerraMowNumberBase):
         if hub:
             global_params = hub.global_params
             if global_params:
-                main_direction_config = global_params.get('main_direction_angle_config', {})
-                current_angle = main_direction_config.get('current_angle')
+                main_direction_config = global_params.get(
+                    "main_direction_angle_config", {}
+                )
+                current_angle = main_direction_config.get("current_angle")
                 if current_angle is not None:
-                    attrs['current_robot_angle'] = current_angle
+                    attrs["current_robot_angle"] = current_angle
 
         return attrs
 
@@ -379,7 +370,7 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
     _attr_native_max_value = 180
     _attr_native_step = 1
     _listens_for_mode_change = True
-    _required_mode = 'MAIN_DIRECTION_MODE_AUTO_ROTATE'
+    _required_mode = "MAIN_DIRECTION_MODE_AUTO_ROTATE"
 
     _unique_id_suffix = "main_direction_auto_rotate_interval"
 
@@ -394,9 +385,9 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
         if not global_params:
             return None
 
-        main_direction_config = global_params.get('main_direction_angle_config', {})
-        auto_config = main_direction_config.get('auto_rotate_mode_config', {})
-        interval = auto_config.get('angle_interval')
+        main_direction_config = global_params.get("main_direction_angle_config", {})
+        auto_config = main_direction_config.get("auto_rotate_mode_config", {})
+        interval = auto_config.get("angle_interval")
         return float(interval) if interval is not None else None
 
     async def async_set_native_value(self, value: float) -> None:
@@ -409,11 +400,9 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
 
         # Send the set command to dp_155
         command = {
-            'main_direction_angle_config': {
-                'mode': 'MAIN_DIRECTION_MODE_AUTO_ROTATE',
-                'auto_rotate_mode_config': {
-                    'angle_interval': interval_value
-                }
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_AUTO_ROTATE",
+                "auto_rotate_mode_config": {"angle_interval": interval_value},
             }
         }
 
@@ -424,8 +413,8 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
         attrs = {
-            'valid_range': '1-180 degrees',
-            'description': 'Angle interval for auto rotate mode'
+            "valid_range": "1-180 degrees",
+            "description": "Angle interval for auto rotate mode",
         }
 
         # Add the current angle information
@@ -433,10 +422,12 @@ class MainDirectionAutoRotateIntervalNumber(TerraMowNumberBase):
         if hub:
             global_params = hub.global_params
             if global_params:
-                main_direction_config = global_params.get('main_direction_angle_config', {})
-                current_angle = main_direction_config.get('current_angle')
+                main_direction_config = global_params.get(
+                    "main_direction_angle_config", {}
+                )
+                current_angle = main_direction_config.get("current_angle")
                 if current_angle is not None:
-                    attrs['current_robot_angle'] = current_angle
+                    attrs["current_robot_angle"] = current_angle
 
         return attrs
 
@@ -452,7 +443,7 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
     _attr_native_max_value = 359
     _attr_native_step = 1
     _listens_for_mode_change = True
-    _required_mode = 'MAIN_DIRECTION_MODE_MULTIPLE'
+    _required_mode = "MAIN_DIRECTION_MODE_MULTIPLE"
 
     _unique_id_suffix = "multiple_direction_angle1"
 
@@ -467,9 +458,9 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
         if not global_params:
             return None
 
-        main_direction_config = global_params.get('main_direction_angle_config', {})
-        multiple_config = main_direction_config.get('multiple_mode_config', {})
-        angles = multiple_config.get('angles', [0, 90])
+        main_direction_config = global_params.get("main_direction_angle_config", {})
+        multiple_config = main_direction_config.get("multiple_mode_config", {})
+        angles = multiple_config.get("angles", [0, 90])
 
         # Return the first angle, or 0 if the array is empty
         return float(angles[0]) if len(angles) > 0 else 0.0
@@ -477,7 +468,9 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
     async def async_set_native_value(self, value: float) -> None:
         """Set the first multiple direction angle."""
         if not self.available:
-            _LOGGER.error("Multiple direction angle1 control not available in current mode")
+            _LOGGER.error(
+                "Multiple direction angle1 control not available in current mode"
+            )
             return
 
         # Ensure the angle value stays within the 0-359 range
@@ -485,37 +478,42 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
 
         # Get the current second angle
         global_params = self.basic_data.lawn_mower.global_params or {}
-        main_direction_config = global_params.get('main_direction_angle_config', {})
-        multiple_config = main_direction_config.get('multiple_mode_config', {})
-        current_angles = multiple_config.get('angles', [0, 90])
+        main_direction_config = global_params.get("main_direction_angle_config", {})
+        multiple_config = main_direction_config.get("multiple_mode_config", {})
+        current_angles = multiple_config.get("angles", [0, 90])
 
         # Get the second angle, or use the default of 90 if it does not exist
         angle2_value = current_angles[1] if len(current_angles) > 1 else 90
 
         # Check whether the two angles are the same
         if angle1_value == angle2_value:
-            _LOGGER.warning("Angle1 (%d°) is same as Angle2 (%d°), this may not be effective",
-                          angle1_value, angle2_value)
+            _LOGGER.warning(
+                "Angle1 (%d°) is same as Angle2 (%d°), this may not be effective",
+                angle1_value,
+                angle2_value,
+            )
 
         # Send the set command to dp_155
         command = {
-            'main_direction_angle_config': {
-                'mode': 'MAIN_DIRECTION_MODE_MULTIPLE',
-                'multiple_mode_config': {
-                    'angles': [angle1_value, angle2_value]
-                }
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_MULTIPLE",
+                "multiple_mode_config": {"angles": [angle1_value, angle2_value]},
             }
         }
 
-        _LOGGER.info("Setting multiple direction angles to [%d°, %d°]", angle1_value, angle2_value)
+        _LOGGER.info(
+            "Setting multiple direction angles to [%d°, %d°]",
+            angle1_value,
+            angle2_value,
+        )
         self.basic_data.lawn_mower.publish_data_point(155, command)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
         attrs = {
-            'valid_range': '0-359 degrees',
-            'description': 'First angle for multiple main direction mode'
+            "valid_range": "0-359 degrees",
+            "description": "First angle for multiple main direction mode",
         }
 
         # Add current angle information and second-angle information
@@ -523,17 +521,19 @@ class MultipleDirectionAngle1Number(TerraMowNumberBase):
         if hub:
             global_params = hub.global_params
             if global_params:
-                main_direction_config = global_params.get('main_direction_angle_config', {})
-                current_angle = main_direction_config.get('current_angle')
+                main_direction_config = global_params.get(
+                    "main_direction_angle_config", {}
+                )
+                current_angle = main_direction_config.get("current_angle")
                 if current_angle is not None:
-                    attrs['current_robot_angle'] = current_angle
+                    attrs["current_robot_angle"] = current_angle
 
                 # Show the paired second angle
-                multiple_config = main_direction_config.get('multiple_mode_config', {})
-                angles = multiple_config.get('angles', [])
+                multiple_config = main_direction_config.get("multiple_mode_config", {})
+                angles = multiple_config.get("angles", [])
                 if len(angles) > 1:
-                    attrs['paired_angle2'] = angles[1]
-                    attrs['angle_difference'] = abs(angles[1] - angles[0])
+                    attrs["paired_angle2"] = angles[1]
+                    attrs["angle_difference"] = abs(angles[1] - angles[0])
 
         return attrs
 
@@ -549,7 +549,7 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
     _attr_native_max_value = 359
     _attr_native_step = 1
     _listens_for_mode_change = True
-    _required_mode = 'MAIN_DIRECTION_MODE_MULTIPLE'
+    _required_mode = "MAIN_DIRECTION_MODE_MULTIPLE"
 
     _unique_id_suffix = "multiple_direction_angle2"
 
@@ -564,9 +564,9 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
         if not global_params:
             return None
 
-        main_direction_config = global_params.get('main_direction_angle_config', {})
-        multiple_config = main_direction_config.get('multiple_mode_config', {})
-        angles = multiple_config.get('angles', [0, 90])
+        main_direction_config = global_params.get("main_direction_angle_config", {})
+        multiple_config = main_direction_config.get("multiple_mode_config", {})
+        angles = multiple_config.get("angles", [0, 90])
 
         # Return the second angle, or 90 if the array is too short
         return float(angles[1]) if len(angles) > 1 else 90.0
@@ -574,7 +574,9 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
     async def async_set_native_value(self, value: float) -> None:
         """Set the second multiple direction angle."""
         if not self.available:
-            _LOGGER.error("Multiple direction angle2 control not available in current mode")
+            _LOGGER.error(
+                "Multiple direction angle2 control not available in current mode"
+            )
             return
 
         # Ensure the angle value stays within the 0-359 range
@@ -582,37 +584,42 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
 
         # Get the current first angle
         global_params = self.basic_data.lawn_mower.global_params or {}
-        main_direction_config = global_params.get('main_direction_angle_config', {})
-        multiple_config = main_direction_config.get('multiple_mode_config', {})
-        current_angles = multiple_config.get('angles', [0, 90])
+        main_direction_config = global_params.get("main_direction_angle_config", {})
+        multiple_config = main_direction_config.get("multiple_mode_config", {})
+        current_angles = multiple_config.get("angles", [0, 90])
 
         # Get the first angle, or use the default of 0 if it does not exist
         angle1_value = current_angles[0] if len(current_angles) > 0 else 0
 
         # Check whether the two angles are the same
         if angle1_value == angle2_value:
-            _LOGGER.warning("Angle2 (%d°) is same as Angle1 (%d°), this may not be effective",
-                          angle2_value, angle1_value)
+            _LOGGER.warning(
+                "Angle2 (%d°) is same as Angle1 (%d°), this may not be effective",
+                angle2_value,
+                angle1_value,
+            )
 
         # Send the set command to dp_155
         command = {
-            'main_direction_angle_config': {
-                'mode': 'MAIN_DIRECTION_MODE_MULTIPLE',
-                'multiple_mode_config': {
-                    'angles': [angle1_value, angle2_value]
-                }
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_MULTIPLE",
+                "multiple_mode_config": {"angles": [angle1_value, angle2_value]},
             }
         }
 
-        _LOGGER.info("Setting multiple direction angles to [%d°, %d°]", angle1_value, angle2_value)
+        _LOGGER.info(
+            "Setting multiple direction angles to [%d°, %d°]",
+            angle1_value,
+            angle2_value,
+        )
         self.basic_data.lawn_mower.publish_data_point(155, command)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
         attrs = {
-            'valid_range': '0-359 degrees',
-            'description': 'Second angle for multiple main direction mode'
+            "valid_range": "0-359 degrees",
+            "description": "Second angle for multiple main direction mode",
         }
 
         # Add current angle information and first-angle information
@@ -620,17 +627,19 @@ class MultipleDirectionAngle2Number(TerraMowNumberBase):
         if hub:
             global_params = hub.global_params
             if global_params:
-                main_direction_config = global_params.get('main_direction_angle_config', {})
-                current_angle = main_direction_config.get('current_angle')
+                main_direction_config = global_params.get(
+                    "main_direction_angle_config", {}
+                )
+                current_angle = main_direction_config.get("current_angle")
                 if current_angle is not None:
-                    attrs['current_robot_angle'] = current_angle
+                    attrs["current_robot_angle"] = current_angle
 
                 # Show the paired first angle
-                multiple_config = main_direction_config.get('multiple_mode_config', {})
-                angles = multiple_config.get('angles', [])
+                multiple_config = main_direction_config.get("multiple_mode_config", {})
+                angles = multiple_config.get("angles", [])
                 if len(angles) > 0:
-                    attrs['paired_angle1'] = angles[0]
+                    attrs["paired_angle1"] = angles[0]
                     if len(angles) > 1:
-                        attrs['angle_difference'] = abs(angles[1] - angles[0])
+                        attrs["angle_difference"] = abs(angles[1] - angles[0])
 
         return attrs

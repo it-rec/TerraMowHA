@@ -55,7 +55,7 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
         super().__init__(basic_data, hass)
         self._activity = LawnMowerActivity.DOCKED  # default state
 
-        self._has_returning = hasattr(LawnMowerActivity, 'RETURNING')
+        self._has_returning = hasattr(LawnMowerActivity, "RETURNING")
         if not self._has_returning:
             _LOGGER.info("LawnMowerActivity.RETURNING not available in this HA version")
 
@@ -97,8 +97,13 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
         if old_activity != value:
             # Only log at INFO on an actual change, to avoid a line per dp_107
             _LOGGER.info("Activity changed from %s to %s", old_activity, value)
-        _LOGGER.debug("State change details: mission=%s, sub_mission=%s, mission_state=%s, has_error=%s",
-                     self.hub.mission, self.hub.sub_mission, self.hub.mission_state, self.hub.has_error)
+        _LOGGER.debug(
+            "State change details: mission=%s, sub_mission=%s, mission_state=%s, has_error=%s",
+            self.hub.mission,
+            self.hub.sub_mission,
+            self.hub.mission_state,
+            self.hub.has_error,
+        )
 
     @property
     def available(self) -> bool:
@@ -113,7 +118,11 @@ class TerraMowLawnMowerEntity(TerraMowEntity, LawnMowerEntity):
     @property
     def supported_features(self) -> LawnMowerEntityFeature:
         """Flag lawn mower features that are supported."""
-        return LawnMowerEntityFeature.START_MOWING | LawnMowerEntityFeature.PAUSE | LawnMowerEntityFeature.DOCK
+        return (
+            LawnMowerEntityFeature.START_MOWING
+            | LawnMowerEntityFeature.PAUSE
+            | LawnMowerEntityFeature.DOCK
+        )
 
     def update_activity_from_state(self) -> None:
         """Update activity based on the hub's mission state."""

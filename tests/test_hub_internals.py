@@ -51,7 +51,12 @@ def test_should_replace_pending() -> None:
 def test_retry_delay_ladder() -> None:
     hub = _hub()
     assert [hub._get_retry_delay(i) for i in range(6)] == [
-        2.0, 5.0, 10.0, 30.0, 30.0, 30.0,
+        2.0,
+        5.0,
+        10.0,
+        30.0,
+        30.0,
+        30.0,
     ]
 
 
@@ -353,7 +358,11 @@ def test_dp_callbacks_batched_into_single_loop_hop() -> None:
 
     assert hub.hass.loop.call_soon_threadsafe.call_count == 1
     # registration order preserved; the coroutine became a task in place
-    assert order == ["sync1", "task:test_dp_callbacks_batched_into_single_loop_hop.<locals>.async_cb", "sync2"]
+    assert order == [
+        "sync1",
+        "task:test_dp_callbacks_batched_into_single_loop_hop.<locals>.async_cb",
+        "sync2",
+    ]
 
 
 def test_batched_dispatch_isolates_callback_errors() -> None:
@@ -449,7 +458,6 @@ def test_async_stop_clears_state() -> None:
 
 
 def test_diagnostics_redacts_secrets_and_exports_hub_state() -> None:
-    from custom_components.terramow.const import DOMAIN
     from custom_components.terramow.diagnostics import (
         async_get_config_entry_diagnostics,
     )
@@ -517,7 +525,11 @@ def test_diagnostics_exports_firmware_payloads_with_identifiers_redacted() -> No
     firmware = asyncio.run(async_get_config_entry_diagnostics(MagicMock(), entry))[
         "firmware"
     ]
-    assert firmware == {"device_info": {}, "component_versions": {}, "is_upgrading": None}
+    assert firmware == {
+        "device_info": {},
+        "component_versions": {},
+        "is_upgrading": None,
+    }
 
     device_info = {
         "version": "9.9.32",

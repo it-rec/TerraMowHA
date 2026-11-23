@@ -7,14 +7,14 @@ name = "terramow-ha"
 version = "0.1.0"
 description = "Home Assistant integration for TerraMow robotic lawn mowers"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "homeassistant>=2024.1.0",
+    "homeassistant>=2025.3.0",
     "aiomqtt>=2.0.0",
 ]
 
@@ -24,7 +24,6 @@ dev = [
     "pytest-homeassistant-custom-component>=0.13.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
-    "black>=23.0.0",
 ]
 
 [tool.pytest.ini_options]
@@ -47,7 +46,7 @@ select = [
     "UP", # pyupgrade
 ]
 ignore = [
-    "E501", # line too long, handled by black
+    "E501", # line too long, handled by ruff format
 ]
 
 [tool.ruff.lint.isort]
@@ -66,9 +65,6 @@ disallow_untyped_defs = true
 follow_imports = "silent"
 files = ["custom_components/terramow"]
 
-[tool.black]
-target-version = ["py312"]
-line-length = 88
 [tool.coverage.run]
 source = ["custom_components/terramow"]
 branch = true
@@ -77,4 +73,7 @@ branch = true
 show_missing = true
 exclude_also = [
     "if TYPE_CHECKING:",
+    # Typing-only overload stubs never run; older coverage releases (as on
+    # the minimum-HA CI leg) still count their "..." bodies as branches.
+    "@overload",
 ]

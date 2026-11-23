@@ -104,7 +104,7 @@ Apparaten in het lokale netwerk worden automatisch gedetecteerd via Zeroconf —
 
 ### Vereisten
 
-- Home Assistant 2024.6.0 of nieuwer (de CI valideert tegen de huidige HA Core-release)
+- Home Assistant 2025.3.0 of nieuwer (de CI valideert tegen de huidige HA Core-release)
 - TerraMow-firmwareversie 6.6.0 of nieuwer
 - TerraMow-APP-versie 1.6.0 of nieuwer
 - Live kaart en maaipad vereisen firmware HA-moduleversie 3; op versie 2 (bijv. S800) werkt al het andere, en de sensor voor versiecompatibiliteit meldt dat

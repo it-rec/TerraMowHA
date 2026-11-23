@@ -225,9 +225,7 @@ MIN_COVERAGE_SEGMENT_POINTS = 4
 COVERAGE_MAX_SIMPLIFY_MM = 300.0
 
 
-def _thin_points(
-    points: list[dict[str, Any]], target: int
-) -> list[dict[str, Any]]:
+def _thin_points(points: list[dict[str, Any]], target: int) -> list[dict[str, Any]]:
     """Evenly thin a polyline to ``target`` points, keeping both endpoints.
 
     Keeping the endpoints matters: the thinned track must still span the whole
@@ -491,11 +489,10 @@ def _lost_path_points(
     if old_id is not None and old_id == new_data.get("id"):
         new_key_set = set(new_keys)
         shared = sum(1 for key in old_keys if key in new_key_set)
-        if 2 * len(new_points) >= len(old_points) and 3 * shared >= len(
-            old_points
-        ):
+        if 2 * len(new_points) >= len(old_points) and 3 * shared >= len(old_points):
             return None
     return old_points
+
 
 # Self-sampled Wi-Fi heatmap (issue #200, approach B): the firmware exposes a
 # wifi_signal_map_index in map_data but never serves the raster locally (probe
@@ -697,11 +694,15 @@ class BackToStationReason(Enum):
     BACK_TO_STATION_REASON_NONE = "BACK_TO_STATION_REASON_NONE"
     BACK_TO_STATION_REASON_LOW_BATTERY = "BACK_TO_STATION_REASON_LOW_BATTERY"
     BACK_TO_STATION_REASON_RAINING = "BACK_TO_STATION_REASON_RAINING"
-    BACK_TO_STATION_REASON_MOW_MOTOR_OVERHEAT = "BACK_TO_STATION_REASON_MOW_MOTOR_OVERHEAT"
+    BACK_TO_STATION_REASON_MOW_MOTOR_OVERHEAT = (
+        "BACK_TO_STATION_REASON_MOW_MOTOR_OVERHEAT"
+    )
     BACK_TO_STATION_REASON_WHEEL_OVERHEAT = "BACK_TO_STATION_REASON_WHEEL_OVERHEAT"
     BACK_TO_STATION_REASON_NIGHT_TIME = "BACK_TO_STATION_REASON_NIGHT_TIME"
     # Newer firmware: docked while waiting out the rain delay after rain stopped
-    BACK_TO_STATION_REASON_WAIT_AFTER_RAIN_STOP = "BACK_TO_STATION_REASON_WAIT_AFTER_RAIN_STOP"
+    BACK_TO_STATION_REASON_WAIT_AFTER_RAIN_STOP = (
+        "BACK_TO_STATION_REASON_WAIT_AFTER_RAIN_STOP"
+    )
 
 
 # Missions that count as an active mowing job / a recharge run. Used both
@@ -876,19 +877,39 @@ class TerraMowHub:
         self._aiomqtt_client: aiomqtt.Client | None = None
         self._mqtt_task: asyncio.Task[None] | None = None
         self._stop_event = threading.Event()  # Set on shutdown; gates retries
-        self.callbacks: dict[int, list[Callable[..., Any]]] = {}  # Stores dp_id and its list of callback functions
-        self.map_callbacks: list[Callable[..., Any]] = []  # Stores map info callback functions
-        self.pose_callbacks: list[Callable[..., Any]] = []  # Stores pose callback functions
-        self.path_callbacks: list[Callable[..., Any]] = []  # Stores path data callback functions
-        self.history_path_callbacks: list[Callable[..., Any]] = []  # Stores history path data callback functions
-        self.coverage_callbacks: list[Callable[..., Any]] = []  # Notified when the archived tracks / cycle coverage change
-        self._state_listeners: list[Callable[[], None]] = []  # State change listeners (connection state, dp_107, model)
-        self.connection_error = False  # Whether the MQTT connection is in an error state
-        self._pending_serial: str | None = None  # dp_102 serial parked during entry setup
+        self.callbacks: dict[
+            int, list[Callable[..., Any]]
+        ] = {}  # Stores dp_id and its list of callback functions
+        self.map_callbacks: list[
+            Callable[..., Any]
+        ] = []  # Stores map info callback functions
+        self.pose_callbacks: list[
+            Callable[..., Any]
+        ] = []  # Stores pose callback functions
+        self.path_callbacks: list[
+            Callable[..., Any]
+        ] = []  # Stores path data callback functions
+        self.history_path_callbacks: list[
+            Callable[..., Any]
+        ] = []  # Stores history path data callback functions
+        self.coverage_callbacks: list[
+            Callable[..., Any]
+        ] = []  # Notified when the archived tracks / cycle coverage change
+        self._state_listeners: list[
+            Callable[[], None]
+        ] = []  # State change listeners (connection state, dp_107, model)
+        self.connection_error = (
+            False  # Whether the MQTT connection is in an error state
+        )
+        self._pending_serial: str | None = (
+            None  # dp_102 serial parked during entry setup
+        )
         self._map_info: dict[str, Any] = {}  # Stores the current map info
         self._map_data: dict[str, Any] = {}  # Stores map data fetched over HTTP
         self._path_data: dict[str, Any] = {}  # Stores path data fetched over HTTP
-        self._history_path_data: dict[str, Any] = {}  # Stores history path data fetched over HTTP
+        self._history_path_data: dict[
+            str, Any
+        ] = {}  # Stores history path data fetched over HTTP
         # Mow tracks archived from earlier in the running session, preserved
         # across the firmware clearing the realtime path on a mid-session
         # recharge dock (issue #214).
@@ -977,13 +998,17 @@ class TerraMowHub:
         self._map_status: dict[str, Any] = {}  # Stores dp_117 map status
         self._current_work_data: dict[str, Any] = {}  # Stores dp_113 current work data
         self._statistics_data: dict[str, Any] = {}  # Stores dp_124 work statistics data
-        self._base_station_time: dict[str, Any] = {}  # Stores dp_125 base station usage time
+        self._base_station_time: dict[
+            str, Any
+        ] = {}  # Stores dp_125 base station usage time
         self._blade_time: dict[str, Any] = {}  # Stores dp_126 blade usage time
         self._schedule_data: dict[str, Any] = {}  # Stores dp_138 upcoming schedule
         self._battery_status: dict[str, Any] = {}  # Store dp_108 battery status
         self._battery_level: int | None = None  # Store dp_8 battery percentage
         self._robot_info: dict[str, Any] = {}  # Store dp_102 device/network info
-        self._component_versions: dict[str, Any] = {}  # Store dp_129 component firmware versions
+        self._component_versions: dict[
+            str, Any
+        ] = {}  # Store dp_129 component firmware versions
         self._error_list: list[Any] = []  # Store dp_116 active error list
         # Codes of the last complete dp_116 list received on the *current*
         # connection; None until one arrives (see fault_snapshot_codes).
@@ -995,7 +1020,9 @@ class TerraMowHub:
         self._weather_info: dict[str, Any] = {}  # Store dp_157 extreme-weather warning
         self._operating_modes: dict[str, Any] = {}  # Store dp_154 operating modes
         self._advanced_settings: dict[str, Any] = {}  # Store dp_150 advanced settings
-        self._full_schedule: dict[str, Any] = {}  # Store dp_122 full weekly schedule list
+        self._full_schedule: dict[
+            str, Any
+        ] = {}  # Store dp_122 full weekly schedule list
         # protobuf JSON may report an all-default (empty) schedule list, so
         # "no list yet" needs its own flag rather than ``not _full_schedule``.
         self._full_schedule_received = False
@@ -1026,14 +1053,18 @@ class TerraMowHub:
         # Snapshot of the last finished mow session (mow-report image).
         self._last_mow_report: dict[str, Any] | None = None
         self._task_status: dict[str, Any] = {}  # Store dp_107 task status raw payload
-        self._seen_unknown_dp_ids: set[int] = set()  # Unknown data points already logged
+        self._seen_unknown_dp_ids: set[int] = (
+            set()
+        )  # Unknown data points already logged
         # Bounded per-dp change history (epoch, payload) for undocumented dps, so
         # a single diagnostics export reveals how dynamic values move over time.
         self._unknown_dp_history: dict[int, deque[tuple[float, str]]] = {}
         # Latest raw payload seen for each unhandled data point, surfaced in
         # diagnostics so undocumented dps can be identified from real data.
         self._unknown_dp_payloads: dict[int, str] = {}
-        self._device_model: str = "TerraMow S1200"  # Default model name, kept for backward compatibility
+        self._device_model: str = (
+            "TerraMow S1200"  # Default model name, kept for backward compatibility
+        )
         # Entities reach the hub through this attribute; the name is kept
         # from the time the lawn mower entity itself played the hub role.
         self.basic_data.lawn_mower = self
@@ -1068,7 +1099,9 @@ class TerraMowHub:
         self._last_delivery: OrderedDict[str, tuple[str, float]] = OrderedDict()
         self._duplicate_deliveries: Counter[str] = Counter()
 
-        self.cmd_seq = random.randint(0, 0xFFFFFFFF)  # Generate a random command sequence number
+        self.cmd_seq = random.randint(
+            0, 0xFFFFFFFF
+        )  # Generate a random command sequence number
         # get_cmd_seq is reachable from the event loop and from executor
         # threads (sync command senders), so the increment must be atomic
         # to avoid handing out a duplicate seq.
@@ -1117,7 +1150,9 @@ class TerraMowHub:
             "duplicate_deliveries": dict(self._duplicate_deliveries),
         }
 
-    def register_state_listener(self, listener: Callable[[], None]) -> Callable[[], None]:
+    def register_state_listener(
+        self, listener: Callable[[], None]
+    ) -> Callable[[], None]:
         """Register a listener called on connection/dp_107/model changes.
 
         Listeners historically had to be thread-safe (paho invoked them from
@@ -1168,9 +1203,7 @@ class TerraMowHub:
 
         self.hass.loop.call_soon_threadsafe(_run_on_loop)
 
-    def _dispatch_batch(
-        self, targets: list[Callable[..., Any]], *args: Any
-    ) -> None:
+    def _dispatch_batch(self, targets: list[Callable[..., Any]], *args: Any) -> None:
         """Schedule a snapshot of handlers onto the event loop in one hop.
 
         A data point like dp_107 fans out to a dozen entity callbacks; one
@@ -1300,22 +1333,35 @@ class TerraMowHub:
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_155: %s", payload)
 
-    def _notify_mode_selector_if_changed(self, old_params: dict[str, Any], new_params: dict[str, Any]) -> None:
+    def _notify_mode_selector_if_changed(
+        self, old_params: dict[str, Any], new_params: dict[str, Any]
+    ) -> None:
         """Notify the mode selector if the main direction mode changed."""
         try:
-            old_mode = old_params.get('main_direction_angle_config', {}).get('mode') if old_params else None
-            new_mode = new_params.get('main_direction_angle_config', {}).get('mode')
+            old_mode = (
+                old_params.get("main_direction_angle_config", {}).get("mode")
+                if old_params
+                else None
+            )
+            new_mode = new_params.get("main_direction_angle_config", {}).get("mode")
 
             if new_mode and old_mode != new_mode:
-                _LOGGER.debug("Main direction mode changed from %s to %s, notifying mode selector", old_mode, new_mode)
+                _LOGGER.debug(
+                    "Main direction mode changed from %s to %s, notifying mode selector",
+                    old_mode,
+                    new_mode,
+                )
 
                 # Notify the mode selector via a Home Assistant event
-                self.hass.bus.fire(f"{DOMAIN}_device_mode_confirmed", {
-                    "device_host": self.host,
-                    "confirmed_mode": new_mode,
-                    "old_mode": old_mode,
-                    "source": "device_feedback"
-                })
+                self.hass.bus.fire(
+                    f"{DOMAIN}_device_mode_confirmed",
+                    {
+                        "device_host": self.host,
+                        "confirmed_mode": new_mode,
+                        "old_mode": old_mode,
+                        "source": "device_feedback",
+                    },
+                )
 
         except Exception as e:
             _LOGGER.warning("Error notifying mode selector: %s", e)
@@ -1365,7 +1411,9 @@ class TerraMowHub:
         this Home Assistant run observed, and a restored one could not be
         told apart from a live capture.
         """
-        work = self._current_work_data if isinstance(self._current_work_data, dict) else {}
+        work = (
+            self._current_work_data if isinstance(self._current_work_data, dict) else {}
+        )
 
         def _number(key: str) -> float | None:
             try:
@@ -1415,9 +1463,8 @@ class TerraMowHub:
         work = self._current_work_data
         if not isinstance(work, dict):
             return False
-        return (
-            work.get("is_completed") is not True
-            and self._work_counters_positive(work)
+        return work.get("is_completed") is not True and self._work_counters_positive(
+            work
         )
 
     def _maybe_release_latch_on_manual_end(self, work: dict[str, Any]) -> None:
@@ -2265,7 +2312,7 @@ class TerraMowHub:
             "sub_mission": SubMission,
             "state": MissionState,
             "power_mode": PowerMode,
-            "back_to_station_reason": BackToStationReason
+            "back_to_station_reason": BackToStationReason,
         }
 
         # Capture raw fields before enum conversion mutates the dict
@@ -2289,7 +2336,9 @@ class TerraMowHub:
                     data[key] = enum_class(data[key])
                     _LOGGER.debug("Converted %s: %s -> %s", key, old_value, data[key])
                 except (ValueError, KeyError) as e:
-                    _LOGGER.error("Invalid value for %s: %s (error: %s)", key, data[key], e)
+                    _LOGGER.error(
+                        "Invalid value for %s: %s (error: %s)", key, data[key], e
+                    )
                     # Unknown value (e.g. newer firmware): drop the key so the
                     # .get(...) fallbacks below keep the previous known state
                     # instead of clobbering it with None.
@@ -2412,9 +2461,17 @@ class TerraMowHub:
         # else: a recharge or other non-idle mid-session interruption — keep the
         # latch so the job still shows through it.
 
-        _LOGGER.debug("Mission state updated: mission=%s->%s, sub_mission=%s->%s, state=%s->%s, has_error=%s, back_to_station_reason=%s",
-                     old_mission, self.mission, old_sub_mission, self.sub_mission,
-                     old_mission_state, self.mission_state, self.has_error, self.back_to_station_reason)
+        _LOGGER.debug(
+            "Mission state updated: mission=%s->%s, sub_mission=%s->%s, state=%s->%s, has_error=%s, back_to_station_reason=%s",
+            old_mission,
+            self.mission,
+            old_sub_mission,
+            self.sub_mission,
+            old_mission_state,
+            self.mission_state,
+            self.has_error,
+            self.back_to_station_reason,
+        )
 
         self._observe_battery_health()
         self._notify_state_listeners()
@@ -2477,9 +2534,10 @@ class TerraMowHub:
         """Coalesce current dp_8/107/108/113 state into aggregate windows."""
         before = self._battery_health.dump()
         status = self._battery_status
-        charger_connected = status.get("charger_connected") is True or status.get(
-            "state"
-        ) == "BATTERY_STATE_CHARGING"
+        charger_connected = (
+            status.get("charger_connected") is True
+            or status.get("state") == "BATTERY_STATE_CHARGING"
+        )
         self._battery_health.observe(
             level=self._battery_level,
             charger_connected=charger_connected,
@@ -2657,7 +2715,9 @@ class TerraMowHub:
             # Show the firmware version on the device page. Prefer the real
             # version from dp_102 (e.g. "9.9.210"); the dp_127 compatibility
             # number ("28.3") is only a fallback until dp_102 has arrived.
-            sw_version = self.firmware_version_name or self._format_firmware_version(data)
+            sw_version = self.firmware_version_name or self._format_firmware_version(
+                data
+            )
             if sw_version:
                 self._dispatch(self._async_update_device_sw_version, sw_version)
 
@@ -2670,7 +2730,9 @@ class TerraMowHub:
 
             # If the version is incompatible, consider disabling some features or showing a warning
             if compatibility_status == CompatibilityStatus.INCOMPATIBLE:
-                _LOGGER.error("Version completely incompatible, recommend checking firmware and plugin versions")
+                _LOGGER.error(
+                    "Version completely incompatible, recommend checking firmware and plugin versions"
+                )
 
             # Sync the compatibility result to a Home Assistant Repair Issue so
             # that incompatible firmware surfaces as an actionable repair card
@@ -2730,12 +2792,15 @@ class TerraMowHub:
                     _LOGGER.warning(
                         "Cannot reach TerraMow MQTT broker at %s:%d (%s); "
                         "will keep retrying with backoff",
-                        self.host, MQTT_PORT, e,
+                        self.host,
+                        MQTT_PORT,
+                        e,
                     )
                 else:
                     _LOGGER.debug(
                         "MQTT connection still failing (attempt %d): %s",
-                        consecutive_failures, e,
+                        consecutive_failures,
+                        e,
                     )
             else:
                 # The message stream ended without an error (broker closed the
@@ -2818,9 +2883,7 @@ class TerraMowHub:
         self.connection_error = False
         self._notify_state_listeners()
 
-    def _persist_unknown_dp(
-        self, timestamp: float, dp_id: int, payload: str
-    ) -> None:
+    def _persist_unknown_dp(self, timestamp: float, dp_id: int, payload: str) -> None:
         """Append an undocumented-dp change to a JSONL file for offline decoding.
 
         Called only while debug logging is enabled. The file lives in the HA
@@ -2839,8 +2902,7 @@ class TerraMowHub:
         try:
             with open(path, "a", encoding="utf-8") as handle:
                 handle.write(
-                    json.dumps({"t": timestamp, "dp": dp_id, "payload": payload})
-                    + "\n"
+                    json.dumps({"t": timestamp, "dp": dp_id, "payload": payload}) + "\n"
                 )
         except OSError as err:
             _LOGGER.debug("Failed to persist unknown-dp log: %s", err)
@@ -3002,12 +3064,15 @@ class TerraMowHub:
                     "Received undocumented data point %d (no handler registered). "
                     "First payload: %s. Enable debug logging for the terramow "
                     "integration to record all payloads for this data point.",
-                    dp_id, payload[:500],
+                    dp_id,
+                    payload[:500],
                 )
             elif _LOGGER.isEnabledFor(logging.DEBUG):
                 # Guarded: the slice would otherwise run per message even
                 # with debug logging off.
-                _LOGGER.debug("Unhandled data point %d payload: %s", dp_id, payload[:2000])
+                _LOGGER.debug(
+                    "Unhandled data point %d payload: %s", dp_id, payload[:2000]
+                )
 
     def register_callback(
         self, dp_id: int, callback: Callable[..., Any]
@@ -3038,7 +3103,9 @@ class TerraMowHub:
             self._dispatch(callback, self._map_info)
         return _make_unsubscriber(self.map_callbacks, callback)
 
-    def register_pose_callback(self, callback: Callable[..., Any]) -> Callable[[], None]:
+    def register_pose_callback(
+        self, callback: Callable[..., Any]
+    ) -> Callable[[], None]:
         """Register a callback function for pose updates.
 
         Returns an idempotent unsubscribe callable removing the callback.
@@ -3051,7 +3118,9 @@ class TerraMowHub:
             self._dispatch(callback, self._pose)
         return _make_unsubscriber(self.pose_callbacks, callback)
 
-    def register_path_callback(self, callback: Callable[..., Any]) -> Callable[[], None]:
+    def register_path_callback(
+        self, callback: Callable[..., Any]
+    ) -> Callable[[], None]:
         """Register a callback function for path data updates.
 
         Returns an idempotent unsubscribe callable removing the callback.
@@ -3100,8 +3169,12 @@ class TerraMowHub:
     def _update_map_info(self, map_info: dict[str, Any]) -> None:
         """Update map info and notify callbacks."""
         self._map_info = map_info
-        _LOGGER.debug("Map info updated: id=%s, name=%s, state=%s",
-                     map_info.get('id'), map_info.get('name'), map_info.get('map_state'))
+        _LOGGER.debug(
+            "Map info updated: id=%s, name=%s, state=%s",
+            map_info.get("id"),
+            map_info.get("name"),
+            map_info.get("map_state"),
+        )
         for callback in list(self.map_callbacks):
             self._dispatch(callback, map_info)
 
@@ -3112,7 +3185,9 @@ class TerraMowHub:
                 return data.get(key)
         return None
 
-    def _build_map_info_from_map_data(self, map_data: dict[str, Any]) -> dict[str, Any] | None:
+    def _build_map_info_from_map_data(
+        self, map_data: dict[str, Any]
+    ) -> dict[str, Any] | None:
         """Build/complete map_info from the HTTP map data."""
         if not isinstance(map_data, dict):
             return None
@@ -3124,7 +3199,9 @@ class TerraMowHub:
         mapped = {
             "id": new_id,
             "name": self._get_map_field(map_data, "name", "map_name", "mapName"),
-            "map_state": self._get_map_field(map_data, "map_state", "mapState", "state"),
+            "map_state": self._get_map_field(
+                map_data, "map_state", "mapState", "state"
+            ),
             "regions": map_data.get("regions"),
             "clean_info": self._get_map_field(map_data, "clean_info", "cleanInfo"),
             "total_area": self._get_map_field(map_data, "total_area", "totalArea"),
@@ -3148,7 +3225,9 @@ class TerraMowHub:
                 _LOGGER.warning("Invalid %s meta seq: %s", label, meta.get("seq"))
             return -1
 
-    def _should_replace_pending(self, pending_meta: dict[str, Any] | None, seq: int, label: str) -> bool:
+    def _should_replace_pending(
+        self, pending_meta: dict[str, Any] | None, seq: int, label: str
+    ) -> bool:
         """Whether to replace the cached pending meta with the new meta."""
         if pending_meta is None:
             return True
@@ -3197,9 +3276,7 @@ class TerraMowHub:
             self._async_retry_meta(channel, delay)
         )
 
-    async def _async_retry_meta(
-        self, channel: _MetaFetchChannel, delay: float
-    ) -> None:
+    async def _async_retry_meta(self, channel: _MetaFetchChannel, delay: float) -> None:
         """Retry a channel's fetch after a delay."""
         try:
             await asyncio.sleep(delay)
@@ -3360,7 +3437,10 @@ class TerraMowHub:
             if key not in detected:
                 self._safety_pending.pop(key, None)
         for key in list(self._safety_active):
-            if key not in detected or detected.get(key, {}).get("kind") == "virtual_wall":
+            if (
+                key not in detected
+                or detected.get(key, {}).get("kind") == "virtual_wall"
+            ):
                 self._safety_active.pop(key, None)
 
         for key, detection in detected.items():
@@ -3501,7 +3581,9 @@ class TerraMowHub:
             return
 
         if baseline.get("map_id") != snapshot.get("map_id"):
-            self._set_map_integrity_baseline(snapshot, "expected_change", "map_switched")
+            self._set_map_integrity_baseline(
+                snapshot, "expected_change", "map_switched"
+            )
             return
 
         changed = changed_geometry_layers(baseline, snapshot)
@@ -3563,9 +3645,7 @@ class TerraMowHub:
         keeps the hub alive across a config-entry reload.
         """
         self.hass.async_create_task(
-            self._get_map_integrity_store().async_save(
-                self._map_integrity_save_data()
-            )
+            self._get_map_integrity_store().async_save(self._map_integrity_save_data())
         )
 
     async def async_restore_map_integrity(self) -> None:
@@ -3753,18 +3833,14 @@ class TerraMowHub:
         cell = (round(x / WIFI_CELL_MM), round(y / WIFI_CELL_MM))
         prev = self._wifi_cells.get(cell)
         value = (
-            float(signal)
-            if prev is None
-            else prev + WIFI_EMA_ALPHA * (signal - prev)
+            float(signal) if prev is None else prev + WIFI_EMA_ALPHA * (signal - prev)
         )
         self._wifi_cells[cell] = value
         if prev is not None and round(value) == round(prev):
             return  # no visible change — skip the rev bump and save
         if len(self._wifi_cells) > MAX_WIFI_CELLS:
             # Bound the grid: drop the oldest-inserted cells (dict order).
-            for key in list(self._wifi_cells)[
-                : len(self._wifi_cells) - MAX_WIFI_CELLS
-            ]:
+            for key in list(self._wifi_cells)[: len(self._wifi_cells) - MAX_WIFI_CELLS]:
                 del self._wifi_cells[key]
         self._wifi_map_rev += 1
         self._schedule_wifi_map_save()
@@ -3844,9 +3920,7 @@ class TerraMowHub:
     @property
     def passage_reliability(self) -> list[dict[str, Any]]:
         """Deterministic graph edges with bounded observed evidence."""
-        return self._passage_reliability.diagnostics(
-            dt_util.utcnow().timestamp()
-        )
+        return self._passage_reliability.diagnostics(dt_util.utcnow().timestamp())
 
     def _record_fault_hotspots(self, errors: list[Any]) -> None:
         """Stamp the current pose for every error code that is newly present.
@@ -3861,9 +3935,7 @@ class TerraMowHub:
         are map-frame.
         """
         previous = {
-            entry.get("code")
-            for entry in self._error_list
-            if isinstance(entry, dict)
+            entry.get("code") for entry in self._error_list if isinstance(entry, dict)
         }
         x = self._pose.get("x")
         y = self._pose.get("y")
@@ -3898,7 +3970,10 @@ class TerraMowHub:
         for hotspot in self._fault_hotspots:
             if hotspot["code"] != code:
                 continue
-            if math.dist((hotspot["x"], hotspot["y"]), (x, y)) <= FAULT_HOTSPOT_MERGE_MM:
+            if (
+                math.dist((hotspot["x"], hotspot["y"]), (x, y))
+                <= FAULT_HOTSPOT_MERGE_MM
+            ):
                 hotspot["count"] += 1
                 hotspot["last_seen"] = dt_util.utcnow().isoformat()
                 # Move to the running mean so the marker settles on the spot.
@@ -4159,9 +4234,7 @@ class TerraMowHub:
                 zone_id = zone.get("id")
                 if isinstance(zone_id, int) and not isinstance(zone_id, bool):
                     name = zone.get("name")
-                    names[zone_id] = (
-                        name if isinstance(name, str) and name else None
-                    )
+                    names[zone_id] = name if isinstance(name, str) and name else None
         return names
 
     async def async_set_zone_policies(self, policies: dict[Any, Any]) -> None:
@@ -4323,7 +4396,8 @@ class TerraMowHub:
         """Snapshot the anchors for the debounced disk write."""
         return {
             "anchors": {
-                key: [stamp, value] for key, (stamp, value) in self._wear_anchors.items()
+                key: [stamp, value]
+                for key, (stamp, value) in self._wear_anchors.items()
             }
         }
 
@@ -4467,9 +4541,7 @@ class TerraMowHub:
                 COVERAGE_SIMPLIFY_EPSILON_MM,
                 COVERAGE_MAX_SIMPLIFY_MM,
             )
-            self._coverage_cycle_done = bool(
-                (data or {}).get("coverage_cycle_done")
-            )
+            self._coverage_cycle_done = bool((data or {}).get("coverage_cycle_done"))
             self._restored_map_id = (data or {}).get("map_id")
         stamps = (data or {}).get("zone_last_seen")
         if isinstance(stamps, dict):
@@ -4503,10 +4575,9 @@ class TerraMowHub:
         if restored is None:
             return
 
-        session_open = (
-            work.get("is_completed") is not True
-            and self._work_counters_positive(work)
-        )
+        session_open = work.get(
+            "is_completed"
+        ) is not True and self._work_counters_positive(work)
         current_map_id = self._map_data.get("id")
         map_matches = (
             self._restored_map_id is None
@@ -4560,7 +4631,9 @@ class TerraMowHub:
         if seq != -1 and channel.seq != -1 and seq < channel.seq:
             _LOGGER.info(
                 "%s seq went backward (%d -> %d); treating as new session",
-                channel.label.capitalize(), channel.seq, seq,
+                channel.label.capitalize(),
+                channel.seq,
+                seq,
             )
             channel.seq = -1
             channel.etag = None
@@ -4579,7 +4652,9 @@ class TerraMowHub:
 
         channel.fetching = True
         try:
-            data, etag, ok, _not_modified = await self._async_fetch_json(meta, channel.etag)
+            data, etag, ok, _not_modified = await self._async_fetch_json(
+                meta, channel.etag
+            )
             if ok:
                 if seq != -1:
                     channel.seq = seq
@@ -4600,7 +4675,9 @@ class TerraMowHub:
             pending_meta = channel.pending_meta
             channel.pending_meta = None
             if pending_meta:
-                pending_seq = self._get_meta_seq(pending_meta, channel.label, warn=False)
+                pending_seq = self._get_meta_seq(
+                    pending_meta, channel.label, warn=False
+                )
                 if pending_seq == -1 or pending_seq > channel.seq:
                     self.hass.async_create_task(
                         self._async_handle_meta(channel, pending_meta)
@@ -4688,7 +4765,8 @@ class TerraMowHub:
             _LOGGER.warning(
                 "Device serial changed from %s to %s (different mower at the "
                 "same address?); keeping the existing registry identity",
-                stored, serial,
+                stored,
+                serial,
             )
             return
 
@@ -4756,7 +4834,9 @@ class TerraMowHub:
                 device_registry.async_update_device(
                     device_entry.id, sw_version=sw_version
                 )
-                _LOGGER.info("Device registry updated with firmware version: %s", sw_version)
+                _LOGGER.info(
+                    "Device registry updated with firmware version: %s", sw_version
+                )
         except Exception as e:
             _LOGGER.error("Error updating device firmware version: %s", e)
 
@@ -4770,10 +4850,7 @@ class TerraMowHub:
                 device_registry, self._device_identifier(), self.basic_data.entry_id
             )
             if device_entry:
-                device_registry.async_update_device(
-                    device_entry.id,
-                    model=model_name
-                )
+                device_registry.async_update_device(device_entry.id, model=model_name)
                 _LOGGER.info("Device registry updated with new model: %s", model_name)
             else:
                 _LOGGER.warning("Device not found in registry for update")
@@ -5027,7 +5104,11 @@ class TerraMowHub:
         if self.sub_mission != SubMission.SUB_MISSION_SAVING_MAP:
             return False
         progress = self._map_save_progress.get("int_value")
-        if isinstance(progress, int) and not isinstance(progress, bool) and progress >= 100:
+        if (
+            isinstance(progress, int)
+            and not isinstance(progress, bool)
+            and progress >= 100
+        ):
             return True
         started = self._map_save_started_at
         return (
@@ -5347,9 +5428,9 @@ class TerraMowHub:
     def _global_clean_command(self) -> PlannedCommand:
         """dp_103 command starting a normal (global) mow."""
         return 103, {
-            'seq': self.get_cmd_seq(),
-            'mode': 'START_MODE_GLOBAL_CLEAN',
-            'global_clean': {'restart': False}
+            "seq": self.get_cmd_seq(),
+            "mode": "START_MODE_GLOBAL_CLEAN",
+            "global_clean": {"restart": False},
         }
 
     def _build_select_region_command(self, region_ids: list[int]) -> dict[str, Any]:
@@ -5363,9 +5444,9 @@ class TerraMowHub:
         so the map card's tap-to-mow was confirmed yet never started (#140).
         """
         return {
-            'seq': self.get_cmd_seq(),
-            'mode': 'START_MODE_SELECT_REGION_CLEAN',
-            'select_region_clean': {'region_ids': list(region_ids)}
+            "seq": self.get_cmd_seq(),
+            "mode": "START_MODE_SELECT_REGION_CLEAN",
+            "select_region_clean": {"region_ids": list(region_ids)},
         }
 
     def start_select_region_clean(self, region_ids: list[int]) -> None:
@@ -5445,10 +5526,7 @@ class TerraMowHub:
         self._ensure_command_allowed()
 
         _LOGGER.info("START EDGE TRIM : Sending edge trim command")
-        return 103, {
-            'seq': self.get_cmd_seq(),
-            'mode': 'START_MODE_EDGE_TRIM_CLEAN'
-        }
+        return 103, {"seq": self.get_cmd_seq(), "mode": "START_MODE_EDGE_TRIM_CLEAN"}
 
     def start_edge_trim(self) -> None:
         """Start edge-trim mowing (fire-and-forget)."""
@@ -5460,18 +5538,15 @@ class TerraMowHub:
 
     def _resume_mow_command(self) -> PlannedCommand:
         """dp_106 resume command (also resumes a paused recharge)."""
-        return 106, {'seq': self.get_cmd_seq()}
+        return 106, {"seq": self.get_cmd_seq()}
 
     def _pause_command(self) -> PlannedCommand:
         """dp_105 pause command."""
-        return 105, {'seq': self.get_cmd_seq()}
+        return 105, {"seq": self.get_cmd_seq()}
 
     def _return_command(self) -> PlannedCommand:
         """dp_103 command sending the mower back to the station."""
-        return 103, {
-            'seq': self.get_cmd_seq(),
-            'mode': 'START_MODE_RETURN'
-        }
+        return 103, {"seq": self.get_cmd_seq(), "mode": "START_MODE_RETURN"}
 
     def _request_compatibility_info(self) -> None:
         """Request version compatibility information."""
@@ -5492,7 +5567,10 @@ class TerraMowHub:
         """
         try:
             _LOGGER.info("Requesting full weekly schedule")
-            request_data = {"cmd_type": "SCHEDULE_CMD_TYPE_GET", "seq": self.get_cmd_seq()}
+            request_data = {
+                "cmd_type": "SCHEDULE_CMD_TYPE_GET",
+                "seq": self.get_cmd_seq(),
+            }
             self.publish_data_point(122, request_data)
         except Exception as e:
             _LOGGER.error("Failed to request full weekly schedule: %s", e)

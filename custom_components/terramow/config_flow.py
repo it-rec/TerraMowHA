@@ -149,9 +149,7 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
                 )
 
         return self.async_show_form(
-            step_id="user",
-            data_schema=STEP_USER_DATA_SCHEMA,
-            errors=errors
+            step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
         )
 
     async def async_step_zeroconf(self, discovery_info: Any) -> ConfigFlowResult:
@@ -186,8 +184,7 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
     def _host_already_configured(self, host: str) -> bool:
         """Return True if an existing entry already uses this host."""
         return any(
-            entry.data.get(CONF_HOST) == host
-            for entry in self._async_current_entries()
+            entry.data.get(CONF_HOST) == host for entry in self._async_current_entries()
         )
 
     async def async_step_user_pass(
@@ -214,9 +211,7 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
-                _LOGGER.info(
-                    'Setting up discovered host "%s"', self._discovered_host
-                )
+                _LOGGER.info('Setting up discovered host "%s"', self._discovered_host)
                 return self.async_create_entry(
                     title=info["title"],
                     data=data,
@@ -260,9 +255,7 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
-                self.hass.config_entries.async_update_entry(
-                    entry, data=updated_data
-                )
+                self.hass.config_entries.async_update_entry(entry, data=updated_data)
                 await self.hass.config_entries.async_reload(entry.entry_id)
                 return self.async_abort(reason="reauth_successful")
 
@@ -305,9 +298,7 @@ class ConfigFlow(BaseConfigFlow, domain=DOMAIN):
                     # Keep the adopted serial (the mower moved address, it
                     # did not change identity) and the serial-based unique
                     # id; host-keyed entries keep following the host.
-                    data={**user_input, CONF_SERIAL: serial}
-                    if serial
-                    else user_input,
+                    data={**user_input, CONF_SERIAL: serial} if serial else user_input,
                     unique_id=serial or new_host,
                 )
                 await self.hass.config_entries.async_reload(entry.entry_id)
@@ -366,15 +357,11 @@ class TerraMowOptionsFlow(OptionsFlow):
                 # paired: without both coordinates no tracker is created.
                 vol.Optional(
                     CONF_GPS_LATITUDE,
-                    description={
-                        "suggested_value": options.get(CONF_GPS_LATITUDE)
-                    },
+                    description={"suggested_value": options.get(CONF_GPS_LATITUDE)},
                 ): vol.All(vol.Coerce(float), vol.Range(min=-90, max=90)),
                 vol.Optional(
                     CONF_GPS_LONGITUDE,
-                    description={
-                        "suggested_value": options.get(CONF_GPS_LONGITUDE)
-                    },
+                    description={"suggested_value": options.get(CONF_GPS_LONGITUDE)},
                 ): vol.All(vol.Coerce(float), vol.Range(min=-180, max=180)),
                 vol.Required(
                     CONF_GPS_HEADING,

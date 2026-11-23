@@ -35,17 +35,13 @@ def _map(map_id: int = 1) -> dict[str, object]:
                 "sub_regions": [
                     {
                         "id": 11,
-                        "boundary": _poly(
-                            (0, 0), (500, 0), (500, 1000), (0, 1000)
-                        ),
+                        "boundary": _poly((0, 0), (500, 0), (500, 1000), (0, 1000)),
                     }
                 ],
             }
         ],
         "forbidden_zones": [_poly((100, 100), (200, 100), (200, 200))],
-        "physical_forbidden_zones": [
-            _poly((300, 100), (400, 100), (400, 200))
-        ],
+        "physical_forbidden_zones": [_poly((300, 100), (400, 100), (400, 200))],
         "pass_through_zones": [_poly((450, 0), (550, 0), (550, 100))],
         "required_zones": [_poly((600, 600), (700, 600), (700, 700))],
         "obstacles": [_poly((800, 800), (850, 800), (850, 850))],
@@ -56,9 +52,7 @@ def _map(map_id: int = 1) -> dict[str, object]:
                 "line": _poly((450, 500), (550, 500)),
             }
         ],
-        "virtual_cross_boundary_tunnels": [
-            {"line": _poly((250, 0), (250, 100))}
-        ],
+        "virtual_cross_boundary_tunnels": [{"line": _poly((250, 0), (250, 100))}],
     }
 
 
@@ -104,9 +98,12 @@ def test_snapshot_is_stable_for_invalid_and_reordered_geometry() -> None:
     reordered["forbidden_zones"].reverse()  # type: ignore[union-attr]
     moved = reordered["station_pose"]  # type: ignore[assignment]
     moved["x"] = 10  # type: ignore[index]
-    assert changed_geometry_layers(
-        snapshot_map_geometry(_map()), snapshot_map_geometry(reordered)
-    ) == []
+    assert (
+        changed_geometry_layers(
+            snapshot_map_geometry(_map()), snapshot_map_geometry(reordered)
+        )
+        == []
+    )
 
 
 def test_changed_geometry_layers_classifies_every_layer() -> None:

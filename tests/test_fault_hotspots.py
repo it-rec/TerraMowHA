@@ -107,7 +107,7 @@ async def test_faults_further_apart_stay_separate(hub: TerraMowHub) -> None:
 
 
 async def test_different_codes_at_one_spot_stay_separate(hub: TerraMowHub) -> None:
-    """"Stuck here" and "lifted here" are different problems."""
+    """ "Stuck here" and "lifted here" are different problems."""
     _at(hub, 500, 500)
     await _fault(hub, 903, 201)
 

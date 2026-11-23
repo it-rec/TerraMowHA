@@ -129,9 +129,13 @@ async def test_zeroconf_discovery_creates_entry(hass: HomeAssistant) -> None:
     assert result["type"] == FlowResultType.FORM
     assert result["step_id"] == "user_pass"
 
-    with patch(
-        "custom_components.terramow.config_flow.validate_input",
-        return_value={"title": "TerraMow (192.0.2.55)"},
+    # The created entry is set up right away; keep that off the network.
+    with (
+        patch(
+            "custom_components.terramow.config_flow.validate_input",
+            return_value={"title": "TerraMow (192.0.2.55)"},
+        ),
+        patch("custom_components.terramow.async_setup_entry", return_value=True),
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {CONF_PASSWORD: "secret"}

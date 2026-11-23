@@ -109,7 +109,7 @@ Geräte im lokalen Netzwerk werden automatisch über Zeroconf erkannt — akzept
 
 ### Anforderungen
 
-- Home Assistant 2024.6.0 oder neuer (die CI prüft gegen die aktuelle HA-Core-Version)
+- Home Assistant 2025.3.0 oder neuer (die CI testet gegen dieses Minimum und die neueste HA-Core-Version)
 - TerraMow-Firmware-Version 6.6.0 oder neuer
 - TerraMow-APP-Version 1.6.0 oder neuer
 - Live-Karte und Mähpfad erfordern die Firmware-HA-Modul-Version 3; auf Version 2 (z. B. S800) funktioniert alles andere, und der Sensor für die Versionskompatibilität meldet dies

@@ -39,9 +39,7 @@ from custom_components.terramow.sensor import (
 from custom_components.terramow.update import TerraMowFirmwareUpdate
 
 _SENSOR_DESCRIPTIONS = {description.key: description for description in SENSORS}
-_BINARY_DESCRIPTIONS = {
-    description.key: description for description in BINARY_SENSORS
-}
+_BINARY_DESCRIPTIONS = {description.key: description for description in BINARY_SENSORS}
 
 
 def _hub() -> TerraMowHub:
@@ -81,7 +79,10 @@ def test_blade_speed_select_read_path() -> None:
     # default before any device data
     assert select.current_option == "blade_disk_speed_type_medium"
 
-    _feed(hub.on_global_params, {"blade_disk_speed": {"speed_type": "BLADE_DISK_SPEED_TYPE_HIGH"}})
+    _feed(
+        hub.on_global_params,
+        {"blade_disk_speed": {"speed_type": "BLADE_DISK_SPEED_TYPE_HIGH"}},
+    )
     assert select.current_option == "blade_disk_speed_type_high"
     assert select.options == [
         "blade_disk_speed_type_low",
@@ -114,9 +115,12 @@ def test_blade_speed_select_write_path() -> None:
 def test_main_direction_mode_select_tracks_device_mode() -> None:
     hub = _hub()
     select = MainDirectionModeSelect(hub.basic_data, hub.hass)
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MULTIPLE"},
-    })
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MULTIPLE"},
+        },
+    )
     assert select.current_option == "main_direction_mode_multiple"
 
 
@@ -130,9 +134,13 @@ def test_high_grass_select_reads_map_info() -> None:
     select = HighGrassEdgeTrimModeSelect(hub.basic_data, hub.hass)
     assert select.current_option is None
 
-    hub._update_map_info({
-        "mow_param": {"high_grass_edge_trim_mode": {"mode": "HIGH_GRASS_EDGE_TRIM_INTENSIVE"}},
-    })
+    hub._update_map_info(
+        {
+            "mow_param": {
+                "high_grass_edge_trim_mode": {"mode": "HIGH_GRASS_EDGE_TRIM_INTENSIVE"}
+            },
+        }
+    )
     assert select.current_option == "high_grass_edge_trim_intensive"
 
 
@@ -145,7 +153,9 @@ def test_high_grass_select_write_path() -> None:
 
     topic, command = _published(hub)
     assert topic == "data_point/155/app"
-    assert command == {"high_grass_edge_trim_mode": {"mode": "HIGH_GRASS_EDGE_TRIM_STANDARD"}}
+    assert command == {
+        "high_grass_edge_trim_mode": {"mode": "HIGH_GRASS_EDGE_TRIM_STANDARD"}
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -223,12 +233,15 @@ def _single_angle_number(hub) -> MainDirectionSingleAngleNumber:
 def test_single_angle_number_reads_angle_in_single_mode() -> None:
     hub = _hub()
     number = _single_angle_number(hub)
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {
-            "mode": "MAIN_DIRECTION_MODE_SINGLE",
-            "single_mode_config": {"angle": 42},
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_SINGLE",
+                "single_mode_config": {"angle": 42},
+            },
         },
-    })
+    )
     assert number.available is True
     assert number.native_value == 42.0
 
@@ -236,9 +249,12 @@ def test_single_angle_number_reads_angle_in_single_mode() -> None:
 def test_single_angle_number_unavailable_in_multiple_mode() -> None:
     hub = _hub()
     number = _single_angle_number(hub)
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MULTIPLE"},
-    })
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MULTIPLE"},
+        },
+    )
     assert number.available is False
     assert number.native_value is None
 
@@ -246,12 +262,15 @@ def test_single_angle_number_unavailable_in_multiple_mode() -> None:
 def test_single_angle_number_write_wraps_angle() -> None:
     hub = _hub()
     number = _single_angle_number(hub)
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {
-            "mode": "MAIN_DIRECTION_MODE_SINGLE",
-            "single_mode_config": {"angle": 0},
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_SINGLE",
+                "single_mode_config": {"angle": 0},
+            },
         },
-    })
+    )
 
     asyncio.run(number.async_set_native_value(370.0))
 
@@ -268,11 +287,14 @@ def test_single_angle_number_write_wraps_angle() -> None:
 def test_map_status_sensor_from_dp117() -> None:
     hub = _hub()
     sensor = TerraMowMapStatusSensor(hub.basic_data, hub.hass)
-    _feed(hub.on_map_status, {
-        "map_state": "MAP_STATE_COMPLETE",
-        "is_map_detected": True,
-        "map_id": 3,
-    })
+    _feed(
+        hub.on_map_status,
+        {
+            "map_state": "MAP_STATE_COMPLETE",
+            "is_map_detected": True,
+            "map_id": 3,
+        },
+    )
     assert sensor.native_value == "map_state_complete"
     attrs = sensor.extra_state_attributes
     assert attrs["is_map_detected"] is True
@@ -289,12 +311,16 @@ def test_map_area_sensor_converts_units() -> None:
 def test_clean_mode_sensor_reports_selected_regions() -> None:
     hub = _hub()
     sensor = TerraMowCleanModeSensor(hub.basic_data, hub.hass)
-    asyncio.run(sensor._on_map_info({
-        "clean_info": {
-            "mode": "MAP_CLEAN_INFO_MODE_SELECT_REGION",
-            "select_region": {"region_id": [1, 2]},
-        },
-    }))
+    asyncio.run(
+        sensor._on_map_info(
+            {
+                "clean_info": {
+                    "mode": "MAP_CLEAN_INFO_MODE_SELECT_REGION",
+                    "select_region": {"region_id": [1, 2]},
+                },
+            }
+        )
+    )
     assert sensor.native_value == "map_clean_info_mode_select_region"
     assert sensor.extra_state_attributes["selected_regions"] == [1, 2]
 
@@ -325,19 +351,27 @@ def test_power_mode_sensor_from_dp107() -> None:
 def test_back_to_station_reason_sensor_from_dp107() -> None:
     hub = _hub()
     sensor = _sensor(hub, "back_to_station_reason")
-    _feed(hub.on_mission_status, {
-        "back_to_station_reason": "BACK_TO_STATION_REASON_LOW_BATTERY",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "back_to_station_reason": "BACK_TO_STATION_REASON_LOW_BATTERY",
+        },
+    )
     assert sensor.native_value == "back_to_station_reason_low_battery"
 
 
-def test_back_to_station_reason_wait_after_rain_stop(caplog: pytest.LogCaptureFixture) -> None:
+def test_back_to_station_reason_wait_after_rain_stop(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     """Newer firmware reports a post-rain wait reason (issue #349)."""
     hub = _hub()
     sensor = _sensor(hub, "back_to_station_reason")
-    _feed(hub.on_mission_status, {
-        "back_to_station_reason": "BACK_TO_STATION_REASON_WAIT_AFTER_RAIN_STOP",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "back_to_station_reason": "BACK_TO_STATION_REASON_WAIT_AFTER_RAIN_STOP",
+        },
+    )
     assert sensor.native_value == "back_to_station_reason_wait_after_rain_stop"
     assert sensor.native_value in sensor.options
     assert "Invalid value for back_to_station_reason" not in caplog.text
@@ -353,12 +387,15 @@ def test_mow_speed_sensor_from_dp155() -> None:
 def test_battery_sensor_attributes_fix_temperature_typo() -> None:
     hub = _hub()
     sensor = BatterySensor(hub.basic_data, hub.hass)
-    _feed(hub.on_battery_status, {
-        "state": "BATTERY_STATE_CHARGED",
-        "tempreture": "BATTERY_TEMPRETURE_NORMAL",
-        "charger_connected": True,
-        "is_switch_on": True,
-    })
+    _feed(
+        hub.on_battery_status,
+        {
+            "state": "BATTERY_STATE_CHARGED",
+            "tempreture": "BATTERY_TEMPRETURE_NORMAL",
+            "charger_connected": True,
+            "is_switch_on": True,
+        },
+    )
     attrs = sensor.extra_state_attributes
     # the firmware typo is normalised for display
     assert attrs["temperature"] == "BATTERY_TEMPERATURE_NORMAL"
@@ -375,10 +412,13 @@ def test_navigation_and_upgrade_binary_sensors() -> None:
     located = _binary(hub, "navigation_located")
     upgrading = _binary(hub, "firmware_upgrading")
 
-    _feed(hub.on_mission_status, {
-        "is_robot_navi_located": True,
-        "is_upgrading": False,
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "is_robot_navi_located": True,
+            "is_upgrading": False,
+        },
+    )
     assert located.is_on is True
     assert upgrading.is_on is False
 
@@ -416,5 +456,7 @@ def test_update_entity_exposes_component_versions() -> None:
     hub = _hub()
     update = TerraMowFirmwareUpdate(hub.basic_data, hub.hass)
     assert update.extra_state_attributes == {}
-    _feed(hub.on_component_versions, {"ap_app": "9.9.210", "main_controller": "09.09.210"})
+    _feed(
+        hub.on_component_versions, {"ap_app": "9.9.210", "main_controller": "09.09.210"}
+    )
     assert update.extra_state_attributes["component_versions"]["ap_app"] == "9.9.210"

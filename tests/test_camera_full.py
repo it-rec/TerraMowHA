@@ -98,13 +98,29 @@ def test_collect_recursive_and_dedupe() -> None:
     nested = {"a": {"x": 1, "y": 1}, "b": [{"x": 2, "y": 2}]}
     pts = _collect_recursive_points(nested)
     assert (1.0, 1.0) in pts and (2.0, 2.0) in pts
-    assert _dedupe_points([(1.0, 1.0), (1.0, 1.0), (2.0, 2.0)]) == [(1.0, 1.0), (2.0, 2.0)]
+    assert _dedupe_points([(1.0, 1.0), (1.0, 1.0), (2.0, 2.0)]) == [
+        (1.0, 1.0),
+        (2.0, 2.0),
+    ]
 
 
 def test_ellipse_points_variants() -> None:
-    assert len(_ellipse_points({"center": {"x": 0, "y": 0}, "radius_x": 1, "radius_y": 2})) == 36
-    assert len(_ellipse_points({"center": {"x": 0, "y": 0}, "width": 2, "height": 4})) == 36
-    assert len(_ellipse_points({"center": {"x": 0, "y": 0}, "a": 1, "b": 1, "rotation": 30})) == 36
+    assert (
+        len(_ellipse_points({"center": {"x": 0, "y": 0}, "radius_x": 1, "radius_y": 2}))
+        == 36
+    )
+    assert (
+        len(_ellipse_points({"center": {"x": 0, "y": 0}, "width": 2, "height": 4}))
+        == 36
+    )
+    assert (
+        len(
+            _ellipse_points(
+                {"center": {"x": 0, "y": 0}, "a": 1, "b": 1, "rotation": 30}
+            )
+        )
+        == 36
+    )
     # missing radii -> no polygon
     assert _ellipse_points({"center": {"x": 0, "y": 0}}) == []
     assert _ellipse_points("nope") == []
@@ -137,8 +153,8 @@ def test_extract_path_points_and_map_id() -> None:
         "map_id": 3,
         "points": [
             {"position": {"x": 1, "y": 2}, "type": "PATH_POINT_TYPE_CLEANING"},
-            {"position": None},          # skipped
-            "not-a-dict",                # skipped
+            {"position": None},  # skipped
+            "not-a-dict",  # skipped
         ],
     }
     pts = _extract_path_points(data)
@@ -176,7 +192,9 @@ def test_pixel_geometry_and_simplify() -> None:
 
 
 def test_map_extent() -> None:
-    extent = _extract_map_extent({"width": 100, "height": 80, "resolution": 0.05, "origin": {"x": 0, "y": 0}})
+    extent = _extract_map_extent(
+        {"width": 100, "height": 80, "resolution": 0.05, "origin": {"x": 0, "y": 0}}
+    )
     assert len(extent) == 4
     assert _extract_map_extent({}) == []
 
@@ -194,24 +212,38 @@ def test_ellipse_points_key_fallbacks() -> None:
     # center inferred from the ellipse dict itself (no "center" key)
     assert len(_ellipse_points({"x": 0, "y": 0, "radius_x": 1, "radius_y": 1})) == 36
     # center found by recursively searching for a nested point
-    assert len(
-        _ellipse_points({"pts": [{"x": 1, "y": 1}], "radius_x": 1, "radius_y": 1})
-    ) == 36
+    assert (
+        len(_ellipse_points({"pts": [{"x": 1, "y": 1}], "radius_x": 1, "radius_y": 1}))
+        == 36
+    )
     # rx/ry aliases
     assert len(_ellipse_points({"center": {"x": 0, "y": 0}, "rx": 1, "ry": 2})) == 36
     # major/minor aliases
-    assert len(
-        _ellipse_points({"center": {"x": 0, "y": 0}, "major_radius": 2, "minor_radius": 1})
-    ) == 36
+    assert (
+        len(
+            _ellipse_points(
+                {"center": {"x": 0, "y": 0}, "major_radius": 2, "minor_radius": 1}
+            )
+        )
+        == 36
+    )
     # a single radius mirrors onto the missing axis (both directions)
     assert len(_ellipse_points({"center": {"x": 0, "y": 0}, "radius_x": 2})) == 36
     assert len(_ellipse_points({"center": {"x": 0, "y": 0}, "radius_y": 2})) == 36
     # a large theta is read as milli-radians and converted to degrees
-    assert len(
-        _ellipse_points(
-            {"center": {"x": 0, "y": 0}, "radius_x": 1, "radius_y": 1, "theta": 100000}
+    assert (
+        len(
+            _ellipse_points(
+                {
+                    "center": {"x": 0, "y": 0},
+                    "radius_x": 1,
+                    "radius_y": 1,
+                    "theta": 100000,
+                }
+            )
         )
-    ) == 36
+        == 36
+    )
 
 
 def test_feature_points_includes_bare_point_and_pose() -> None:
@@ -236,15 +268,19 @@ def test_formatting_helpers() -> None:
     assert _format_file_size(5 * 1024 * 1024).endswith("MB")
     assert _format_point(None) == "-"
     assert _format_point((1.4, 2.6)) == "1, 3"
-    assert _format_size({"width": 100, "height": 80, "resolution": 50}) == "100×80 @ 50mm"
+    assert (
+        _format_size({"width": 100, "height": 80, "resolution": 50}) == "100×80 @ 50mm"
+    )
     assert _format_size({}) == "-"
 
 
 def test_angle_helpers() -> None:
     assert coerce_angle_radians(None) is None
     assert coerce_angle_radians(2000, milli_radian=True) == 2.0
-    assert abs(normalize_angle_radians(3 * math.pi) - math.pi) < 1e-6 or \
-        abs(normalize_angle_radians(3 * math.pi) + math.pi) < 1e-6
+    assert (
+        abs(normalize_angle_radians(3 * math.pi) - math.pi) < 1e-6
+        or abs(normalize_angle_radians(3 * math.pi) + math.pi) < 1e-6
+    )
 
 
 def test_render_placeholder_is_png() -> None:
@@ -271,10 +307,14 @@ MAP_WITH_MARKERS = {
     "map_state": "MAP_STATE_COMPLETE",
     "map_view_rotate_angle": 20,
     "station_pose": {"x": 0.0, "y": 0.0, "theta": 0.0},
-    "regions": [{"id": 1, "boundary": _poly((0, 0), (4, 0), (4, 4), (0, 4)), "sub_regions": []}],
+    "regions": [
+        {"id": 1, "boundary": _poly((0, 0), (4, 0), (4, 4), (0, 4)), "sub_regions": []}
+    ],
     "virtual_walls": [_poly((0, 2), (4, 2))],
     "cross_boundary_tunnels": [{"line": _poly((1, 1), (2, 2))}],
-    "forbidden_zones": [{"ellipse": {"center": {"x": 3, "y": 3}, "radius_x": 0.5, "radius_y": 0.5}}],
+    "forbidden_zones": [
+        {"ellipse": {"center": {"x": 3, "y": 3}, "radius_x": 0.5, "radius_y": 0.5}}
+    ],
     "cross_boundary_markers": [_poly((1, 3), (1.2, 3), (1.1, 3.2))],
     "trapped_points": [_poly((2, 1), (2.2, 1), (2.1, 1.2))],
     "clean_info": {
@@ -318,13 +358,25 @@ def test_render_history_only_path() -> None:
     camera = TerraMowMapCamera(hub.basic_data, hub.hass)
     hub._map_data = MAP_WITH_MARKERS
     asyncio.run(camera._on_map_info({"id": 1}))
-    asyncio.run(camera._on_history_path_data({
-        "id": 9, "map_id": 1, "type": "PATH_TYPE_CLEAN",
-        "points": [
-            {"position": {"x": 0.2, "y": 0.2}, "type": "PATH_POINT_TYPE_CLEANING"},
-            {"position": {"x": 1.0, "y": 1.0}, "type": "PATH_POINT_TYPE_CLEANING"},
-        ],
-    }))
+    asyncio.run(
+        camera._on_history_path_data(
+            {
+                "id": 9,
+                "map_id": 1,
+                "type": "PATH_TYPE_CLEAN",
+                "points": [
+                    {
+                        "position": {"x": 0.2, "y": 0.2},
+                        "type": "PATH_POINT_TYPE_CLEANING",
+                    },
+                    {
+                        "position": {"x": 1.0, "y": 1.0},
+                        "type": "PATH_POINT_TYPE_CLEANING",
+                    },
+                ],
+            }
+        )
+    )
     assert asyncio.run(camera.async_camera_image()).startswith(PNG_MAGIC)
     scene = camera._build_scene()
     assert scene["history_path_points"]

@@ -24,7 +24,7 @@ from typing import Any
 
 # Imported from the package root on purpose. The old home, .config_entry, is a
 # deprecated alias that stops working in HA 2027.6; the new one, .entity, only
-# exists from HA 2026.6 on, while this integration supports 2024.6+ (hacs.json).
+# exists from HA 2026.6 on, while this integration supports 2025.3+ (hacs.json).
 # The root re-exports both names in every version in that range, so it is the
 # one path that works everywhere. mypy cannot see it because
 # device_tracker/__init__.py re-exports without __all__, making these implicit

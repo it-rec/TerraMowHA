@@ -34,9 +34,7 @@ def _map(map_id: int = 1) -> dict[str, object]:
                 "boundary": _poly((0, 0), (1000, 0), (1000, 1000), (0, 1000)),
             }
         ],
-        "forbidden_zones": [
-            _poly((300, 300), (700, 300), (700, 700), (300, 700))
-        ],
+        "forbidden_zones": [_poly((300, 300), (700, 300), (700, 700), (300, 700))],
         "physical_forbidden_zones": [
             _poly((100, 100), (200, 100), (200, 200), (100, 200))
         ],
@@ -74,16 +72,14 @@ def test_polygon_entry_outer_exit_wall_crossing_and_edges() -> None:
     ]
     assert evaluate_pose(
         data, None, (150, 150), allow_segment=False, tolerance_mm=10
-    ) == [
-        {"kind": "no_go_area", "geometry_id": "physical_forbidden_zones:0"}
-    ]
+    ) == [{"kind": "no_go_area", "geometry_id": "physical_forbidden_zones:0"}]
     assert evaluate_pose(data, None, (1200, 500), allow_segment=False) == [
         {"kind": "outer_boundary", "geometry_id": "allowed_regions"}
     ]
     assert evaluate_pose(data, None, (300, 500), allow_segment=False) == []
-    assert evaluate_pose(
-        data, (250, 250), (750, 250), allow_segment=True
-    ) == [{"kind": "virtual_wall", "geometry_id": "virtual_walls:0:0"}]
+    assert evaluate_pose(data, (250, 250), (750, 250), allow_segment=True) == [
+        {"kind": "virtual_wall", "geometry_id": "virtual_walls:0:0"}
+    ]
     # Merely touching an endpoint and a disallowed telemetry segment are neutral.
     assert evaluate_pose(data, (250, 0), (500, 0), allow_segment=True) == []
     assert evaluate_pose(data, (250, 250), (750, 250), allow_segment=False) == []

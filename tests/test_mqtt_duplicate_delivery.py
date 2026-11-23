@@ -149,7 +149,9 @@ def test_tracked_topics_are_bounded(monkeypatch: Any) -> None:
     assert len(hub._last_delivery) == MQTT_DUPLICATE_TRACKED_TOPICS
     # The oldest topics were evicted; the newest are still tracked.
     assert "discovered/topic/0" not in hub._last_delivery
-    assert f"discovered/topic/{MQTT_DUPLICATE_TRACKED_TOPICS + 49}" in hub._last_delivery
+    assert (
+        f"discovered/topic/{MQTT_DUPLICATE_TRACKED_TOPICS + 49}" in hub._last_delivery
+    )
 
 
 def test_evicted_topics_drop_their_duplicate_counter(monkeypatch: Any) -> None:

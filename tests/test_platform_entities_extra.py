@@ -84,10 +84,13 @@ def test_edge_cutting_distance_number_read_and_write() -> None:
 def test_mowing_spacing_number_publishes_value() -> None:
     hub = _hub()
     number = MowingSpacingNumber(hub.basic_data, hub.hass)
-    _feed(hub.on_global_params, {
-        "mow_spacing": {"value": 100},
-        "current_mow_spacing": 90,
-    })
+    _feed(
+        hub.on_global_params,
+        {
+            "mow_spacing": {"value": 100},
+            "current_mow_spacing": 90,
+        },
+    )
     assert number.native_value == 100.0
     assert number.extra_state_attributes["current_mow_spacing"] == 90
 
@@ -109,12 +112,15 @@ def test_auto_rotate_interval_number_mode_dependent() -> None:
     number = _mode_number(
         MainDirectionAutoRotateIntervalNumber(hub.basic_data, hub.hass), hub
     )
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {
-            "mode": "MAIN_DIRECTION_MODE_AUTO_ROTATE",
-            "auto_rotate_mode_config": {"angle_interval": 25},
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_AUTO_ROTATE",
+                "auto_rotate_mode_config": {"angle_interval": 25},
+            },
         },
-    })
+    )
     assert number.available is True
     assert number.native_value == 25.0
 
@@ -130,9 +136,12 @@ def test_auto_rotate_interval_unavailable_in_single_mode() -> None:
     number = _mode_number(
         MainDirectionAutoRotateIntervalNumber(hub.basic_data, hub.hass), hub
     )
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_SINGLE"},
-    })
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_SINGLE"},
+        },
+    )
     assert number.available is False
     assert number.native_value is None
 
@@ -144,12 +153,15 @@ def test_multiple_direction_angle_numbers_read_and_write() -> None:
     hub = _hub()
     angle1 = _mode_number(MultipleDirectionAngle1Number(hub.basic_data, hub.hass), hub)
     angle2 = _mode_number(MultipleDirectionAngle2Number(hub.basic_data, hub.hass), hub)
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {
-            "mode": "MAIN_DIRECTION_MODE_MULTIPLE",
-            "multiple_mode_config": {"angles": [30, 120]},
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_MULTIPLE",
+                "multiple_mode_config": {"angles": [30, 120]},
+            },
         },
-    })
+    )
     assert angle1.available is True
     assert angle1.native_value == 30.0
     assert angle2.native_value == 120.0
@@ -194,10 +206,13 @@ def test_battery_state_and_temperature_sensors_from_dp108() -> None:
     hub = _hub()
     state = _sensor(hub, "battery_state")
     temperature = _sensor(hub, "battery_temperature_state")
-    _feed(hub.on_battery_status, {
-        "state": "BATTERY_STATE_CHARGING",
-        "tempreture": "BATTERY_TEMPRETURE_OVERHEAT",
-    })
+    _feed(
+        hub.on_battery_status,
+        {
+            "state": "BATTERY_STATE_CHARGING",
+            "tempreture": "BATTERY_TEMPRETURE_OVERHEAT",
+        },
+    )
     assert state.native_value == "battery_state_charging"
     assert temperature.native_value == "battery_tempreture_overheat"
 
@@ -214,11 +229,14 @@ def test_lifetime_statistics_sensors_from_dp124() -> None:
     total_area = _sensor(hub, "total_mowed_area")
     assert total_time.native_value is None
 
-    _feed(hub.on_statistics_data, {
-        "duration": 3600,
-        "clean_times": 12,
-        "clean_area": 2560,  # 0.1 m^2 units -> 256.0 m^2
-    })
+    _feed(
+        hub.on_statistics_data,
+        {
+            "duration": 3600,
+            "clean_times": 12,
+            "clean_area": 2560,  # 0.1 m^2 units -> 256.0 m^2
+        },
+    )
     assert total_time.native_value == 3600
     assert total_jobs.native_value == 12
     assert total_area.native_value == 256.0
@@ -236,13 +254,16 @@ def test_current_session_sensors_from_dp113() -> None:
     session_time = _sensor(hub, "current_session_time")
     job_type = _sensor(hub, "current_job_type")
 
-    _feed(hub.on_current_work_data, {
-        "clean_area": 2500,   # -> 250.0 m^2
-        "total_area": 10000,  # -> progress 25%
-        "work_duration": 900,
-        "type": "MAP_AREA_TYPE_CLEANING",
-        "is_completed": False,
-    })
+    _feed(
+        hub.on_current_work_data,
+        {
+            "clean_area": 2500,  # -> 250.0 m^2
+            "total_area": 10000,  # -> progress 25%
+            "work_duration": 900,
+            "type": "MAP_AREA_TYPE_CLEANING",
+            "is_completed": False,
+        },
+    )
     assert area.native_value == 250.0
     assert progress.native_value == 25.0
     assert session_time.native_value == 900

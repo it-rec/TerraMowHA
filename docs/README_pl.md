@@ -104,7 +104,7 @@ Urządzenia w sieci lokalnej są wykrywane automatycznie przez Zeroconf — zaak
 
 ### Wymagania
 
-- Home Assistant 2024.6.0 lub nowszy (CI weryfikuje integrację względem bieżącego wydania HA Core)
+- Home Assistant 2025.3.0 lub nowszy (CI weryfikuje integrację względem bieżącego wydania HA Core)
 - Oprogramowanie TerraMow w wersji 6.6.0 lub nowszej
 - Aplikacja TerraMow w wersji 1.6.0 lub nowszej
 - Mapa na żywo i ścieżka koszenia wymagają wersji 3 modułu HA w oprogramowaniu; przy wersji 2 (np. S800) wszystko pozostałe działa, a czujnik zgodności wersji to zgłasza

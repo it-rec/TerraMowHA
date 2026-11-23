@@ -48,9 +48,7 @@ MAP_DATA = {
 
 
 def _scene(coverage_segments):
-    return build_scene(
-        MAP_DATA, {}, {}, False, session_path_segments=coverage_segments
-    )
+    return build_scene(MAP_DATA, {}, {}, False, session_path_segments=coverage_segments)
 
 
 # ---------------------------------------------------------------------------

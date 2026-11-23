@@ -32,6 +32,7 @@ async def async_setup_entry(
 
     async_add_entities(entities)
 
+
 class TerraMowResetButtonBase(TerraMowEntity, ButtonEntity):
     """Base class for TerraMow reset buttons."""
 
@@ -54,6 +55,7 @@ class ResetBladeTimerButton(TerraMowResetButtonBase):
         _LOGGER.info("Resetting blade timer")
         hub.publish_data_point(126, {"int_value": 0})
 
+
 class ResetBaseStationTimerButton(TerraMowResetButtonBase):
     """Button to reset the base station usage time."""
 
@@ -69,6 +71,7 @@ class ResetBaseStationTimerButton(TerraMowResetButtonBase):
             return
         _LOGGER.info("Resetting base station timer")
         hub.publish_data_point(125, {"int_value": 0})
+
 
 class EdgeTrimButton(TerraMowEntity, ButtonEntity):
     """Button that starts the TerraMow in edge-trim mode."""

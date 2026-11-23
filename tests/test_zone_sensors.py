@@ -332,12 +332,22 @@ def test_zone_boundaries_from_map_skips_unusable_geometry() -> None:
     assert [zone_id for zone_id, _ in zone_boundaries_from_map(MAP_DATA)] == [1, 2]
     assert zone_boundaries_from_map({"regions": ["x"]}) == []
     assert zone_boundaries_from_map({"regions": [{"sub_regions": ["x"]}]}) == []
-    assert zone_boundaries_from_map(
-        {"regions": [{"sub_regions": [{"id": 1, "boundary": [{"x": "a", "y": 1}]}]}]}
-    ) == []
-    assert zone_boundaries_from_map(
-        {"regions": [{"sub_regions": [{"id": True, "boundary": []}]}]}
-    ) == []
+    assert (
+        zone_boundaries_from_map(
+            {
+                "regions": [
+                    {"sub_regions": [{"id": 1, "boundary": [{"x": "a", "y": 1}]}]}
+                ]
+            }
+        )
+        == []
+    )
+    assert (
+        zone_boundaries_from_map(
+            {"regions": [{"sub_regions": [{"id": True, "boundary": []}]}]}
+        )
+        == []
+    )
 
 
 def test_coverage_ratios_need_zones_and_segments() -> None:
@@ -351,9 +361,7 @@ def test_coverage_ratios_need_zones_and_segments() -> None:
 def test_coverage_ratio_is_capped_at_one() -> None:
     zones = zone_boundaries_from_map(MAP_DATA)
     # Many passes over the same small zone: the raw product exceeds the area.
-    segments = [
-        [{"x": 0, "y": y}, {"x": 10000, "y": y}] for y in range(0, 10000, 200)
-    ]
+    segments = [[{"x": 0, "y": y}, {"x": 10000, "y": y}] for y in range(0, 10000, 200)]
     ratios = coverage_ratios_for_zones(zones, segments, 500.0)
     assert ratios[1] == 1.0
 

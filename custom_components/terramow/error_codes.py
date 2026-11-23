@@ -50,10 +50,6 @@ def describe_error(code: object) -> str:
     resolves through the catalog; everything else just echoes the value so
     a malformed entry still produces a usable string.
     """
-    if (
-        isinstance(code, int)
-        and not isinstance(code, bool)
-        and code in ERROR_CODES
-    ):
+    if isinstance(code, int) and not isinstance(code, bool) and code in ERROR_CODES:
         return ERROR_CODES[code]
     return f"Error {code}"

@@ -22,6 +22,8 @@ from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.hub import TerraMowHub
 from custom_components.terramow.image import (
     MowReportImage,
+)
+from custom_components.terramow.image import (
     async_setup_entry as image_setup,
 )
 from custom_components.terramow.map_render import _format_duration, render_mow_report
@@ -94,9 +96,7 @@ async def test_completion_captures_the_session_numbers(hub: TerraMowHub) -> None
 
 
 async def test_abort_is_recorded_as_such(hub: TerraMowHub) -> None:
-    await hub.on_mission_status(
-        _mission("MISSION_GLOBAL_CLEAN", "MISSION_STATE_ABORT")
-    )
+    await hub.on_mission_status(_mission("MISSION_GLOBAL_CLEAN", "MISSION_STATE_ABORT"))
     assert hub.last_mow_report is not None
     assert hub.last_mow_report["outcome"] == "aborted"
 
@@ -251,9 +251,7 @@ def test_render_without_a_total_area_shows_the_bare_area() -> None:
 
 async def test_setup_creates_the_image_entity(hub: TerraMowHub) -> None:
     added: list[Any] = []
-    entry = SimpleNamespace(
-        entry_id="e1", runtime_data=hub.basic_data, options={}
-    )
+    entry = SimpleNamespace(entry_id="e1", runtime_data=hub.basic_data, options={})
     await image_setup(hub.hass, entry, added.extend)  # type: ignore[arg-type]
     assert len(added) == 1
     assert isinstance(added[0], MowReportImage)

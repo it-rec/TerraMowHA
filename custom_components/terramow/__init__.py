@@ -37,7 +37,7 @@ from .const import (
     CompatibilityStatus,
 )
 from .const import DOMAIN as DOMAIN
-from .entity_utils import async_get_entry_device
+from .entity_utils import async_get_entry_device, device_belongs_to_entry
 from .hub import TerraMowHub
 from .intent import async_remove_intents, async_setup_intents
 from .issues import async_clear_compatibility_issue, async_clear_maintenance_issues
@@ -99,7 +99,23 @@ ZONE_PLAN_SCHEMA = vol.Schema(
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.LAWN_MOWER, Platform.SENSOR, Platform.BINARY_SENSOR, Platform.SELECT, Platform.NUMBER, Platform.CAMERA, Platform.IMAGE, Platform.UPDATE, Platform.BUTTON, Platform.SWITCH, Platform.DEVICE_TRACKER, Platform.EVENT, Platform.CALENDAR, Platform.TODO]
+PLATFORMS: list[Platform] = [
+    Platform.LAWN_MOWER,
+    Platform.SENSOR,
+    Platform.BINARY_SENSOR,
+    Platform.SELECT,
+    Platform.NUMBER,
+    Platform.CAMERA,
+    Platform.IMAGE,
+    Platform.UPDATE,
+    Platform.BUTTON,
+    Platform.SWITCH,
+    Platform.DEVICE_TRACKER,
+    Platform.EVENT,
+    Platform.CALENDAR,
+    Platform.TODO,
+]
+
 
 @dataclass
 class TerraMowBasicData:
@@ -113,7 +129,9 @@ class TerraMowBasicData:
     device_uid: str | None = None
     compatibility_status: str = CompatibilityStatus.COMPATIBLE
     firmware_version: dict[str, Any] | None = None
-    compatibility_reason: str = ""  # Store the specific reason for compatibility check failure
+    compatibility_reason: str = (
+        ""  # Store the specific reason for compatibility check failure
+    )
     entry_id: str | None = None  # Config entry id, used to scope repair issues
     # Option: treat any finished job as 100 % complete even without an explicit
     # firmware completion signal (CONF_ASSUME_JOB_COMPLETE). Read from the
@@ -129,14 +147,17 @@ class TerraMowBasicData:
 
             _LOGGER.info(
                 "Version compatibility check: firmware overall=%d, firmware HA version=%d, plugin HA version=%d",
-                overall_version, ha_version, CURRENT_HA_VERSION
+                overall_version,
+                ha_version,
+                CURRENT_HA_VERSION,
             )
 
             # Check if firmware meets minimum requirements
             if overall_version < MIN_REQUIRED_OVERALL_VERSION:
                 _LOGGER.warning(
                     "Firmware version too low: overall=%d < minimum required=%d",
-                    overall_version, MIN_REQUIRED_OVERALL_VERSION
+                    overall_version,
+                    MIN_REQUIRED_OVERALL_VERSION,
                 )
                 self.compatibility_reason = f"overall_version_low:{overall_version}"
                 return CompatibilityStatus.UPGRADE_REQUIRED
@@ -145,7 +166,8 @@ class TerraMowBasicData:
             if ha_version < MIN_SUPPORTED_HA_VERSION:
                 _LOGGER.warning(
                     "Firmware HA version is too low: %d < %d, please upgrade firmware",
-                    ha_version, MIN_SUPPORTED_HA_VERSION
+                    ha_version,
+                    MIN_SUPPORTED_HA_VERSION,
                 )
                 self.compatibility_reason = f"ha_version_low:{ha_version}"
                 return CompatibilityStatus.UPGRADE_REQUIRED
@@ -157,14 +179,17 @@ class TerraMowBasicData:
                 _LOGGER.info(
                     "Firmware HA version %d is older than plugin version %d; "
                     "version-%d-only features (live map/path) are unavailable",
-                    ha_version, CURRENT_HA_VERSION, CURRENT_HA_VERSION
+                    ha_version,
+                    CURRENT_HA_VERSION,
+                    CURRENT_HA_VERSION,
                 )
                 self.compatibility_reason = f"ha_version_limited:{ha_version}"
                 return CompatibilityStatus.COMPATIBLE
             elif ha_version > CURRENT_HA_VERSION:
                 _LOGGER.warning(
                     "Firmware HA version is higher: %d > %d, recommend upgrading plugin",
-                    ha_version, CURRENT_HA_VERSION
+                    ha_version,
+                    CURRENT_HA_VERSION,
                 )
                 self.compatibility_reason = f"ha_version_high:{ha_version}"
                 return CompatibilityStatus.DOWNGRADE_RECOMMENDED
@@ -181,7 +206,7 @@ class TerraMowBasicData:
         """Get user-friendly compatibility status message."""
         if self.compatibility_status == CompatibilityStatus.COMPATIBLE:
             if self.compatibility_reason.startswith("ha_version_limited:"):
-                firmware_version = self.compatibility_reason.split(':')[1]
+                firmware_version = self.compatibility_reason.split(":")[1]
                 return (
                     f"Version compatible (firmware HA module version {firmware_version}); "
                     f"live map and path view require version {CURRENT_HA_VERSION}"
@@ -197,7 +222,7 @@ class TerraMowBasicData:
                 return f"Firmware version too low, please upgrade firmware to overall version {MIN_REQUIRED_OVERALL_VERSION} or higher"
         elif self.compatibility_status == CompatibilityStatus.DOWNGRADE_RECOMMENDED:
             if self.compatibility_reason.startswith("ha_version_high:"):
-                firmware_version = self.compatibility_reason.split(':')[1]
+                firmware_version = self.compatibility_reason.split(":")[1]
                 return f"Firmware HA module version is higher (firmware: {firmware_version}, plugin: {CURRENT_HA_VERSION}), recommend upgrading plugin"
             else:
                 return "Firmware HA version is higher than plugin version, recommend upgrading plugin or using corresponding firmware version"
@@ -238,8 +263,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     device_registry = dr.async_get(hass)
     new_identifier = (DOMAIN, device_uid)
     legacy_identifiers = [
-        ('TerraMowLanwMower', host),  # original misspelled identifier
-        ('TerraMowLawnMower', host),  # pre-DOMAIN identifier
+        ("TerraMowLanwMower", host),  # original misspelled identifier
+        ("TerraMowLawnMower", host),  # pre-DOMAIN identifier
         (DOMAIN, host),  # host-keyed identifier from before serial adoption
     ]
     for legacy_identifier in legacy_identifiers:
@@ -252,24 +277,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
             continue
         # Check if a device with the new identifier already exists to avoid conflicts
         if async_get_entry_device(device_registry, new_identifier, entry.entry_id):
-            if (
-                entry.data.get(CONF_SERIAL)
-                and entry.entry_id in old_device_entry.config_entries
+            if entry.data.get(CONF_SERIAL) and device_belongs_to_entry(
+                old_device_entry, entry.entry_id
             ):
                 # Ghost left behind by a serial adoption that raced the
                 # initial platform setup (<= 1.13.0): the host-keyed
                 # duplicate can never be served again, the serial-keyed
                 # device is the live one. Remove the ghost.
-                _LOGGER.info(
-                    "Removing stale duplicate device %s", legacy_identifier
-                )
+                _LOGGER.info("Removing stale duplicate device %s", legacy_identifier)
                 device_registry.async_remove_device(old_device_entry.id)
             else:
-                _LOGGER.warning("Cannot migrate device, a device with the new identifier already exists. Please remove the old device manually.")
+                _LOGGER.warning(
+                    "Cannot migrate device, a device with the new identifier already exists. Please remove the old device manually."
+                )
         else:
             _LOGGER.info(
                 "Migrating device identifier from %s to %s",
-                legacy_identifier, new_identifier,
+                legacy_identifier,
+                new_identifier,
             )
             device_registry.async_update_device(
                 old_device_entry.id, new_identifiers={new_identifier}
@@ -286,9 +311,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
             entity_registry, entry.entry_id
         ):
             if host_fragment in reg_entry.unique_id:
-                _LOGGER.info(
-                    "Removing stale duplicate entity %s", reg_entry.entity_id
-                )
+                _LOGGER.info("Removing stale duplicate entity %s", reg_entry.entity_id)
                 entity_registry.async_remove(reg_entry.entity_id)
     # End of Automatic migration
 
@@ -303,9 +326,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     except InvalidAuth as err:
         raise ConfigEntryAuthFailed("Invalid TerraMow credentials") from err
     except CannotConnect as err:
-        raise ConfigEntryNotReady(
-            f"Unable to connect to TerraMow at {host}"
-        ) from err
+        raise ConfigEntryNotReady(f"Unable to connect to TerraMow at {host}") from err
 
     basic_data = TerraMowBasicData(
         host=host,
@@ -313,9 +334,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
         entry_id=entry.entry_id,
         device_uid=device_uid,
         assume_job_complete=bool(
-            entry.options.get(
-                CONF_ASSUME_JOB_COMPLETE, DEFAULT_ASSUME_JOB_COMPLETE
-            )
+            entry.options.get(CONF_ASSUME_JOB_COMPLETE, DEFAULT_ASSUME_JOB_COMPLETE)
         ),
     )
 
@@ -370,13 +389,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
     return True
 
 
-async def _async_options_updated(hass: HomeAssistant, entry: TerraMowConfigEntry) -> None:
+async def _async_options_updated(
+    hass: HomeAssistant, entry: TerraMowConfigEntry
+) -> None:
     """Reload integration when options change."""
     await hass.config_entries.async_reload(entry.entry_id)
 
 
 def _async_register_services(hass: HomeAssistant) -> None:
     """Register integration-level services."""
+
     def _resolve_hubs(entity_ids: list[str]) -> list[TerraMowHub]:
         registry = er.async_get(hass)
         targets: list[TerraMowHub] = []

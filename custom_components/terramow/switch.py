@@ -65,7 +65,7 @@ class ThoroughCornerCuttingSwitch(PushUpdateMixin, TerraMowEntity, SwitchEntity)
         map_info = hub.map_info
         if not map_info:
             return None
-        mow_param = map_info.get('mow_param')
+        mow_param = map_info.get("mow_param")
         if not isinstance(mow_param, dict):
             return None
         return mow_param
@@ -75,7 +75,7 @@ class ThoroughCornerCuttingSwitch(PushUpdateMixin, TerraMowEntity, SwitchEntity)
         mow_param = self._get_mow_param()
         if mow_param is None:
             return None
-        value = mow_param.get('enable_thorough_corner_cutting')
+        value = mow_param.get("enable_thorough_corner_cutting")
         if value is None:
             return None
         return bool(value)
@@ -92,7 +92,7 @@ class ThoroughCornerCuttingSwitch(PushUpdateMixin, TerraMowEntity, SwitchEntity)
             _LOGGER.error("Lawn mower not available")
             return
 
-        command = {'enable_thorough_corner_cutting': enabled}
+        command = {"enable_thorough_corner_cutting": enabled}
         _LOGGER.info("Setting thorough corner cutting to %s", enabled)
         hub.publish_data_point(155, command)
 
@@ -162,9 +162,7 @@ class ScheduleWeekdaySwitch(ScheduleSwitch):
     def available(self) -> bool:
         hub = self.hub
         return (
-            super().available
-            and hub is not None
-            and hub.schedule_weekdays_configurable
+            super().available and hub is not None and hub.schedule_weekdays_configurable
         )
 
     @property

@@ -18,6 +18,7 @@ from .entity_utils import PushUpdateMixin, safe_write_ha_state
 # Note: this module is not a platform of its own. sensor.py imports these
 # classes and adds them from its async_setup_entry.
 
+
 class TerraMowMapSensorBase(TerraMowEntity, SensorEntity):
     """Base class for map sensors."""
 
@@ -39,14 +40,13 @@ class TerraMowMapSensorBase(TerraMowEntity, SensorEntity):
         await super().async_added_to_hass()
         hub = self.hub
         if hub:
-            self.async_on_remove(
-                hub.register_map_callback(self._on_map_info)
-            )
+            self.async_on_remove(hub.register_map_callback(self._on_map_info))
 
     async def _on_map_info(self, map_info: dict[str, Any]) -> None:
         """Handle a map info update."""
         self._map_info = map_info
         safe_write_ha_state(self)
+
 
 class TerraMowMapStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
     """Map status sensor - uses dp_117 data."""
@@ -71,7 +71,7 @@ class TerraMowMapStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
         if not map_status:
             return None
 
-        state = to_ha_enum_state(map_status.get('map_state'))
+        state = to_ha_enum_state(map_status.get("map_state"))
         return state if state in self._attr_options else None
 
     @property
@@ -86,16 +86,19 @@ class TerraMowMapStatusSensor(PushUpdateMixin, TerraMowEntity, SensorEntity):
             return {}
 
         return {
-            'is_map_detected': map_status.get('is_map_detected', False),
-            'map_id': map_status.get('map_id'),
-            'map_number': map_status.get('map_number', 0),
-            'is_backing_up_map': map_status.get('is_backing_up_map', False),
-            'backup_map_id': map_status.get('backup_map_id'),
-            'main_direction_angle': map_status.get('main_direction_angle'),
-            'is_spot_mode_map': map_status.get('is_spot_mode_map', False),
-            'spot_mode_map_number': map_status.get('spot_mode_map_number', 0),
-            'is_able_to_run_build_map': map_status.get('is_able_to_run_build_map', False),
+            "is_map_detected": map_status.get("is_map_detected", False),
+            "map_id": map_status.get("map_id"),
+            "map_number": map_status.get("map_number", 0),
+            "is_backing_up_map": map_status.get("is_backing_up_map", False),
+            "backup_map_id": map_status.get("backup_map_id"),
+            "main_direction_angle": map_status.get("main_direction_angle"),
+            "is_spot_mode_map": map_status.get("is_spot_mode_map", False),
+            "spot_mode_map_number": map_status.get("spot_mode_map_number", 0),
+            "is_able_to_run_build_map": map_status.get(
+                "is_able_to_run_build_map", False
+            ),
         }
+
 
 class TerraMowMapAreaSensor(TerraMowMapSensorBase):
     """Map area sensor."""
@@ -116,7 +119,7 @@ class TerraMowMapAreaSensor(TerraMowMapSensorBase):
             return None
 
         # total_area is in units of 0.1 square meters; convert to square meters
-        total_area = self._map_info.get('total_area')
+        total_area = self._map_info.get("total_area")
         if total_area is None:
             return None
         return round(float(total_area) / 10, 1)
@@ -128,7 +131,12 @@ class TerraMowCleanModeSensor(TerraMowMapSensorBase):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "clean_mode"
     _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = ["map_clean_info_mode_global", "map_clean_info_mode_select_region", "map_clean_info_mode_draw_region", "map_clean_info_mode_move_to_target_point"]
+    _attr_options = [
+        "map_clean_info_mode_global",
+        "map_clean_info_mode_select_region",
+        "map_clean_info_mode_draw_region",
+        "map_clean_info_mode_move_to_target_point",
+    ]
 
     _unique_id_suffix = "clean_mode"
 
@@ -138,8 +146,8 @@ class TerraMowCleanModeSensor(TerraMowMapSensorBase):
         if not self._map_info:
             return None
 
-        clean_info = self._map_info.get('clean_info', {})
-        mode = to_ha_enum_state(clean_info.get('mode', ''))
+        clean_info = self._map_info.get("clean_info", {})
+        mode = to_ha_enum_state(clean_info.get("mode", ""))
 
         return mode if mode in self._attr_options else None
 
@@ -149,13 +157,13 @@ class TerraMowCleanModeSensor(TerraMowMapSensorBase):
         if not self._map_info:
             return {}
 
-        clean_info = self._map_info.get('clean_info', {})
+        clean_info = self._map_info.get("clean_info", {})
         attrs = {}
 
         # Show detailed information depending on the working mode
-        if 'select_region' in clean_info:
-            region_ids = clean_info['select_region'].get('region_id', [])
-            attrs['selected_regions'] = region_ids
-            attrs['selected_regions_count'] = len(region_ids)
+        if "select_region" in clean_info:
+            region_ids = clean_info["select_region"].get("region_id", [])
+            attrs["selected_regions"] = region_ids
+            attrs["selected_regions_count"] = len(region_ids)
 
         return attrs

@@ -24,6 +24,7 @@ from custom_components.terramow import (
 from custom_components.terramow.config_flow import CannotConnect, InvalidAuth
 from custom_components.terramow.const import DOMAIN
 from custom_components.terramow.intent import INTENT_MOW_ZONE, async_setup_intents
+from tests.helpers import find_device
 
 USER_INPUT = {CONF_HOST: "192.0.2.10", CONF_PASSWORD: "secret"}
 
@@ -79,9 +80,7 @@ async def test_setup_entry_stops_hub_when_platform_setup_fails(
     with (
         patch("custom_components.terramow.validate_input", return_value={}),
         patch("custom_components.terramow.TerraMowHub", return_value=hub),
-        patch(
-            "custom_components.terramow.async_setup_map_card", AsyncMock()
-        ),
+        patch("custom_components.terramow.async_setup_map_card", AsyncMock()),
         patch.object(
             hass.config_entries,
             "async_forward_entry_setups",
@@ -110,12 +109,8 @@ async def test_setup_entry_migrates_device_identifier(hass: HomeAssistant) -> No
     ):
         await async_setup_entry(hass, entry)
 
-    assert (
-        device_registry.async_get_device({("terramow", "192.0.2.10")}) is not None
-    )
-    assert (
-        device_registry.async_get_device({("TerraMowLanwMower", "192.0.2.10")}) is None
-    )
+    assert find_device(device_registry, ("terramow", "192.0.2.10")) is not None
+    assert find_device(device_registry, ("TerraMowLanwMower", "192.0.2.10")) is None
 
 
 # ---------------------------------------------------------------------------
@@ -147,8 +142,7 @@ async def test_unload_entry_stops_hub_and_clears_data(hass: HomeAssistant) -> No
     # ...and so is the Assist intent, or the next setup would register it over
     # itself and Home Assistant would log a warning (issue #358).
     assert not any(
-        handler.intent_type == INTENT_MOW_ZONE
-        for handler in intent.async_get(hass)
+        handler.intent_type == INTENT_MOW_ZONE for handler in intent.async_get(hass)
     )
 
 
@@ -172,9 +166,7 @@ async def test_start_select_region_service_dispatches_to_hub(
     entry.runtime_data = basic_data
 
     ent_reg = er.async_get(hass)
-    ent_reg.async_get_or_create(
-        "lawn_mower", DOMAIN, "unique", config_entry=entry
-    )
+    ent_reg.async_get_or_create("lawn_mower", DOMAIN, "unique", config_entry=entry)
     entity_id = ent_reg.async_get_entity_id("lawn_mower", DOMAIN, "unique")
 
     _async_register_services(hass)

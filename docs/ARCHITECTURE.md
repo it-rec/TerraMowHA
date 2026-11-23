@@ -427,16 +427,22 @@ executor: rc 4/5 → `InvalidAuth`, any other failure → `CannotConnect`.
 
 CI (`.github/workflows/validate.yml`) enforces:
 
-- **100 % coverage** — `pytest … --cov=custom_components/terramow
-  --cov-fail-under=100`, with `branch = true` in `[tool.coverage.run]`. The
-  suite covers every line **and branch**; the floor cannot silently regress.
+- **100 % coverage on every supported Home Assistant version** — `pytest …
+  --cov=custom_components/terramow --cov-fail-under=100`, with `branch = true`
+  in `[tool.coverage.run]`, run as a matrix: the minimum HA release declared in
+  `hacs.json` (HA 2025.3, Python 3.13) and the newest HA release (Python 3.14). The suite
+  covers every line **and branch**; the floor cannot silently regress. A small
+  `Tests` job reports the matrix result as the single required status.
 - **`mypy` strict** — `mypy` with `[tool.mypy] strict = true`,
   `disallow_untyped_defs`, `warn_return_any`; `follow_imports = silent` so
   third-party gaps (homeassistant, …) don't break the gate. Every shipped
   module is fully typed.
 - **hassfest** and **HACS** validation (the HACS job ignores store-only repo
   metadata: `topics description issues`).
-- Ruff lint (non-blocking, `continue-on-error`) and `compileall`.
+- Blocking **ruff** lint and **`ruff format --check`** over
+  `custom_components` and `tests` (ruff pinned in the workflow), `compileall`,
+  and the map card ES-module check.
+- All actions are pinned to commit SHAs; Dependabot keeps the pins current.
 
 The **single `# pragma: no cover`** is in `hub.on_mqtt_message`: the
 `int(match.group(1))` `ValueError` branch is unreachable because the topic regex

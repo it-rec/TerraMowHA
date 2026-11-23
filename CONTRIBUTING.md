@@ -23,11 +23,12 @@ the device protocol.
 
 ## Local setup
 
-Python 3.13 is used in CI. Create a virtual environment and install the test
-dependencies:
+CI runs the tests on Python 3.13 against the minimum supported Home Assistant
+release and on Python 3.14 against the newest one; use Python 3.13 or newer
+locally. Create a virtual environment and install the test dependencies:
 
 ```bash
-python3.13 -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements_test.txt
 ```
@@ -40,8 +41,8 @@ pushing:
 ### 1. Tests + coverage (must stay at 100%)
 
 The coverage floor is enforced at **100% line and branch** via
-`--cov-fail-under=100`. Any new line of shipped code needs a test that exercises
-it.
+`--cov-fail-under=100`, on both Home Assistant versions of the CI matrix. Any
+new line of shipped code needs a test that exercises it.
 
 ```bash
 pytest tests/ \
@@ -71,10 +72,15 @@ The whole shipped package is type-checked in strict mode
 mypy
 ```
 
-### 3. Lint (ruff)
+### 3. Lint and formatting (ruff)
+
+Both are blocking and cover the tests too. CI pins ruff (see
+`.github/workflows/validate.yml`); use the same version locally so the
+formatter agrees.
 
 ```bash
-ruff check custom_components/terramow
+ruff check custom_components tests
+ruff format --check custom_components tests   # `ruff format …` to fix
 ```
 
 ### 4. Hassfest & 5. HACS

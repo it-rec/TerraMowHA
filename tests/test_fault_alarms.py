@@ -53,9 +53,7 @@ def test_alarm_descriptions() -> None:
         assert description.push_dp_ids == (116,)
         assert description.refresh_on_connection is True
     # every other binary sensor keeps the push-only refresh
-    assert [d.key for d in BINARY_SENSORS if d.refresh_on_connection] == list(
-        _ALARMS
-    )
+    assert [d.key for d in BINARY_SENSORS if d.refresh_on_connection] == list(_ALARMS)
 
 
 def test_alarm_codes_have_catalog_text() -> None:
@@ -181,9 +179,7 @@ def test_connection_loss_clears_the_list() -> None:
 def test_alarm_refreshes_on_connection_changes() -> None:
     hub = _hub()
     alarm = _alarm(hub, "lift_alarm")
-    with patch(
-        "custom_components.terramow.binary_sensor.safe_write_ha_state"
-    ) as write:
+    with patch("custom_components.terramow.binary_sensor.safe_write_ha_state") as write:
         asyncio.run(alarm.async_added_to_hass())
         hub._set_connection_error(True)
         write.assert_called_once_with(alarm)

@@ -259,7 +259,9 @@ def test_active_mission_replaced_by_a_new_job() -> None:
     hub = _make_hub()
     _feed_dp107(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
     _feed_dp107(hub, mission="MISSION_IDLE", state="MISSION_STATE_IDLE")
-    _feed_dp107(hub, mission="MISSION_SELECT_REGION_CLEAN", state="MISSION_STATE_RUNNING")
+    _feed_dp107(
+        hub, mission="MISSION_SELECT_REGION_CLEAN", state="MISSION_STATE_RUNNING"
+    )
     assert hub.active_mission is Mission.MISSION_SELECT_REGION_CLEAN
 
 
@@ -583,9 +585,9 @@ def test_dp116_error_notifies_listeners_and_faults_the_mower() -> None:
 
 def test_activity_error_on_connection_loss_and_recovery() -> None:
     probe = _Activity()
-    assert probe.feed(mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING") is (
-        LawnMowerActivity.MOWING
-    )
+    assert probe.feed(
+        mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING"
+    ) is (LawnMowerActivity.MOWING)
 
     probe.hub._set_connection_error(True)
     probe.entity.update_activity_from_state()

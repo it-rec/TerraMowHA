@@ -30,9 +30,7 @@ def _map(map_id: int = 1, *, duplicate: bool = False) -> dict[str, object]:
                 "sub_regions": [
                     {
                         "id": 1,
-                        "boundary": _poly(
-                            (0, 0), (1000, 0), (1000, 1000), (0, 1000)
-                        ),
+                        "boundary": _poly((0, 0), (1000, 0), (1000, 1000), (0, 1000)),
                     },
                     {
                         "id": 2,
@@ -185,9 +183,10 @@ def test_healthy_expiry_restore_revalidation_and_map_reset() -> None:
         "retreats": [],
         "faults": [],
     }
-    assert tracker.diagnostics(PASSAGE_MAX_AGE_SECONDS + 3)[0][
-        "classification"
-    ] == "healthy"
+    assert (
+        tracker.diagnostics(PASSAGE_MAX_AGE_SECONDS + 3)[0]["classification"]
+        == "healthy"
+    )
     saved = tracker.dump()
 
     restored = PassageReliabilityTracker()

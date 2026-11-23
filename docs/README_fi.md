@@ -104,7 +104,7 @@ Paikallisverkon laitteet löydetään automaattisesti Zeroconfin kautta — hyv�
 
 ### Vaatimukset
 
-- Home Assistant 2024.6.0 tai uudempi (CI tarkistaa integraation nykyistä HA Core -julkaisua vasten)
+- Home Assistant 2025.3.0 tai uudempi (CI tarkistaa integraation nykyistä HA Core -julkaisua vasten)
 - TerraMow-laiteohjelmisto versio 6.6.0 tai uudempi
 - TerraMow-sovellus versio 1.6.0 tai uudempi
 - Reaaliaikainen kartta ja leikkuureitti vaativat laiteohjelmiston HA-moduulin version 3; versiossa 2 (esim. S800) kaikki muu toimii, ja versioyhteensopivuuden tunnistin ilmoittaa siitä

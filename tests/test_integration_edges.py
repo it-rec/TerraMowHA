@@ -92,9 +92,7 @@ async def test_battery_attributes_when_device_omits_tempreture_field(
     hub = entry.runtime_data.lawn_mower
 
     battery = resolve_entity_id(hass, "sensor", "battery")
-    temperature_state = resolve_entity_id(
-        hass, "sensor", "battery_temperature_state"
-    )
+    temperature_state = resolve_entity_id(hass, "sensor", "battery_temperature_state")
 
     await push_dp(hass, hub, 8, {"int_value": 55})
     await push_dp(

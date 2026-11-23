@@ -34,6 +34,7 @@ PENDING_MODE_TIMEOUT = 10
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: TerraMowConfigEntry,
@@ -52,6 +53,7 @@ async def async_setup_entry(
     ]
 
     async_add_entities(entities)
+
 
 class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
     """Map zone selector - Zone selector for mowing specific areas."""
@@ -86,9 +88,7 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
         await super().async_added_to_hass()
         hub = self.hub
         if hub:
-            self.async_on_remove(
-                hub.register_map_callback(self._on_map_info)
-            )
+            self.async_on_remove(hub.register_map_callback(self._on_map_info))
 
     # Note: unique_id intentionally stays "region_select" for backward
     # compatibility. This ensures entity_id does not change after an upgrade,
@@ -142,11 +142,13 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
         hub = self.hub
         if hub:
             command = {
-                'seq': hub.get_cmd_seq(),
-                'mode': 'START_MODE_SELECT_REGION_CLEAN',  # Device protocol field, keep unchanged
-                'select_region_clean': {  # Device protocol field, keep unchanged
-                    'region_ids': [zone_id]  # Device protocol field name, keep unchanged
-                }
+                "seq": hub.get_cmd_seq(),
+                "mode": "START_MODE_SELECT_REGION_CLEAN",  # Device protocol field, keep unchanged
+                "select_region_clean": {  # Device protocol field, keep unchanged
+                    "region_ids": [
+                        zone_id
+                    ]  # Device protocol field name, keep unchanged
+                },
             }
             hub.publish_data_point(103, command)
             _LOGGER.info("Zone clean command sent: zone_id=%d", zone_id)
@@ -166,7 +168,9 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
             self._current_option = "no_zones_available"
             return
 
-        regions = self._map_info.get('regions', [])  # Device protocol field name, keep unchanged
+        regions = self._map_info.get(
+            "regions", []
+        )  # Device protocol field name, keep unchanged
         if not regions:
             self._options = ["no_zones_available"]
             self._current_option = "no_zones_available"
@@ -177,14 +181,16 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
 
         for region in regions:
             # Only process sub-zones (the device protocol uses the sub_regions field name)
-            sub_regions = region.get('sub_regions', [])  # Device protocol field name, keep unchanged
+            sub_regions = region.get(
+                "sub_regions", []
+            )  # Device protocol field name, keep unchanged
             for sub_zone in sub_regions:
-                sub_zone_id = sub_zone.get('id')
+                sub_zone_id = sub_zone.get("id")
                 if sub_zone_id is None:
                     # An option without an id could never be selected (the id
                     # parse would fail), so don't offer it.
                     continue
-                sub_zone_name = sub_zone.get('name', f'Sub-zone {sub_zone_id}')
+                sub_zone_name = sub_zone.get("name", f"Sub-zone {sub_zone_id}")
 
                 if sub_zone_name and sub_zone_name.strip():
                     sub_option = f"{sub_zone_name} (ID: {sub_zone_id})"
@@ -198,7 +204,9 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
         if not self._current_option or self._current_option not in self._options:
             self._current_option = "all_zones"
 
-        _LOGGER.debug("Updated zone options: %d sub-zones available", len(self._options) - 1)
+        _LOGGER.debug(
+            "Updated zone options: %d sub-zones available", len(self._options) - 1
+        )
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -206,33 +214,45 @@ class TerraMowZoneSelect(TerraMowEntity, SelectEntity):
         if not self._map_info:
             return {}
 
-        regions = self._map_info.get('regions', [])  # Device protocol field name, keep unchanged
+        regions = self._map_info.get(
+            "regions", []
+        )  # Device protocol field name, keep unchanged
 
         # Count all sub-zones
         all_sub_zones = []
         for region in regions:
-            sub_regions = region.get('sub_regions', [])  # Device protocol field name, keep unchanged
+            sub_regions = region.get(
+                "sub_regions", []
+            )  # Device protocol field name, keep unchanged
             for sub_zone in sub_regions:
                 sub_zone_info = {
-                    'id': sub_zone.get('id'),
-                    'name': sub_zone.get('name', ''),
-                    'parent_region_id': region.get('id'),  # Device protocol field name, keep unchanged
-                    'parent_region_name': region.get('name', '')
+                    "id": sub_zone.get("id"),
+                    "name": sub_zone.get("name", ""),
+                    "parent_region_id": region.get(
+                        "id"
+                    ),  # Device protocol field name, keep unchanged
+                    "parent_region_name": region.get("name", ""),
                 }
                 all_sub_zones.append(sub_zone_info)
 
         attrs = {
-            'map_id': self._map_info.get('id'),
-            'sub_zones_count': len(all_sub_zones),
-            'available_sub_zones': all_sub_zones
+            "map_id": self._map_info.get("id"),
+            "sub_zones_count": len(all_sub_zones),
+            "available_sub_zones": all_sub_zones,
         }
 
         # Show the current cleaning info
-        clean_info = self._map_info.get('clean_info', {})
-        if clean_info.get('mode') == 'MAP_CLEAN_INFO_MODE_SELECT_REGION':  # Device protocol constant, keep unchanged
-            select_region = clean_info.get('select_region', {})  # Device protocol field name, keep unchanged
-            selected_zone_ids = select_region.get('region_id', [])  # Device protocol field name, keep unchanged
-            attrs['currently_selected_zones'] = selected_zone_ids
+        clean_info = self._map_info.get("clean_info", {})
+        if (
+            clean_info.get("mode") == "MAP_CLEAN_INFO_MODE_SELECT_REGION"
+        ):  # Device protocol constant, keep unchanged
+            select_region = clean_info.get(
+                "select_region", {}
+            )  # Device protocol field name, keep unchanged
+            selected_zone_ids = select_region.get(
+                "region_id", []
+            )  # Device protocol field name, keep unchanged
+            attrs["currently_selected_zones"] = selected_zone_ids
 
         return attrs
 
@@ -258,7 +278,9 @@ class MowSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         hass: HomeAssistant,
     ) -> None:
         super().__init__(basic_data, hass)
-        self._current_option: str | None = MOW_SPEED_TYPE_MEDIUM  # Default: medium speed
+        self._current_option: str | None = (
+            MOW_SPEED_TYPE_MEDIUM  # Default: medium speed
+        )
         self._unknown_speed_type: str | None = None
 
     def _get_mow_speed_feature_version(self) -> int | None:
@@ -331,8 +353,8 @@ class MowSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         if not global_params:
             return to_ha_enum_state(self._current_option)
 
-        mow_speed = global_params.get('mow_speed', {})
-        speed_type = mow_speed.get('speed_type')
+        mow_speed = global_params.get("mow_speed", {})
+        speed_type = mow_speed.get("speed_type")
         if not speed_type:
             self._unknown_speed_type = None
             self._current_option = None
@@ -377,11 +399,7 @@ class MowSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
             return
 
         # Send the set command to dp_155
-        command = {
-            'mow_speed': {
-                'speed_type': option
-            }
-        }
+        command = {"mow_speed": {"speed_type": option}}
 
         _LOGGER.info("Setting mow speed to %s", option)
         hub.publish_data_point(155, command)
@@ -395,20 +413,22 @@ class MowSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         feature_version = self._get_mow_speed_feature_version()
         auto_speed_supported = self._should_expose_auto_option()
         available_speeds: dict[str, str] = {
-            MOW_SPEED_TYPE_LOW: 'Low Speed',
-            MOW_SPEED_TYPE_MEDIUM: 'Medium Speed (Default)',
-            MOW_SPEED_TYPE_ADAPTIVE_HIGH: 'Adaptive High Speed',
+            MOW_SPEED_TYPE_LOW: "Low Speed",
+            MOW_SPEED_TYPE_MEDIUM: "Medium Speed (Default)",
+            MOW_SPEED_TYPE_ADAPTIVE_HIGH: "Adaptive High Speed",
         }
         if auto_speed_supported:
-            available_speeds[MOW_SPEED_TYPE_AUTO] = 'Auto (Load Adaptive)'
+            available_speeds[MOW_SPEED_TYPE_AUTO] = "Auto (Load Adaptive)"
 
         attrs: dict[str, Any] = {
-            'available_speeds': available_speeds,
-            'auto_speed_supported': auto_speed_supported,
-            'mow_speed_feature_version': feature_version if feature_version is not None else "unknown",
+            "available_speeds": available_speeds,
+            "auto_speed_supported": auto_speed_supported,
+            "mow_speed_feature_version": feature_version
+            if feature_version is not None
+            else "unknown",
         }
         if self._unknown_speed_type:
-            attrs['unknown_speed_type'] = self._unknown_speed_type
+            attrs["unknown_speed_type"] = self._unknown_speed_type
         return attrs
 
 
@@ -424,7 +444,7 @@ class BladeSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
     _attr_options = [
         "BLADE_DISK_SPEED_TYPE_LOW",
         "BLADE_DISK_SPEED_TYPE_MEDIUM",
-        "BLADE_DISK_SPEED_TYPE_HIGH"
+        "BLADE_DISK_SPEED_TYPE_HIGH",
     ]
 
     def __init__(
@@ -453,8 +473,8 @@ class BladeSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         if not global_params:
             return to_ha_enum_state(self._current_option)
 
-        blade_disk_speed = global_params.get('blade_disk_speed', {})
-        speed_type = blade_disk_speed.get('speed_type')
+        blade_disk_speed = global_params.get("blade_disk_speed", {})
+        speed_type = blade_disk_speed.get("speed_type")
 
         if speed_type and speed_type in self._attr_options:
             self._current_option = speed_type
@@ -475,11 +495,7 @@ class BladeSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
             return
 
         # Send the set command to dp_155
-        command = {
-            'blade_disk_speed': {
-                'speed_type': option
-            }
-        }
+        command = {"blade_disk_speed": {"speed_type": option}}
 
         _LOGGER.info("Setting blade speed to %s", option)
         hub.publish_data_point(155, command)
@@ -490,10 +506,10 @@ class BladeSpeedSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
         return {
-            'available_speeds': {
-                'BLADE_DISK_SPEED_TYPE_LOW': 'Low Speed',
-                'BLADE_DISK_SPEED_TYPE_MEDIUM': 'Medium Speed (Default)',
-                'BLADE_DISK_SPEED_TYPE_HIGH': 'High Speed'
+            "available_speeds": {
+                "BLADE_DISK_SPEED_TYPE_LOW": "Low Speed",
+                "BLADE_DISK_SPEED_TYPE_MEDIUM": "Medium Speed (Default)",
+                "BLADE_DISK_SPEED_TYPE_HIGH": "High Speed",
             }
         }
 
@@ -510,7 +526,7 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
     _attr_options = [
         "MAIN_DIRECTION_MODE_SINGLE",
         "MAIN_DIRECTION_MODE_MULTIPLE",
-        "MAIN_DIRECTION_MODE_AUTO_ROTATE"
+        "MAIN_DIRECTION_MODE_AUTO_ROTATE",
     ]
 
     def __init__(
@@ -519,7 +535,9 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         hass: HomeAssistant,
     ) -> None:
         super().__init__(basic_data, hass)
-        self._current_option = "MAIN_DIRECTION_MODE_SINGLE"  # Default: single main direction
+        self._current_option = (
+            "MAIN_DIRECTION_MODE_SINGLE"  # Default: single main direction
+        )
         self._pending_mode: str | None = None  # Cache the mode pending activation
         self._pending_timeout_unsub: CALLBACK_TYPE | None = None
 
@@ -536,6 +554,7 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         listener is torn down on removal (reload/reconfigure) instead of
         leaking across reloads and acting on a removed entity.
         """
+
         async def on_device_confirmed(event: Event) -> None:
             if event.data.get("device_host") == self.host:
                 confirmed_mode = event.data.get("confirmed_mode")
@@ -561,8 +580,10 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         if hub:
             global_params = hub.global_params
             if global_params:
-                main_direction_config = global_params.get('main_direction_angle_config', {})
-                device_mode = main_direction_config.get('mode')
+                main_direction_config = global_params.get(
+                    "main_direction_angle_config", {}
+                )
+                device_mode = main_direction_config.get("mode")
                 if device_mode and device_mode in self._attr_options:
                     return str(device_mode)
 
@@ -608,37 +629,39 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
 
         # Get the current global params to preserve the other configuration
         global_params = hub.global_params or {}
-        current_main_direction = global_params.get('main_direction_angle_config', {})
+        current_main_direction = global_params.get("main_direction_angle_config", {})
 
         # Build the main-direction configuration
-        main_direction_config: dict[str, Any] = {
-            'mode': option
-        }
+        main_direction_config: dict[str, Any] = {"mode": option}
 
         # Add the corresponding configuration structure based on the mode
         if option == "MAIN_DIRECTION_MODE_SINGLE":
             # Keep the existing single-main-direction config, or use the default of 0 degrees
-            current_single_config: dict[str, Any] = current_main_direction.get('single_mode_config', {})
-            main_direction_config['single_mode_config'] = {
-                'angle': current_single_config.get('angle', 0)
+            current_single_config: dict[str, Any] = current_main_direction.get(
+                "single_mode_config", {}
+            )
+            main_direction_config["single_mode_config"] = {
+                "angle": current_single_config.get("angle", 0)
             }
         elif option == "MAIN_DIRECTION_MODE_MULTIPLE":
             # Keep the existing multiple-main-direction config, or use the default angle list
-            current_multiple_config: dict[str, Any] = current_main_direction.get('multiple_mode_config', {})
-            main_direction_config['multiple_mode_config'] = {
-                'angles': current_multiple_config.get('angles', [0, 90])
+            current_multiple_config: dict[str, Any] = current_main_direction.get(
+                "multiple_mode_config", {}
+            )
+            main_direction_config["multiple_mode_config"] = {
+                "angles": current_multiple_config.get("angles", [0, 90])
             }
         elif option == "MAIN_DIRECTION_MODE_AUTO_ROTATE":
             # Keep the existing auto-rotate config, or use the default interval of 15 degrees
-            current_auto_config: dict[str, Any] = current_main_direction.get('auto_rotate_mode_config', {})
-            main_direction_config['auto_rotate_mode_config'] = {
-                'angle_interval': current_auto_config.get('angle_interval', 15)
+            current_auto_config: dict[str, Any] = current_main_direction.get(
+                "auto_rotate_mode_config", {}
+            )
+            main_direction_config["auto_rotate_mode_config"] = {
+                "angle_interval": current_auto_config.get("angle_interval", 15)
             }
 
         # Send the set command to dp_155
-        command = {
-            'main_direction_angle_config': main_direction_config
-        }
+        command = {"main_direction_angle_config": main_direction_config}
 
         _LOGGER.info("Setting main direction mode from %s to %s", old_mode, option)
         hub.publish_data_point(155, command)
@@ -646,16 +669,21 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         # Set a timeout to clear the pending state (prevents a failed device response from leaving the state stuck)
         self._schedule_pending_mode_timeout()
 
-    def _notify_angle_controllers_mode_change(self, old_mode: str, new_mode: str) -> None:
+    def _notify_angle_controllers_mode_change(
+        self, old_mode: str, new_mode: str
+    ) -> None:
         """Notify the related angle controllers that the mode has changed."""
         # Fire a Home Assistant event that the angle controllers listen for;
         # their listener refreshes availability/state immediately.
-        self.hass.bus.fire(f"{DOMAIN}_main_direction_mode_changed", {
-            "device_host": self.host,
-            "old_mode": old_mode,
-            "new_mode": new_mode,
-            "source": "mode_select"
-        })
+        self.hass.bus.fire(
+            f"{DOMAIN}_main_direction_mode_changed",
+            {
+                "device_host": self.host,
+                "old_mode": old_mode,
+                "new_mode": new_mode,
+                "source": "mode_select",
+            },
+        )
 
     def _schedule_pending_mode_timeout(self) -> None:
         """(Re)arm the timer that clears a pending mode the device never confirms."""
@@ -683,12 +711,18 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
         """Callback invoked after the device confirms a mode change."""
         self._cancel_pending_mode_timeout()
         if self._pending_mode == confirmed_mode:
-            _LOGGER.debug("Device confirmed mode change to %s, clearing pending state", confirmed_mode)
+            _LOGGER.debug(
+                "Device confirmed mode change to %s, clearing pending state",
+                confirmed_mode,
+            )
             self._pending_mode = None
             safe_write_ha_state(self)
         elif self._pending_mode:
-            _LOGGER.warning("Device confirmed mode %s but pending mode was %s",
-                          confirmed_mode, self._pending_mode)
+            _LOGGER.warning(
+                "Device confirmed mode %s but pending mode was %s",
+                confirmed_mode,
+                self._pending_mode,
+            )
             self._pending_mode = None
             self._current_option = confirmed_mode
             safe_write_ha_state(self)
@@ -697,40 +731,48 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return entity specific state attributes."""
         attrs: dict[str, Any] = {
-            'available_modes': {
-                'MAIN_DIRECTION_MODE_SINGLE': 'Single Direction',
-                'MAIN_DIRECTION_MODE_MULTIPLE': 'Multiple Directions',
-                'MAIN_DIRECTION_MODE_AUTO_ROTATE': 'Auto Rotate Direction'
+            "available_modes": {
+                "MAIN_DIRECTION_MODE_SINGLE": "Single Direction",
+                "MAIN_DIRECTION_MODE_MULTIPLE": "Multiple Directions",
+                "MAIN_DIRECTION_MODE_AUTO_ROTATE": "Auto Rotate Direction",
             }
         }
 
         # Add status information
         if self._pending_mode:
-            attrs['status'] = 'changing_mode'
-            attrs['pending_mode'] = self._pending_mode
+            attrs["status"] = "changing_mode"
+            attrs["pending_mode"] = self._pending_mode
         else:
-            attrs['status'] = 'active'
+            attrs["status"] = "active"
 
         # Add detailed information about the current configuration
         hub = self.hub
         if hub:
             global_params = hub.global_params
             if global_params:
-                main_direction_config = global_params.get('main_direction_angle_config', {})
-                current_angle = main_direction_config.get('current_angle')
+                main_direction_config = global_params.get(
+                    "main_direction_angle_config", {}
+                )
+                current_angle = main_direction_config.get("current_angle")
                 if current_angle is not None:
-                    attrs['current_angle'] = current_angle
+                    attrs["current_angle"] = current_angle
 
-                mode = main_direction_config.get('mode')
-                if mode == 'MAIN_DIRECTION_MODE_SINGLE':
-                    single_config = main_direction_config.get('single_mode_config', {})
-                    attrs['single_angle'] = single_config.get('angle', 0)
-                elif mode == 'MAIN_DIRECTION_MODE_MULTIPLE':
-                    multiple_config = main_direction_config.get('multiple_mode_config', {})
-                    attrs['multiple_angles'] = multiple_config.get('angles', [])
-                elif mode == 'MAIN_DIRECTION_MODE_AUTO_ROTATE':
-                    auto_config = main_direction_config.get('auto_rotate_mode_config', {})
-                    attrs['auto_rotate_interval'] = auto_config.get('angle_interval', 15)
+                mode = main_direction_config.get("mode")
+                if mode == "MAIN_DIRECTION_MODE_SINGLE":
+                    single_config = main_direction_config.get("single_mode_config", {})
+                    attrs["single_angle"] = single_config.get("angle", 0)
+                elif mode == "MAIN_DIRECTION_MODE_MULTIPLE":
+                    multiple_config = main_direction_config.get(
+                        "multiple_mode_config", {}
+                    )
+                    attrs["multiple_angles"] = multiple_config.get("angles", [])
+                elif mode == "MAIN_DIRECTION_MODE_AUTO_ROTATE":
+                    auto_config = main_direction_config.get(
+                        "auto_rotate_mode_config", {}
+                    )
+                    attrs["auto_rotate_interval"] = auto_config.get(
+                        "angle_interval", 15
+                    )
 
         return attrs
 
@@ -764,7 +806,7 @@ class HighGrassEdgeTrimModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity)
         map_info = hub.map_info
         if not map_info:
             return None
-        mow_param = map_info.get('mow_param')
+        mow_param = map_info.get("mow_param")
         if not isinstance(mow_param, dict):
             return None
         return mow_param
@@ -779,10 +821,10 @@ class HighGrassEdgeTrimModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity)
         mow_param = self._get_mow_param()
         if mow_param is None:
             return None
-        trim_cfg = mow_param.get('high_grass_edge_trim_mode')
+        trim_cfg = mow_param.get("high_grass_edge_trim_mode")
         if not isinstance(trim_cfg, dict):
             return None
-        mode = trim_cfg.get('mode')
+        mode = trim_cfg.get("mode")
         if mode in self._attr_options:
             return to_ha_enum_state(mode)
         return None
@@ -800,8 +842,8 @@ class HighGrassEdgeTrimModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity)
             return
 
         command = {
-            'high_grass_edge_trim_mode': {
-                'mode': option,
+            "high_grass_edge_trim_mode": {
+                "mode": option,
             }
         }
 

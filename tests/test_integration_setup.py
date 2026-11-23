@@ -111,9 +111,7 @@ def resolve_entity_id(
     hass: HomeAssistant, platform: str, unique_suffix: str | None = None
 ) -> str:
     """Resolve an entity_id from the stable unique_id scheme."""
-    unique_id = (
-        UID_PREFIX if unique_suffix is None else f"{UID_PREFIX}.{unique_suffix}"
-    )
+    unique_id = UID_PREFIX if unique_suffix is None else f"{UID_PREFIX}.{unique_suffix}"
     entity_id = er.async_get(hass).async_get_entity_id(platform, DOMAIN, unique_id)
     assert entity_id is not None, f"no {platform} entity with unique_id {unique_id}"
     return entity_id
@@ -169,9 +167,7 @@ async def test_setup_loads_and_creates_all_platform_entities(
     # disabled-by-default entities (pose, cellular, ...) have no state.
     for reg_entry in entries:
         if reg_entry.disabled_by is None:
-            assert (
-                hass.states.get(reg_entry.entity_id) is not None
-            ), reg_entry.entity_id
+            assert hass.states.get(reg_entry.entity_id) is not None, reg_entry.entity_id
 
 
 async def test_key_entities_get_the_expected_stable_entity_ids(
@@ -180,9 +176,7 @@ async def test_key_entities_get_the_expected_stable_entity_ids(
     await setup_terramow(hass)
 
     # The suffix-less unique_id belongs to the lawn mower itself.
-    assert (
-        resolve_entity_id(hass, "lawn_mower") == "lawn_mower.terramow_mower"
-    )
+    assert resolve_entity_id(hass, "lawn_mower") == "lawn_mower.terramow_mower"
     expected = {
         ("select", "main_direction_mode"): "select.terramow_main_direction_mode",
         ("select", "region_select"): "select.terramow_zone_select",
@@ -338,8 +332,11 @@ async def test_dp116_error_list_surfaces_as_problem_and_error(
         hass,
         hub,
         107,
-        {"mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_RUNNING",
-         "has_error": False},
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "state": "MISSION_STATE_RUNNING",
+            "has_error": False,
+        },
     )
     assert hass.states.get(mower).state == "mowing"
     assert hass.states.get(problem).state == "off"
@@ -426,9 +423,7 @@ async def test_battery_pushes_update_real_states(hass: HomeAssistant) -> None:
     hub = entry.runtime_data.lawn_mower
 
     battery = resolve_entity_id(hass, "sensor", "battery")
-    temperature_state = resolve_entity_id(
-        hass, "sensor", "battery_temperature_state"
-    )
+    temperature_state = resolve_entity_id(hass, "sensor", "battery_temperature_state")
     charging = resolve_entity_id(hass, "binary_sensor", "charging_state")
 
     assert hass.states.get(battery).state == "unknown"

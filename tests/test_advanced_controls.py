@@ -107,12 +107,15 @@ def test_feature_version_parsing_tolerates_odd_values() -> None:
 
 def test_mode_select_write_preserves_existing_angles() -> None:
     hub = _hub()
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {
-            "mode": "MAIN_DIRECTION_MODE_SINGLE",
-            "multiple_mode_config": {"angles": [30, 120]},
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_SINGLE",
+                "multiple_mode_config": {"angles": [30, 120]},
+            },
         },
-    })
+    )
     select = MainDirectionModeSelect(hub.basic_data, hub.hass)
     select.async_write_ha_state = MagicMock()
 
@@ -182,9 +185,12 @@ def test_angle1_reads_first_angle_in_multiple_mode() -> None:
     assert number.native_value == 30.0
 
     # unavailable outside multiple mode
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_SINGLE"},
-    })
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_SINGLE"},
+        },
+    )
     assert number.available is False
 
 
@@ -196,7 +202,10 @@ def test_angle1_write_preserves_second_angle() -> None:
     asyncio.run(number.async_set_native_value(405.0))  # wraps to 45
 
     _topic, command = _published(hub)
-    assert command["main_direction_angle_config"]["multiple_mode_config"]["angles"] == [45, 120]
+    assert command["main_direction_angle_config"]["multiple_mode_config"]["angles"] == [
+        45,
+        120,
+    ]
 
 
 def test_angle2_write_preserves_first_angle() -> None:
@@ -208,7 +217,10 @@ def test_angle2_write_preserves_first_angle() -> None:
     asyncio.run(number.async_set_native_value(200.0))
 
     _topic, command = _published(hub)
-    assert command["main_direction_angle_config"]["multiple_mode_config"]["angles"] == [30, 200]
+    assert command["main_direction_angle_config"]["multiple_mode_config"]["angles"] == [
+        30,
+        200,
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -218,12 +230,15 @@ def test_angle2_write_preserves_first_angle() -> None:
 
 def test_auto_rotate_interval_read_and_write() -> None:
     hub = _hub()
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {
-            "mode": "MAIN_DIRECTION_MODE_AUTO_ROTATE",
-            "auto_rotate_mode_config": {"angle_interval": 20},
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_AUTO_ROTATE",
+                "auto_rotate_mode_config": {"angle_interval": 20},
+            },
         },
-    })
+    )
     number = MainDirectionAutoRotateIntervalNumber(hub.basic_data, hub.hass)
     assert number.available is True
     assert number.native_value == 20.0
@@ -237,9 +252,12 @@ def test_auto_rotate_interval_read_and_write() -> None:
 
 def test_auto_rotate_interval_unavailable_in_single_mode() -> None:
     hub = _hub()
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_SINGLE"},
-    })
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_SINGLE"},
+        },
+    )
     number = MainDirectionAutoRotateIntervalNumber(hub.basic_data, hub.hass)
     assert number.available is False
     hub.mqtt_client.publish.reset_mock()
