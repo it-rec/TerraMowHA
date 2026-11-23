@@ -747,6 +747,69 @@ async def test_stop_cancels_inflight_build_task(hass: HomeAssistant) -> None:
     assert feed._build_task is None
 
 
+async def test_stop_without_inflight_build_only_unsubscribes(
+    hass: HomeAssistant,
+) -> None:
+    """Stopping an idle feed drops its subscriptions and nothing else."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    feed = map_card._MapFeed(hass, MagicMock(), 1, hub)
+    unsub = MagicMock()
+    feed._unsubs = [unsub]
+    feed.stop()
+
+    unsub.assert_called_once()
+    assert feed._unsubs == []
+    assert feed._build_task is None
+
+
+async def test_debounce_while_building_flags_a_rebuild(hass: HomeAssistant) -> None:
+    """A debounce firing during a running build queues one rebuild instead."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    feed = map_card._MapFeed(hass, MagicMock(), 1, hub)
+    running = hass.loop.create_future()
+    feed._build_task = running
+    feed._schedule_scene_build()
+
+    assert feed._rebuild_pending is True
+    assert feed._build_task is running  # no second build started
+    running.cancel()
+
+
+async def test_build_and_push_runs_again_when_a_rebuild_was_flagged(
+    hass: HomeAssistant,
+) -> None:
+    """A rebuild flagged during a build runs right after it, then stops."""
+    entry = await setup_terramow(hass)
+    hub = entry.runtime_data.lawn_mower
+    assert hub is not None
+
+    feed = map_card._MapFeed(hass, MagicMock(), 1, hub)
+    builds = {"n": 0}
+
+    async def fake_build() -> dict[str, Any]:
+        builds["n"] += 1
+        if builds["n"] == 1:
+            feed._rebuild_pending = True  # source changed mid-build
+        return {"n": builds["n"]}
+
+    emitted: list[dict[str, Any]] = []
+    feed._shared_scene_build = fake_build
+    feed._emit_scene = emitted.append
+
+    await feed._build_and_push()
+
+    assert builds["n"] == 2
+    assert emitted == [{"n": 1}, {"n": 2}]
+    assert feed._rebuild_pending is False
+    assert feed._build_task is None
+
+
 async def test_shared_scene_build_dedupes_across_feeds(
     hass: HomeAssistant, monkeypatch: Any
 ) -> None:

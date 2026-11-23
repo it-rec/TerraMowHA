@@ -10,16 +10,14 @@ def find_device(
 ) -> dr.DeviceEntry | None:
     """Return the first device carrying ``identifier``, or None.
 
-    ``DeviceRegistry.async_get_device`` is deprecated on current Home
-    Assistant (identifiers are no longer unique across config entries) and
-    raises in tests, while its replacements do not exist on the oldest
-    release the CI matrix covers. Scanning the registry works on both.
+    Current Home Assistant deprecates ``DeviceRegistry.async_get_device`` and
+    using ``registry.devices`` as a mapping (both raise in tests), while their
+    replacements do not exist on the oldest release the CI matrix covers.
+    Iterating ``registry.devices`` works on both: it yields the device entries
+    on current releases and the device ids on older ones.
     """
-    return next(
-        (
-            device
-            for device in registry.devices.values()
-            if identifier in device.identifiers
-        ),
-        None,
-    )
+    for item in registry.devices:
+        device = item if isinstance(item, dr.DeviceEntry) else registry.async_get(item)
+        if device is not None and identifier in device.identifiers:
+            return device
+    return None
