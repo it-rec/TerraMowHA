@@ -430,7 +430,7 @@ CI (`.github/workflows/validate.yml`) enforces:
 - **100 % coverage on every supported Home Assistant version** — `pytest …
   --cov=custom_components/terramow --cov-fail-under=100`, with `branch = true`
   in `[tool.coverage.run]`, run as a matrix: the minimum HA release declared in
-  `hacs.json` (Python 3.12) and the newest HA release (Python 3.14). The suite
+  `hacs.json` (HA 2025.3, Python 3.13) and the newest HA release (Python 3.14). The suite
   covers every line **and branch**; the floor cannot silently regress. A small
   `Tests` job reports the matrix result as the single required status.
 - **`mypy` strict** — `mypy` with `[tool.mypy] strict = true`,

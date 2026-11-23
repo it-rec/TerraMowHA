@@ -104,7 +104,7 @@ Enheter i det lokala nätverket upptäcks automatiskt via Zeroconf — godkänn 
 
 ### Krav
 
-- Home Assistant 2024.6.0 eller senare (CI validerar mot den aktuella HA Core-utgåvan)
+- Home Assistant 2025.3.0 eller senare (CI validerar mot den aktuella HA Core-utgåvan)
 - TerraMow-firmware version 6.6.0 eller senare
 - TerraMow-appen version 1.6.0 eller senare
 - Karta i realtid och klippspår kräver firmwarens HA-modulversion 3; på version 2 (t.ex. S800) fungerar allt annat, och sensorn för versionskompatibilitet rapporterar det

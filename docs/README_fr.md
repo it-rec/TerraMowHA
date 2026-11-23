@@ -104,7 +104,7 @@ Les appareils du réseau local sont découverts automatiquement via Zeroconf —
 
 ### Prérequis
 
-- Home Assistant 2024.6.0 ou plus récent (l'intégration continue valide contre la version actuelle de HA Core)
+- Home Assistant 2025.3.0 ou plus récent (l'intégration continue valide contre la version actuelle de HA Core)
 - Micrologiciel TerraMow version 6.6.0 ou plus récent
 - Application TerraMow version 1.6.0 ou plus récente
 - La carte en direct et le trajet de tonte nécessitent la version 3 du module HA du micrologiciel ; en version 2 (par ex. S800) tout le reste fonctionne, et le capteur de compatibilité de version le signale

@@ -23,8 +23,8 @@ the device protocol.
 
 ## Local setup
 
-CI runs the tests on Python 3.12 against the minimum supported Home Assistant
-release and on Python 3.14 against the newest one; any Python from 3.12 works
+CI runs the tests on Python 3.13 against the minimum supported Home Assistant
+release and on Python 3.14 against the newest one; use Python 3.13 or newer
 locally. Create a virtual environment and install the test dependencies:
 
 ```bash

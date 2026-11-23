@@ -104,7 +104,7 @@ Os dispositivos na rede local são detetados automaticamente através de Zerocon
 
 ### Requisitos
 
-- Home Assistant 2024.6.0 ou posterior (a CI valida contra a versão atual do HA Core)
+- Home Assistant 2025.3.0 ou posterior (a CI valida contra a versão atual do HA Core)
 - Firmware TerraMow versão 6.6.0 ou posterior
 - Aplicação TerraMow versão 1.6.0 ou posterior
 - O mapa em direto e o trajeto de corte requerem a versão 3 do módulo HA do firmware; na versão 2 (por ex. S800) tudo o resto funciona, e o sensor de compatibilidade de versão comunica-o

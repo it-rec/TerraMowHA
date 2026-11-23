@@ -104,7 +104,7 @@ I dispositivi sulla rete locale vengono rilevati automaticamente tramite Zerocon
 
 ### Requisiti
 
-- Home Assistant 2024.6.0 o successivo (la CI verifica sull'attuale versione di HA Core)
+- Home Assistant 2025.3.0 o successivo (la CI verifica sull'attuale versione di HA Core)
 - Firmware TerraMow versione 6.6.0 o successiva
 - App TerraMow versione 1.6.0 o successiva
 - La mappa in tempo reale e il percorso di taglio richiedono la versione 3 del modulo HA del firmware; con la versione 2 (ad es. S800) tutto il resto funziona, e il sensore di compatibilità di versione lo segnala

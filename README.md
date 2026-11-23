@@ -123,7 +123,7 @@ Devices on the local network are discovered automatically via Zeroconf — accep
 
 ### Requirements
 
-- Home Assistant 2024.6.0 or later (CI validates against the current HA Core release)
+- Home Assistant 2025.3.0 or later (CI tests against this minimum and the newest HA Core release)
 - TerraMow firmware version 6.6.0 or later
 - TerraMow APP version 1.6.0 or later
 - Live map and mowing path require firmware HA module version 3; on version 2 (e.g. S800) everything else works and the version compatibility sensor reports it

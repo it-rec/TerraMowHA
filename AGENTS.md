@@ -23,7 +23,7 @@ TerraMowHA is a [Home Assistant](https://www.home-assistant.io/) custom integrat
 - Integration code: `custom_components/terramow/`
 - Tests: `tests/` (pytest with `pytest-homeassistant-custom-component`)
 - Developer protocol docs: `docs/en/developers.md` (MQTT topics, data points, map/path capabilities)
-- Minimum Python: 3.12 (CI tests on 3.12 with the minimum supported HA and on 3.14 with the newest HA)
+- Minimum Python: 3.13, as required by the minimum supported HA (CI tests on 3.13 with HA 2025.3 and on 3.14 with the newest HA)
 
 ## Architecture
 
@@ -76,7 +76,7 @@ mypy
 
 1. **Hassfest** — Home Assistant manifest/integration validation.
 2. **HACS validation** — integration category checks.
-3. **Tests** — full pytest suite as a matrix (minimum HA from `hacs.json` on Python 3.12, newest HA on Python 3.14); each leg fails if coverage drops below 100% (`--cov-fail-under=100`). The `Tests` job reports the combined matrix result (the ruleset requires that name).
+3. **Tests** — full pytest suite as a matrix (minimum HA from `hacs.json` on Python 3.13, newest HA on Python 3.14); each leg fails if coverage drops below 100% (`--cov-fail-under=100`). The `Tests` job reports the combined matrix result (the ruleset requires that name).
 4. **Python Lint** — `compileall` + `ruff check` + `ruff format --check` (both over `custom_components` and `tests`) + `node tests/frontend/eval_card_module.mjs` (verifies the map card still loads as a strict ES module).
 5. **Type Check** — `mypy` over `custom_components/terramow`, `strict = true`.
 

@@ -57,12 +57,12 @@ jobs:
           # The oldest Home Assistant release hacs.json declares as supported.
           # pytest-homeassistant-custom-component pins Home Assistant, so the
           # plugin version selects the HA version.
-          - name: HA 2024.6 minimum / Python 3.12
-            python: "3.12"
-            plugin: "==0.13.136"
-            # acme as pinned by HA 2024.6 breaks on josepy 2.x
-            # (no ComparableX509), which pip would otherwise pick.
-            extra: "josepy<2"
+          - name: HA 2025.3 minimum / Python 3.13
+            python: "3.13"
+            plugin: "==0.13.225"
+            # The plugin release for HA 2025.3 resolves an aiohttp that this
+            # HA release does not support; pin the one it was built with.
+            extra: "aiohttp==3.11.13"
             report: false
           # The newest Home Assistant release: the plugin is left unpinned and
           # needs the Python version current HA requires.
@@ -152,7 +152,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Compile Python sources
         run: python -m compileall custom_components/terramow
