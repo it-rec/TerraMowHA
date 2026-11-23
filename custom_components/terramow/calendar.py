@@ -206,12 +206,18 @@ class TerraMowScheduleCalendar(PushUpdateMixin, TerraMowEntity, CalendarEntity):
             return None
 
         start = anchor.replace(
-            hour=start_time["hour"], minute=start_time["minute"], second=0, microsecond=0
+            hour=start_time["hour"],
+            minute=start_time["minute"],
+            second=0,
+            microsecond=0,
         )
         end_time = config.get("end_time", {})
         if "hour" in end_time and "minute" in end_time:
             end = anchor.replace(
-                hour=end_time["hour"], minute=end_time["minute"], second=0, microsecond=0
+                hour=end_time["hour"],
+                minute=end_time["minute"],
+                second=0,
+                microsecond=0,
             )
         else:
             end = start + timedelta(hours=1)
@@ -252,7 +258,9 @@ class TerraMowScheduleCalendar(PushUpdateMixin, TerraMowEntity, CalendarEntity):
             if not isinstance(config, dict) or config.get("disabled", False):
                 continue
             week_days = config.get("week_days") or []
-            indices = {_WEEKDAY_INDEX[day] for day in week_days if day in _WEEKDAY_INDEX}
+            indices = {
+                _WEEKDAY_INDEX[day] for day in week_days if day in _WEEKDAY_INDEX
+            }
             if weekday not in indices:
                 continue
             # Protobuf omits a zero id; recurring items carry their RRULE so
@@ -317,12 +325,18 @@ class TerraMowScheduleCalendar(PushUpdateMixin, TerraMowEntity, CalendarEntity):
             return None
 
         start = anchor.replace(
-            hour=start_time["hour"], minute=start_time["minute"], second=0, microsecond=0
+            hour=start_time["hour"],
+            minute=start_time["minute"],
+            second=0,
+            microsecond=0,
         )
         end_time = data.get("end_time", {})
         if "hour" in end_time and "minute" in end_time:
             end = anchor.replace(
-                hour=end_time["hour"], minute=end_time["minute"], second=0, microsecond=0
+                hour=end_time["hour"],
+                minute=end_time["minute"],
+                second=0,
+                microsecond=0,
             )
         else:
             end = start + timedelta(hours=1)

@@ -43,8 +43,7 @@ def _distance_to_segment(point: Point, start: Point, end: Point) -> float:
         0.0,
         min(
             1.0,
-            ((point[0] - start[0]) * dx + (point[1] - start[1]) * dy)
-            / length_sq,
+            ((point[0] - start[0]) * dx + (point[1] - start[1]) * dy) / length_sq,
         ),
     )
     projected = (start[0] + position * dx, start[1] + position * dy)
@@ -63,9 +62,7 @@ def _inside(point: Point, polygon: list[Point]) -> bool:
     """Ray-casting containment, with boundary handled separately."""
     inside = False
     x, y = point
-    for (x1, y1), (x2, y2) in zip(
-        polygon, polygon[1:] + polygon[:1], strict=True
-    ):
+    for (x1, y1), (x2, y2) in zip(polygon, polygon[1:] + polygon[:1], strict=True):
         if (y1 > y) != (y2 > y):
             crossing_x = x1 + (y - y1) * (x2 - x1) / (y2 - y1)
             if x < crossing_x:
@@ -138,9 +135,7 @@ def evaluate_pose(
         _on_boundary(current, polygon, tolerance_mm) or _inside(current, polygon)
         for polygon in allowed
     ):
-        detections.append(
-            {"kind": "outer_boundary", "geometry_id": "allowed_regions"}
-        )
+        detections.append({"kind": "outer_boundary", "geometry_id": "allowed_regions"})
 
     if previous is not None and allow_segment:
         for index, wall in enumerate(scene.get("virtual_walls", [])):

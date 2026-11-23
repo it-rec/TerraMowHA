@@ -109,23 +109,32 @@ def test_single_angle_available_from_cached_mode() -> None:
 def test_availability_follows_device_reported_mode() -> None:
     hub = _hub()
     number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_SINGLE"},
-    })
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_SINGLE"},
+        },
+    )
     assert number.available is True
 
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MULTIPLE"},
-    })
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MULTIPLE"},
+        },
+    )
     assert number.available is False
 
 
 def test_cached_mode_takes_priority_until_device_push() -> None:
     hub = _hub()
     number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MULTIPLE"},
-    })
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MULTIPLE"},
+        },
+    )
     number._cached_mode = "MAIN_DIRECTION_MODE_SINGLE"
     assert number._current_main_direction_mode() == "MAIN_DIRECTION_MODE_SINGLE"
     # the cache survives reads (availability is evaluated repeatedly per write)
@@ -148,16 +157,24 @@ def test_mode_change_listener_updates_cache() -> None:
     # the listener is registered when the entity is added to hass
     number._register_mode_change_listener()
     _event_name, callback = hub.hass.bus.async_listen.call_args.args
-    asyncio.run(callback(SimpleNamespace(data={
-        "device_host": number.host,
-        "new_mode": "MAIN_DIRECTION_MODE_AUTO_ROTATE",
-    })))
+    asyncio.run(
+        callback(
+            SimpleNamespace(
+                data={
+                    "device_host": number.host,
+                    "new_mode": "MAIN_DIRECTION_MODE_AUTO_ROTATE",
+                }
+            )
+        )
+    )
     assert number._cached_mode == "MAIN_DIRECTION_MODE_AUTO_ROTATE"
     number.async_write_ha_state.assert_called_once()
 
     # an event for a different host is ignored
     number._cached_mode = None
-    asyncio.run(callback(SimpleNamespace(data={"device_host": "other", "new_mode": "x"})))
+    asyncio.run(
+        callback(SimpleNamespace(data={"device_host": "other", "new_mode": "x"}))
+    )
     assert number._cached_mode is None
 
 
@@ -168,15 +185,18 @@ def test_mode_change_listener_updates_cache() -> None:
 
 def _device_mode(hub, mode: str) -> None:
     hub.hass.states.get = MagicMock(return_value=None)
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {
-            "mode": mode,
-            "current_angle": 33,
-            "single_mode_config": {"angle": 10},
-            "auto_rotate_mode_config": {"angle_interval": 20},
-            "multiple_mode_config": {"angles": [30, 120]},
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {
+                "mode": mode,
+                "current_angle": 33,
+                "single_mode_config": {"angle": 10},
+                "auto_rotate_mode_config": {"angle_interval": 20},
+                "multiple_mode_config": {"angles": [30, 120]},
+            },
         },
-    })
+    )
 
 
 def test_numbers_unavailable_in_wrong_mode_do_not_publish() -> None:
@@ -214,12 +234,15 @@ def test_mode_numbers_expose_current_angle_attributes() -> None:
 def test_single_angle_native_value_none_when_angle_missing() -> None:
     hub = _hub()
     number = MainDirectionSingleAngleNumber(hub.basic_data, hub.hass)
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {
-            "mode": "MAIN_DIRECTION_MODE_SINGLE",
-            "single_mode_config": {},
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_SINGLE",
+                "single_mode_config": {},
+            },
         },
-    })
+    )
     assert number.native_value is None
 
 
@@ -332,7 +355,9 @@ def test_mode_helper_cached_and_empty_paths_for_all() -> None:
         hub = _hub()
         number = cls(hub.basic_data, hub.hass)
         number._cached_mode = "MAIN_DIRECTION_MODE_AUTO_ROTATE"
-        assert number._current_main_direction_mode() == "MAIN_DIRECTION_MODE_AUTO_ROTATE"
+        assert (
+            number._current_main_direction_mode() == "MAIN_DIRECTION_MODE_AUTO_ROTATE"
+        )
         assert number._cached_mode == "MAIN_DIRECTION_MODE_AUTO_ROTATE"
 
         # no cache and no device data yet -> mode unknown
@@ -353,10 +378,16 @@ def test_every_mode_number_registers_a_working_listener() -> None:
         number.async_write_ha_state = MagicMock()
         number._register_mode_change_listener()
         _event_name, callback = hub.hass.bus.async_listen.call_args.args
-        asyncio.run(callback(SimpleNamespace(data={
-            "device_host": number.host,
-            "new_mode": "MAIN_DIRECTION_MODE_MULTIPLE",
-        })))
+        asyncio.run(
+            callback(
+                SimpleNamespace(
+                    data={
+                        "device_host": number.host,
+                        "new_mode": "MAIN_DIRECTION_MODE_MULTIPLE",
+                    }
+                )
+            )
+        )
         assert number._cached_mode == "MAIN_DIRECTION_MODE_MULTIPLE"
 
 

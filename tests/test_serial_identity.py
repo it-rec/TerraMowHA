@@ -223,9 +223,7 @@ async def test_setup_uses_serial_as_device_uid(hass: HomeAssistant) -> None:
     with (
         patch("custom_components.terramow.validate_input", return_value={}),
         patch("custom_components.terramow.TerraMowHub", _FakeHub),
-        patch(
-            "custom_components.terramow.async_setup_map_card", AsyncMock()
-        ),
+        patch("custom_components.terramow.async_setup_map_card", AsyncMock()),
         patch.object(
             hass.config_entries,
             "async_forward_entry_setups",
@@ -413,9 +411,12 @@ async def test_setup_removes_ghost_device_and_stale_entities(
 
     # the ghost device and its host-keyed duplicate entity are gone
     assert device_registry.async_get_device({(DOMAIN, HOST)}) is None
-    assert entity_registry.async_get_entity_id(
-        "sensor", DOMAIN, f"lawn_mower.terramow@{HOST}.battery"
-    ) is None
+    assert (
+        entity_registry.async_get_entity_id(
+            "sensor", DOMAIN, f"lawn_mower.terramow@{HOST}.battery"
+        )
+        is None
+    )
     # the live serial-keyed device and entity survive untouched
     assert device_registry.async_get_device({(DOMAIN, SERIAL)})
     assert entity_registry.async_get_entity_id(
@@ -474,9 +475,12 @@ async def test_setup_sweeps_stale_host_entity_without_ghost_device(
     ):
         await async_setup_entry(hass, entry)
 
-    assert entity_registry.async_get_entity_id(
-        "sensor", DOMAIN, f"lawn_mower.terramow@{HOST}.battery"
-    ) is None
+    assert (
+        entity_registry.async_get_entity_id(
+            "sensor", DOMAIN, f"lawn_mower.terramow@{HOST}.battery"
+        )
+        is None
+    )
 
 
 async def test_adopt_pending_serial_reparks_if_setup_never_finishes(
@@ -531,9 +535,7 @@ async def test_retained_dp102_during_setup_creates_no_ghost_device(
             None,
             SimpleNamespace(
                 topic="data_point/102/robot",
-                payload=json.dumps(
-                    {"version": "9.9.210", "sn": SERIAL}
-                ).encode(),
+                payload=json.dumps({"version": "9.9.210", "sn": SERIAL}).encode(),
             ),
         )
 

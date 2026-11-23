@@ -16,9 +16,7 @@ USER_INPUT = {CONF_HOST: "192.0.2.10", CONF_PASSWORD: "secret"}
 
 
 def _patch_validate(**kwargs):
-    return patch(
-        "custom_components.terramow.config_flow.validate_input", **kwargs
-    )
+    return patch("custom_components.terramow.config_flow.validate_input", **kwargs)
 
 
 async def test_user_flow_creates_entry(hass: HomeAssistant) -> None:
@@ -65,9 +63,9 @@ async def test_user_flow_errors(
 
 
 async def test_user_flow_aborts_on_duplicate_host(hass: HomeAssistant) -> None:
-    MockConfigEntry(
-        domain=DOMAIN, data=USER_INPUT, unique_id="192.0.2.10"
-    ).add_to_hass(hass)
+    MockConfigEntry(domain=DOMAIN, data=USER_INPUT, unique_id="192.0.2.10").add_to_hass(
+        hass
+    )
 
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
@@ -119,9 +117,7 @@ async def test_reconfigure_flow_updates_host_and_unique_id(
 async def test_reconfigure_flow_aborts_when_host_taken(
     hass: HomeAssistant,
 ) -> None:
-    entry = MockConfigEntry(
-        domain=DOMAIN, data=USER_INPUT, unique_id="192.0.2.10"
-    )
+    entry = MockConfigEntry(domain=DOMAIN, data=USER_INPUT, unique_id="192.0.2.10")
     entry.add_to_hass(hass)
     other = MockConfigEntry(
         domain=DOMAIN,
@@ -145,9 +141,7 @@ async def test_reconfigure_flow_aborts_when_host_taken(
 
 
 async def test_reauth_flow_updates_password(hass: HomeAssistant) -> None:
-    entry = MockConfigEntry(
-        domain=DOMAIN, data=USER_INPUT, unique_id="192.0.2.10"
-    )
+    entry = MockConfigEntry(domain=DOMAIN, data=USER_INPUT, unique_id="192.0.2.10")
     entry.add_to_hass(hass)
 
     result = await hass.config_entries.flow.async_init(

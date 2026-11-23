@@ -211,6 +211,5 @@ class MaintenanceTodoList(PushUpdateMixin, TerraMowEntity, TodoListEntity):
         if hub is None:
             return {}
         return {
-            f"{task.uid}_used_minutes": self._used_minutes(hub, task)
-            for task in TASKS
+            f"{task.uid}_used_minutes": self._used_minutes(hub, task) for task in TASKS
         }

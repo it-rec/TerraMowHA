@@ -239,7 +239,12 @@ def test_error_fires_error_event() -> None:
     hub = _hub()
     ent = _entity(hub)
     _added(ent)
-    _feed(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING", has_error=True)
+    _feed(
+        hub,
+        mission="MISSION_GLOBAL_CLEAN",
+        state="MISSION_STATE_RUNNING",
+        has_error=True,
+    )
     _fire(ent)
     assert _last_event(ent) == EVENT_ERROR
     assert ent._trigger_event.call_args.args[1]["has_error"] is True
@@ -263,9 +268,7 @@ def test_error_list_fault_fires_error_event() -> None:
     assert hub.has_error is False
     # The codes behind the fault ride along, with readable catalog text
     assert ent._trigger_event.call_args.args[1]["error_codes"] == [5]
-    assert ent._trigger_event.call_args.args[1]["error_descriptions"] == [
-        "Error 5"
-    ]
+    assert ent._trigger_event.call_args.args[1]["error_descriptions"] == ["Error 5"]
 
 
 def test_connection_error_does_not_fire_error_event() -> None:
@@ -287,7 +290,12 @@ def test_real_fault_still_fires_after_connection_blip() -> None:
     _added(ent)
     hub.connection_error = True
     _fire(ent)
-    _feed(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING", has_error=True)
+    _feed(
+        hub,
+        mission="MISSION_GLOBAL_CLEAN",
+        state="MISSION_STATE_RUNNING",
+        has_error=True,
+    )
     _fire(ent)
     assert _last_event(ent) == EVENT_ERROR
 

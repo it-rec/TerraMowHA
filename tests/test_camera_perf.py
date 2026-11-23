@@ -480,7 +480,9 @@ def test_scene_path_cache_hits_on_same_dict_and_reextracts_on_new() -> None:
     first = build_scene(SMALL_MAP, current, history, False, cache=cache)
     # a new current-path dict with the unchanged history dict: the history
     # extraction is served from the cache (identical list objects)...
-    second = build_scene(SMALL_MAP, _path([(0.5, 0.5), (0.6, 0.6)]), history, False, cache=cache)
+    second = build_scene(
+        SMALL_MAP, _path([(0.5, 0.5), (0.6, 0.6)]), history, False, cache=cache
+    )
     assert second["history_path_points"] is first["history_path_points"]
     # ...while the current path was re-extracted
     assert len(second["current_path_points"]) == 2
@@ -603,7 +605,9 @@ def test_composite_helpers_skip_off_canvas_and_empty_shapes() -> None:
     camera._renderer._composite_polygon_fill(
         image, [(-20, -20), (-5, -20), (-5, -5)], (255, 0, 0, 128)
     )
-    camera._renderer._apply_hatch(image, [(-20, -20), (-5, -20), (-5, -5)], (255, 0, 0, 128))
+    camera._renderer._apply_hatch(
+        image, [(-20, -20), (-5, -20), (-5, -5)], (255, 0, 0, 128)
+    )
     # an empty point list is a no-op
     camera._renderer._composite_draw(image, [], lambda draw, shifted: None)
 

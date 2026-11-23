@@ -450,7 +450,13 @@ MAP_DRAW = {
             "boundary": _poly((0, 0), (6, 0), (6, 6), (0, 6)),
             "edge_segments": [_poly((0, 0), (6, 0)), _poly((0, 0))],  # valid + <2
             "obstacles": [
-                {"ellipse": {"center": {"x": 1, "y": 1}, "radius_x": 0.3, "radius_y": 0.3}}
+                {
+                    "ellipse": {
+                        "center": {"x": 1, "y": 1},
+                        "radius_x": 0.3,
+                        "radius_y": 0.3,
+                    }
+                }
             ],
             "sub_regions": [
                 "not-a-dict",
@@ -462,9 +468,15 @@ MAP_DRAW = {
                         _poly((0.2, 0.2), (0.8, 0.2), (0.8, 0.8)),
                         _poly((0.3, 0.3), (0.4, 0.3)),  # <3 -> skipped
                     ],
-                    "edge_segments": [_poly((0, 0), (2, 0)), _poly((0, 0))],  # valid + <2
+                    "edge_segments": [
+                        _poly((0, 0), (2, 0)),
+                        _poly((0, 0)),
+                    ],  # valid + <2
                 },
-                {"id": 8, "boundary": _poly((3, 3), (4, 3))},  # boundary <3 -> skipped in draw
+                {
+                    "id": 8,
+                    "boundary": _poly((3, 3), (4, 3)),
+                },  # boundary <3 -> skipped in draw
             ],
         },
         {
@@ -508,7 +520,11 @@ def test_render_map_with_non_dict_metadata_sections() -> None:
         "mow_param": "nope",
         "backup_info_list": "nope",
         "regions": [
-            {"id": 1, "boundary": _poly((0, 0), (4, 0), (4, 4), (0, 4)), "sub_regions": []}
+            {
+                "id": 1,
+                "boundary": _poly((0, 0), (4, 0), (4, 4), (0, 4)),
+                "sub_regions": [],
+            }
         ],
     }
     asyncio.run(camera._on_map_info({"id": 1}))
@@ -585,19 +601,25 @@ def test_draw_helpers_degenerate_inputs() -> None:
     camera._renderer._draw_polygon_pixels(
         image, draw, [(0, 0), (10, 0), (10, 10)], (0, 0, 0, 0), (0, 0, 0, 255), 1
     )
-    camera._renderer._draw_polygon(image, draw, None, [(0, 0), (1, 1)], (0, 0, 0, 0), (0, 0, 0, 255), 1)
+    camera._renderer._draw_polygon(
+        image, draw, None, [(0, 0), (1, 1)], (0, 0, 0, 0), (0, 0, 0, 255), 1
+    )
 
     # polyline / dashed / hatch degenerate paths
     camera._renderer._draw_polyline(draw, None, [(0.0, 0.0)], (0, 0, 0, 255), 1)
     camera._renderer._draw_dashed_polyline(draw, [(0, 0)], (0, 0, 0, 255), 1, 4, 4)
-    camera._renderer._draw_dashed_polyline(draw, [(5, 5), (5, 5), (20, 5)], (0, 0, 0, 255), 1, 4, 4)
+    camera._renderer._draw_dashed_polyline(
+        draw, [(5, 5), (5, 5), (20, 5)], (0, 0, 0, 255), 1, 4, 4
+    )
     camera._renderer._apply_hatch(image, [(0, 0), (10, 0)], (0, 0, 0, 255))
 
     # marker with an unknown kind -> the fallback dot
     camera._renderer._draw_marker(draw, (40, 40), (0, 0, 0, 255), "circle")
 
     # path stroke: too-few points, then the dashed variant
-    camera._renderer._draw_path_stroke(draw, [(0, 0)], (0, 0, 0, 255), 4, (0, 0, 0, 128), 8)
+    camera._renderer._draw_path_stroke(
+        draw, [(0, 0)], (0, 0, 0, 255), 4, (0, 0, 0, 128), 8
+    )
     camera._renderer._draw_path_stroke(
         draw, [(0, 0), (30, 30)], (0, 0, 0, 255), 4, (0, 0, 0, 128), 8, dash=6, gap=4
     )
@@ -627,7 +649,7 @@ def test_draw_summary_panel_breaks_on_overflowing_chips() -> None:
     camera._map_data = {"id": 1, "name": "X", "map_state": "MAP_STATE_COMPLETE"}
     image = Image.new("RGBA", (1024, 1024), (255, 255, 255, 255))
     # oversized counts make the first count chip overflow the panel and break.
-    huge = 10 ** 400
+    huge = 10**400
     scene = {
         "scene_counts": {
             "regions": huge,

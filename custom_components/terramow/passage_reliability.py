@@ -58,11 +58,7 @@ def build_passage_graph(map_data: dict[str, Any]) -> list[dict[str, Any]]:
                     continue
                 start_zone = _zone_at(line[0], zones)
                 end_zone = _zone_at(line[-1], zones)
-                if (
-                    start_zone is None
-                    or end_zone is None
-                    or start_zone == end_zone
-                ):
+                if start_zone is None or end_zone is None or start_zone == end_zone:
                     continue
                 geometry = [[float(x), float(y)] for x, y in line]
                 digest = hashlib.blake2b(
@@ -123,7 +119,9 @@ class PassageReliabilityTracker:
                 nearby.add(edge["id"])
         return nearby
 
-    def _record(self, edge_id: str, kind: str, now: float, duration: float | None = None) -> None:
+    def _record(
+        self, edge_id: str, kind: str, now: float, duration: float | None = None
+    ) -> None:
         stats = self.stats.setdefault(
             edge_id,
             {"successes": [], "retreats": [], "faults": []},
@@ -211,9 +209,7 @@ class PassageReliabilityTracker:
             classification = "unknown"
             if evidence >= PASSAGE_MIN_CLASSIFICATION_SAMPLES:
                 classification = (
-                    "degraded"
-                    if (retreats + faults) / evidence >= 0.5
-                    else "healthy"
+                    "degraded" if (retreats + faults) / evidence >= 0.5 else "healthy"
                 )
             durations = [
                 item["duration_seconds"]

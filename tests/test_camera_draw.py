@@ -81,7 +81,15 @@ MEGA_MAP = {
             "id": 100,
             "name": "Haupt",
             "boundary": _poly((0, 0), (4, 0), (4, 3), (0, 3)),
-            "obstacles": [{"ellipse": {"center": {"x": 1, "y": 1}, "radius_x": 0.3, "radius_y": 0.3}}],
+            "obstacles": [
+                {
+                    "ellipse": {
+                        "center": {"x": 1, "y": 1},
+                        "radius_x": 0.3,
+                        "radius_y": 0.3,
+                    }
+                }
+            ],
             "sub_regions": [
                 {
                     "id": 7,
@@ -177,7 +185,11 @@ def test_render_long_mixed_path() -> None:
         x = 0.1 * i
         ptype = "PATH_POINT_TYPE_CLEANING" if i % 5 else "PATH_POINT_TYPE_TRANSIT"
         points.append({"position": {"x": x, "y": 0.5 + 0.02 * i}, "type": ptype})
-    asyncio.run(camera._on_path_data({"id": 5, "map_id": 1, "type": "PATH_TYPE_CLEAN", "points": points}))
+    asyncio.run(
+        camera._on_path_data(
+            {"id": 5, "map_id": 1, "type": "PATH_TYPE_CLEAN", "points": points}
+        )
+    )
 
     assert _render(camera).startswith(PNG_MAGIC)
     scene = camera._build_scene()
@@ -270,9 +282,7 @@ def test_camera_setup_falls_back_on_invalid_resolution() -> None:
 def test_camera_setup_falls_back_on_invalid_theme() -> None:
     hub = _hub()
     added: list = []
-    entry = SimpleNamespace(
-        runtime_data=hub.basic_data, options={"map_theme": "bogus"}
-    )
+    entry = SimpleNamespace(runtime_data=hub.basic_data, options={"map_theme": "bogus"})
     asyncio.run(async_setup_entry(hub.hass, entry, added.extend))
     assert all(cam._theme == "light" for cam in added)
 
@@ -297,13 +307,28 @@ def test_draw_coverage_noop_on_degenerate_path() -> None:
                 "map_id": 1,
                 "type": "PATH_TYPE_CLEAN",
                 "points": [
-                    {"position": {"x": 1.0, "y": 1.0}, "type": "PATH_POINT_TYPE_CLEANING"},
-                    {"position": {"x": 1.0, "y": 1.0}, "type": "PATH_POINT_TYPE_CLEANING"},
-                    {"position": {"x": 1.0, "y": 1.0}, "type": "PATH_POINT_TYPE_CLEANING"},
+                    {
+                        "position": {"x": 1.0, "y": 1.0},
+                        "type": "PATH_POINT_TYPE_CLEANING",
+                    },
+                    {
+                        "position": {"x": 1.0, "y": 1.0},
+                        "type": "PATH_POINT_TYPE_CLEANING",
+                    },
+                    {
+                        "position": {"x": 1.0, "y": 1.0},
+                        "type": "PATH_POINT_TYPE_CLEANING",
+                    },
                     # a transit followed by a lone cleaning point: the
                     # resulting single-point run is skipped, not swathed
-                    {"position": {"x": 2.0, "y": 2.0}, "type": "PATH_POINT_TYPE_RETURN"},
-                    {"position": {"x": 3.0, "y": 3.0}, "type": "PATH_POINT_TYPE_CLEANING"},
+                    {
+                        "position": {"x": 2.0, "y": 2.0},
+                        "type": "PATH_POINT_TYPE_RETURN",
+                    },
+                    {
+                        "position": {"x": 3.0, "y": 3.0},
+                        "type": "PATH_POINT_TYPE_CLEANING",
+                    },
                 ],
             }
         )
@@ -317,10 +342,7 @@ def test_path_runs_falls_back_to_flat_points() -> None:
 
     assert MapRenderer._path_runs({}, "current") == []
     flat = [{"x": 1, "y": 2}]
-    assert (
-        MapRenderer._path_runs({"current_path_points": flat}, "current")
-        == [flat]
-    )
+    assert MapRenderer._path_runs({"current_path_points": flat}, "current") == [flat]
 
 
 # ---------------------------------------------------------------------------
@@ -340,7 +362,13 @@ def test_build_scene_region_edges_obstacles_and_subregion_details() -> None:
                 "boundary": _poly((0, 0), (4, 0), (4, 4), (0, 4)),
                 "edge_segments": [_poly((0, 0), (4, 0))],
                 "obstacles": [
-                    {"ellipse": {"center": {"x": 1, "y": 1}, "radius_x": 0.3, "radius_y": 0.3}}
+                    {
+                        "ellipse": {
+                            "center": {"x": 1, "y": 1},
+                            "radius_x": 0.3,
+                            "radius_y": 0.3,
+                        }
+                    }
                 ],
                 "sub_regions": [
                     {
@@ -627,8 +655,13 @@ def test_realistic_map_draws_scale_bar_and_legend() -> None:
 
     # the transformer scale is realistic -> a scale bar is chosen and drawn
     assert camera._renderer._transformer is not None
-    assert camera._renderer._scale_bar_choice(camera._renderer._transformer.scale) is not None
-    labels = [label for _, label in camera._renderer._legend_entries(camera._build_scene())]
+    assert (
+        camera._renderer._scale_bar_choice(camera._renderer._transformer.scale)
+        is not None
+    )
+    labels = [
+        label for _, label in camera._renderer._legend_entries(camera._build_scene())
+    ]
     assert "Path" in labels
     assert "Coverage" in labels
 
@@ -668,7 +701,9 @@ def test_hud_localized_for_german() -> None:
     assert camera._language == "de"
     assert camera._t("snapshot") == "Karten-Schnappschuss"
     assert camera._t("nogo") == "Sperrzone"
-    labels = [label for _, label in camera._renderer._legend_entries(camera._build_scene())]
+    labels = [
+        label for _, label in camera._renderer._legend_entries(camera._build_scene())
+    ]
     assert "Sperrzone" in labels
     assert camera.extra_state_attributes["map_language"] == "de"
     # the localized image still renders

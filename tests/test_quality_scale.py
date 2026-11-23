@@ -5,12 +5,27 @@ from pathlib import Path
 import yaml
 
 _GOLD = {
-    "devices", "diagnostics", "discovery", "discovery-update-info",
-    "docs-data-update", "docs-examples", "docs-known-limitations",
-    "docs-supported-devices", "docs-supported-functions", "docs-troubleshooting",
-    "docs-use-cases", "dynamic-devices", "entity-category", "entity-device-class",
-    "entity-disabled-by-default", "entity-translations", "exception-translations",
-    "icon-translations", "reconfiguration-flow", "repair-issues", "stale-devices",
+    "devices",
+    "diagnostics",
+    "discovery",
+    "discovery-update-info",
+    "docs-data-update",
+    "docs-examples",
+    "docs-known-limitations",
+    "docs-supported-devices",
+    "docs-supported-functions",
+    "docs-troubleshooting",
+    "docs-use-cases",
+    "dynamic-devices",
+    "entity-category",
+    "entity-device-class",
+    "entity-disabled-by-default",
+    "entity-translations",
+    "exception-translations",
+    "icon-translations",
+    "reconfiguration-flow",
+    "repair-issues",
+    "stale-devices",
 }
 
 _PLATINUM = {"async-dependency", "inject-websession", "strict-typing"}
@@ -18,7 +33,9 @@ _PLATINUM = {"async-dependency", "inject-websession", "strict-typing"}
 
 def _rules() -> dict:
     data = yaml.safe_load(
-        Path("custom_components/terramow/quality_scale.yaml").read_text(encoding="utf-8")
+        Path("custom_components/terramow/quality_scale.yaml").read_text(
+            encoding="utf-8"
+        )
     )
     return data["rules"]
 

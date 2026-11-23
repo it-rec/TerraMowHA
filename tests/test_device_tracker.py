@@ -64,9 +64,7 @@ def _meters_north(latitude: float) -> float:
 def _meters_east(longitude: float) -> float:
     import math
 
-    return (
-        (longitude - ANCHOR_LON) * LAT_M * math.cos(math.radians(ANCHOR_LAT))
-    )
+    return (longitude - ANCHOR_LON) * LAT_M * math.cos(math.radians(ANCHOR_LAT))
 
 
 # ---------------------------------------------------------------------------
@@ -110,34 +108,46 @@ def test_distance_is_preserved_under_rotation() -> None:
 
 
 def test_projection_needs_a_station_and_usable_numbers() -> None:
-    assert project_pose(
-        {"x": 1, "y": 2},
-        None,
-        anchor_latitude=ANCHOR_LAT,
-        anchor_longitude=ANCHOR_LON,
-        heading=0,
-    ) is None
-    assert project_pose(
-        {"x": 1, "y": 2},
-        "not a dict",  # type: ignore[arg-type]
-        anchor_latitude=ANCHOR_LAT,
-        anchor_longitude=ANCHOR_LON,
-        heading=0,
-    ) is None
-    assert project_pose(
-        {"y": 2},  # no x
-        STATION,
-        anchor_latitude=ANCHOR_LAT,
-        anchor_longitude=ANCHOR_LON,
-        heading=0,
-    ) is None
-    assert project_pose(
-        {"x": "abc", "y": 2},
-        STATION,
-        anchor_latitude=ANCHOR_LAT,
-        anchor_longitude=ANCHOR_LON,
-        heading=0,
-    ) is None
+    assert (
+        project_pose(
+            {"x": 1, "y": 2},
+            None,
+            anchor_latitude=ANCHOR_LAT,
+            anchor_longitude=ANCHOR_LON,
+            heading=0,
+        )
+        is None
+    )
+    assert (
+        project_pose(
+            {"x": 1, "y": 2},
+            "not a dict",  # type: ignore[arg-type]
+            anchor_latitude=ANCHOR_LAT,
+            anchor_longitude=ANCHOR_LON,
+            heading=0,
+        )
+        is None
+    )
+    assert (
+        project_pose(
+            {"y": 2},  # no x
+            STATION,
+            anchor_latitude=ANCHOR_LAT,
+            anchor_longitude=ANCHOR_LON,
+            heading=0,
+        )
+        is None
+    )
+    assert (
+        project_pose(
+            {"x": "abc", "y": 2},
+            STATION,
+            anchor_latitude=ANCHOR_LAT,
+            anchor_longitude=ANCHOR_LON,
+            heading=0,
+        )
+        is None
+    )
 
 
 def test_polar_anchor_does_not_divide_by_zero() -> None:

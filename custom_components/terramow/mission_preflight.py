@@ -208,9 +208,7 @@ class MissionPreflightTracker:
             float(record["battery_used"]) for record in comparable
         )
         recharge = round(
-            statistics.median(
-                int(record["recharge_legs"]) for record in comparable
-            )
+            statistics.median(int(record["recharge_legs"]) for record in comparable)
         )
         finish = now.timestamp() + duration
         sunset_at = sunset_today(sunset, now)
@@ -229,9 +227,7 @@ class MissionPreflightTracker:
             "duration_seconds": round(duration),
             "battery_percent": round(battery, 1),
             "battery_margin_percent": (
-                round(battery_level - battery, 1)
-                if battery_level is not None
-                else None
+                round(battery_level - battery, 1) if battery_level is not None else None
             ),
             "recharge_legs": recharge,
             "estimated_finish": datetime.fromtimestamp(

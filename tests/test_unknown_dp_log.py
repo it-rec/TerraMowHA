@@ -44,9 +44,7 @@ def _feed_unknown(hub, payload=b'{"int_value": 7}'):
 def test_persist_writes_line(tmp_path):
     hub = _hub(tmp_path)
     hub._persist_unknown_dp(1.5, 200, '{"int_value": 5}')
-    assert _lines(tmp_path) == [
-        {"t": 1.5, "dp": 200, "payload": '{"int_value": 5}'}
-    ]
+    assert _lines(tmp_path) == [{"t": 1.5, "dp": 200, "payload": '{"int_value": 5}'}]
 
 
 def test_persist_appends(tmp_path):

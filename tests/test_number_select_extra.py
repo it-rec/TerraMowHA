@@ -136,7 +136,9 @@ def test_mode_number_listener_host_mismatch_and_missing_new_mode() -> None:
         _event_name, callback = hub.hass.bus.async_listen.call_args.args
 
         # a different host is ignored (callback exits, no write)
-        asyncio.run(callback(SimpleNamespace(data={"device_host": "other", "new_mode": "x"})))
+        asyncio.run(
+            callback(SimpleNamespace(data={"device_host": "other", "new_mode": "x"}))
+        )
         number.async_write_ha_state.assert_not_called()
 
         # matching host without new_mode -> writes but keeps the cache
@@ -202,7 +204,10 @@ def test_single_angle_attributes_short_circuits() -> None:
 
     # params present but no current_angle reported
     hub3 = _hub()
-    _feed(hub3.on_global_params, {"main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_SINGLE"}})
+    _feed(
+        hub3.on_global_params,
+        {"main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_SINGLE"}},
+    )
     number3 = MainDirectionSingleAngleNumber(hub3.basic_data, hub3.hass)
     assert "current_robot_angle" not in number3.extra_state_attributes
 
@@ -219,7 +224,10 @@ def test_auto_rotate_attributes_short_circuits() -> None:
     assert "current_robot_angle" not in number2.extra_state_attributes
 
     hub3 = _hub()
-    _feed(hub3.on_global_params, {"main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_AUTO_ROTATE"}})
+    _feed(
+        hub3.on_global_params,
+        {"main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_AUTO_ROTATE"}},
+    )
     number3 = MainDirectionAutoRotateIntervalNumber(hub3.basic_data, hub3.hass)
     assert "current_robot_angle" not in number3.extra_state_attributes
 
@@ -237,9 +245,12 @@ def test_multiple_angle1_attributes_short_circuits() -> None:
 
     # config with no current_angle and a single-element angles list
     hub3 = _hub()
-    _feed(hub3.on_global_params, {
-        "main_direction_angle_config": {"multiple_mode_config": {"angles": [30]}},
-    })
+    _feed(
+        hub3.on_global_params,
+        {
+            "main_direction_angle_config": {"multiple_mode_config": {"angles": [30]}},
+        },
+    )
     number3 = MultipleDirectionAngle1Number(hub3.basic_data, hub3.hass)
     attrs = number3.extra_state_attributes
     assert "current_robot_angle" not in attrs
@@ -259,9 +270,12 @@ def test_multiple_angle2_attributes_short_circuits() -> None:
 
     # no current_angle, empty angles list
     hub3 = _hub()
-    _feed(hub3.on_global_params, {
-        "main_direction_angle_config": {"multiple_mode_config": {"angles": []}},
-    })
+    _feed(
+        hub3.on_global_params,
+        {
+            "main_direction_angle_config": {"multiple_mode_config": {"angles": []}},
+        },
+    )
     number3 = MultipleDirectionAngle2Number(hub3.basic_data, hub3.hass)
     attrs3 = number3.extra_state_attributes
     assert "current_robot_angle" not in attrs3
@@ -269,12 +283,15 @@ def test_multiple_angle2_attributes_short_circuits() -> None:
 
     # single-element angles list -> paired_angle1 set but no difference
     hub4 = _hub()
-    _feed(hub4.on_global_params, {
-        "main_direction_angle_config": {
-            "current_angle": 5,
-            "multiple_mode_config": {"angles": [42]},
+    _feed(
+        hub4.on_global_params,
+        {
+            "main_direction_angle_config": {
+                "current_angle": 5,
+                "multiple_mode_config": {"angles": [42]},
+            },
         },
-    })
+    )
     number4 = MultipleDirectionAngle2Number(hub4.basic_data, hub4.hass)
     attrs4 = number4.extra_state_attributes
     assert attrs4["paired_angle1"] == 42
@@ -288,33 +305,43 @@ def test_multiple_angle2_attributes_short_circuits() -> None:
 
 def test_multiple_angle1_write_warns_when_equal_to_angle2() -> None:
     hub = _hub()
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {
-            "mode": "MAIN_DIRECTION_MODE_MULTIPLE",
-            "multiple_mode_config": {"angles": [30, 90]},
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_MULTIPLE",
+                "multiple_mode_config": {"angles": [30, 90]},
+            },
         },
-    })
+    )
     number = MultipleDirectionAngle1Number(hub.basic_data, hub.hass)
     # set angle1 equal to the existing angle2 (90) -> warning branch, still publishes
     asyncio.run(number.async_set_native_value(90.0))
     _topic, payload = hub.mqtt_client.publish.call_args.args
-    angles = json.loads(payload)["main_direction_angle_config"]["multiple_mode_config"]["angles"]
+    angles = json.loads(payload)["main_direction_angle_config"]["multiple_mode_config"][
+        "angles"
+    ]
     assert angles == [90, 90]
 
 
 def test_multiple_angle2_write_warns_when_equal_to_angle1() -> None:
     hub = _hub()
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {
-            "mode": "MAIN_DIRECTION_MODE_MULTIPLE",
-            "multiple_mode_config": {"angles": [45, 200]},
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_MULTIPLE",
+                "multiple_mode_config": {"angles": [45, 200]},
+            },
         },
-    })
+    )
     number = MultipleDirectionAngle2Number(hub.basic_data, hub.hass)
     # set angle2 equal to the existing angle1 (45) -> warning branch, still publishes
     asyncio.run(number.async_set_native_value(45.0))
     _topic, payload = hub.mqtt_client.publish.call_args.args
-    angles = json.loads(payload)["main_direction_angle_config"]["multiple_mode_config"]["angles"]
+    angles = json.loads(payload)["main_direction_angle_config"]["multiple_mode_config"][
+        "angles"
+    ]
     assert angles == [45, 45]
 
 
@@ -380,7 +407,10 @@ def test_zone_select_keeps_valid_current_option() -> None:
     hub = _shub()
     select = TerraMowZoneSelect(hub.basic_data, hub.hass)
     select.async_write_ha_state = MagicMock()
-    map_info = {"id": 1, "regions": [{"id": 1, "sub_regions": [{"id": 7, "name": "A"}]}]}
+    map_info = {
+        "id": 1,
+        "regions": [{"id": 1, "sub_regions": [{"id": 7, "name": "A"}]}],
+    }
     asyncio.run(select._on_map_info(map_info))
     assert select.current_option == "all_zones"
     # a second identical update keeps the already-valid current option
@@ -392,11 +422,15 @@ def test_zone_select_attrs_without_region_clean() -> None:
     hub = _shub()
     select = TerraMowZoneSelect(hub.basic_data, hub.hass)
     select.async_write_ha_state = MagicMock()
-    asyncio.run(select._on_map_info({
-        "id": 3,
-        "regions": [{"id": 1, "sub_regions": [{"id": 7, "name": "A"}]}],
-        "clean_info": {"mode": "MAP_CLEAN_INFO_MODE_GLOBAL"},
-    }))
+    asyncio.run(
+        select._on_map_info(
+            {
+                "id": 3,
+                "regions": [{"id": 1, "sub_regions": [{"id": 7, "name": "A"}]}],
+                "clean_info": {"mode": "MAP_CLEAN_INFO_MODE_GLOBAL"},
+            }
+        )
+    )
     attrs = select.extra_state_attributes
     assert attrs["map_id"] == 3
     # clean mode is not select-region -> no selected zones reported
@@ -484,7 +518,10 @@ def test_blade_speed_select_without_lawn_mower() -> None:
 def test_blade_speed_extra_state_attributes() -> None:
     hub = _shub()
     select = BladeSpeedSelect(hub.basic_data, hub.hass)
-    assert "BLADE_DISK_SPEED_TYPE_HIGH" in select.extra_state_attributes["available_speeds"]
+    assert (
+        "BLADE_DISK_SPEED_TYPE_HIGH"
+        in select.extra_state_attributes["available_speeds"]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -500,15 +537,23 @@ def test_mode_select_device_confirmation_listener() -> None:
 
     # matching host + confirmed_mode clears the pending mode
     select._pending_mode = "MAIN_DIRECTION_MODE_MULTIPLE"
-    asyncio.run(callback(SimpleNamespace(data={
-        "device_host": select.host,
-        "confirmed_mode": "MAIN_DIRECTION_MODE_MULTIPLE",
-    })))
+    asyncio.run(
+        callback(
+            SimpleNamespace(
+                data={
+                    "device_host": select.host,
+                    "confirmed_mode": "MAIN_DIRECTION_MODE_MULTIPLE",
+                }
+            )
+        )
+    )
     assert select._pending_mode is None
 
     # a different host is ignored
     select._pending_mode = "MAIN_DIRECTION_MODE_SINGLE"
-    asyncio.run(callback(SimpleNamespace(data={"device_host": "other", "confirmed_mode": "x"})))
+    asyncio.run(
+        callback(SimpleNamespace(data={"device_host": "other", "confirmed_mode": "x"}))
+    )
     assert select._pending_mode == "MAIN_DIRECTION_MODE_SINGLE"
 
     # matching host but no confirmed_mode is a no-op
@@ -624,7 +669,10 @@ def test_mode_select_attrs_short_circuits() -> None:
 
     # params with no current_angle and an unrecognised mode
     hub2 = _shub()
-    _feed(hub2.on_global_params, {"main_direction_angle_config": {"mode": "SOMETHING_ELSE"}})
+    _feed(
+        hub2.on_global_params,
+        {"main_direction_angle_config": {"mode": "SOMETHING_ELSE"}},
+    )
     select2 = MainDirectionModeSelect(hub2.basic_data, hub2.hass)
     select2._pending_mode = None
     attrs2 = select2.extra_state_attributes

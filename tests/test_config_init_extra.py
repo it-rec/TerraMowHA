@@ -69,9 +69,7 @@ async def test_setup_entry_success_starts_hub_and_forwards(hass: HomeAssistant) 
     with (
         patch("custom_components.terramow.validate_input", return_value={"title": "T"}),
         patch("custom_components.terramow.TerraMowHub") as hub_cls,
-        patch(
-            "custom_components.terramow.async_setup_map_card", AsyncMock()
-        ),
+        patch("custom_components.terramow.async_setup_map_card", AsyncMock()),
         patch.object(
             hass.config_entries, "async_forward_entry_setups", AsyncMock()
         ) as forward,
@@ -97,14 +95,14 @@ async def test_setup_entry_success_starts_hub_and_forwards(hass: HomeAssistant) 
 
 async def test_options_updated_reloads_entry(hass: HomeAssistant) -> None:
     entry = _entry(hass)
-    with patch.object(
-        hass.config_entries, "async_reload", AsyncMock()
-    ) as reload:
+    with patch.object(hass.config_entries, "async_reload", AsyncMock()) as reload:
         await _async_options_updated(hass, entry)
     reload.assert_awaited_once_with(entry.entry_id)
 
 
-async def test_setup_entry_migration_conflict_keeps_old_device(hass: HomeAssistant) -> None:
+async def test_setup_entry_migration_conflict_keeps_old_device(
+    hass: HomeAssistant,
+) -> None:
     entry = _entry(hass)
     device_registry = dr.async_get(hass)
     # both the old (misspelled) and the new identifier already exist
@@ -247,7 +245,9 @@ async def test_reauth_reports_unknown(hass: HomeAssistant) -> None:
     assert result["errors"] == {"base": "unknown"}
 
 
-async def test_reconfigure_reports_invalid_auth_and_unknown(hass: HomeAssistant) -> None:
+async def test_reconfigure_reports_invalid_auth_and_unknown(
+    hass: HomeAssistant,
+) -> None:
     entry = _entry(hass)
     result = await entry.start_reconfigure_flow(hass)
     with patch(

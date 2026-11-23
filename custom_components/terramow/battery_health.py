@@ -107,9 +107,7 @@ class BatteryHealthTracker:
                 drop = int(start["level"]) - level
                 area_delta = (
                     None
-                    if area is None
-                    or start["area"] is None
-                    or area < start["area"]
+                    if area is None or start["area"] is None or area < start["area"]
                     else (area - start["area"]) / 10.0
                 )
                 duration_delta = (
@@ -275,14 +273,10 @@ class BatteryHealthTracker:
                 round(statistics.median(area_rates), 2) if area_rates else None
             ),
             "mowing_minutes_per_10_percent": (
-                round(statistics.median(duration_rates), 2)
-                if duration_rates
-                else None
+                round(statistics.median(duration_rates), 2) if duration_rates else None
             ),
             "charge_20_80_minutes": (
-                round(statistics.median(charge_minutes), 1)
-                if charge_minutes
-                else None
+                round(statistics.median(charge_minutes), 1) if charge_minutes else None
             ),
             "charge_percent_per_hour": (
                 round(statistics.median(charge_rates), 1) if charge_rates else None

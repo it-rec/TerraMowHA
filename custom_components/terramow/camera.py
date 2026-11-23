@@ -161,7 +161,9 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         # The finished static layers paired with the transformer they were
         # drawn with, published as one atomic reference. The final render reads
         # this so it never pairs a static image with a mismatched transformer.
-        self._render_snapshot: tuple[Image.Image, CoordinateTransformer | None] | None = None
+        self._render_snapshot: (
+            tuple[Image.Image, CoordinateTransformer | None] | None
+        ) = None
         # Serialize rebuilds so overlapping map/path/history updates don't race
         # on the renderer's drawing state (each rebuild runs in an executor).
         self._rebuild_lock = asyncio.Lock()
@@ -332,8 +334,7 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         if not self._static_dirty:
             return False
         return (
-            time.monotonic() - self._last_static_rebuild
-            >= STATIC_REBUILD_MIN_INTERVAL
+            time.monotonic() - self._last_static_rebuild >= STATIC_REBUILD_MIN_INTERVAL
         )
 
     def _invalidate_png_cache(self) -> None:
@@ -402,7 +403,9 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         if not self._path_data_logged and path_data:
             _LOGGER.debug(
                 "ha_path_v1 top-level keys: %s",
-                list(path_data.keys()) if isinstance(path_data, dict) else type(path_data),
+                list(path_data.keys())
+                if isinstance(path_data, dict)
+                else type(path_data),
             )
             self._path_data_logged = True
         self._mark_static_dirty()
@@ -413,7 +416,9 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
         if not self._history_path_data_logged and path_data:
             _LOGGER.debug(
                 "ha_path_v1 history top-level keys: %s",
-                list(path_data.keys()) if isinstance(path_data, dict) else type(path_data),
+                list(path_data.keys())
+                if isinstance(path_data, dict)
+                else type(path_data),
             )
             self._history_path_data_logged = True
         self._mark_static_dirty()
@@ -495,8 +500,15 @@ class TerraMowMapCamera(TerraMowEntity, Camera):
             }
 
         station_pose = pose_tuple(self._map_data.get("station_pose"))
-        if live_pose is not None and live_pose["is_zero"] and battery_connected is True and station_pose is not None:
-            station_theta = coerce_angle_radians(station_pose.get("theta"), milli_radian=True)
+        if (
+            live_pose is not None
+            and live_pose["is_zero"]
+            and battery_connected is True
+            and station_pose is not None
+        ):
+            station_theta = coerce_angle_radians(
+                station_pose.get("theta"), milli_radian=True
+            )
             robot_yaw = None
             if station_theta is not None:
                 robot_yaw = normalize_angle_radians(station_theta + math.pi)
@@ -590,9 +602,7 @@ async def async_setup_entry(
 ) -> None:
     """Initialize the camera platform."""
     basic_data = config_entry.runtime_data
-    resolution = config_entry.options.get(
-        CONF_MAP_RESOLUTION, DEFAULT_MAP_RESOLUTION
-    )
+    resolution = config_entry.options.get(CONF_MAP_RESOLUTION, DEFAULT_MAP_RESOLUTION)
     if resolution not in MAP_RESOLUTION_OPTIONS:
         resolution = DEFAULT_MAP_RESOLUTION
     theme = config_entry.options.get(CONF_MAP_THEME, DEFAULT_MAP_THEME)

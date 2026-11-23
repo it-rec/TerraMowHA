@@ -151,8 +151,7 @@ def test_missing_end_time_defaults_to_one_hour() -> None:
     event = _event_at(cal, NOW)
     assert event is not None
     assert event.end - event.start == (
-        datetime(2026, 7, 4, 10, 0, tzinfo=UTC)
-        - datetime(2026, 7, 4, 9, 0, tzinfo=UTC)
+        datetime(2026, 7, 4, 10, 0, tzinfo=UTC) - datetime(2026, 7, 4, 9, 0, tzinfo=UTC)
     )
 
 
@@ -524,7 +523,10 @@ def test_weekly_ignores_malformed_items() -> None:
                 "not-a-dict",
                 {"id": 1},  # no global_schedule_v2
                 {"id": 2, "global_schedule_v2": {"basic_config": "nope"}},
-                {"id": 3, "global_schedule_v2": {"basic_config": {"week_days": ALL_DAYS}}},
+                {
+                    "id": 3,
+                    "global_schedule_v2": {"basic_config": {"week_days": ALL_DAYS}},
+                },
             ]
         ),
     )

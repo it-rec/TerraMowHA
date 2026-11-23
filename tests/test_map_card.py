@@ -80,9 +80,7 @@ MAP_DATA: dict[str, Any] = {
                     {"x": 0, "y": 8000},
                 ]
             },
-            "edge_segments": [
-                {"points": [{"x": 0, "y": 0}, {"x": 10000, "y": 0}]}
-            ],
+            "edge_segments": [{"points": [{"x": 0, "y": 0}, {"x": 10000, "y": 0}]}],
             "sub_regions": [
                 {
                     "id": 7,
@@ -135,9 +133,7 @@ MAP_DATA: dict[str, Any] = {
     "virtual_walls": [
         {"line": {"points": [{"x": 9000, "y": 500}, {"x": 9500, "y": 500}]}}
     ],
-    "clean_info": {
-        "move_to_target_point": {"target_point": {"x": 4000, "y": 4200}}
-    },
+    "clean_info": {"move_to_target_point": {"target_point": {"x": 4000, "y": 4200}}},
 }
 
 # A degenerate sub-region (no boundary → no center) rides along in the map
@@ -187,9 +183,7 @@ async def setup_terramow(hass: HomeAssistant) -> MockConfigEntry:
 
 def _lawn_mower_entity_id(hass: HomeAssistant) -> str:
     unique_id = f"lawn_mower.terramow@{SERIAL}"
-    entity_id = er.async_get(hass).async_get_entity_id(
-        "lawn_mower", DOMAIN, unique_id
-    )
+    entity_id = er.async_get(hass).async_get_entity_id("lawn_mower", DOMAIN, unique_id)
     assert entity_id is not None
     return entity_id
 
@@ -375,17 +369,13 @@ async def test_subscribe_any_terramow_entity(
     )
 
     client = await hass_ws_client(hass)
-    await client.send_json(
-        {"id": 1, "type": WS_SUBSCRIBE_MAP, "entity_id": sensor_id}
-    )
+    await client.send_json({"id": 1, "type": WS_SUBSCRIBE_MAP, "entity_id": sensor_id})
     result = await client.receive_json()
     assert result["success"]
 
     # Unsubscribing tears the feed down without errors (skip the feed's
     # initial snapshot events queued between result and unsubscribe reply)
-    await client.send_json(
-        {"id": 2, "type": "unsubscribe_events", "subscription": 1}
-    )
+    await client.send_json({"id": 2, "type": "unsubscribe_events", "subscription": 1})
     while True:
         result = await client.receive_json()
         if result.get("id") == 2:
@@ -447,12 +437,11 @@ async def test_status_payload_sunset(hass: HomeAssistant) -> None:
     now = datetime(2026, 10, 4, 14, 0, tzinfo=dt_util.get_default_time_zone())
 
     with patch.object(map_card.dt_util, "now", return_value=now):
-        await hub.on_environment_info(
-            json.dumps({"sunset": {"hour": 19, "minute": 2}})
+        await hub.on_environment_info(json.dumps({"sunset": {"hour": 19, "minute": 2}}))
+        assert (
+            build_status_payload(hub)["sunset"]
+            == now.replace(hour=19, minute=2).isoformat()
         )
-        assert build_status_payload(hub)["sunset"] == now.replace(
-            hour=19, minute=2
-        ).isoformat()
 
         for bad in ({"hour": 99, "minute": 0}, {"hour": "7", "minute": 0}, None):
             await hub.on_environment_info(json.dumps({"sunset": bad}))
@@ -487,9 +476,7 @@ async def test_status_payload_mission_info(hass: HomeAssistant) -> None:
     await hub.on_mission_status(
         json.dumps({"back_to_station_reason": "BACK_TO_STATION_REASON_NONE"})
     )
-    assert (
-        "back_to_station_reason" not in build_status_payload(hub)["status"]
-    )
+    assert "back_to_station_reason" not in build_status_payload(hub)["status"]
 
 
 async def test_paths_append_delta(
@@ -545,9 +532,7 @@ async def test_paths_append_delta(
     # Path rewritten from scratch → full scene again
     rewritten = {
         **PATH_DATA,
-        "points": [
-            {"position": {"x": 7, "y": 8}, "type": "PATH_POINT_TYPE_CLEANING"}
-        ],
+        "points": [{"position": {"x": 7, "y": 8}, "type": "PATH_POINT_TYPE_CLEANING"}],
     }
     hub._apply_path_data(rewritten)
     await hass.async_block_till_done()
@@ -705,9 +690,7 @@ async def test_unsubscribe_cancels_pending_scene_push(
     # unsubscribe before it fires.
     hub._apply_map_data(MAP_DATA)
     await hass.async_block_till_done()
-    await client.send_json(
-        {"id": 2, "type": "unsubscribe_events", "subscription": 1}
-    )
+    await client.send_json({"id": 2, "type": "unsubscribe_events", "subscription": 1})
     while True:
         result = await client.receive_json()
         if result.get("id") == 2:
@@ -890,9 +873,7 @@ async def test_payload_carries_main_direction_angle(hass: HomeAssistant) -> None
         {
             **MAP_DATA,
             "mow_param": {
-                "global_param": {
-                    "main_direction_angle_config": {"current_angle": 135}
-                }
+                "global_param": {"main_direction_angle_config": {"current_angle": 135}}
             },
         }
     )
@@ -984,9 +965,7 @@ async def test_zone_direction_angles_override_global(hass: HomeAssistant) -> Non
     # Global SINGLE mode also prefers the configured angle.
     assert payload["main_direction_angle"] == 180
     subs = {
-        sub["id"]: sub
-        for region in payload["regions"]
-        for sub in region["sub_regions"]
+        sub["id"]: sub for region in payload["regions"] for sub in region["sub_regions"]
     }
     assert subs[7]["direction_angle"] == -90
     assert subs[8]["direction_angle"] == 45
@@ -1029,9 +1008,7 @@ async def test_payload_carries_zone_and_global_settings(
     assert payload["mow_params"]["mow_height"] == 75
     assert payload["mow_params"]["mow_speed"] == "MOW_SPEED_TYPE_MEDIUM"
     subs = {
-        sub["id"]: sub
-        for region in payload["regions"]
-        for sub in region["sub_regions"]
+        sub["id"]: sub for region in payload["regions"] for sub in region["sub_regions"]
     }
     # Zone 7 has custom params; zone 8 runs on the global block.
     assert subs[7]["params"]["mow_height"] == 60
@@ -1109,9 +1086,7 @@ async def test_lovelace_resource_heals_module_type(
     await setup_terramow(hass)
 
     assert resources.created == []
-    assert resources.updated == [
-        ("ours", {"res_type": "js", "url": _CARD_URL})
-    ]
+    assert resources.updated == [("ours", {"res_type": "js", "url": _CARD_URL})]
     # Regression guard: "js" (classic script) is the type that reliably
     # re-executes from browser cache on both HA 2026.6 and 2026.7+ (#140).
     assert map_card.CARD_RESOURCE_TYPE == "js"
@@ -1119,9 +1094,7 @@ async def test_lovelace_resource_heals_module_type(
 
 async def test_lovelace_resource_already_current(hass: HomeAssistant) -> None:
     """A current resource entry is left untouched."""
-    resources = _FakeResources(
-        [{"id": "ours", "url": _CARD_URL, "type": "js"}]
-    )
+    resources = _FakeResources([{"id": "ours", "url": _CARD_URL, "type": "js"}])
     hass.data["lovelace"] = SimpleNamespace(resources=resources)
 
     await setup_terramow(hass)
@@ -1476,9 +1449,7 @@ async def test_maintenance_payload_skips_disabled_entities(
         disabled_by=er.RegistryEntryDisabler.USER,
     )
     # An unrelated entity of the same device matches no role at all.
-    registry.async_get_or_create(
-        "sensor", DOMAIN, f"{uid}.pose", config_entry=other
-    )
+    registry.async_get_or_create("sensor", DOMAIN, f"{uid}.pose", config_entry=other)
 
     payload = build_maintenance_payload(hass, other.entry_id)
 

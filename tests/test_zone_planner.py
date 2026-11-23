@@ -123,18 +123,14 @@ def test_unknown_renamed_invalid_not_due_and_bad_choice() -> None:
 async def test_hub_persists_plans_and_uses_confirmed_start() -> None:
     hub = _hub()
     hub._map_data = _map()
-    hub._zone_last_seen = {
-        1: (datetime.now(UTC) - timedelta(days=5)).isoformat()
-    }
+    hub._zone_last_seen = {1: (datetime.now(UTC) - timedelta(days=5)).isoformat()}
     store = hub._get_zone_policy_store()
     store.async_save = AsyncMock()
     policies = {
         "1": {"interval_days": 3, "priority": 5},
         "2": {"interval_days": 3, "manual_only": True},
     }
-    plan = await hub.async_plan_due_zones(
-        policies=policies, unknown_choice="exclude"
-    )
+    plan = await hub.async_plan_due_zones(policies=policies, unknown_choice="exclude")
     assert plan["region_ids"] == [1]
     assert hub.last_zone_plan == plan
     saved = store.async_save.await_args.args[0]["policies"]
@@ -224,9 +220,7 @@ def test_planner_skips_malformed_map_and_flags_mismatches() -> None:
 async def test_start_due_zones_without_due_ids_does_not_start() -> None:
     hub = _hub()
     hub._map_data = _map()
-    hub._zone_last_seen = {
-        1: (datetime.now(UTC) - timedelta(days=1)).isoformat()
-    }
+    hub._zone_last_seen = {1: (datetime.now(UTC) - timedelta(days=1)).isoformat()}
     store = hub._get_zone_policy_store()
     store.async_save = AsyncMock()
     hub.async_start_select_region_clean = AsyncMock()

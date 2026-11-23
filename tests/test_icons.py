@@ -25,11 +25,15 @@ def test_every_icon_key_matches_a_translation_key() -> None:
     for platform, keys in icons.items():
         assert platform in strings, platform
         for key in keys:
-            assert key in strings[platform], f"{platform}/{key} missing from strings.json"
+            assert key in strings[platform], (
+                f"{platform}/{key} missing from strings.json"
+            )
 
 
 def test_platform_modules_no_longer_hardcode_icons() -> None:
     # icons.json is the single source of truth; entities must not also set
     # a hard-coded _attr_icon (which would shadow the translation).
     for module in _BASE.glob("*.py"):
-        assert '_attr_icon = "mdi' not in module.read_text(encoding="utf-8"), module.name
+        assert '_attr_icon = "mdi' not in module.read_text(encoding="utf-8"), (
+            module.name
+        )

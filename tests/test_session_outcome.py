@@ -38,9 +38,7 @@ def _hub() -> TerraMowHub:
 
 
 def _mission(hub: TerraMowHub, mission: str, state: str) -> None:
-    asyncio.run(
-        hub.on_mission_status(json.dumps({"mission": mission, "state": state}))
-    )
+    asyncio.run(hub.on_mission_status(json.dumps({"mission": mission, "state": state})))
 
 
 def _work(hub: TerraMowHub, **fields) -> None:
@@ -176,9 +174,7 @@ def test_raw_values_stay_reachable_via_attributes() -> None:
 def test_outcome_attributes_are_empty_while_running() -> None:
     hub = _hub()
     _run_session(hub)
-    assert _session_outcome_attributes(_raw_session_progress, "raw_progress")(
-        hub
-    ) == {}
+    assert _session_outcome_attributes(_raw_session_progress, "raw_progress")(hub) == {}
     assert "session_outcome" not in _current_session_attributes(hub)
 
 

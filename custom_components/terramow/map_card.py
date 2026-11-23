@@ -115,9 +115,7 @@ _HUB_COVERAGE_CACHES: WeakKeyDictionary[TerraMowHub, dict[str, Any]] = (
 # so the card paints the known map at once, instead of blanking to "Waiting for
 # mower data…" while the heavy build_scene_payload runs in the executor. The
 # background rebuild that follows sends a delta (or a fresh scene) moments later.
-_HUB_SCENE_CACHES: WeakKeyDictionary[TerraMowHub, dict[str, Any]] = (
-    WeakKeyDictionary()
-)
+_HUB_SCENE_CACHES: WeakKeyDictionary[TerraMowHub, dict[str, Any]] = WeakKeyDictionary()
 
 # In-flight scene build per hub. When several cards view the same mower, their
 # feeds get the same source callbacks at the same tick and would each run the
@@ -179,9 +177,7 @@ async def _async_register_lovelace_resource(hass: HomeAssistant) -> None:
         async def _register_when_started(_event: Event) -> None:
             await _async_try_register_lovelace_resource(hass)
 
-        hass.bus.async_listen_once(
-            EVENT_HOMEASSISTANT_STARTED, _register_when_started
-        )
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _register_when_started)
         return
     resources = getattr(lovelace, "resources", None)
     if resources is None and isinstance(lovelace, dict):  # pre-2024.8 layout
@@ -212,9 +208,7 @@ async def _async_register_lovelace_resource(hass: HomeAssistant) -> None:
             )
             _LOGGER.info("Updated the map card Lovelace resource to %s", url)
         return
-    await resources.async_create_item(
-        {"res_type": CARD_RESOURCE_TYPE, "url": url}
-    )
+    await resources.async_create_item({"res_type": CARD_RESOURCE_TYPE, "url": url})
     _LOGGER.info("Registered the map card Lovelace resource %s", url)
 
 
@@ -281,9 +275,7 @@ def _main_direction_angle(map_data: dict[str, Any]) -> Any:
     global_param = mow_param.get("global_param")
     if not isinstance(global_param, dict):
         return None
-    return _direction_angle_from_config(
-        global_param.get("main_direction_angle_config")
-    )
+    return _direction_angle_from_config(global_param.get("main_direction_angle_config"))
 
 
 # The per-zone mow settings surfaced in the card's zone-info panel; the same
@@ -309,9 +301,7 @@ def _zone_settings(map_data: dict[str, Any]) -> dict[int, dict[str, Any]]:
         zone_id = item.get("id")
         param = item.get("region_param")
         if isinstance(zone_id, int) and isinstance(param, dict):
-            settings[zone_id] = {
-                key: param.get(key) for key in _ZONE_SETTING_FIELDS
-            }
+            settings[zone_id] = {key: param.get(key) for key in _ZONE_SETTING_FIELDS}
     return settings
 
 
@@ -471,11 +461,7 @@ def build_scene_payload(
         # the whole chip, area included).
         "map_name": (
             map_data.get("name")
-            or (
-                f"Map #{map_data['id']}"
-                if map_data.get("id") is not None
-                else None
-            )
+            or (f"Map #{map_data['id']}" if map_data.get("id") is not None else None)
         ),
         "map_state": map_data.get("map_state"),
         "total_area": map_data.get("total_area"),
@@ -689,9 +675,7 @@ def build_robot_payload(hub: TerraMowHub) -> dict[str, Any] | None:
         sx = station_pose.get("x")
         sy = station_pose.get("y")
         if isinstance(sx, (int, float)) and isinstance(sy, (int, float)):
-            theta = coerce_angle_radians(
-                station_pose.get("theta"), milli_radian=True
-            )
+            theta = coerce_angle_radians(station_pose.get("theta"), milli_radian=True)
             return {
                 "x": float(sx),
                 "y": float(sy),
@@ -726,9 +710,7 @@ def build_status_payload(hub: TerraMowHub) -> dict[str, Any]:
             total_area = work_data.get("total_area") or 0
             clean_area = work_data.get("clean_area") or 0
             if total_area > 0:
-                work["progress"] = round(
-                    min(100.0 * clean_area / total_area, 100.0), 1
-                )
+                work["progress"] = round(min(100.0 * clean_area / total_area, 100.0), 1)
             if clean_area:
                 # clean_area is in units of 0.1 m²
                 work["area_m2"] = round(float(clean_area) / 10, 1)
@@ -754,8 +736,7 @@ def build_status_payload(hub: TerraMowHub) -> dict[str, Any]:
     # error on the map itself instead of only in the Active-errors sensor
     # (issue #171). Empty when there's no fault.
     errors = [
-        {"code": code, "text": describe_error(code)}
-        for code in hub.active_error_codes
+        {"code": code, "text": describe_error(code)} for code in hub.active_error_codes
     ]
 
     # Today's sunset from the mower's own dp_152 report, as an absolute
@@ -1045,9 +1026,7 @@ class _MapFeed:
                     self._last_wifi = wifi
                 if any(value for value in appends.values()):
                     self.connection.send_message(
-                        event_message(
-                            self.msg_id, {"type": "paths_append", **appends}
-                        )
+                        event_message(self.msg_id, {"type": "paths_append", **appends})
                     )
                 return  # nothing changed at all — push nothing
 

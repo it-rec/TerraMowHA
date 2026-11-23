@@ -51,7 +51,10 @@ PATH_DATA = {
     "id": 1,
     "map_id": 4,
     "points": [
-        {"position": {"x": float(i), "y": float(-i)}, "type": "PATH_POINT_TYPE_CLEANING"}
+        {
+            "position": {"x": float(i), "y": float(-i)},
+            "type": "PATH_POINT_TYPE_CLEANING",
+        }
         for i in range(200)
     ],
 }
@@ -115,9 +118,7 @@ def test_bounds_match_the_full_point_cloud() -> None:
     only ever read the extremes, and deduplication cannot move an extreme.
     """
     segments = [[{"x": -7000.0, "y": 4200.0}, {"x": -6900.0, "y": 4300.0}]]
-    scene = build_scene(
-        MAP_DATA, PATH_DATA, {}, False, session_path_segments=segments
-    )
+    scene = build_scene(MAP_DATA, PATH_DATA, {}, False, session_path_segments=segments)
     assert scene["bounds"] == _reference_bounds(MAP_DATA, PATH_DATA, {}, segments)
 
 

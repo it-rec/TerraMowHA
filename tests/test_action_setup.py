@@ -74,9 +74,7 @@ async def test_actions_exist_while_entry_retries_setup(
     ent_reg.async_get_or_create("lawn_mower", DOMAIN, "unique", config_entry=entry)
     entity_id = ent_reg.async_get_entity_id("lawn_mower", DOMAIN, "unique")
 
-    with patch(
-        "custom_components.terramow.validate_input", side_effect=CannotConnect
-    ):
+    with patch("custom_components.terramow.validate_input", side_effect=CannotConnect):
         await hass.config_entries.async_setup(entry.entry_id)
         await hass.async_block_till_done()
 

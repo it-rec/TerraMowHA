@@ -116,7 +116,7 @@ async def test_no_forecast_while_the_counter_has_not_moved(
 async def test_no_forecast_once_the_interval_is_already_past(
     hub: TerraMowHub,
 ) -> None:
-    """"Due now" is what the maintenance entities already say."""
+    """ "Due now" is what the maintenance entities already say."""
     _anchor(hub, "blade", age_hours=48, value=0)
     assert (
         hub.wear_forecast(
@@ -147,9 +147,13 @@ async def test_the_forecast_extrapolates_the_observed_rate(
 
 async def test_a_slower_mower_gets_a_later_date(hub: TerraMowHub) -> None:
     _anchor(hub, "base_station", age_hours=48, value=0)
-    fast = hub.wear_forecast("base_station", 2000, BASE_STATION_MAINTENANCE_CYCLE_MINUTES)
+    fast = hub.wear_forecast(
+        "base_station", 2000, BASE_STATION_MAINTENANCE_CYCLE_MINUTES
+    )
     _anchor(hub, "base_station", age_hours=48, value=0)
-    slow = hub.wear_forecast("base_station", 500, BASE_STATION_MAINTENANCE_CYCLE_MINUTES)
+    slow = hub.wear_forecast(
+        "base_station", 500, BASE_STATION_MAINTENANCE_CYCLE_MINUTES
+    )
 
     assert fast is not None and slow is not None
     assert slow > fast

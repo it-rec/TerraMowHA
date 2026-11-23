@@ -50,9 +50,7 @@ from custom_components.terramow.update import (
     async_setup_entry as update_setup,
 )
 
-_BINARY_DESCRIPTIONS = {
-    description.key: description for description in BINARY_SENSORS
-}
+_BINARY_DESCRIPTIONS = {description.key: description for description in BINARY_SENSORS}
 
 
 def _binary(hub: TerraMowHub, key: str) -> TerraMowBinarySensor:
@@ -144,12 +142,15 @@ def test_map_status_sensor_none_and_attributes() -> None:
     assert sensor.native_value is None
     assert sensor.extra_state_attributes == {}
 
-    _feed(hub.on_map_status, {
-        "map_state": "MAP_STATE_COMPLETE",
-        "is_map_detected": True,
-        "map_id": 4,
-        "map_number": 2,
-    })
+    _feed(
+        hub.on_map_status,
+        {
+            "map_state": "MAP_STATE_COMPLETE",
+            "is_map_detected": True,
+            "map_id": 4,
+            "map_number": 2,
+        },
+    )
     assert sensor.native_value == "map_state_complete"
     attrs = sensor.extra_state_attributes
     assert attrs["map_id"] == 4
@@ -171,32 +172,47 @@ def test_lawn_mower_activity_states() -> None:
     entity = _lawn_mower(hub)
 
     # running a mow mission -> MOWING
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_RUNNING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "state": "MISSION_STATE_RUNNING",
+        },
+    )
     entity.update_activity_from_state()
     assert entity.activity == LawnMowerActivity.MOWING
 
     # station-wait sub-mission -> PAUSED
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN",
-        "sub_mission": "SUB_MISSION_FLEXIBLE_STATION_WAIT",
-        "state": "MISSION_STATE_RUNNING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "sub_mission": "SUB_MISSION_FLEXIBLE_STATION_WAIT",
+            "state": "MISSION_STATE_RUNNING",
+        },
+    )
     entity.update_activity_from_state()
     assert entity.activity == LawnMowerActivity.PAUSED
 
     # recharge mission -> RETURNING (RETURNING exists on this HA)
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_RECHARGE", "state": "MISSION_STATE_RUNNING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_RECHARGE",
+            "state": "MISSION_STATE_RUNNING",
+        },
+    )
     entity.update_activity_from_state()
     assert entity.activity in (LawnMowerActivity.RETURNING, LawnMowerActivity.DOCKED)
 
     # paused mission -> PAUSED
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_IDLE", "state": "MISSION_STATE_PAUSE",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_IDLE",
+            "state": "MISSION_STATE_PAUSE",
+        },
+    )
     entity.update_activity_from_state()
     assert entity.activity == LawnMowerActivity.PAUSED
 
@@ -211,21 +227,30 @@ def test_lawn_mower_saving_map_and_docked_branches() -> None:
     entity = _lawn_mower(hub)
 
     # saving the map while running -> treated as DOCKED
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN",
-        "sub_mission": "SUB_MISSION_SAVING_MAP",
-        "state": "MISSION_STATE_RUNNING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "sub_mission": "SUB_MISSION_SAVING_MAP",
+            "state": "MISSION_STATE_RUNNING",
+        },
+    )
     entity.update_activity_from_state()
     assert entity.activity == LawnMowerActivity.DOCKED
 
     # a running mission that is neither mow nor recharge -> DOCKED
-    _feed(hub.on_mission_status, {"mission": "MISSION_IDLE", "state": "MISSION_STATE_RUNNING"})
+    _feed(
+        hub.on_mission_status,
+        {"mission": "MISSION_IDLE", "state": "MISSION_STATE_RUNNING"},
+    )
     entity.update_activity_from_state()
     assert entity.activity == LawnMowerActivity.DOCKED
 
     # idle -> DOCKED
-    _feed(hub.on_mission_status, {"mission": "MISSION_IDLE", "state": "MISSION_STATE_IDLE"})
+    _feed(
+        hub.on_mission_status,
+        {"mission": "MISSION_IDLE", "state": "MISSION_STATE_IDLE"},
+    )
     entity.update_activity_from_state()
     assert entity.activity == LawnMowerActivity.DOCKED
 
@@ -315,12 +340,15 @@ def test_binary_sensors_reflect_device_flags() -> None:
     assert _binary(hub, "charging_state").is_on is True
     assert _binary(hub, "power_switch").is_on is True
 
-    _feed(hub.on_mission_status, {
-        "is_robot_navi_located": True,
-        "is_upgrading": True,
-        "has_error": True,
-        "back_to_station_reason": "BACK_TO_STATION_REASON_RAINING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "is_robot_navi_located": True,
+            "is_upgrading": True,
+            "has_error": True,
+            "back_to_station_reason": "BACK_TO_STATION_REASON_RAINING",
+        },
+    )
     assert _binary(hub, "navigation_located").is_on is True
     assert _binary(hub, "firmware_upgrading").is_on is True
     assert _binary(hub, "problem").is_on is True
@@ -395,7 +423,18 @@ def test_high_frequency_entities_are_disabled_by_default() -> None:
 
     hub = _hub()
     # the 2 Hz pose sensor is opt-in
-    assert TerraMowPoseSensor(hub.basic_data, hub.hass).entity_registry_enabled_default is False
+    assert (
+        TerraMowPoseSensor(hub.basic_data, hub.hass).entity_registry_enabled_default
+        is False
+    )
     # the clean-mode camera is opt-in, the main map camera stays enabled
-    assert TerraMowMapCamera(hub.basic_data, hub.hass, clean_mode=True).entity_registry_enabled_default is False
-    assert TerraMowMapCamera(hub.basic_data, hub.hass).entity_registry_enabled_default is True
+    assert (
+        TerraMowMapCamera(
+            hub.basic_data, hub.hass, clean_mode=True
+        ).entity_registry_enabled_default
+        is False
+    )
+    assert (
+        TerraMowMapCamera(hub.basic_data, hub.hass).entity_registry_enabled_default
+        is True
+    )

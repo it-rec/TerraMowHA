@@ -134,13 +134,16 @@ def test_sensors_without_attributes_fn_report_no_attributes() -> None:
 def test_next_scheduled_start_formats_time_and_attributes() -> None:
     hub = _hub()
     sensor = _sensor(hub, "next_scheduled_start")
-    _feed(hub.on_schedule_data, {
-        "exist": True,
-        "item_id": 3,
-        "shift_id": 1,
-        "start_time": {"hour": 9, "minute": 5},
-        "end_time": {"hour": 11, "minute": 30},
-    })
+    _feed(
+        hub.on_schedule_data,
+        {
+            "exist": True,
+            "item_id": 3,
+            "shift_id": 1,
+            "start_time": {"hour": 9, "minute": 5},
+            "end_time": {"hour": 11, "minute": 30},
+        },
+    )
     assert sensor.native_value == "09:05"
     attrs = sensor.extra_state_attributes
     assert attrs["has_schedule"] is True
@@ -163,12 +166,15 @@ def test_next_scheduled_start_none_when_no_schedule() -> None:
 def test_mow_speed_sensor_unknown_value_and_attributes() -> None:
     hub = _hub()
     sensor = TerraMowMowSpeedSensor(hub.basic_data, hub.hass)
-    _feed(hub.on_global_params, {
-        "mow_speed": {"speed_type": "MOW_SPEED_TYPE_TURBO"},
-        "mow_spacing": {"value": 100},
-        "edge_cutting_distance": {"value": -10},
-        "blade_disk_speed": {"speed_type": "BLADE_DISK_SPEED_TYPE_HIGH"},
-    })
+    _feed(
+        hub.on_global_params,
+        {
+            "mow_speed": {"speed_type": "MOW_SPEED_TYPE_TURBO"},
+            "mow_spacing": {"value": 100},
+            "edge_cutting_distance": {"value": -10},
+            "blade_disk_speed": {"speed_type": "BLADE_DISK_SPEED_TYPE_HIGH"},
+        },
+    )
     assert sensor.native_value is None  # unknown enum -> None
     attrs = sensor.extra_state_attributes
     assert attrs["mow_spacing"] == 100
@@ -193,7 +199,7 @@ def test_remaining_time_sensors_expose_attributes() -> None:
     hub = _hub()
     blade = _sensor(hub, "remaining_blade_time")
     base = _sensor(hub, "remaining_base_station_time")
-    _feed(hub.on_blade_time, {"int_value": 15000})   # past the 14400 cycle
+    _feed(hub.on_blade_time, {"int_value": 15000})  # past the 14400 cycle
     _feed(hub.on_base_station_time, {"int_value": 100})
     assert blade.native_value == 0  # clamped
     blade_attrs = blade.extra_state_attributes
@@ -252,13 +258,16 @@ def test_main_direction_status_no_config_and_modes() -> None:
     _feed(hub.on_global_params, {})  # empty -> unknown
     assert sensor.native_value is None
 
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {
-            "mode": "MAIN_DIRECTION_MODE_MULTIPLE",
-            "current_angle": 40,
-            "multiple_mode_config": {"angles": [30, 120]},
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_MULTIPLE",
+                "current_angle": 40,
+                "multiple_mode_config": {"angles": [30, 120]},
+            },
         },
-    })
+    )
     assert sensor.native_value == "main_direction_mode_multiple"
     attrs = sensor.extra_state_attributes
     assert attrs["mode"] == "MAIN_DIRECTION_MODE_MULTIPLE"
@@ -276,22 +285,28 @@ def test_main_direction_status_single_and_auto_modes() -> None:
     hub = _hub()
     sensor = _sensor(hub, "main_direction_status")
 
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {
-            "mode": "MAIN_DIRECTION_MODE_SINGLE",
-            "single_mode_config": {"angle": 12},
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_SINGLE",
+                "single_mode_config": {"angle": 12},
+            },
         },
-    })
+    )
     attrs = sensor.extra_state_attributes
     assert attrs["configured_angle"] == 12
     assert attrs["mode_description"] == "Single main direction"
 
-    _feed(hub.on_global_params, {
-        "main_direction_angle_config": {
-            "mode": "MAIN_DIRECTION_MODE_AUTO_ROTATE",
-            "auto_rotate_mode_config": {"angle_interval": 30},
+    _feed(
+        hub.on_global_params,
+        {
+            "main_direction_angle_config": {
+                "mode": "MAIN_DIRECTION_MODE_AUTO_ROTATE",
+                "auto_rotate_mode_config": {"angle_interval": 30},
+            },
         },
-    })
+    )
     attrs = sensor.extra_state_attributes
     assert attrs["rotation_interval"] == 30
     assert attrs["mode_description"] == "Auto rotate main direction"
@@ -311,11 +326,14 @@ def test_mission_enum_sensors_from_dp107() -> None:
     mission = _sensor(hub, "mission")
     sub = _sensor(hub, "sub_mission")
     state = _sensor(hub, "mission_state")
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN",
-        "sub_mission": "SUB_MISSION_FLEXIBLE_STATION_WAIT",
-        "state": "MISSION_STATE_RUNNING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "sub_mission": "SUB_MISSION_FLEXIBLE_STATION_WAIT",
+            "state": "MISSION_STATE_RUNNING",
+        },
+    )
     assert mission.native_value == "mission_global_clean"
     assert sub.native_value == "sub_mission_flexible_station_wait"
     assert state.native_value == "mission_state_running"
@@ -333,11 +351,14 @@ def test_mission_sensor_none_when_member_unset() -> None:
 
 def test_mission_enum_sensors_expose_raw_protocol_value() -> None:
     hub = _hub()
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN",
-        "sub_mission": "SUB_MISSION_WAIT_FOR_RAIN_TO_STOP",
-        "state": "MISSION_STATE_PAUSE",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "sub_mission": "SUB_MISSION_WAIT_FOR_RAIN_TO_STOP",
+            "state": "MISSION_STATE_PAUSE",
+        },
+    )
     # State is the lowercase HA token; the attribute keeps the device's enum.
     assert _sensor(hub, "mission").extra_state_attributes == {
         "protocol_value": "MISSION_GLOBAL_CLEAN"
@@ -354,39 +375,44 @@ def test_protocol_value_stays_raw_while_display_decays() -> None:
     hub = _hub()
     sub = _sensor(hub, "sub_mission")
     state = _sensor(hub, "mission_state")
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_BUILD_MAP",
-        "sub_mission": "SUB_MISSION_SAVING_MAP",
-        "state": "MISSION_STATE_RUNNING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_BUILD_MAP",
+            "sub_mission": "SUB_MISSION_SAVING_MAP",
+            "state": "MISSION_STATE_RUNNING",
+        },
+    )
     _feed(hub.on_map_save_progress, {"int_value": 100})
     # #142: the state decays to idle once the save finished, but the attribute
     # still shows what the device last reported, so the derivation is visible.
     assert sub.native_value == "sub_mission_idle"
-    assert sub.extra_state_attributes == {
-        "protocol_value": "SUB_MISSION_SAVING_MAP"
-    }
+    assert sub.extra_state_attributes == {"protocol_value": "SUB_MISSION_SAVING_MAP"}
     assert state.native_value == "mission_state_idle"
-    assert state.extra_state_attributes == {
-        "protocol_value": "MISSION_STATE_RUNNING"
-    }
+    assert state.extra_state_attributes == {"protocol_value": "MISSION_STATE_RUNNING"}
 
 
 def test_active_job_sensor_survives_mid_session_dock() -> None:
     hub = _hub()
     mission = _sensor(hub, "mission")
     active = _sensor(hub, "active_job")
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN",
-        "state": "MISSION_STATE_RUNNING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "state": "MISSION_STATE_RUNNING",
+        },
+    )
     assert active.native_value == "mission_global_clean"
     # Mid-session dock: firmware resets raw mission to idle; the diagnostic
     # mission sensor follows the device, the active-job sensor holds the job.
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_IDLE",
-        "state": "MISSION_STATE_IDLE",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_IDLE",
+            "state": "MISSION_STATE_IDLE",
+        },
+    )
     assert mission.native_value == "mission_idle"
     assert active.native_value == "mission_global_clean"
     # the latched job still shows the raw device mission beside it
@@ -396,5 +422,8 @@ def test_active_job_sensor_survives_mid_session_dock() -> None:
 def test_back_to_station_reason_unknown_value_is_none() -> None:
     hub = _hub()
     sensor = _sensor(hub, "back_to_station_reason")
-    _feed(hub.on_mission_status, {"back_to_station_reason": "BACK_TO_STATION_REASON_ALIEN"})
+    _feed(
+        hub.on_mission_status,
+        {"back_to_station_reason": "BACK_TO_STATION_REASON_ALIEN"},
+    )
     assert sensor.native_value is None

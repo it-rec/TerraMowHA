@@ -56,10 +56,13 @@ def test_start_mowing_idle_starts_global_clean() -> None:
 
 def test_start_mowing_paused_job_resumes() -> None:
     hub = _hub()
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN",
-        "state": "MISSION_STATE_PAUSE",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "state": "MISSION_STATE_PAUSE",
+        },
+    )
     _clear_limiter(hub)
     hub.start_mowing()
     topic, command = _published(hub)
@@ -70,10 +73,13 @@ def test_start_mowing_paused_job_resumes() -> None:
 
 def test_start_mowing_station_wait_resumes() -> None:
     hub = _hub()
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN",
-        "sub_mission": "SUB_MISSION_FLEXIBLE_STATION_WAIT",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "sub_mission": "SUB_MISSION_FLEXIBLE_STATION_WAIT",
+        },
+    )
     _clear_limiter(hub)
     hub.start_mowing()
     topic, _ = _published(hub)
@@ -87,10 +93,13 @@ def test_start_mowing_station_wait_resumes() -> None:
 
 def test_pause_running_job_sends_pause() -> None:
     hub = _hub()
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN",
-        "state": "MISSION_STATE_RUNNING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "state": "MISSION_STATE_RUNNING",
+        },
+    )
     _clear_limiter(hub)
     hub.pause()
     topic, _ = _published(hub)
@@ -113,10 +122,13 @@ def test_dock_from_mowing_starts_return() -> None:
 
 def test_dock_resumes_paused_recharge() -> None:
     hub = _hub()
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_RECHARGE",
-        "state": "MISSION_STATE_PAUSE",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_RECHARGE",
+            "state": "MISSION_STATE_PAUSE",
+        },
+    )
     _clear_limiter(hub)
     hub.dock()
     topic, _ = _published(hub)

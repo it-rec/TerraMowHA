@@ -111,9 +111,7 @@ async def test_an_empty_or_unusable_track_counts_nothing(hub: TerraMowHub) -> No
 
 
 async def test_the_grid_is_bounded(hub: TerraMowHub) -> None:
-    hub._mow_counts = {
-        (index, 0): 1 for index in range(MAX_MOW_COUNT_CELLS + 50)
-    }
+    hub._mow_counts = {(index, 0): 1 for index in range(MAX_MOW_COUNT_CELLS + 50)}
     hub._active_mow_mission = "MISSION_GLOBAL_CLEAN"
     hub._coverage_segments = _track((0, 0))
     await _finish_cycle(hub)

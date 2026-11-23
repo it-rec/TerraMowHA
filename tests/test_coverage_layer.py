@@ -33,9 +33,7 @@ def _hub() -> TerraMowHub:
 
 
 def _mission(hub: TerraMowHub, mission: str, state: str) -> None:
-    asyncio.run(
-        hub.on_mission_status(json.dumps({"mission": mission, "state": state}))
-    )
+    asyncio.run(hub.on_mission_status(json.dumps({"mission": mission, "state": state})))
 
 
 def _work(hub: TerraMowHub, **fields) -> None:
@@ -48,8 +46,7 @@ def _path(points, path_id: int = 101, map_id: int = 1) -> dict:
         "map_id": map_id,
         "type": "NAVIGATION_PATH_TYPE_REALTIME",
         "points": [
-            {"position": {"x": x, "y": y}, "type": kind}
-            for x, y, kind in points
+            {"position": {"x": x, "y": y}, "type": kind} for x, y, kind in points
         ],
     }
 
@@ -169,10 +166,7 @@ def test_coverage_over_budget_is_thinned_not_dropped() -> None:
     hub._apply_path_data(DOCK_RESET)
 
     assert len(hub.coverage_segments) == len(detailed) + 1
-    assert (
-        sum(len(segment) for segment in hub.coverage_segments)
-        <= MAX_COVERAGE_POINTS
-    )
+    assert sum(len(segment) for segment in hub.coverage_segments) <= MAX_COVERAGE_POINTS
     # the oldest tracks lost detail but still span the ground they covered
     oldest = hub.coverage_segments[0]
     assert len(oldest) < len(detailed[0])
@@ -182,9 +176,7 @@ def test_coverage_over_budget_is_thinned_not_dropped() -> None:
 
 def test_compact_segments_drops_only_at_the_per_segment_floor() -> None:
     floor = 4
-    segments = [
-        [{"x": i, "y": y} for y in range(floor)] for i in range(20)
-    ]
+    segments = [[{"x": i, "y": y} for y in range(floor)] for i in range(20)]
     _compact_segments(segments, floor * 10, floor, 90.0, 300.0)
     assert len(segments) == 10
     # dropping starts at the oldest end
@@ -218,10 +210,7 @@ def test_compaction_shrinks_without_cutting_corners() -> None:
     assert {"x": 1900.0, "y": 0.0} in shrunk
 
     # a segment nothing can be shaved off (every vertex is a huge deviation)
-    jagged = [
-        {"x": float(i * 1000), "y": 0.0 if i % 2 == 0 else 1e7}
-        for i in range(8)
-    ]
+    jagged = [{"x": float(i * 1000), "y": 0.0 if i % 2 == 0 else 1e7} for i in range(8)]
     assert _shrink_segment(list(jagged), 4, 25.0, 200.0) == jagged
     # an irreducible archive over budget falls back to dropping oldest whole
     segments = [list(jagged), list(jagged)]
@@ -433,9 +422,7 @@ def test_adoption_merges_restored_segments_into_the_coverage() -> None:
     # session segments but no coverage — adoption must not lose them there.
     hub = _hub()
     store = hub._get_session_path_store()
-    store.async_load = AsyncMock(
-        return_value={"map_id": None, "segments": [SEGMENT]}
-    )
+    store.async_load = AsyncMock(return_value={"map_id": None, "segments": [SEGMENT]})
     asyncio.run(hub.async_restore_session_paths())
     _work(hub, clean_area=413)
     assert hub.session_path_segments == [SEGMENT]
@@ -491,9 +478,7 @@ def test_compaction_never_draws_across_ground_the_mower_missed() -> None:
         """One stripe: down one side, back up 600 mm over."""
         x = float(index * 2000)
         down = [{"x": x, "y": float(y)} for y in range(0, 3001, 100)]
-        up = [
-            {"x": x + 600.0, "y": float(y)} for y in range(3000, -1, -100)
-        ]
+        up = [{"x": x + 600.0, "y": float(y)} for y in range(3000, -1, -100)]
         return down + up
 
     segments = [hairpin(i) for i in range(20)]

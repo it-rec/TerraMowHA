@@ -206,7 +206,9 @@ PALETTES = {"light": LIGHT_PALETTE, "dark": DARK_PALETTE}
 
 
 @lru_cache(maxsize=32)
-def _load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+def _load_font(
+    size: int, bold: bool = False
+) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     """Load a font."""
     candidates = [
         (
@@ -321,7 +323,7 @@ def _enum_label(value: Any) -> str:
     text = value
     for prefix, replacement in replacements.items():
         if text.startswith(prefix):
-            text = replacement + text[len(prefix):]
+            text = replacement + text[len(prefix) :]
             break
     return text.replace("_", " ").title()
 
@@ -615,15 +617,24 @@ class MapRenderer:
             radius=MAP_RADIUS,
             fill=pal.shadow,
         )
-        draw.rounded_rectangle(MAP_RECT, radius=MAP_RADIUS, fill=pal.map_bg, outline=pal.card_border)
         draw.rounded_rectangle(
-            (SUMMARY_RECT[0], SUMMARY_RECT[1] + 10, SUMMARY_RECT[2], SUMMARY_RECT[3] + 10),
+            MAP_RECT, radius=MAP_RADIUS, fill=pal.map_bg, outline=pal.card_border
+        )
+        draw.rounded_rectangle(
+            (
+                SUMMARY_RECT[0],
+                SUMMARY_RECT[1] + 10,
+                SUMMARY_RECT[2],
+                SUMMARY_RECT[3] + 10,
+            ),
             radius=CARD_RADIUS,
             fill=pal.shadow,
         )
         draw.rounded_rectangle(SUMMARY_RECT, radius=CARD_RADIUS, fill=pal.card_bg)
 
-    def _draw_empty_map_card(self, image: Image.Image, map_data: dict[str, Any]) -> None:
+    def _draw_empty_map_card(
+        self, image: Image.Image, map_data: dict[str, Any]
+    ) -> None:
         """Empty map shown when there is no spatial data."""
         draw = ImageDraw.Draw(image, "RGBA")
         title_font = _load_font(28, bold=True)
@@ -689,7 +700,9 @@ class MapRenderer:
                 outline = (
                     pal.required_outline if sub_region["selected"] else pal.map_outline
                 )
-                self._draw_polygon_pixels(image, draw, pixels, fill, outline, self._s(1))
+                self._draw_polygon_pixels(
+                    image, draw, pixels, fill, outline, self._s(1)
+                )
                 for inner in sub_region["inner_boundaries"]:
                     inner_pixels = transformer.to_pixels(inner)
                     draw.polygon(
@@ -698,10 +711,20 @@ class MapRenderer:
                         outline=pal.map_outline,
                     )
                 for edge_line in sub_region["edge_lines"]:
-                    self._draw_polyline(draw, transformer, edge_line, pal.edge_line, self._s(2))
+                    self._draw_polyline(
+                        draw, transformer, edge_line, pal.edge_line, self._s(2)
+                    )
                 center = sub_region["center"]
-                if center is not None and sub_region["order"] and sub_region["order"] > 0:
-                    self._draw_order_badge(draw, transformer.to_pixel(center[0], center[1]), sub_region["order"])
+                if (
+                    center is not None
+                    and sub_region["order"]
+                    and sub_region["order"] > 0
+                ):
+                    self._draw_order_badge(
+                        draw,
+                        transformer.to_pixel(center[0], center[1]),
+                        sub_region["order"],
+                    )
                 if center is not None and sub_region["has_custom_param"]:
                     center_px = transformer.to_pixel(center[0], center[1])
                     draw.ellipse(
@@ -720,7 +743,9 @@ class MapRenderer:
                 pixels = transformer.to_pixels(region["boundary"])
                 draw.line(pixels + [pixels[0]], fill=pal.map_outline, width=self._s(2))
             for edge_line in region["edge_lines"]:
-                self._draw_polyline(draw, transformer, edge_line, pal.edge_line, self._s(2))
+                self._draw_polyline(
+                    draw, transformer, edge_line, pal.edge_line, self._s(2)
+                )
 
     def _draw_scene_overlay(self, image: Image.Image, scene: dict[str, Any]) -> None:
         """Draw the scene suffix atop the static prefix.
@@ -740,7 +765,15 @@ class MapRenderer:
         self._draw_path(image, scene)
 
         for polygon in scene["required_zones"]:
-            self._draw_polygon(image, draw, transformer, polygon, pal.required_fill, pal.required_outline, self._s(3))
+            self._draw_polygon(
+                image,
+                draw,
+                transformer,
+                polygon,
+                pal.required_fill,
+                pal.required_outline,
+                self._s(3),
+            )
 
         for polygon in scene["pass_through_zones"]:
             self._draw_polygon(
@@ -774,7 +807,9 @@ class MapRenderer:
                 pal.restricted_outline,
                 self._s(4),
             )
-            self._apply_hatch(image, transformer.to_pixels(polygon), pal.hatch, spacing=self._s(12))
+            self._apply_hatch(
+                image, transformer.to_pixels(polygon), pal.hatch, spacing=self._s(12)
+            )
 
         for polygon in scene["obstacles"]:
             self._draw_polygon(
@@ -790,26 +825,58 @@ class MapRenderer:
         for polygon in scene["draw_region_polygons"]:
             pixels = transformer.to_pixels(polygon)
             self._composite_polygon_fill(image, pixels, pal.draw_region_fill)
-            self._draw_dashed_polyline(draw, pixels + [pixels[0]], pal.draw_region_outline, self._s(3), self._s(12), self._s(8))
+            self._draw_dashed_polyline(
+                draw,
+                pixels + [pixels[0]],
+                pal.draw_region_outline,
+                self._s(3),
+                self._s(12),
+                self._s(8),
+            )
 
         for wall in scene["virtual_walls"]:
             pixels = transformer.to_pixels(wall)
-            self._draw_dashed_polyline(draw, pixels, pal.restricted_outline, self._s(4), self._s(12), self._s(8))
+            self._draw_dashed_polyline(
+                draw,
+                pixels,
+                pal.restricted_outline,
+                self._s(4),
+                self._s(12),
+                self._s(8),
+            )
 
         for tunnel in scene["cross_boundary_tunnels"]:
-            self._draw_tunnel(image, draw, transformer, tunnel, pal.channel_soft, pal.channel)
+            self._draw_tunnel(
+                image, draw, transformer, tunnel, pal.channel_soft, pal.channel
+            )
         for tunnel in scene["virtual_cross_boundary_tunnels"]:
-            self._draw_tunnel(image, draw, transformer, tunnel, pal.channel_soft, pal.channel)
+            self._draw_tunnel(
+                image, draw, transformer, tunnel, pal.channel_soft, pal.channel
+            )
 
         for marker in scene["cross_boundary_markers"]:
-            self._draw_marker(draw, transformer.to_pixel(marker[0], marker[1]), pal.channel, "diamond")
+            self._draw_marker(
+                draw, transformer.to_pixel(marker[0], marker[1]), pal.channel, "diamond"
+            )
         for marker in scene["trapped_points"]:
-            self._draw_marker(draw, transformer.to_pixel(marker[0], marker[1]), pal.badge_orange, "triangle")
+            self._draw_marker(
+                draw,
+                transformer.to_pixel(marker[0], marker[1]),
+                pal.badge_orange,
+                "triangle",
+            )
         for marker in scene["maintenance_points"]:
-            self._draw_marker(draw, transformer.to_pixel(marker[0], marker[1]), pal.badge_blue, "hex")
+            self._draw_marker(
+                draw, transformer.to_pixel(marker[0], marker[1]), pal.badge_blue, "hex"
+            )
 
         if scene["move_target_point"] is not None:
-            self._draw_target(draw, transformer.to_pixel(scene["move_target_point"][0], scene["move_target_point"][1]))
+            self._draw_target(
+                draw,
+                transformer.to_pixel(
+                    scene["move_target_point"][0], scene["move_target_point"][1]
+                ),
+            )
 
         if scene["station_pose"] is not None:
             self._draw_station(image, scene["station_pose"])
@@ -1028,7 +1095,12 @@ class MapRenderer:
             draw.line(pixels, fill=outline, width=s(5))
             for point in (pixels[0], pixels[-1]):
                 draw.ellipse(
-                    [point[0] - s(5), point[1] - s(5), point[0] + s(5), point[1] + s(5)],
+                    [
+                        point[0] - s(5),
+                        point[1] - s(5),
+                        point[0] + s(5),
+                        point[1] + s(5),
+                    ],
                     fill=outline,
                 )
 
@@ -1049,7 +1121,9 @@ class MapRenderer:
         elif kind == "triangle":
             points = [(x, y - s(9)), (x + s(8), y + s(7)), (x - s(8), y + s(7))]
             draw.polygon(points, fill=color, outline=white)
-            draw.text((x - s(2), y - s(5)), "!", fill=white, font=_load_font(s(12), bold=True))
+            draw.text(
+                (x - s(2), y - s(5)), "!", fill=white, font=_load_font(s(12), bold=True)
+            )
         elif kind == "hex":
             points = [
                 (x - s(7), y),
@@ -1093,8 +1167,12 @@ class MapRenderer:
         x, y = center
         s = self._s
         blue = self._palette.badge_blue
-        draw.ellipse([x - s(18), y - s(18), x + s(18), y + s(18)], outline=blue, width=s(3))
-        draw.ellipse([x - s(10), y - s(10), x + s(10), y + s(10)], outline=blue, width=s(2))
+        draw.ellipse(
+            [x - s(18), y - s(18), x + s(18), y + s(18)], outline=blue, width=s(3)
+        )
+        draw.ellipse(
+            [x - s(10), y - s(10), x + s(10), y + s(10)], outline=blue, width=s(2)
+        )
         draw.ellipse([x - s(3), y - s(3), x + s(3), y + s(3)], fill=blue)
 
     def _draw_path_stroke(
@@ -1113,7 +1191,9 @@ class MapRenderer:
             return
         if dash is not None and gap is not None:
             self._draw_dashed_polyline(draw, pixels, glow_color, glow_width, dash, gap)
-            self._draw_dashed_polyline(draw, pixels, inner_color, inner_width, dash, gap)
+            self._draw_dashed_polyline(
+                draw, pixels, inner_color, inner_width, dash, gap
+            )
             return
 
         draw.line(pixels, fill=glow_color, width=glow_width, joint="curve")
@@ -1130,7 +1210,12 @@ class MapRenderer:
                 fill=glow_color,
             )
             draw.ellipse(
-                [x - inner_radius, y - inner_radius, x + inner_radius, y + inner_radius],
+                [
+                    x - inner_radius,
+                    y - inner_radius,
+                    x + inner_radius,
+                    y + inner_radius,
+                ],
                 fill=inner_color,
             )
 
@@ -1187,7 +1272,9 @@ class MapRenderer:
         swath_px = int(round(CUTTING_WIDTH_MM * transformer.scale))
         # Keep the swath sane on degenerate/legacy coordinate scales: at least
         # a visible band, at most an eighth of the canvas.
-        swath_px = max(self._s(3), min(swath_px, (IMAGE_WIDTH * self._scene_scale) // 8))
+        swath_px = max(
+            self._s(3), min(swath_px, (IMAGE_WIDTH * self._scene_scale) // 8)
+        )
         color = self._palette.coverage
         radius = max(1, swath_px // 2)
 
@@ -1212,8 +1299,7 @@ class MapRenderer:
             if len(path_points) < 2:
                 continue
             pixels = [
-                transformer.to_pixel(point["x"], point["y"])
-                for point in path_points
+                transformer.to_pixel(point["x"], point["y"]) for point in path_points
             ]
             pixels = simplify_path_pixels(
                 pixels, 1.1 * self._scene_scale, 1.2 * self._scene_scale
@@ -1241,24 +1327,22 @@ class MapRenderer:
             self._draw_path_layer(image, run, "current")
 
     @staticmethod
-    def _path_runs(
-        scene: dict[str, Any], variant: str
-    ) -> list[list[dict[str, Any]]]:
+    def _path_runs(scene: dict[str, Any], variant: str) -> list[list[dict[str, Any]]]:
         """The mowing runs for ``variant``, falling back to the flat list.
 
         ``build_scene`` always supplies ``<variant>_path_runs``; the fallback
         wraps the flat ``<variant>_path_points`` as a single run so a
         hand-built scene without the split still renders.
         """
-        runs: list[list[dict[str, Any]]] | None = scene.get(
-            f"{variant}_path_runs"
-        )
+        runs: list[list[dict[str, Any]]] | None = scene.get(f"{variant}_path_runs")
         if runs is not None:
             return runs
         flat = scene.get(f"{variant}_path_points", [])
         return [flat] if flat else []
 
-    def _station_pixel_size(self, transformer: CoordinateTransformer) -> tuple[int, int]:
+    def _station_pixel_size(
+        self, transformer: CoordinateTransformer
+    ) -> tuple[int, int]:
         """Station icon size in pixels on the active canvas, true to scale."""
         length_px = STATION_LENGTH_MM * transformer.scale
         length_px = min(
@@ -1280,8 +1364,8 @@ class MapRenderer:
         hw = w / 2
         hh = h / 2
 
-        station = Image.new('RGBA', (canvas, canvas), COLOR_TRANSPARENT)
-        draw = ImageDraw.Draw(station, 'RGBA')
+        station = Image.new("RGBA", (canvas, canvas), COLOR_TRANSPARENT)
+        draw = ImageDraw.Draw(station, "RGBA")
 
         body_box = [x - hw, y - hh, x + hw, y + hh]
         draw.rounded_rectangle(
@@ -1316,13 +1400,17 @@ class MapRenderer:
         deg = deg - 90
 
         station_rotated = station.rotate(-deg, expand=True, fillcolor=COLOR_TRANSPARENT)
-        station_mask_rotated = station_mask.rotate(-deg, expand=True, fillcolor=COLOR_TRANSPARENT)
+        station_mask_rotated = station_mask.rotate(
+            -deg, expand=True, fillcolor=COLOR_TRANSPARENT
+        )
 
         cx, cy = transformer.to_pixel(pose["x"], pose["y"])
 
-        image.paste(station_rotated,
-                  (cx - station_rotated.width // 2, cy - station_rotated.height // 2),
-                  station_mask_rotated)
+        image.paste(
+            station_rotated,
+            (cx - station_rotated.width // 2, cy - station_rotated.height // 2),
+            station_mask_rotated,
+        )
 
     def _robot_pixel_length(self, transformer: CoordinateTransformer) -> int:
         """Robot icon length in 1x pixels, true to scale within the clamps."""
@@ -1349,8 +1437,8 @@ class MapRenderer:
         hw = w / 2
         hh = h / 2
 
-        robot_image = Image.new('RGBA', (canvas, canvas), COLOR_TRANSPARENT)
-        draw = ImageDraw.Draw(robot_image, 'RGBA')
+        robot_image = Image.new("RGBA", (canvas, canvas), COLOR_TRANSPARENT)
+        draw = ImageDraw.Draw(robot_image, "RGBA")
 
         body_box = [px - hw, py - hh, px + hw, py + hh]
         draw.ellipse(body_box, fill=self._palette.robot_body)
@@ -1398,8 +1486,12 @@ class MapRenderer:
         deg = yaw * 180 / math.pi
         deg = deg - 90
 
-        robot_rotated = robot_image.rotate(-deg, expand=True, fillcolor=COLOR_TRANSPARENT)
-        robot_mask_rotated = robot_mask.rotate(-deg, expand=True, fillcolor=COLOR_TRANSPARENT)
+        robot_rotated = robot_image.rotate(
+            -deg, expand=True, fillcolor=COLOR_TRANSPARENT
+        )
+        robot_mask_rotated = robot_mask.rotate(
+            -deg, expand=True, fillcolor=COLOR_TRANSPARENT
+        )
 
         # Downsample the 2x icon after rotation for anti-aliased edges.
         target = (
@@ -1409,11 +1501,15 @@ class MapRenderer:
         robot_rotated = robot_rotated.resize(target, Image.Resampling.LANCZOS)
         robot_mask_rotated = robot_mask_rotated.resize(target, Image.Resampling.LANCZOS)
 
-        image.paste(robot_rotated,
-                  (cx - robot_rotated.width // 2, cy - robot_rotated.height // 2),
-                  robot_mask_rotated)
+        image.paste(
+            robot_rotated,
+            (cx - robot_rotated.width // 2, cy - robot_rotated.height // 2),
+            robot_mask_rotated,
+        )
 
-    def _draw_map_chips(self, draw: ImageDraw.ImageDraw, map_data: dict[str, Any]) -> None:
+    def _draw_map_chips(
+        self, draw: ImageDraw.ImageDraw, map_data: dict[str, Any]
+    ) -> None:
         """Draw the summary chips above the map."""
         name = map_data.get("name") or f"Map #{map_data.get('id', '-')}"
         state = _enum_label(map_data.get("map_state"))
@@ -1422,7 +1518,13 @@ class MapRenderer:
         left = MAP_RECT[0] + 18
         top = MAP_RECT[1] + 18
         self._draw_chip(draw, (left, top), _truncate(name, 26), pal.card_bg, pal.text)
-        badge_color = pal.badge_blue if "Complete" in state else pal.badge_orange if state != "-" else pal.badge_gray
+        badge_color = (
+            pal.badge_blue
+            if "Complete" in state
+            else pal.badge_orange
+            if state != "-"
+            else pal.badge_gray
+        )
         self._draw_chip(draw, (left, top + 42), state, badge_color, pal.text_white)
 
     def _scale_bar_choice(self, scale: float) -> tuple[int, int] | None:
@@ -1477,7 +1579,9 @@ class MapRenderer:
             font=font,
         )
 
-    def _legend_entries(self, scene: dict[str, Any]) -> list[tuple[tuple[int, int, int, int], str]]:
+    def _legend_entries(
+        self, scene: dict[str, Any]
+    ) -> list[tuple[tuple[int, int, int, int], str]]:
         """Color/label pairs for the feature types present in the scene."""
         pal = self._palette
         counts = scene.get("scene_counts", {})
@@ -1489,7 +1593,9 @@ class MapRenderer:
             entries.append((pal.path_current, self._t("path")))
         if self._show_coverage and has_mow_track:
             entries.append((pal.coverage, self._t("coverage")))
-        if counts.get("forbidden_zones", 0) or counts.get("physical_forbidden_zones", 0):
+        if counts.get("forbidden_zones", 0) or counts.get(
+            "physical_forbidden_zones", 0
+        ):
             entries.append((pal.restricted_outline, self._t("nogo")))
         if counts.get("required_zones", 0):
             entries.append((pal.required_outline, self._t("required")))
@@ -1562,7 +1668,10 @@ class MapRenderer:
         draw.rounded_rectangle([x, y, x + width, y + height], radius=16, fill=fill)
         box = draw.textbbox((0, 0), text, font=font)
         draw.text(
-            (x + (width - (box[2] - box[0])) / 2, y + (height - (box[3] - box[1])) / 2 - 1),
+            (
+                x + (width - (box[2] - box[0])) / 2,
+                y + (height - (box[3] - box[1])) / 2 - 1,
+            ),
             text,
             fill=text_color,
             font=font,
@@ -1600,20 +1709,42 @@ class MapRenderer:
             flags.append(f"Bird {map_data.get('bird_view_index', 0)}")
         if map_data.get("enable_advanced_edge_cutting"):
             flags.append(self._t("flag_adv_edge"))
-        flags.append(self._t("flag_locked") if map_data.get("is_boundary_locked") else self._t("flag_unlocked"))
-        flags.append(self._t("flag_build_on") if map_data.get("is_able_to_run_build_map") else self._t("flag_build_off"))
+        flags.append(
+            self._t("flag_locked")
+            if map_data.get("is_boundary_locked")
+            else self._t("flag_unlocked")
+        )
+        flags.append(
+            self._t("flag_build_on")
+            if map_data.get("is_able_to_run_build_map")
+            else self._t("flag_build_off")
+        )
 
         backup_info = map_data.get("backup_info_list", [])
         backup_text = self._t("backup_off")
         if map_data.get("has_backup") or backup_info:
             backup_text = f"{len(backup_info) if isinstance(backup_info, list) else 0} {self._t('backup_item')}"
         metrics = [
-            (self._t("lbl_map"), _truncate(f"#{map_data.get('id', '-')} · {map_data.get('name', '-')}", 22)),
+            (
+                self._t("lbl_map"),
+                _truncate(
+                    f"#{map_data.get('id', '-')} · {map_data.get('name', '-')}", 22
+                ),
+            ),
             (self._t("lbl_area"), _format_area(map_data.get("total_area"))),
-            (self._t("lbl_mode"), _truncate(_enum_label(map_data.get("clean_info", {}).get("mode")), 20)),
+            (
+                self._t("lbl_mode"),
+                _truncate(_enum_label(map_data.get("clean_info", {}).get("mode")), 20),
+            ),
             (self._t("lbl_size"), _truncate(_format_size(map_data), 24)),
             (self._t("lbl_origin"), _format_point(point_tuple(map_data.get("origin")))),
-            (self._t("lbl_backup"), _truncate(f"{backup_text} · {_format_file_size(map_data.get('file_size'))}", 24)),
+            (
+                self._t("lbl_backup"),
+                _truncate(
+                    f"{backup_text} · {_format_file_size(map_data.get('file_size'))}",
+                    24,
+                ),
+            ),
             (self._t("lbl_flags"), _truncate(" / ".join(flags), 24)),
         ]
 
@@ -1663,7 +1794,12 @@ class MapRenderer:
                 radius=14,
                 fill=self._palette.map_bg,
             )
-            draw.text((chip_x + 10, chip_y + 6), chip, fill=self._palette.text_subtle, font=chip_font)
+            draw.text(
+                (chip_x + 10, chip_y + 6),
+                chip,
+                fill=self._palette.text_subtle,
+                font=chip_font,
+            )
             chip_x += chip_width + 10
 
 

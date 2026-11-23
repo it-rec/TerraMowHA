@@ -28,9 +28,7 @@ from custom_components.terramow.sensor import (
 from custom_components.terramow.switch import ThoroughCornerCuttingSwitch
 
 _SENSOR_DESCRIPTIONS = {description.key: description for description in SENSORS}
-_BINARY_DESCRIPTIONS = {
-    description.key: description for description in BINARY_SENSORS
-}
+_BINARY_DESCRIPTIONS = {description.key: description for description in BINARY_SENSORS}
 
 
 def _hub() -> TerraMowHub:
@@ -54,21 +52,33 @@ def test_niche_diagnostics_disabled_by_default() -> None:
     hub = _hub()
     # niche / redundant readouts are off by default (enable on demand)
     disabled = [
-        "sunrise", "sunset", "move_mode", "map_mode", "mow_mode",
-        "last_event", "rain_sensor_threshold", "after_rain_resume_delay",
+        "sunrise",
+        "sunset",
+        "move_mode",
+        "map_mode",
+        "mow_mode",
+        "last_event",
+        "rain_sensor_threshold",
+        "after_rain_resume_delay",
         "cellular_connection_type",
     ]
     for key in disabled:
         assert _sensor(hub, key).entity_registry_enabled_default is False
     # broadly-useful diagnostics stay enabled
     enabled_sensors = [
-        "active_errors", "fault", "cellular_signal_rsrp", "cellular_signal_rsrq",
+        "active_errors",
+        "fault",
+        "cellular_signal_rsrp",
+        "cellular_signal_rsrq",
     ]
     for key in enabled_sensors:
         assert _sensor(hub, key).entity_registry_enabled_default is True
     enabled_binary = [
-        "extreme_weather", "cliff_detection", "slope_detection",
-        "after_rain_auto_resume", "cellular_enabled",
+        "extreme_weather",
+        "cliff_detection",
+        "slope_detection",
+        "after_rain_auto_resume",
+        "cellular_enabled",
     ]
     for key in enabled_binary:
         assert _binary(hub, key).entity_registry_enabled_default is True
@@ -159,10 +169,15 @@ def test_last_event_sensor_from_dp123() -> None:
     sensor = _sensor(hub, "last_event")
     assert sensor.native_value is None
     assert sensor.extra_state_attributes == {}
-    _feed(hub.on_event_data, {"event_list": [
-        {"code": 1, "time": "2026-07-06T08:00:00Z"},
-        {"code": 8, "time": "2026-07-06T08:27:38Z"},
-    ]})
+    _feed(
+        hub.on_event_data,
+        {
+            "event_list": [
+                {"code": 1, "time": "2026-07-06T08:00:00Z"},
+                {"code": 8, "time": "2026-07-06T08:27:38Z"},
+            ]
+        },
+    )
     assert sensor.native_value == 8
     assert sensor.extra_state_attributes == {"event_time": "2026-07-06T08:27:38Z"}
     # a malformed latest entry / missing fields degrade gracefully
@@ -184,16 +199,23 @@ def test_advanced_settings_entities_from_dp150() -> None:
     threshold = _sensor(hub, "rain_sensor_threshold")
     delay = _sensor(hub, "after_rain_resume_delay")
     # no data yet -> None everywhere
-    assert cliff.is_on is None and threshold.native_value is None and delay.native_value is None
-    _feed(hub.on_advanced_settings, {
-        "enable_cliff_detection": {"value": True},
-        "enable_slope_detection": {"value": False},
-        "rain_sensor_threshold": {"upper_limit": 1000},
-        "after_rain_stop_setting": {
-            "enable_auto_resume": True,
-            "auto_resume_delay_time": {"hours": 2, "minutes": 30},
+    assert (
+        cliff.is_on is None
+        and threshold.native_value is None
+        and delay.native_value is None
+    )
+    _feed(
+        hub.on_advanced_settings,
+        {
+            "enable_cliff_detection": {"value": True},
+            "enable_slope_detection": {"value": False},
+            "rain_sensor_threshold": {"upper_limit": 1000},
+            "after_rain_stop_setting": {
+                "enable_auto_resume": True,
+                "auto_resume_delay_time": {"hours": 2, "minutes": 30},
+            },
         },
-    })
+    )
     assert cliff.is_on is True
     assert slope.is_on is False
     assert resume.is_on is True
@@ -207,18 +229,24 @@ def test_advanced_settings_entities_degrade_gracefully() -> None:
     threshold = _sensor(hub, "rain_sensor_threshold")
     delay = _sensor(hub, "after_rain_resume_delay")
     # malformed / missing nested fields -> None, never a crash
-    _feed(hub.on_advanced_settings, {
-        "enable_cliff_detection": {"value": "x"},        # non-bool
-        "rain_sensor_threshold": "nope",                 # non-dict
-        "after_rain_stop_setting": {"auto_resume_delay_time": {}},  # empty delay
-    })
+    _feed(
+        hub.on_advanced_settings,
+        {
+            "enable_cliff_detection": {"value": "x"},  # non-bool
+            "rain_sensor_threshold": "nope",  # non-dict
+            "after_rain_stop_setting": {"auto_resume_delay_time": {}},  # empty delay
+        },
+    )
     assert cliff.is_on is None
     assert threshold.native_value is None
     assert delay.native_value is None
     # a partial delay (only minutes) still computes
-    _feed(hub.on_advanced_settings, {
-        "after_rain_stop_setting": {"auto_resume_delay_time": {"minutes": 45}},
-    })
+    _feed(
+        hub.on_advanced_settings,
+        {
+            "after_rain_stop_setting": {"auto_resume_delay_time": {"minutes": 45}},
+        },
+    )
     assert delay.native_value == 45
     # a non-dict node partway down a nested path -> None
     _feed(hub.on_advanced_settings, {"enable_cliff_detection": "x"})
@@ -230,7 +258,11 @@ def test_advanced_settings_entities_degrade_gracefully() -> None:
     assert delay.native_value is None
     # without a lawn mower -> None
     hub.basic_data.lawn_mower = None
-    assert cliff.is_on is None and threshold.native_value is None and delay.native_value is None
+    assert (
+        cliff.is_on is None
+        and threshold.native_value is None
+        and delay.native_value is None
+    )
 
 
 def test_dp150_force_and_dp152_manual_mapping_binary_sensors() -> None:
@@ -244,16 +276,24 @@ def test_dp150_force_and_dp152_manual_mapping_binary_sensors() -> None:
     for ent in (fsb, fcn, reloc, takeover, boundary):
         assert ent.entity_registry_enabled_default is False
         assert ent.is_on is None
-    _feed(hub.on_advanced_settings, {
-        "force_single_base_station_mode": {"value": True},
-        "force_cellular_network": {"value": False},
-    })
-    assert fsb.is_on is True and fcn.is_on is False
-    _feed(hub.on_environment_info, {
-        "manual_mapping": {
-            "need_relocation": True, "need_takeover": False, "is_boundary_closed": True,
+    _feed(
+        hub.on_advanced_settings,
+        {
+            "force_single_base_station_mode": {"value": True},
+            "force_cellular_network": {"value": False},
         },
-    })
+    )
+    assert fsb.is_on is True and fcn.is_on is False
+    _feed(
+        hub.on_environment_info,
+        {
+            "manual_mapping": {
+                "need_relocation": True,
+                "need_takeover": False,
+                "is_boundary_closed": True,
+            },
+        },
+    )
     assert reloc.is_on is True and takeover.is_on is False and boundary.is_on is True
     # a non-dict manual_mapping and a non-bool field degrade to None
     _feed(hub.on_environment_info, {"manual_mapping": "nope"})
@@ -345,11 +385,14 @@ def test_operating_mode_sensors_from_dp154() -> None:
     mapm = _sensor(hub, "map_mode")
     mow = _sensor(hub, "mow_mode")
     assert move.native_value is None
-    _feed(hub.on_operating_modes, {
-        "move_mode": "MOVE_MODE_MOW",
-        "map_mode": "MAP_MODE_BASE_STATION",
-        "mow_mode": "MOW_MODE_GLOBAL",
-    })
+    _feed(
+        hub.on_operating_modes,
+        {
+            "move_mode": "MOVE_MODE_MOW",
+            "map_mode": "MAP_MODE_BASE_STATION",
+            "mow_mode": "MOW_MODE_GLOBAL",
+        },
+    )
     assert move.native_value == "MOVE_MODE_MOW"
     assert mapm.native_value == "MAP_MODE_BASE_STATION"
     assert mow.native_value == "MOW_MODE_GLOBAL"
@@ -376,23 +419,29 @@ def test_environment_sensors_from_dp152() -> None:
     daylight = _binary(hub, "daylight")
     # no data yet -> None
     assert sunrise.native_value is None and defog.is_on is None
-    _feed(hub.on_environment_info, {
-        "is_defogger_heating": True,
-        "is_illuminate_light_on": False,
-        "sunrise": {"hour": 5, "minute": 29},
-        "sunset": {"hour": 21, "minute": 7},
-        "is_not_in_daylight_period": True,
-    })
+    _feed(
+        hub.on_environment_info,
+        {
+            "is_defogger_heating": True,
+            "is_illuminate_light_on": False,
+            "sunrise": {"hour": 5, "minute": 29},
+            "sunset": {"hour": 21, "minute": 7},
+            "is_not_in_daylight_period": True,
+        },
+    )
     assert sunrise.native_value == "05:29"
     assert sunset.native_value == "21:07"
     assert defog.is_on is True
     assert illum.is_on is False
     assert daylight.is_on is False  # inverted from is_not_in_daylight_period
     # a malformed time slot degrades to None (bad hour, bad minute, non-dict)
-    _feed(hub.on_environment_info, {
-        "sunrise": {"hour": "x", "minute": 0},   # bad hour
-        "sunset": {"hour": 5, "minute": "x"},    # valid hour, bad minute
-    })
+    _feed(
+        hub.on_environment_info,
+        {
+            "sunrise": {"hour": "x", "minute": 0},  # bad hour
+            "sunset": {"hour": 5, "minute": "x"},  # valid hour, bad minute
+        },
+    )
     assert sunrise.native_value is None
     assert sunset.native_value is None
     # a non-dict slot is also handled
@@ -408,14 +457,20 @@ def test_extreme_weather_sensor_from_dp157() -> None:
     weather = _binary(hub, "extreme_weather")
     assert weather.is_on is None
     assert weather.extra_state_attributes == {}
-    _feed(hub.on_weather_info, {
-        "has_extream_weather": True,
-        "extream_weather_info_url": "https://example.invalid/w",
-    })
+    _feed(
+        hub.on_weather_info,
+        {
+            "has_extream_weather": True,
+            "extream_weather_info_url": "https://example.invalid/w",
+        },
+    )
     assert weather.is_on is True
     assert weather.extra_state_attributes == {"info_url": "https://example.invalid/w"}
     # no url -> no attribute
-    _feed(hub.on_weather_info, {"has_extream_weather": False, "extream_weather_info_url": ""})
+    _feed(
+        hub.on_weather_info,
+        {"has_extream_weather": False, "extream_weather_info_url": ""},
+    )
     assert weather.is_on is False
     assert weather.extra_state_attributes == {}
     # without a lawn mower -> empty attributes
@@ -438,9 +493,15 @@ def test_cellular_sensors_disabled_report_none() -> None:
     assert rsrp.native_value is None and enabled.is_on is None
     assert ctype.native_value is None
     # disabled modem: signal is None, type still reported, enabled False
-    _feed(hub.on_cellular_info, {
-        "is_enabled": False, "RSRP": 0, "RSRQ": 0, "type": "CELLULAR_TYPE_UNKNOWN",
-    })
+    _feed(
+        hub.on_cellular_info,
+        {
+            "is_enabled": False,
+            "RSRP": 0,
+            "RSRQ": 0,
+            "type": "CELLULAR_TYPE_UNKNOWN",
+        },
+    )
     assert rsrp.native_value is None
     assert rsrq.native_value is None
     assert ctype.native_value == "CELLULAR_TYPE_UNKNOWN"
@@ -455,9 +516,15 @@ def test_cellular_sensors_enabled_report_signal() -> None:
     rsrp = _sensor(hub, "cellular_signal_rsrp")
     rsrq = _sensor(hub, "cellular_signal_rsrq")
     enabled = _binary(hub, "cellular_enabled")
-    _feed(hub.on_cellular_info, {
-        "is_enabled": True, "RSRP": -95, "RSRQ": -12, "type": "CELLULAR_TYPE_LTE",
-    })
+    _feed(
+        hub.on_cellular_info,
+        {
+            "is_enabled": True,
+            "RSRP": -95,
+            "RSRQ": -12,
+            "type": "CELLULAR_TYPE_LTE",
+        },
+    )
     assert rsrp.native_value == -95
     assert rsrq.native_value == -12
     assert enabled.is_on is True
@@ -480,12 +547,15 @@ def test_battery_level_from_dp8() -> None:
 
 def test_battery_status_sensors_from_dp108() -> None:
     hub = _hub()
-    _feed(hub.on_battery_status, {
-        "state": "BATTERY_STATE_CHARGING",
-        "tempreture": "BATTERY_TEMPRETURE_NORMAL",
-        "charger_connected": True,
-        "is_switch_on": False,
-    })
+    _feed(
+        hub.on_battery_status,
+        {
+            "state": "BATTERY_STATE_CHARGING",
+            "tempreture": "BATTERY_TEMPRETURE_NORMAL",
+            "charger_connected": True,
+            "is_switch_on": False,
+        },
+    )
     assert _sensor(hub, "battery_state").native_value == "battery_state_charging"
     assert (
         _sensor(hub, "battery_temperature_state").native_value
@@ -529,11 +599,14 @@ def test_battery_temperature_state_without_report() -> None:
 
 def test_statistics_sensors_from_dp124() -> None:
     hub = _hub()
-    _feed(hub.on_statistics_data, {
-        "duration": 7200,
-        "clean_times": 12,
-        "clean_area": 1234,  # 0.1 m² units
-    })
+    _feed(
+        hub.on_statistics_data,
+        {
+            "duration": 7200,
+            "clean_times": 12,
+            "clean_area": 1234,  # 0.1 m² units
+        },
+    )
     assert _sensor(hub, "total_mowing_time").native_value == 7200
     assert _sensor(hub, "total_mowing_jobs").native_value == 12
     assert _sensor(hub, "total_mowed_area").native_value == 123.4
@@ -546,13 +619,16 @@ def test_statistics_sensors_from_dp124() -> None:
 
 def test_current_session_sensors_from_dp113() -> None:
     hub = _hub()
-    _feed(hub.on_current_work_data, {
-        "clean_area": 500,   # 0.1 m² -> 50 m²
-        "total_area": 1000,  # 0.1 m² -> 100 m²
-        "work_duration": 903,
-        "type": "MAP_AREA_TYPE_CLEANING",
-        "is_completed": False,
-    })
+    _feed(
+        hub.on_current_work_data,
+        {
+            "clean_area": 500,  # 0.1 m² -> 50 m²
+            "total_area": 1000,  # 0.1 m² -> 100 m²
+            "work_duration": 903,
+            "type": "MAP_AREA_TYPE_CLEANING",
+            "is_completed": False,
+        },
+    )
     assert _sensor(hub, "current_session_area").native_value == 50.0
     assert _sensor(hub, "current_session_progress").native_value == 50.0
     assert _sensor(hub, "current_session_time").native_value == 903
@@ -704,13 +780,16 @@ def test_next_scheduled_start_from_dp138() -> None:
 
 def test_task_status_binary_sensors_from_dp107() -> None:
     hub = _hub()
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN",
-        "state": "MISSION_STATE_RUNNING",
-        "has_error": True,
-        "is_saving_data": True,
-        "back_to_station_reason": "BACK_TO_STATION_REASON_RAINING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "state": "MISSION_STATE_RUNNING",
+            "has_error": True,
+            "is_saving_data": True,
+            "back_to_station_reason": "BACK_TO_STATION_REASON_RAINING",
+        },
+    )
     assert _binary(hub, "problem").is_on is True
     assert _binary(hub, "rain_detected").is_on is True
     assert _binary(hub, "saving_data").is_on is True
@@ -738,11 +817,14 @@ def test_map_detected_from_dp117() -> None:
 
 def test_global_param_sensors_from_dp155() -> None:
     hub = _hub()
-    _feed(hub.on_global_params, {
-        "mow_height": {"value": 45},
-        "mow_speed": {"speed_type": "MOW_SPEED_TYPE_LOW"},
-        "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MULTIPLE"},
-    })
+    _feed(
+        hub.on_global_params,
+        {
+            "mow_height": {"value": 45},
+            "mow_speed": {"speed_type": "MOW_SPEED_TYPE_LOW"},
+            "main_direction_angle_config": {"mode": "MAIN_DIRECTION_MODE_MULTIPLE"},
+        },
+    )
     assert MowingHeightNumber(hub.basic_data, hub.hass).native_value == 45.0
     assert (
         MowSpeedSelect(hub.basic_data, hub.hass).current_option == "mow_speed_type_low"

@@ -145,11 +145,12 @@ async def test_handle_map_meta_seq_guard_skips_duplicate() -> None:
     hub = _hub()
     hub._map_channel.seq = 10
     called = MagicMock()
-    with patch(
-        "custom_components.terramow.hub.async_get_clientsession", called
-    ):
+    with patch("custom_components.terramow.hub.async_get_clientsession", called):
         # seq == current (not backward) -> skipped by the seq guard
-        await hub._async_handle_meta(hub._map_channel, {"seq": 10, "http_port": 1, "http_path": "/m", "token": "t"})
+        await hub._async_handle_meta(
+            hub._map_channel,
+            {"seq": 10, "http_port": 1, "http_path": "/m", "token": "t"},
+        )
     called.assert_not_called()
 
 
@@ -160,7 +161,10 @@ async def test_handle_map_meta_backward_seq_resets_and_refetches() -> None:
     # seq 4 < 10 -> new-session reset, then the fetch proceeds (a new map would
     # otherwise stay hidden behind the seq guard until a reload)
     with _patch_session(resp):
-        await hub._async_handle_meta(hub._map_channel, {"seq": 4, "http_port": 1, "http_path": "/m", "token": "t"})
+        await hub._async_handle_meta(
+            hub._map_channel,
+            {"seq": 4, "http_port": 1, "http_path": "/m", "token": "t"},
+        )
     assert hub.map_data["id"] == 9
     assert hub._map_channel.seq == 4
 
@@ -183,7 +187,10 @@ async def test_handle_path_meta_success_and_backward_reset() -> None:
     resp = _FakeResp(status=200, body=b'{"id": 2, "map_id": 1, "points": []}')
     # seq 3 < 8 -> backward reset, then fetch proceeds
     with _patch_session(resp):
-        await hub._async_handle_meta(hub._path_channel, {"seq": 3, "http_port": 1, "http_path": "/p", "token": "t"})
+        await hub._async_handle_meta(
+            hub._path_channel,
+            {"seq": 3, "http_port": 1, "http_path": "/p", "token": "t"},
+        )
     assert hub.path_data["id"] == 2
     assert hub._path_channel.seq == 3
 
@@ -192,8 +199,9 @@ async def test_handle_history_path_meta_success() -> None:
     hub = _hub()
     resp = _FakeResp(status=200, body=b'{"id": 7, "map_id": 1, "points": []}')
     with _patch_session(resp):
-        await hub._async_handle_meta(hub._history_path_channel,
-            {"seq": 2, "http_port": 1, "http_path": "/h", "token": "t"}
+        await hub._async_handle_meta(
+            hub._history_path_channel,
+            {"seq": 2, "http_port": 1, "http_path": "/h", "token": "t"},
         )
     assert hub.history_path_data["id"] == 7
     assert hub._history_path_channel.seq == 2
@@ -276,17 +284,29 @@ async def test_retry_coroutines_refetch() -> None:
     assert hub.map_data["id"] == 1
 
     hub2 = _hub()
-    hub2._path_channel.retry_meta = {"seq": 1, "http_port": 1, "http_path": "/p", "token": "t"}
-    with patch("asyncio.sleep", AsyncMock()), _patch_session(
-        _FakeResp(body=b'{"id": 2, "map_id": 1, "points": []}')
+    hub2._path_channel.retry_meta = {
+        "seq": 1,
+        "http_port": 1,
+        "http_path": "/p",
+        "token": "t",
+    }
+    with (
+        patch("asyncio.sleep", AsyncMock()),
+        _patch_session(_FakeResp(body=b'{"id": 2, "map_id": 1, "points": []}')),
     ):
         await hub2._async_retry_meta(hub2._path_channel, 0.0)
     assert hub2.path_data["id"] == 2
 
     hub3 = _hub()
-    hub3._history_path_channel.retry_meta = {"seq": 1, "http_port": 1, "http_path": "/h", "token": "t"}
-    with patch("asyncio.sleep", AsyncMock()), _patch_session(
-        _FakeResp(body=b'{"id": 3, "map_id": 1, "points": []}')
+    hub3._history_path_channel.retry_meta = {
+        "seq": 1,
+        "http_port": 1,
+        "http_path": "/h",
+        "token": "t",
+    }
+    with (
+        patch("asyncio.sleep", AsyncMock()),
+        _patch_session(_FakeResp(body=b'{"id": 3, "map_id": 1, "points": []}')),
     ):
         await hub3._async_retry_meta(hub3._history_path_channel, 0.0)
     assert hub3.history_path_data["id"] == 3
@@ -381,9 +401,13 @@ def test_hub_compat_and_task_properties() -> None:
 def test_start_mowing_while_running_is_noop() -> None:
     hub = _hub()
     hub._last_control_time = 0.0
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_RUNNING",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "state": "MISSION_STATE_RUNNING",
+        },
+    )
     hub.mqtt_client.publish.reset_mock()
     hub.start_mowing()  # already mowing -> no command
     hub.mqtt_client.publish.assert_not_called()
@@ -392,9 +416,13 @@ def test_start_mowing_while_running_is_noop() -> None:
 def test_pause_while_already_paused_is_noop() -> None:
     hub = _hub()
     hub._last_control_time = 0.0
-    _feed(hub.on_mission_status, {
-        "mission": "MISSION_GLOBAL_CLEAN", "state": "MISSION_STATE_PAUSE",
-    })
+    _feed(
+        hub.on_mission_status,
+        {
+            "mission": "MISSION_GLOBAL_CLEAN",
+            "state": "MISSION_STATE_PAUSE",
+        },
+    )
     hub.mqtt_client.publish.reset_mock()
     hub.pause()  # already paused -> no command
     hub.mqtt_client.publish.assert_not_called()
@@ -403,7 +431,10 @@ def test_pause_while_already_paused_is_noop() -> None:
 def test_pause_non_mow_mission_running_publishes() -> None:
     hub = _hub()
     hub._last_control_time = 0.0
-    _feed(hub.on_mission_status, {"mission": "MISSION_IDLE", "state": "MISSION_STATE_RUNNING"})
+    _feed(
+        hub.on_mission_status,
+        {"mission": "MISSION_IDLE", "state": "MISSION_STATE_RUNNING"},
+    )
     hub.pause()  # running non-mow mission -> pause command (dp_105)
     topic, _payload = hub.mqtt_client.publish.call_args.args
     assert topic == "data_point/105/app"

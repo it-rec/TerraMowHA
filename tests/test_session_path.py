@@ -70,9 +70,7 @@ def _hub() -> TerraMowHub:
 
 
 def _mission(hub: TerraMowHub, mission: str, state: str) -> None:
-    asyncio.run(
-        hub.on_mission_status(json.dumps({"mission": mission, "state": state}))
-    )
+    asyncio.run(hub.on_mission_status(json.dumps({"mission": mission, "state": state})))
 
 
 def _start_session(hub: TerraMowHub) -> None:
@@ -85,8 +83,7 @@ def _path(points, path_id: int = 101, map_id: int = 1) -> dict:
         "map_id": map_id,
         "type": "NAVIGATION_PATH_TYPE_REALTIME",
         "points": [
-            {"position": {"x": x, "y": y}, "type": kind}
-            for x, y, kind in points
+            {"position": {"x": x, "y": y}, "type": kind} for x, y, kind in points
         ],
     }
 
@@ -224,9 +221,7 @@ def test_archive_keeps_every_leg_within_its_point_budget() -> None:
     _start_session(hub)
     legs = 60
     for i in range(legs):
-        hub._apply_path_data(
-            _path(_clean((i, 0), (i, 1000)), path_id=100 + i)
-        )
+        hub._apply_path_data(_path(_clean((i, 0), (i, 1000)), path_id=100 + i))
         hub._apply_path_data(_path([], path_id=100 + i))
     # Segments are tracks, not a queue: a long job must not push the first
     # legs of the lawn off the map (issue #326).
@@ -274,7 +269,9 @@ def test_reserved_identical_track_is_archived_only_once() -> None:
     assert len(hub.session_path_segments) == 1
 
     # the same ground re-served under a new path id, then cleared again
-    hub._apply_path_data(_path(_clean((0, 0), (5000, 0), (5000, 1000), (0, 1000)), path_id=103))
+    hub._apply_path_data(
+        _path(_clean((0, 0), (5000, 0), (5000, 1000), (0, 1000)), path_id=103)
+    )
     hub._apply_path_data(_path([], path_id=103))
     assert len(hub.session_path_segments) == 1
 
@@ -327,9 +324,7 @@ def test_adopted_segments_survive_the_first_mow_frame_after_restart() -> None:
     the open work counters mark it as the same job continuing — it must not
     wipe what was just adopted (issue #332: paths messed up after upgrading)."""
     hub = _hub()
-    hub._session_path_segments = [
-        [{"x": 0.0, "y": 0.0}, {"x": 1000.0, "y": 0.0}]
-    ]
+    hub._session_path_segments = [[{"x": 0.0, "y": 0.0}, {"x": 1000.0, "y": 0.0}]]
     hub._current_work_data = {"work_duration": 12, "clean_area": 5}
     _start_session(hub)
     assert hub.session_path_segments
@@ -337,9 +332,7 @@ def test_adopted_segments_survive_the_first_mow_frame_after_restart() -> None:
 
 def test_fresh_session_with_junk_work_data_still_wipes_stale_archive() -> None:
     hub = _hub()
-    hub._session_path_segments = [
-        [{"x": 0.0, "y": 0.0}, {"x": 1000.0, "y": 0.0}]
-    ]
+    hub._session_path_segments = [[{"x": 0.0, "y": 0.0}, {"x": 1000.0, "y": 0.0}]]
     hub._current_work_data = ["not", "a", "dict"]  # type: ignore[assignment]
     _start_session(hub)
     assert hub.session_path_segments == []
@@ -360,10 +353,7 @@ def test_lost_path_points_classifies_the_payload() -> None:
     # cleared, replaced wholesale, or replaced by a new path id: everything
     # cached is lost
     assert _lost_path_points(_data(old), _data([])) == old
-    assert (
-        _lost_path_points(_data(old), _data([{"position": {"x": 9, "y": 9}}]))
-        == old
-    )
+    assert _lost_path_points(_data(old), _data([{"position": {"x": 9, "y": 9}}])) == old
     fresh = [{"position": {"x": 90 + i, "y": 9}, "type": "T"} for i in range(6)]
     assert _lost_path_points(_data(old), _data(fresh, path_id=102)) == old
     # payloads missing the points list entirely count as cleared / empty
@@ -409,9 +399,7 @@ def test_lost_path_points_tolerates_in_place_rewrites() -> None:
     assert _lost_path_points(_data(old), _data(decimated, path_id=102)) == old
     # a same-id payload sharing next to nothing with the cache is a
     # replacement, not a rewrite
-    alien = [
-        {"position": {"x": 9000 + i, "y": 9000}, "type": "T"} for i in range(8)
-    ]
+    alien = [{"position": {"x": 9000 + i, "y": 9000}, "type": "T"} for i in range(8)]
     assert _lost_path_points(_data(old), _data(alien)) == old
     # matching is by coordinates, not float identity: a serializer round-trip
     # re-serving the same track is still a continuation
@@ -636,9 +624,7 @@ def test_card_payload_includes_session_paths() -> None:
     _docked_mid_session(hub)
 
     payload = build_scene_payload(hub)
-    assert payload["session_paths"] == [
-        [[0, 0], [5000, 0], [5000, 1000], [0, 1000]]
-    ]
+    assert payload["session_paths"] == [[[0, 0], [5000, 0], [5000, 1000], [0, 1000]]]
     # paths never widen the fit-to-view bounds
     assert payload["bounds"] == [0, 0, 10000, 8000]
 

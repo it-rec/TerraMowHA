@@ -172,9 +172,7 @@ def test_sensor_table_keys_and_enum_options_are_translated() -> None:
                 assert option == option.lower(), (
                     f"SENSORS['{key}'] option '{option}' is not a lowercase token"
                 )
-                assert option in states, (
-                    f"entity.sensor.{key}.state.{option} missing"
-                )
+                assert option in states, f"entity.sensor.{key}.state.{option} missing"
 
 
 def test_binary_sensor_table_keys_are_translated() -> None:
