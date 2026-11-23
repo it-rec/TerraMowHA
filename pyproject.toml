@@ -24,7 +24,6 @@ dev = [
     "pytest-homeassistant-custom-component>=0.13.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
-    "black>=23.0.0",
 ]
 
 [tool.pytest.ini_options]
@@ -47,7 +46,7 @@ select = [
     "UP", # pyupgrade
 ]
 ignore = [
-    "E501", # line too long, handled by black
+    "E501", # line too long, handled by ruff format
 ]
 
 [tool.ruff.lint.isort]
@@ -66,9 +65,6 @@ disallow_untyped_defs = true
 follow_imports = "silent"
 files = ["custom_components/terramow"]
 
-[tool.black]
-target-version = ["py312"]
-line-length = 88
 [tool.coverage.run]
 source = ["custom_components/terramow"]
 branch = true

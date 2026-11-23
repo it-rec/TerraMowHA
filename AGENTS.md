@@ -23,7 +23,7 @@ TerraMowHA is a [Home Assistant](https://www.home-assistant.io/) custom integrat
 - Integration code: `custom_components/terramow/`
 - Tests: `tests/` (pytest with `pytest-homeassistant-custom-component`)
 - Developer protocol docs: `docs/en/developers.md` (MQTT topics, data points, map/path capabilities)
-- Minimum Python: 3.12 (CI tests on 3.13)
+- Minimum Python: 3.12 (CI tests on 3.12 with the minimum supported HA and on 3.14 with the newest HA)
 
 ## Architecture
 
@@ -56,7 +56,10 @@ pip install -r requirements_test.txt
 pytest tests/ -v --cov=custom_components/terramow --cov-report=term-missing --cov-fail-under=100
 
 # Lint
-ruff check custom_components/terramow
+ruff check custom_components tests
+
+# Format check (run `ruff format custom_components tests` to fix)
+ruff format --check custom_components tests
 
 # Sanity-compile
 python -m compileall custom_components/terramow
@@ -65,7 +68,7 @@ python -m compileall custom_components/terramow
 mypy
 ```
 
-`pyproject.toml` configures pytest (`asyncio_mode = "auto"`), ruff, mypy, black, and coverage. Line length is 88.
+`pyproject.toml` configures pytest (`asyncio_mode = "auto"`), ruff (lint and format), mypy, and coverage. Line length is 88.
 
 ## CI (must stay green)
 
@@ -73,11 +76,13 @@ mypy
 
 1. **Hassfest** — Home Assistant manifest/integration validation.
 2. **HACS validation** — integration category checks.
-3. **Tests** — full pytest suite; fails if coverage drops below 100% (`--cov-fail-under=100`).
-4. **Python Lint** — `compileall` + `ruff check` + `node tests/frontend/eval_card_module.mjs` (verifies the map card still loads as a strict ES module).
+3. **Tests** — full pytest suite as a matrix (minimum HA from `hacs.json` on Python 3.12, newest HA on Python 3.14); each leg fails if coverage drops below 100% (`--cov-fail-under=100`). The `Tests` job reports the combined matrix result (the ruleset requires that name).
+4. **Python Lint** — `compileall` + `ruff check` + `ruff format --check` (both over `custom_components` and `tests`) + `node tests/frontend/eval_card_module.mjs` (verifies the map card still loads as a strict ES module).
 5. **Type Check** — `mypy` over `custom_components/terramow`, `strict = true`.
 
-Run pytest with coverage, ruff, and mypy locally before pushing — a change that isn't 100%-covered will fail CI regardless of how small it is.
+Actions are pinned to commit SHAs with the tag in a trailing comment; keep that form when adding or bumping one.
+
+Run pytest with coverage, ruff (check and format), and mypy locally before pushing — a change that isn't 100%-covered will fail CI regardless of how small it is. Code that only exists for an older or newer HA release must still be covered on both matrix legs.
 
 ## Conventions
 
