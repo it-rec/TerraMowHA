@@ -24,6 +24,7 @@ from custom_components.terramow import (
 from custom_components.terramow.config_flow import CannotConnect, InvalidAuth
 from custom_components.terramow.const import DOMAIN
 from custom_components.terramow.intent import INTENT_MOW_ZONE, async_setup_intents
+from tests.helpers import find_device
 
 USER_INPUT = {CONF_HOST: "192.0.2.10", CONF_PASSWORD: "secret"}
 
@@ -108,10 +109,8 @@ async def test_setup_entry_migrates_device_identifier(hass: HomeAssistant) -> No
     ):
         await async_setup_entry(hass, entry)
 
-    assert device_registry.async_get_device({("terramow", "192.0.2.10")}) is not None
-    assert (
-        device_registry.async_get_device({("TerraMowLanwMower", "192.0.2.10")}) is None
-    )
+    assert find_device(device_registry, ("terramow", "192.0.2.10")) is not None
+    assert find_device(device_registry, ("TerraMowLanwMower", "192.0.2.10")) is None
 
 
 # ---------------------------------------------------------------------------

@@ -13,6 +13,7 @@ import custom_components.terramow.hub as hub_module
 from custom_components.terramow import TerraMowBasicData
 from custom_components.terramow.const import DOMAIN
 from custom_components.terramow.hub import TerraMowHub
+from tests.helpers import find_device
 
 
 def _hub() -> TerraMowHub:
@@ -360,7 +361,7 @@ async def test_update_device_sw_version_and_model(hass: HomeAssistant) -> None:
     hub, reg = _real_hub(hass)
     await hub._async_update_device_sw_version("26.3")
     await hub._async_update_device_model("TerraMow-Pro")
-    device = reg.async_get_device({("terramow", "192.0.2.120")})
+    device = find_device(reg, ("terramow", "192.0.2.120"))
     assert device.sw_version == "26.3"
     assert device.model == "TerraMow-Pro"
 

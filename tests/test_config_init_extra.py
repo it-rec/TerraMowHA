@@ -16,6 +16,7 @@ from custom_components.terramow import (
 )
 from custom_components.terramow.config_flow import CannotConnect, InvalidAuth
 from custom_components.terramow.const import DOMAIN, CompatibilityStatus
+from tests.helpers import find_device
 
 USER_INPUT = {CONF_HOST: "192.0.2.10", CONF_PASSWORD: "secret"}
 
@@ -122,7 +123,7 @@ async def test_setup_entry_migration_conflict_keeps_old_device(
     ):
         await async_setup_entry(hass, entry)
     # the migration must not have removed the pre-existing old device
-    assert device_registry.async_get_device({("TerraMowLanwMower", "192.0.2.10")})
+    assert find_device(device_registry, ("TerraMowLanwMower", "192.0.2.10"))
 
 
 # ---------------------------------------------------------------------------

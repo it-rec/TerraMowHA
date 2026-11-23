@@ -766,12 +766,27 @@ async def test_shared_scene_build_dedupes_across_feeds(
 
     monkeypatch.setattr(map_card, "build_scene_payload", counting)
 
+    # Hold the executor build open until both feeds have asked for it, so the
+    # test does not depend on how quickly the event loop and executor of the
+    # running Home Assistant / Python version finish the first build.
+    gate = asyncio.Event()
+    real_executor_job = hass.async_add_executor_job
+
+    async def gated(target: Any, *args: Any) -> Any:
+        await gate.wait()
+        return await real_executor_job(target, *args)
+
+    monkeypatch.setattr(hass, "async_add_executor_job", gated)
+
     feed_a = map_card._MapFeed(hass, MagicMock(), 1, hub)
     feed_b = map_card._MapFeed(hass, MagicMock(), 2, hub)
 
-    payload_a, payload_b = await asyncio.gather(
-        feed_a._shared_scene_build(), feed_b._shared_scene_build()
-    )
+    task_a = asyncio.ensure_future(feed_a._shared_scene_build())
+    await asyncio.sleep(0)
+    task_b = asyncio.ensure_future(feed_b._shared_scene_build())
+    await asyncio.sleep(0)
+    gate.set()
+    payload_a, payload_b = await asyncio.gather(task_a, task_b)
     assert calls["n"] == 1  # one build shared by both feeds
     assert payload_a is payload_b
     assert map_card._HUB_SCENE_CACHES[hub] is payload_a

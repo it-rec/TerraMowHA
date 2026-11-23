@@ -25,6 +25,7 @@ from custom_components.terramow import TerraMowBasicData, async_setup_entry
 from custom_components.terramow.config_flow import CannotConnect
 from custom_components.terramow.const import CONF_SERIAL, DOMAIN
 from custom_components.terramow.hub import TerraMowHub
+from tests.helpers import find_device
 
 HOST = "192.0.2.10"
 SERIAL = "MP511TEST42"
@@ -102,8 +103,8 @@ async def test_adopt_serial_migrates_registries_and_entry(
         "sensor", DOMAIN, f"version_compatibility.terramow@{SERIAL}"
     )
     # the device identifier follows the serial
-    assert device_registry.async_get_device({(DOMAIN, SERIAL)})
-    assert device_registry.async_get_device({(DOMAIN, HOST)}) is None
+    assert find_device(device_registry, (DOMAIN, SERIAL))
+    assert find_device(device_registry, (DOMAIN, HOST)) is None
     assert entity_registry.async_get_entity_id("sensor", DOMAIN, "unrelated-unique-id")
 
 
@@ -251,8 +252,8 @@ async def test_setup_migrates_host_keyed_identifier_to_serial(
     ):
         await async_setup_entry(hass, entry)
 
-    assert device_registry.async_get_device({(DOMAIN, SERIAL)}) is not None
-    assert device_registry.async_get_device({(DOMAIN, HOST)}) is None
+    assert find_device(device_registry, (DOMAIN, SERIAL)) is not None
+    assert find_device(device_registry, (DOMAIN, HOST)) is None
 
 
 # ---------------------------------------------------------------------------
@@ -319,9 +320,13 @@ async def test_reconfigure_keeps_serial_identity(hass: HomeAssistant) -> None:
             "entry_id": entry.entry_id,
         },
     )
-    with patch(
-        "custom_components.terramow.config_flow.validate_input",
-        return_value={"title": "TerraMow (192.0.2.99)"},
+    # Reconfiguring reloads the entry; keep that reload off the network.
+    with (
+        patch(
+            "custom_components.terramow.config_flow.validate_input",
+            return_value={"title": "TerraMow (192.0.2.99)"},
+        ),
+        patch("custom_components.terramow.async_setup_entry", return_value=True),
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {CONF_HOST: "192.0.2.99", CONF_PASSWORD: "secret"}
@@ -410,7 +415,7 @@ async def test_setup_removes_ghost_device_and_stale_entities(
         await async_setup_entry(hass, entry)
 
     # the ghost device and its host-keyed duplicate entity are gone
-    assert device_registry.async_get_device({(DOMAIN, HOST)}) is None
+    assert find_device(device_registry, (DOMAIN, HOST)) is None
     assert (
         entity_registry.async_get_entity_id(
             "sensor", DOMAIN, f"lawn_mower.terramow@{HOST}.battery"
@@ -418,7 +423,7 @@ async def test_setup_removes_ghost_device_and_stale_entities(
         is None
     )
     # the live serial-keyed device and entity survive untouched
-    assert device_registry.async_get_device({(DOMAIN, SERIAL)})
+    assert find_device(device_registry, (DOMAIN, SERIAL))
     assert entity_registry.async_get_entity_id(
         "sensor", DOMAIN, f"lawn_mower.terramow@{SERIAL}.battery"
     )

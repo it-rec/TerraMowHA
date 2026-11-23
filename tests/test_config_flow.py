@@ -19,6 +19,13 @@ def _patch_validate(**kwargs):
     return patch("custom_components.terramow.config_flow.validate_input", **kwargs)
 
 
+def _patch_setup():
+    # A created entry is set up right away; keep that from opening a real MQTT
+    # connection (current pytest-homeassistant-custom-component fails any test
+    # that tries to open a socket).
+    return patch("custom_components.terramow.async_setup_entry", return_value=True)
+
+
 async def test_user_flow_creates_entry(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
@@ -26,7 +33,10 @@ async def test_user_flow_creates_entry(hass: HomeAssistant) -> None:
     assert result["type"] == FlowResultType.FORM
     assert result["errors"] == {}
 
-    with _patch_validate(return_value={"title": "TerraMow (192.0.2.10)"}):
+    with (
+        _patch_validate(return_value={"title": "TerraMow (192.0.2.10)"}),
+        _patch_setup(),
+    ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], USER_INPUT
         )
