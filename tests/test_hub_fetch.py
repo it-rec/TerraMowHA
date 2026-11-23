@@ -348,7 +348,13 @@ def _real_hub(hass: HomeAssistant):
         unique_id="192.0.2.120",
     )
     entry.add_to_hass(hass)
-    hub = TerraMowHub(TerraMowBasicData(host="192.0.2.120", password="secret"), hass)
+    # Current HA looks devices up per config entry, so the hub needs its entry.
+    hub = TerraMowHub(
+        TerraMowBasicData(
+            host="192.0.2.120", password="secret", entry_id=entry.entry_id
+        ),
+        hass,
+    )
     reg = dr.async_get(hass)
     reg.async_get_or_create(
         config_entry_id=entry.entry_id,

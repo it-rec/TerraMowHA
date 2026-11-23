@@ -73,4 +73,7 @@ branch = true
 show_missing = true
 exclude_also = [
     "if TYPE_CHECKING:",
+    # Typing-only overload stubs never run; older coverage releases (as on
+    # the minimum-HA CI leg) still count their "..." bodies as branches.
+    "@overload",
 ]
