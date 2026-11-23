@@ -37,7 +37,7 @@ from .const import (
     CompatibilityStatus,
 )
 from .const import DOMAIN as DOMAIN
-from .entity_utils import async_get_entry_device
+from .entity_utils import async_get_entry_device, device_belongs_to_entry
 from .hub import TerraMowHub
 from .intent import async_remove_intents, async_setup_intents
 from .issues import async_clear_compatibility_issue, async_clear_maintenance_issues
@@ -277,9 +277,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: TerraMowConfigEntry) -> 
             continue
         # Check if a device with the new identifier already exists to avoid conflicts
         if async_get_entry_device(device_registry, new_identifier, entry.entry_id):
-            if (
-                entry.data.get(CONF_SERIAL)
-                and entry.entry_id in old_device_entry.config_entries
+            if entry.data.get(CONF_SERIAL) and device_belongs_to_entry(
+                old_device_entry, entry.entry_id
             ):
                 # Ghost left behind by a serial adoption that raced the
                 # initial platform setup (<= 1.13.0): the host-keyed

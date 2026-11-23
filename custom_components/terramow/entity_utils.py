@@ -11,6 +11,9 @@ from homeassistant.helpers.entity import Entity
 
 _LOGGER = logging.getLogger(__name__)
 
+# Sentinel for "this core's DeviceEntry has no config_entry_id attribute".
+_NO_OWNER_ATTR: Any = object()
+
 # PushUpdateMixin is always combined with an Entity subclass at runtime, but as
 # a standalone class it has no Entity base. Give mypy an Entity base (dropped at
 # runtime) so it can resolve async_added_to_hass and treat ``self`` as an Entity.
@@ -41,6 +44,19 @@ def async_get_entry_device(
     if config_entry_id is None:
         return None
     return get_by_identifier(identifier, config_entry_id)
+
+
+def device_belongs_to_entry(device: dr.DeviceEntry, config_entry_id: str) -> bool:
+    """Return True if ``device`` belongs to the config entry ``config_entry_id``.
+
+    Newer Home Assistant releases give every device a single owning entry
+    (``DeviceEntry.config_entry_id``) and deprecate ``config_entries``; older
+    cores, still supported per ``hacs.json``, only have ``config_entries``.
+    """
+    owner: str | None = getattr(device, "config_entry_id", _NO_OWNER_ATTR)
+    if owner is not _NO_OWNER_ATTR:
+        return owner == config_entry_id
+    return config_entry_id in device.config_entries
 
 
 def _can_write_state(entity: Entity) -> bool:
