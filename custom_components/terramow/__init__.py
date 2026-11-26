@@ -6,14 +6,20 @@ import logging
 from dataclasses import dataclass
 from typing import Any
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    ATTR_ENTITY_ID,
     CONF_HOST,
     CONF_PASSWORD,
+    ENTITY_MATCH_ALL,
     Platform,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.exceptions import ServiceValidationError
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers.typing import ConfigType
 
 from .const import (
     CONF_IDENTITY_KEY,
@@ -36,6 +42,20 @@ PLATFORMS: list[Platform] = [
     Platform.SWITCH,
     Platform.CALENDAR,
 ]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+SERVICE_START_SELECT_REGION = "start_select_region"
+ATTR_REGION_IDS = "region_ids"
+START_SELECT_REGION_SCHEMA = cv.make_entity_service_schema(
+    {
+        vol.Required(ATTR_REGION_IDS): vol.All(
+            cv.ensure_list,
+            vol.Length(min=1),
+            [vol.All(vol.Coerce(int), vol.Range(min=0))],
+        )
+    }
+)
 
 
 @dataclass
@@ -125,6 +145,37 @@ class TerraMowBasicData:
                 return "Firmware HA version is higher than plugin version, recommend upgrading plugin or using corresponding firmware version"
         else:
             return "Version incompatible, cannot work properly"
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Register the integration's services once, independent of entries."""
+
+    async def async_start_select_region(call: ServiceCall) -> None:
+        """Start mowing the given zones on each targeted mower."""
+        targets = call.data[ATTR_ENTITY_ID]
+        mowers = [
+            basic_data.lawn_mower
+            for basic_data in hass.data.get(DOMAIN, {}).values()
+            if basic_data.lawn_mower is not None
+            and (
+                targets == ENTITY_MATCH_ALL
+                or basic_data.lawn_mower.entity_id in targets
+            )
+        ]
+        if not mowers:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="mower_not_found"
+            )
+        for mower in mowers:
+            await mower.async_start_select_region(call.data[ATTR_REGION_IDS])
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_START_SELECT_REGION,
+        async_start_select_region,
+        schema=START_SELECT_REGION_SCHEMA,
+    )
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

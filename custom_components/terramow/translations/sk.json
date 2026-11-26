@@ -301,5 +301,28 @@
                 "name": "Uhol druhého smeru"
             }
         }
+    },
+    "exceptions": {
+        "mower_not_found": {
+            "message": "Cieľu nezodpovedá žiadna kosačka TerraMow."
+        },
+        "no_zones": {
+            "message": "Aktuálna mapa nemá žiadne zóny na kosenie."
+        },
+        "unknown_zones": {
+            "message": "Tieto ID zón nie sú na aktuálnej mape: {zone_ids}"
+        }
+    },
+    "services": {
+        "start_select_region": {
+            "name": "Pokosiť zóny",
+            "description": "Spustí kosenie zadaných zón aktuálnej mapy.",
+            "fields": {
+                "region_ids": {
+                    "name": "ID zón",
+                    "description": "ID zón na kosenie, ako ich uvádza výber zóny."
+                }
+            }
+        }
     }
 }

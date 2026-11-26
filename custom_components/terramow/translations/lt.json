@@ -301,5 +301,28 @@
                 "name": "Antrosios krypties kampas"
             }
         }
+    },
+    "exceptions": {
+        "mower_not_found": {
+            "message": "Jokia TerraMow žoliapjovė neatitinka tikslo."
+        },
+        "no_zones": {
+            "message": "Dabartiniame žemėlapyje nėra zonų pjovimui."
+        },
+        "unknown_zones": {
+            "message": "Šių zonų ID nėra dabartiniame žemėlapyje: {zone_ids}"
+        }
+    },
+    "services": {
+        "start_select_region": {
+            "name": "Pjauti zonas",
+            "description": "Pradeda pjauti nurodytas dabartinio žemėlapio zonas.",
+            "fields": {
+                "region_ids": {
+                    "name": "Zonų ID",
+                    "description": "Pjaunamų zonų ID, kaip nurodyta zonos pasirinkime."
+                }
+            }
+        }
     }
 }

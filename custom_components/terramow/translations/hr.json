@@ -301,5 +301,28 @@
                 "name": "Kut drugog smjera"
             }
         }
+    },
+    "exceptions": {
+        "mower_not_found": {
+            "message": "Nijedna TerraMow kosilica ne odgovara cilju."
+        },
+        "no_zones": {
+            "message": "Trenutačna karta nema zona za košnju."
+        },
+        "unknown_zones": {
+            "message": "Ovi ID-ovi zona nisu na trenutačnoj karti: {zone_ids}"
+        }
+    },
+    "services": {
+        "start_select_region": {
+            "name": "Pokosi zone",
+            "description": "Pokreće košnju navedenih zona trenutačne karte.",
+            "fields": {
+                "region_ids": {
+                    "name": "ID-ovi zona",
+                    "description": "ID-ovi zona za košnju, kako su navedeni u odabiru zone."
+                }
+            }
+        }
     }
 }

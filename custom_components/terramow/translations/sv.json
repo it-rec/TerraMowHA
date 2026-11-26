@@ -301,5 +301,28 @@
                 "name": "Vinkel för andra riktningen"
             }
         }
+    },
+    "exceptions": {
+        "mower_not_found": {
+            "message": "Ingen TerraMow-gräsklippare matchar målet."
+        },
+        "no_zones": {
+            "message": "Den aktuella kartan har inga zoner att klippa."
+        },
+        "unknown_zones": {
+            "message": "Dessa zon-ID:n finns inte på den aktuella kartan: {zone_ids}"
+        }
+    },
+    "services": {
+        "start_select_region": {
+            "name": "Klipp zoner",
+            "description": "Startar klippning av de angivna zonerna på den aktuella kartan.",
+            "fields": {
+                "region_ids": {
+                    "name": "Zon-ID:n",
+                    "description": "ID:n för zonerna som ska klippas, som de visas i zonvalet."
+                }
+            }
+        }
     }
 }

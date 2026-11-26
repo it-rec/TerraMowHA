@@ -301,5 +301,28 @@
                 "name": "Hoek tweede richting"
             }
         }
+    },
+    "exceptions": {
+        "mower_not_found": {
+            "message": "Geen TerraMow-grasmaaier komt overeen met het doel."
+        },
+        "no_zones": {
+            "message": "De huidige kaart heeft geen zones om te maaien."
+        },
+        "unknown_zones": {
+            "message": "Deze zone-ID's staan niet op de huidige kaart: {zone_ids}"
+        }
+    },
+    "services": {
+        "start_select_region": {
+            "name": "Zones maaien",
+            "description": "Start het maaien van de opgegeven zones van de huidige kaart.",
+            "fields": {
+                "region_ids": {
+                    "name": "Zone-ID's",
+                    "description": "ID's van de te maaien zones, zoals vermeld in de zonekeuze."
+                }
+            }
+        }
     }
 }

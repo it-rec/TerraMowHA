@@ -301,5 +301,28 @@
                 "name": "Toisen suunnan kulma"
             }
         }
+    },
+    "exceptions": {
+        "mower_not_found": {
+            "message": "Mikään TerraMow-leikkuri ei vastaa kohdetta."
+        },
+        "no_zones": {
+            "message": "Nykyisellä kartalla ei ole leikattavia vyöhykkeitä."
+        },
+        "unknown_zones": {
+            "message": "Näitä vyöhyketunnuksia ei ole nykyisellä kartalla: {zone_ids}"
+        }
+    },
+    "services": {
+        "start_select_region": {
+            "name": "Leikkaa vyöhykkeet",
+            "description": "Aloittaa nykyisen kartan annettujen vyöhykkeiden leikkuun.",
+            "fields": {
+                "region_ids": {
+                    "name": "Vyöhyketunnukset",
+                    "description": "Leikattavien vyöhykkeiden tunnukset vyöhykevalinnan mukaisesti."
+                }
+            }
+        }
     }
 }
