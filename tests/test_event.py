@@ -32,7 +32,24 @@ def _hub() -> TerraMowHub:
     hub.mqtt_client = MagicMock()
     hub.mqtt_client.is_connected.return_value = True
     hub.mqtt_client.publish.return_value.rc = 0
+    # A live connection that already delivered dp_107 and a dp_116 snapshot of
+    # an idle mower; the replay tests below start from a fresh hub instead.
+    hub._mission_status_reported = True
+    hub._fault_snapshot_codes = frozenset()
     return hub
+
+
+def _fresh_hub() -> TerraMowHub:
+    """A hub straight after start-up: nothing reported on this connection."""
+    hub = _hub()
+    hub._mission_status_reported = False
+    hub._fault_snapshot_codes = None
+    return hub
+
+
+def _feed_dp116(hub: TerraMowHub, codes: list[int]) -> None:
+    payload = {"error_list": [{"code": code} for code in codes]}
+    asyncio.run(hub.on_error_list(json.dumps(payload)))
 
 
 def _entity(hub: TerraMowHub) -> TerraMowMowerEventEntity:
@@ -408,3 +425,95 @@ def test_drain_without_pending_writes_nothing() -> None:
     _added(ent)
     asyncio.run(ent._async_drain_pending())  # empty queue
     ent.async_write_ha_state.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# replayed state: retained reports after a restart/reconnect are no transitions
+# ---------------------------------------------------------------------------
+
+
+def test_restart_replay_of_completed_mission_fires_nothing() -> None:
+    # HA restarts after a finished job: the broker replays the retained
+    # COMPLETE report. It must set the baseline, not fire mowing_completed.
+    hub = _fresh_hub()
+    ent = _entity(hub)
+    _added(ent)
+    assert ent._last_phase is None
+    _feed(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_COMPLETE")
+    _fire(ent)
+    # dp_107 alone is half a picture: still no baseline, no event
+    assert ent._last_phase is None
+    _feed_dp116(hub, [])
+    _fire(ent)
+    ent._trigger_event.assert_not_called()
+    assert ent._last_phase == "docked"
+    assert ent._was_complete is True
+    # the next real transition fires normally
+    _feed(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
+    _fire(ent)
+    assert _last_event(ent) == EVENT_STARTED
+
+
+def test_restart_replay_fault_first_then_mission_fires_nothing() -> None:
+    # dp_116 may arrive before dp_107; a replayed fault is no new error event.
+    hub = _fresh_hub()
+    ent = _entity(hub)
+    _added(ent)
+    _feed_dp116(hub, [903])
+    _fire(ent)
+    assert ent._last_phase is None
+    _feed(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
+    _fire(ent)
+    ent._trigger_event.assert_not_called()
+    assert ent._last_phase == "error"
+
+
+def test_added_with_complete_picture_seeds_immediately() -> None:
+    hub = _fresh_hub()
+    _feed(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
+    _feed_dp116(hub, [])
+    ent = _entity(hub)
+    _added(ent)
+    assert ent._last_phase == "mowing"
+    assert ent._was_complete is False
+
+
+def test_reconnect_keeps_baseline_and_fires_real_change_once_complete() -> None:
+    # The mower docked while the connection was down: once the new
+    # connection's complete picture arrives the change fires, exactly once.
+    hub = _hub()
+    ent = _entity(hub)
+    _added(ent)
+    _feed(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
+    _fire(ent)
+    assert _last_event(ent) == EVENT_STARTED
+    ent._trigger_event.reset_mock()
+
+    # connection drop + reconnect: the hub forgets this connection's picture
+    hub._mission_status_reported = False
+    hub._fault_snapshot_codes = None
+    _feed(hub, mission="MISSION_IDLE", state="MISSION_STATE_IDLE")
+    _fire(ent)
+    ent._trigger_event.assert_not_called()
+    assert ent._last_phase == "mowing"  # baseline survives the reconnect
+    _feed_dp116(hub, [])
+    _fire(ent)
+    assert _last_event(ent) == EVENT_DOCKED
+    ent._trigger_event.reset_mock()
+    _fire(ent)
+    ent._trigger_event.assert_not_called()
+
+
+def test_reconnect_replaying_unchanged_state_fires_nothing() -> None:
+    hub = _hub()
+    ent = _entity(hub)
+    _added(ent)
+    _feed(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
+    _fire(ent)
+    ent._trigger_event.reset_mock()
+    hub._mission_status_reported = False
+    hub._fault_snapshot_codes = None
+    _feed(hub, mission="MISSION_GLOBAL_CLEAN", state="MISSION_STATE_RUNNING")
+    _feed_dp116(hub, [])
+    _fire(ent)
+    ent._trigger_event.assert_not_called()

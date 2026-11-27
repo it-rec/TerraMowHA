@@ -200,7 +200,7 @@ class MaintenanceTodoList(PushUpdateMixin, TerraMowEntity, TodoListEntity):
         for task in TASKS:
             if task.uid == item.uid:
                 _LOGGER.info("Maintenance done: resetting the %s counter", task.uid)
-                hub.publish_data_point(task.dp_id, {"int_value": 0})
+                await hub.async_reset_maintenance_counter(task.dp_id)
                 return
         _LOGGER.warning("Unknown maintenance item %s", item.uid)
 

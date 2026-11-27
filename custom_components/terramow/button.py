@@ -47,13 +47,13 @@ class ResetBladeTimerButton(TerraMowResetButtonBase):
     _unique_id_suffix = "reset_blade_timer"
 
     async def async_press(self) -> None:
-        """Reset the blade timer by sending 0 to dp_126."""
+        """Reset the blade timer (dp_126 <- 0) and await the mower's zero report."""
         hub = self.hub
         if not hub:
             _LOGGER.error("Lawn mower not available")
             return
         _LOGGER.info("Resetting blade timer")
-        hub.publish_data_point(126, {"int_value": 0})
+        await hub.async_reset_maintenance_counter(126)
 
 
 class ResetBaseStationTimerButton(TerraMowResetButtonBase):
@@ -64,13 +64,13 @@ class ResetBaseStationTimerButton(TerraMowResetButtonBase):
     _unique_id_suffix = "reset_base_station_timer"
 
     async def async_press(self) -> None:
-        """Reset the base station timer by sending 0 to dp_125."""
+        """Reset the base-station timer (dp_125 <- 0); await the zero report."""
         hub = self.hub
         if not hub:
             _LOGGER.error("Lawn mower not available")
             return
         _LOGGER.info("Resetting base station timer")
-        hub.publish_data_point(125, {"int_value": 0})
+        await hub.async_reset_maintenance_counter(125)
 
 
 class EdgeTrimButton(TerraMowEntity, ButtonEntity):

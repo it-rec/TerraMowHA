@@ -65,7 +65,18 @@ async def async_setup_entry(
 
 
 class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
-    """Fires an event on every notable mower state transition."""
+    """Fires an event on every notable mower state transition.
+
+    Never fires for state that was only replayed: after a Home Assistant start
+    (or entry reload) the broker's retained dp_107/dp_116 reports would
+    otherwise look like transitions away from the hub's idle defaults (e.g. a
+    ``mowing_completed`` on every restart). Nothing is compared until the hub
+    holds a complete picture of the current connection — a dp_107 mission
+    report and a dp_116 fault snapshot — and the first such picture only sets
+    the baseline. The baseline survives reconnects, so a transition that
+    really happened while the connection was down still fires once the new
+    connection's complete picture arrives.
+    """
 
     _attr_translation_key = "mower_event"
     _unique_id_suffix = "mower_event"
@@ -105,13 +116,20 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
         """Seed the current phase (without firing) and track transitions."""
         await super().async_added_to_hass()
         # Record the phase we start in so we don't fire a spurious event for
-        # the state that was already present before the entity existed.
-        self._last_phase = self._compute_phase()
-        self._was_complete = (
-            self.hub.mission_state == MissionState.MISSION_STATE_COMPLETE
-        )
+        # the state that was already present before the entity existed. Only
+        # a complete picture counts; otherwise the first one sets the baseline.
+        if self._picture_complete():
+            self._last_phase = self._compute_phase()
+            self._was_complete = (
+                self.hub.mission_state == MissionState.MISSION_STATE_COMPLETE
+            )
         self._shown_display = self._display_key()
         self.async_on_remove(self.hub.register_state_listener(self._on_hub_state))
+
+    def _picture_complete(self) -> bool:
+        """Whether this connection delivered both dp_107 and a dp_116 snapshot."""
+        hub = self.hub
+        return hub.mission_status_reported and hub.fault_snapshot_codes is not None
 
     def _compute_phase(self) -> str:
         """Derive the semantic phase from the hub state (mirrors lawn_mower)."""
@@ -179,6 +197,14 @@ class TerraMowMowerEventEntity(TerraMowEntity, EventEntity):
         attributes = self._event_attributes()
 
         with self._detect_lock:
+            if not self._picture_complete():
+                # Start-up defaults or a half-replayed reconnect: compare later.
+                return None
+            if self._last_phase is None:
+                # First complete picture: baseline only, never an event.
+                self._last_phase = phase
+                self._was_complete = completed
+                return None
             # Completion is a distinct, momentary signal worth its own event.
             if completed and not self._was_complete:
                 self._was_complete = True

@@ -119,7 +119,9 @@ def test_empty_object_clears_active_fault() -> None:
 def test_reconnect_waits_for_a_fresh_list() -> None:
     hub = _hub()
     _feed(hub.on_error_list, json.dumps({"error_list": [{"code": 201}]}))
+    _feed(hub.on_mission_status, json.dumps({"mission": "MISSION_IDLE"}))
     assert _states(hub) == (True, False)
+    assert hub.mission_status_reported is True
 
     observed: list[frozenset[int] | None] = []
     hub.register_state_listener(lambda: observed.append(hub.fault_snapshot_codes))
@@ -129,6 +131,8 @@ def test_reconnect_waits_for_a_fresh_list() -> None:
     # listeners already see the reset when they are told about the connect
     assert observed == [None]
     assert _states(hub) == (None, None)
+    # the new connection's own dp_107 report is awaited too
+    assert hub.mission_status_reported is False
     # the raw list itself stays a mirror of the last device report
     assert hub.error_list == [{"code": 201}]
 
@@ -139,6 +143,7 @@ def test_reconnect_waits_for_a_fresh_list() -> None:
 def test_connection_loss_clears_the_list() -> None:
     hub = _hub()
     _feed(hub.on_error_list, json.dumps({"error_list": [{"code": 1409}]}))
+    _feed(hub.on_mission_status, json.dumps({"mission": "MISSION_IDLE"}))
     observed: list[tuple[bool, frozenset[int] | None]] = []
     hub.register_state_listener(
         lambda: observed.append((hub.connection_error, hub.fault_snapshot_codes))
@@ -170,6 +175,7 @@ def test_connection_loss_clears_the_list() -> None:
 
     asyncio.run(main())
     assert hub.fault_snapshot_codes is None
+    assert hub.mission_status_reported is False
     assert observed[0] == (True, None)
     entity = _alarm(hub, "anti_theft_boundary_alarm")
     assert entity.is_on is None
@@ -201,3 +207,19 @@ def test_other_sensors_and_unloaded_hub_skip_state_listener() -> None:
     asyncio.run(alarm.async_added_to_hass())
     assert hub._state_listeners == []
     assert alarm.is_on is None
+
+
+def test_first_snapshot_notifies_even_when_unchanged() -> None:
+    # After a (re)connect the list usually repeats the previous one ("{}" on a
+    # healthy mower). That first report still completes the connection's
+    # picture, so listeners (the event entity's baseline) must hear about it;
+    # later identical reports stay silent.
+    hub = _hub()
+    calls: list[None] = []
+    hub.register_state_listener(lambda: calls.append(None))
+    _feed(hub.on_error_list, "{}")
+    assert len(calls) == 1
+    _feed(hub.on_error_list, "{}")
+    assert len(calls) == 1
+    _feed(hub.on_error_list, json.dumps({"error_list": [{"code": 201}]}))
+    assert len(calls) == 2

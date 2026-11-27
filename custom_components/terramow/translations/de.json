@@ -630,6 +630,9 @@
     "schedule_switch_unconfirmed": {
       "message": "Der Mäher hat die Zeitplanänderung nicht bestätigt. Prüfe den Schalterzustand und versuche es erneut."
     },
+    "maintenance_reset_unconfirmed": {
+      "message": "The mower did not confirm the maintenance counter reset. Check the counter and try again."
+    },
     "schedule_weekday_unavailable": {
       "message": "Wochentags-Zeitplanschalter sind nur für Zeitfenster-Zeitpläne verfügbar, sobald der Mäher seinen Zeitplan gemeldet hat."
     },

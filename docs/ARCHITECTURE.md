@@ -63,11 +63,11 @@ only creates an entity when a GPS anchor is configured in the options.
 | `map_render.py` | PIL layer — theme palettes, layout constants, font/placeholder caches and the `MapRenderer` that draws a `map_scene` scene into the final PNG. No HA plumbing |
 | `map_strings.py` | Localized HUD labels baked into the rendered PNG. They cannot live in `strings.json` (hassfest rejects unknown translation categories), so this in-code table is selected by the HA UI language, with English as the complete fallback |
 | `update.py` | Read-only firmware `UpdateEntity` — real version from dp_102, `in_progress` from dp_107 `is_upgrading`, component versions from dp_129 |
-| `button.py` | Edge-trim start, reset blade timer (dp_126←0), reset base-station timer (dp_125←0) |
+| `button.py` | Edge-trim start, reset blade timer (dp_126←0), reset base-station timer (dp_125←0); resets go through `hub.async_reset_maintenance_counter`, which awaits the mower's zero report as confirmation (no seq/ret on these dps) and raises `maintenance_reset_unconfirmed` after `COMMAND_REPLY_TIMEOUT` |
 | `switch.py` | Thorough-corner-cutting toggle (writes dp_155); schedule master switch and seven weekday switches (dp_122 `SET_GLOBAL_DISABLED` / `SET_DISABLED_WEEK_DAYS`, reply-matched and GET-confirmed, gated on dp_127 `module.schedule >= 2`) |
-| `event.py` | Fires HA events on mission phase transitions (started/paused/returning/docked/completed/error) |
+| `event.py` | Fires HA events on mission phase transitions (started/paused/returning/docked/completed/error); never for replayed state — nothing is compared until the current connection delivered dp_107 (`hub.mission_status_reported`) and a dp_116 snapshot (`hub.fault_snapshot_codes`), the first complete picture only sets the baseline, and the baseline survives reconnects |
 | `calendar.py` | Schedule calendar — full weekly slots (dp_122) when available, else the next scheduled mow (dp_138); create/update/delete events map to dp_122 `ADD`/`MODIFY`/`DELETE` (time-slot mode, whole-series edits only) |
-| `todo.py` | `MaintenanceTodoList` — the blade / base-station counters as a generated todo list; completing an item publishes the counter reset (dp_126 / dp_125 ← 0) |
+| `todo.py` | `MaintenanceTodoList` — the blade / base-station counters as a generated todo list; completing an item resets the counter (dp_126 / dp_125 ← 0) through the same confirmed `async_reset_maintenance_counter` path as the buttons |
 | `intent.py` | The Assist `TerraMowMowZone` intent: folds a spoken zone name (case/accents/punctuation) against the map's sub-region names and starts a selective mow; refuses on unknown or ambiguous names |
 | `map_card.py` | Interactive map card backend: serves `frontend/terramow-map-card.js` (auto-loaded via `frontend.add_extra_js_url`) and the `terramow/map/subscribe` WebSocket feed pushing the `build_scene` geometry + display robot pose to subscribed cards; also resolves the maintenance counter/reset entity ids of the subscribed device from the entity registry (`build_maintenance_payload`), since entity ids differ per install |
 | `frontend/terramow-map-card.js` | The Lovelace card: canvas vector renderer (pan/zoom/fit, theme-aware), live robot marker, tap-to-mow zone selection calling `terramow.start_select_region`, collapsible legend and maintenance panel |
@@ -393,8 +393,8 @@ dashboard cards.
   `int_value` usage minutes and raise a WARNING issue once it reaches the cycle
   (`BLADE_MAINTENANCE_CYCLE_MINUTES` = 14400 min / 240 h;
   `BASE_STATION_MAINTENANCE_CYCLE_MINUTES` = 43200 min / 30 d), clearing it
-  otherwise. Reset buttons write `int_value:0` back to dp_125/126, which clears
-  the issue on the next report.
+  otherwise. Reset buttons write `int_value:0` back to dp_125/126; the mower's zero
+  report both confirms the reset and clears the issue.
 
 All three are cleared on unload by `async_clear_compatibility_issue` /
 `async_clear_maintenance_issues`.

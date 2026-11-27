@@ -1013,6 +1013,12 @@ class TerraMowHub:
         # Codes of the last complete dp_116 list received on the *current*
         # connection; None until one arrives (see fault_snapshot_codes).
         self._fault_snapshot_codes: frozenset[int] | None = None
+        # Whether a dp_107 mission report arrived on the *current* connection
+        # (see mission_status_reported).
+        self._mission_status_reported = False
+        # Maintenance-counter resets (dp_125/dp_126) waiting for the counter
+        # to report zero (see async_reset_maintenance_counter).
+        self._counter_reset_waiters: dict[int, asyncio.Future[None]] = {}
         self._active_error_code: int | None = None  # Store dp_115 latest error code
         self._event_list: list[Any] = []  # Store dp_123 event log
         self._cellular_info: dict[str, Any] = {}  # Store dp_135 cellular/4G info
@@ -1576,6 +1582,7 @@ class TerraMowHub:
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_125: %s", payload)
             return
+        self._confirm_counter_reset(125, data)
         if self.basic_data.entry_id is not None:
             async_sync_base_station_maintenance_issue(
                 self.hass, self.basic_data.entry_id, data
@@ -1592,6 +1599,7 @@ class TerraMowHub:
         except json.JSONDecodeError:
             _LOGGER.error("Invalid JSON payload for dp_126: %s", payload)
             return
+        self._confirm_counter_reset(126, data)
         if self.basic_data.entry_id is not None:
             async_sync_blade_maintenance_issue(
                 self.hass, self.basic_data.entry_id, data
@@ -1691,6 +1699,7 @@ class TerraMowHub:
             # key is not a list report and is ignored.
             errors = data.get("error_list", [] if not data else None)
             if isinstance(errors, list):
+                first_snapshot = self._fault_snapshot_codes is None
                 self._fault_snapshot_codes = frozenset(_error_codes(errors))
                 changed = errors != self._error_list
                 self._record_fault_hotspots(errors)
@@ -1700,8 +1709,10 @@ class TerraMowHub:
                 # dp_116 does not flow through on_mission_status, so notify the
                 # mower / event entities here too: a fault that shows up only in
                 # the error list (issue #171) must surface the moment it arrives,
-                # not wait for the next dp_107 push.
-                if changed:
+                # not wait for the next dp_107 push. The connection's first
+                # snapshot notifies even when unchanged: it completes the
+                # picture the event entity waits for before comparing.
+                if changed or first_snapshot:
                     self._notify_state_listeners()
 
     async def on_event_data(self, payload: str) -> None:
@@ -2305,6 +2316,7 @@ class TerraMowHub:
         # Preserve the raw payload so that downstream entities can read fields
         # like has_error / back_to_station_reason without enum conversion.
         self._task_status = dict(data)
+        self._mission_status_reported = True
 
         # Define a mapping from field names to enum classes
         enum_mapping = {
@@ -2811,6 +2823,7 @@ class TerraMowHub:
             # Set the error state; a fault list from the lost connection is no
             # longer current.
             self._fault_snapshot_codes = None
+            self._mission_status_reported = False
             self._set_connection_error(True)
             # The listeners were notified when the connection dropped; tell
             # them again once an expected firmware reboot outlives its grace
@@ -2878,8 +2891,10 @@ class TerraMowHub:
         # in response to a GET; without this the schedule calendar is empty)
         self._request_full_schedule()
 
-        # Wait for this connection's own dp_116 report before alarms resolve.
+        # Wait for this connection's own dp_116 report before alarms resolve,
+        # and for its own dp_107 report before the event entity compares.
         self._fault_snapshot_codes = None
+        self._mission_status_reported = False
         self.connection_error = False
         self._notify_state_listeners()
 
@@ -5253,6 +5268,18 @@ class TerraMowHub:
         return self._fault_snapshot_codes
 
     @property
+    def mission_status_reported(self) -> bool:
+        """Whether a dp_107 mission report arrived on the current connection.
+
+        Derived from the raw dp_107 stream: ``False`` until the first report
+        after each (re)connect (normally the broker's retained replay) and
+        reset when the connection drops. Together with ``fault_snapshot_codes``
+        it tells the event entity when the hub holds a complete, current
+        picture of the mower instead of start-up defaults.
+        """
+        return self._mission_status_reported
+
+    @property
     def has_active_error(self) -> bool:
         """Whether the mower reports a fault via either error signal.
 
@@ -5295,6 +5322,42 @@ class TerraMowHub:
     def firmware_version_info(self) -> dict[str, Any]:
         """Return firmware version information."""
         return self.basic_data.firmware_version or {}
+
+    def _confirm_counter_reset(self, dp_id: int, data: Any) -> None:
+        """Complete a pending counter reset once the counter reports zero."""
+        waiter = self._counter_reset_waiters.get(dp_id)
+        if (
+            waiter is not None
+            and not waiter.done()
+            and isinstance(data, dict)
+            and data.get("int_value") == 0
+        ):
+            waiter.set_result(None)
+
+    async def async_reset_maintenance_counter(self, dp_id: int) -> None:
+        """Reset a maintenance counter (dp_125/dp_126) and await the zero report.
+
+        These data points have no command reply (no seq/ret): the mower resets
+        its counter when it receives ``int_value: 0`` and then reports the new
+        value. That report is the confirmation; without it within
+        ``COMMAND_REPLY_TIMEOUT`` the reset is reported as unconfirmed instead
+        of silently succeeding.
+        """
+        waiter: asyncio.Future[None] = asyncio.get_running_loop().create_future()
+        self._counter_reset_waiters[dp_id] = waiter
+        try:
+            self.publish_data_point(dp_id, {"int_value": 0})
+            try:
+                await asyncio.wait_for(waiter, COMMAND_REPLY_TIMEOUT)
+            except TimeoutError as err:
+                raise HomeAssistantError(
+                    translation_domain=DOMAIN,
+                    translation_key="maintenance_reset_unconfirmed",
+                ) from err
+        finally:
+            if self._counter_reset_waiters.get(dp_id) is waiter:
+                del self._counter_reset_waiters[dp_id]
+            waiter.cancel()
 
     def publish_data_point(self, dp_id: int, data: dict[str, Any]) -> None:
         """Publish a command/data payload to a device data point.
