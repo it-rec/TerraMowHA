@@ -33,6 +33,18 @@ def _feed(handler, payload: dict) -> None:
     asyncio.run(handler(json.dumps(payload)))
 
 
+def _confirm_resets(hub: TerraMowHub) -> None:
+    """Let the mocked mower report zero after each counter reset."""
+
+    def publish(topic, payload, **_kwargs):
+        dp_id = int(topic.split("/")[1])
+        handler = hub.on_base_station_time if dp_id == 125 else hub.on_blade_time
+        asyncio.get_running_loop().create_task(handler(payload))
+        return MagicMock(rc=0)
+
+    hub.mqtt_client.publish.side_effect = publish
+
+
 def _published(hub) -> tuple[str, dict]:
     topic, payload = hub.mqtt_client.publish.call_args.args
     return topic, json.loads(payload)
@@ -103,6 +115,7 @@ def test_mow_speed_select_surfaces_unknown_device_value() -> None:
 
 def test_reset_blade_timer_button() -> None:
     hub = _hub()
+    _confirm_resets(hub)
     button = ResetBladeTimerButton(hub.basic_data, hub.hass)
     asyncio.run(button.async_press())
     topic, command = _published(hub)
@@ -112,6 +125,7 @@ def test_reset_blade_timer_button() -> None:
 
 def test_reset_base_station_timer_button() -> None:
     hub = _hub()
+    _confirm_resets(hub)
     button = ResetBaseStationTimerButton(hub.basic_data, hub.hass)
     asyncio.run(button.async_press())
     topic, command = _published(hub)

@@ -41,6 +41,15 @@ async def hub_fixture(hass: HomeAssistant) -> TerraMowHub:
     hub.mqtt_client = MagicMock()
     hub.mqtt_client.is_connected.return_value = True
     hub.mqtt_client.publish.return_value = MagicMock(rc=0)
+
+    def publish(topic: str, payload: str, **_kwargs: Any) -> MagicMock:
+        # The mower confirms a counter reset by reporting zero on the same dp.
+        if topic in ("data_point/125/app", "data_point/126/app"):
+            handler = hub.on_base_station_time if "125" in topic else hub.on_blade_time
+            hass.async_create_task(handler(payload))
+        return MagicMock(rc=0)
+
+    hub.mqtt_client.publish.side_effect = publish
     return hub
 
 

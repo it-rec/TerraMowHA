@@ -630,6 +630,9 @@
     "schedule_switch_unconfirmed": {
       "message": "The mower did not confirm the schedule change. Check the switch state and try again."
     },
+    "maintenance_reset_unconfirmed": {
+      "message": "The mower did not confirm the maintenance counter reset. Check the counter and try again."
+    },
     "schedule_weekday_unavailable": {
       "message": "Weekday schedule switches are only available for time-slot schedules once the mower has reported its schedule."
     },
