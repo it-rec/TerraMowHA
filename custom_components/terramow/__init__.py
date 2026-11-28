@@ -436,9 +436,9 @@ def _referenced_entity_ids(
             async_extract_referenced_entity_ids as legacy_extract,
         )
 
-        selected = legacy_extract(hass, call)
-    else:
-        selected = async_extract_referenced_entity_ids(hass, TargetSelection(call.data))
+        legacy = legacy_extract(hass, call)
+        return set(legacy.referenced), set(legacy.indirectly_referenced)
+    selected = async_extract_referenced_entity_ids(hass, TargetSelection(call.data))
     return set(selected.referenced), set(selected.indirectly_referenced)
 
 
