@@ -4329,6 +4329,11 @@ class TerraMowHub:
                     names[zone_id] = name if isinstance(name, str) and name else None
         return names
 
+    @property
+    def current_zone_ids(self) -> set[int]:
+        """IDs of the zones (sub-regions) on the current device-reported map."""
+        return set(self._zone_names())
+
     async def async_set_zone_policies(self, policies: dict[Any, Any]) -> None:
         """Validate and persist policies bound to the current map and zone name."""
         normalized: dict[int, dict[str, Any]] = {}

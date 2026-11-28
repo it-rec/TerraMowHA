@@ -101,9 +101,16 @@ It registers the domain-level actions (`start_select_region`, `add_schedule`,
 `delete_schedule`, `plan_due_zones`, `start_due_zones`) **independent of any
 config entry**, so they exist while an entry retries setup (mower offline) or
 reloads. Without that, Home Assistant flags automations that use them with an
-"unknown action" repair. The handler resolves target entities via the entity
-registry, validates each resolves to a loaded `runtime_data` with a ready
-`lawn_mower`, then awaits
+"unknown action" repair. All of them are entity services that accept entity,
+device and area targets (`cv.make_entity_service_schema`); device/area targets
+and `entity_id: all` expand to TerraMow `lawn_mower` entities only, while
+explicitly named entities must be TerraMow entities. Each target resolves via
+the entity registry to a loaded `runtime_data` with a ready `lawn_mower`
+(one call per mower, however many of its entities are named). For
+`start_select_region`, zone IDs must be non-negative whole numbers (`zone_id`
+rejects booleans and floats instead of truncating), are de-duplicated, and are
+checked against every target's current map (`hub.current_zone_ids`) before
+anything is sent (`no_zones` / `unknown_zones`). The handler then awaits
 `basic_data.lawn_mower.async_start_select_region_clean()` — the confirmed
 variant that waits for the device's reply and raises a translated
 `command_rejected` error on a non-zero code (a missing reply falls back to

@@ -159,6 +159,7 @@ async def test_start_select_region_service_dispatches_to_hub(
     entry = _entry(hass)
     hub = MagicMock()
     hub.async_start_select_region_clean = AsyncMock()
+    hub.current_zone_ids = {1, 2}
     basic_data = TerraMowBasicData(
         host="192.0.2.10", password="secret", entry_id=entry.entry_id
     )

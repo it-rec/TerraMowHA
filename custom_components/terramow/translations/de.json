@@ -616,6 +616,15 @@
     "map_edit_map_not_sent": {
       "message": "Der Mäher konnte die aktualisierte Karte nicht senden (Code 203); die Änderung wurde möglicherweise bereits übernommen. Bitte die Einstellung nach der Kartenaktualisierung prüfen, bevor es erneut versucht wird."
     },
+    "mower_not_found": {
+      "message": "Kein TerraMow-Mäher entspricht dem Ziel."
+    },
+    "no_zones": {
+      "message": "Die aktuelle Karte hat keine Zonen zum Mähen."
+    },
+    "unknown_zones": {
+      "message": "Diese Zonen-IDs sind nicht auf der aktuellen Karte: {zone_ids}"
+    },
     "command_not_delivered": {
       "message": "Der Befehl konnte nicht an den Mäher gesendet werden – er ist offline oder über MQTT nicht erreichbar. Stelle sicher, dass der Mäher eingeschaltet und mit dem Netzwerk verbunden ist, und versuche es erneut."
     },
