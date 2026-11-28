@@ -616,6 +616,15 @@
     "map_edit_map_not_sent": {
       "message": "The mower could not send the updated map (code 203); the change may already have been applied. Check the setting once the map has refreshed before trying again."
     },
+    "mower_not_found": {
+      "message": "No TerraMow mower matches the target."
+    },
+    "no_zones": {
+      "message": "The current map has no zones to mow."
+    },
+    "unknown_zones": {
+      "message": "These zone IDs are not on the current map: {zone_ids}"
+    },
     "command_not_delivered": {
       "message": "Ukaza ni bilo mogoče poslati kosilnici — ni povezana ali ni dosegljiva prek MQTT. Preverite, ali je kosilnica vklopljena in povezana z omrežjem, ter poskusite znova."
     },

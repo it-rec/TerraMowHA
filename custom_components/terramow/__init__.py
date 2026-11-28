@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,6 +13,7 @@ from homeassistant.const import (
     ATTR_ENTITY_ID,
     CONF_HOST,
     CONF_PASSWORD,
+    ENTITY_MATCH_ALL,
     Platform,
 )
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
@@ -19,6 +21,7 @@ from homeassistant.exceptions import (
     ConfigEntryAuthFailed,
     ConfigEntryNotReady,
     HomeAssistantError,
+    ServiceValidationError,
 )
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
@@ -58,18 +61,38 @@ ATTR_ITEM_ID = "item_id"
 ATTR_POLICIES = "policies"
 ATTR_UNKNOWN_CHOICE = "unknown_choice"
 
-START_SELECT_REGION_SCHEMA = vol.Schema(
+_ZONE_ID_TEXT = re.compile(r"[0-9]+", re.ASCII)
+
+
+def zone_id(value: Any) -> int:
+    """Validate one zone ID: a non-negative integer, or a string of one.
+
+    Booleans and floating-point numbers are rejected instead of being
+    truncated, so ``true`` or ``1.9`` can never select zone 1.
+    """
+    if isinstance(value, bool):
+        raise vol.Invalid("zone IDs must be whole numbers, not booleans")
+    if isinstance(value, int):
+        if value < 0:
+            raise vol.Invalid("zone IDs must not be negative")
+        return value
+    if isinstance(value, str) and _ZONE_ID_TEXT.fullmatch(value.strip()):
+        return int(value)
+    raise vol.Invalid(f"invalid zone ID: {value!r}")
+
+
+# Entity service schemas accept entity, device and area targets; the
+# handlers expand them to the TerraMow mowers they reach.
+START_SELECT_REGION_SCHEMA = cv.make_entity_service_schema(
     {
-        vol.Required(ATTR_ENTITY_ID): cv.entity_ids,
         vol.Required(ATTR_REGION_IDS): vol.All(
-            cv.ensure_list, [vol.Coerce(int)], vol.Length(min=1)
+            cv.ensure_list, vol.Length(min=1), [zone_id]
         ),
     }
 )
 
-ADD_SCHEDULE_SCHEMA = vol.Schema(
+ADD_SCHEDULE_SCHEMA = cv.make_entity_service_schema(
     {
-        vol.Required(ATTR_ENTITY_ID): cv.entity_ids,
         vol.Required(ATTR_WEEK_DAYS): vol.All(
             cv.ensure_list, [vol.In(WEEKDAY_TO_DEVICE)], vol.Length(min=1)
         ),
@@ -80,16 +103,14 @@ ADD_SCHEDULE_SCHEMA = vol.Schema(
     }
 )
 
-DELETE_SCHEDULE_SCHEMA = vol.Schema(
+DELETE_SCHEDULE_SCHEMA = cv.make_entity_service_schema(
     {
-        vol.Required(ATTR_ENTITY_ID): cv.entity_ids,
         vol.Required(ATTR_ITEM_ID): vol.Coerce(int),
     }
 )
 
-ZONE_PLAN_SCHEMA = vol.Schema(
+ZONE_PLAN_SCHEMA = cv.make_entity_service_schema(
     {
-        vol.Required(ATTR_ENTITY_ID): cv.entity_ids,
         vol.Optional(ATTR_POLICIES): dict,
         vol.Optional(ATTR_UNKNOWN_CHOICE, default="ask"): vol.In(
             ("include", "exclude", "ask")
@@ -396,13 +417,71 @@ async def _async_options_updated(
     await hass.config_entries.async_reload(entry.entry_id)
 
 
+def _referenced_entity_ids(
+    hass: HomeAssistant, call: ServiceCall
+) -> tuple[set[str], set[str]]:
+    """(explicit, indirect) entity IDs a service call targets.
+
+    Indirect IDs are those reached through device or area targets. Home
+    Assistant moved target resolution to ``helpers.target``; the
+    ``helpers.service`` version is all that older cores such as 2025.3 have.
+    """
+    try:
+        from homeassistant.helpers.target import (  # type: ignore[import-not-found,unused-ignore]
+            TargetSelection,
+            async_extract_referenced_entity_ids,
+        )
+    except ImportError:
+        from homeassistant.helpers.service import (
+            async_extract_referenced_entity_ids as legacy_extract,
+        )
+
+        selected = legacy_extract(hass, call)
+    else:
+        selected = async_extract_referenced_entity_ids(hass, TargetSelection(call.data))
+    return set(selected.referenced), set(selected.indirectly_referenced)
+
+
 def _async_register_services(hass: HomeAssistant) -> None:
     """Register integration-level services."""
 
-    def _resolve_hubs(entity_ids: list[str]) -> list[TerraMowHub]:
+    def _target_entity_ids(call: ServiceCall) -> list[str]:
+        """Entity IDs to act on: explicit ones as given, plus the TerraMow
+        lawn mowers reached through device/area targets (or ``all``)."""
+        registry = er.async_get(hass)
+
+        def is_terramow_mower(entity_id: str) -> bool:
+            entry = registry.async_get(entity_id)
+            return (
+                entry is not None
+                and entry.platform == DOMAIN
+                and entry.domain == "lawn_mower"
+            )
+
+        if call.data.get(ATTR_ENTITY_ID) == ENTITY_MATCH_ALL:
+            explicit: set[str] = set()
+            indirect = {
+                entry.entity_id
+                for entry in registry.entities.values()
+                if entry.platform == DOMAIN and entry.domain == "lawn_mower"
+            }
+        else:
+            explicit, indirect = _referenced_entity_ids(hass, call)
+        entity_ids = sorted(explicit) + sorted(
+            entity_id
+            for entity_id in indirect - explicit
+            if is_terramow_mower(entity_id)
+        )
+        if not entity_ids:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="mower_not_found"
+            )
+        return entity_ids
+
+    def _resolve_hubs(call: ServiceCall) -> list[TerraMowHub]:
         registry = er.async_get(hass)
         targets: list[TerraMowHub] = []
-        for entity_id in entity_ids:
+        for entity_id in _target_entity_ids(call):
             entry = registry.async_get(entity_id)
             if entry is None or entry.config_entry_id is None:
                 raise HomeAssistantError(
@@ -418,12 +497,31 @@ def _async_register_services(hass: HomeAssistant) -> None:
                     translation_key="lawn_mower_not_ready",
                     translation_placeholders={"entity_id": entity_id},
                 )
-            targets.append(basic_data.lawn_mower)
+            if basic_data.lawn_mower not in targets:
+                targets.append(basic_data.lawn_mower)
         return targets
 
     async def handle_start_select_region(call: ServiceCall) -> None:
-        region_ids: list[int] = call.data[ATTR_REGION_IDS]
-        for hub in _resolve_hubs(call.data[ATTR_ENTITY_ID]):
+        region_ids: list[int] = list(dict.fromkeys(call.data[ATTR_REGION_IDS]))
+        hubs = _resolve_hubs(call)
+        # Check every target against its current map before sending anything,
+        # so a bad ID never starts a partial run on another mower.
+        for hub in hubs:
+            known = hub.current_zone_ids
+            if not known:
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN, translation_key="no_zones"
+                )
+            unknown = sorted(set(region_ids) - known)
+            if unknown:
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN,
+                    translation_key="unknown_zones",
+                    translation_placeholders={
+                        "zone_ids": ", ".join(str(zone) for zone in unknown)
+                    },
+                )
+        for hub in hubs:
             # Confirmed write: waits for the device's dp_119 ack and raises
             # on rejection, so callers (and the map card's toast) see real
             # failures instead of optimistic success.
@@ -441,13 +539,13 @@ def _async_register_services(hass: HomeAssistant) -> None:
             disabled=call.data[ATTR_DISABLED],
             run_once=call.data[ATTR_RUN_ONCE],
         )
-        for hub in _resolve_hubs(call.data[ATTR_ENTITY_ID]):
+        for hub in _resolve_hubs(call):
             item_id = await hub.async_add_schedule(item)
             _LOGGER.info("Added schedule slot (item id %s)", item_id)
 
     async def handle_delete_schedule(call: ServiceCall) -> None:
         item_id: int = call.data[ATTR_ITEM_ID]
-        for hub in _resolve_hubs(call.data[ATTR_ENTITY_ID]):
+        for hub in _resolve_hubs(call):
             await hub.async_delete_schedule(item_id)
 
     async def handle_plan_due_zones(call: ServiceCall) -> dict[str, Any]:
@@ -456,7 +554,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
                 policies=call.data.get(ATTR_POLICIES),
                 unknown_choice=call.data[ATTR_UNKNOWN_CHOICE],
             )
-            for hub in _resolve_hubs(call.data[ATTR_ENTITY_ID])
+            for hub in _resolve_hubs(call)
         ]
         return {"plans": plans}
 
@@ -466,7 +564,7 @@ def _async_register_services(hass: HomeAssistant) -> None:
                 policies=call.data.get(ATTR_POLICIES),
                 unknown_choice=call.data[ATTR_UNKNOWN_CHOICE],
             )
-            for hub in _resolve_hubs(call.data[ATTR_ENTITY_ID])
+            for hub in _resolve_hubs(call)
         ]
         return {"plans": plans}
 

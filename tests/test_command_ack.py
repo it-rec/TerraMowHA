@@ -189,6 +189,7 @@ async def _call_select_region(
         "lawn_mower", DOMAIN, f"lawn_mower.terramow@{SERIAL}"
     )
     assert entity_id is not None
+    hub._map_data = {"regions": [{"sub_regions": [{"id": 7}]}]}
 
     async def _deliver_ack() -> None:
         for _ in range(50):
