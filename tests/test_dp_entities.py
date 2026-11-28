@@ -7,7 +7,7 @@ what the entities report to Home Assistant, including the write path
 
 import asyncio
 import json
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -893,13 +893,13 @@ def test_corner_cutting_switch_reads_map_info() -> None:
 
 def test_corner_cutting_switch_write_path() -> None:
     hub = _hub()
-    hub.mqtt_client = MagicMock()
-    hub.mqtt_client.is_connected.return_value = True
-    hub.mqtt_client.publish.return_value.rc = 0
+    hub.async_map_edit = AsyncMock()
     switch = ThoroughCornerCuttingSwitch(hub.basic_data, hub.hass)
 
     asyncio.run(switch.async_turn_on())
 
-    topic, payload = hub.mqtt_client.publish.call_args.args
-    assert topic == "data_point/155/app"
-    assert json.loads(payload) == {"enable_thorough_corner_cutting": True}
+    hub.async_map_edit.assert_awaited_once_with(
+        "MAP_EDIT_COMMAND_SET_THOROUGH_CORNER_CUTTING",
+        "set_thorough_corner_cutting_param",
+        {"enable_thorough_corner_cutting": True},
+    )

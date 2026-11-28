@@ -489,8 +489,9 @@
       "high_grass_edge_trim_mode": {
         "name": "Режим стрижки кромок в высокой траве",
         "state": {
+          "high_grass_edge_trim_disabled": "Disabled",
           "high_grass_edge_trim_standard": "Стандартный",
-          "high_grass_edge_trim_intensive": "Интенсивный"
+          "high_grass_edge_trim_enhanced": "Интенсивный"
         }
       }
     },
@@ -606,6 +607,15 @@
     }
   },
   "exceptions": {
+    "map_edit_no_map": {
+      "message": "The mower has not reported its current map yet, so the map setting cannot be changed. Try again once the map has loaded."
+    },
+    "map_edit_unconfirmed": {
+      "message": "The mower did not confirm the map setting change. Check the setting once the map has refreshed and try again."
+    },
+    "map_edit_map_not_sent": {
+      "message": "The mower could not send the updated map (code 203); the change may already have been applied. Check the setting once the map has refreshed before trying again."
+    },
     "command_not_delivered": {
       "message": "Не удалось отправить команду газонокосилке — она офлайн или недоступна по MQTT. Убедитесь, что газонокосилка включена и подключена к сети, и повторите попытку."
     },

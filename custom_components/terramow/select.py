@@ -12,7 +12,10 @@ from homeassistant.helpers.event import async_call_later
 
 from . import DOMAIN, TerraMowBasicData, TerraMowConfigEntry
 from .const import (
+    COMPATIBILITY_INFO_DP,
     DEFAULT_BLADE_DISK_SPEED_TYPE,
+    MAP_EDIT_CMD_SET_HIGH_GRASS_EDGE_TRIM_MODE,
+    MIN_MAP_LEVEL_HIGH_GRASS_EDGE_TRIM_VERSION,
     MIN_MOW_SPEED_VERSION_FOR_AUTO,
     MOW_SPEED_TYPE_ADAPTIVE_HIGH,
     MOW_SPEED_TYPE_AUTO,
@@ -778,23 +781,26 @@ class MainDirectionModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
 
 
 class HighGrassEdgeTrimModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity):
-    """High grass edge trim mode selector — published via dp_155.
+    """High-grass edge trim mode of the current map.
 
-    Note: high_grass_edge_trim_mode is reported under map_info["mow_param"],
-    but the documented data point for global operation parameter writes is
-    dp_155. Until a dedicated DP for the mow_param fields is documented,
-    we publish the selection to dp_155 with the matching sub-dict — adjust
-    if firmware exposes a different DP.
+    A map-level setting: the state is the current map's
+    ``mow_param.high_grass_edge_trim_mode.mode`` and a change is a dp_120
+    map edit (``MAP_EDIT_COMMAND_SET_HIGH_GRASS_EDGE_TRIM_MODE``) bound to
+    that map's id. dp_155 does not carry it. Unavailable when dp_127 reports
+    ``module.high_grass_edge_trim`` below 3 (unsupported or legacy dp_150
+    setting).
     """
 
     _push_map_info = True
+    _push_dp_ids = (COMPATIBILITY_INFO_DP,)
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "high_grass_edge_trim_mode"
 
     _attr_options = [
+        "HIGH_GRASS_EDGE_TRIM_DISABLED",
         "HIGH_GRASS_EDGE_TRIM_STANDARD",
-        "HIGH_GRASS_EDGE_TRIM_INTENSIVE",
+        "HIGH_GRASS_EDGE_TRIM_ENHANCED",
     ]
 
     _unique_id_suffix = "high_grass_edge_trim_mode"
@@ -810,6 +816,17 @@ class HighGrassEdgeTrimModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity)
         if not isinstance(mow_param, dict):
             return None
         return mow_param
+
+    @property
+    def available(self) -> bool:
+        hub = self.hub
+        return (
+            super().available
+            and hub is not None
+            and hub.map_level_setting_supported(
+                "high_grass_edge_trim", MIN_MAP_LEVEL_HIGH_GRASS_EDGE_TRIM_VERSION
+            )
+        )
 
     @property
     def options(self) -> list[str]:
@@ -841,12 +858,8 @@ class HighGrassEdgeTrimModeSelect(PushUpdateMixin, TerraMowEntity, SelectEntity)
             _LOGGER.error("Lawn mower not available")
             return
 
-        command = {
-            "high_grass_edge_trim_mode": {
-                "mode": option,
-            }
-        }
-
-        _LOGGER.info("Setting high grass edge trim mode to %s", option)
-        hub.publish_data_point(155, command)
-        self.async_write_ha_state()
+        await hub.async_map_edit(
+            MAP_EDIT_CMD_SET_HIGH_GRASS_EDGE_TRIM_MODE,
+            "set_high_grass_edge_trim_mode_param",
+            {"high_grass_edge_trim_mode": {"mode": option}},
+        )

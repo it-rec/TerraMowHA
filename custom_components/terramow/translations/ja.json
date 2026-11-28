@@ -489,8 +489,9 @@
       "high_grass_edge_trim_mode": {
         "name": "高い草のエッジ刈りモード",
         "state": {
+          "high_grass_edge_trim_disabled": "Disabled",
           "high_grass_edge_trim_standard": "標準",
-          "high_grass_edge_trim_intensive": "強力"
+          "high_grass_edge_trim_enhanced": "強力"
         }
       }
     },
@@ -606,6 +607,15 @@
     }
   },
   "exceptions": {
+    "map_edit_no_map": {
+      "message": "The mower has not reported its current map yet, so the map setting cannot be changed. Try again once the map has loaded."
+    },
+    "map_edit_unconfirmed": {
+      "message": "The mower did not confirm the map setting change. Check the setting once the map has refreshed and try again."
+    },
+    "map_edit_map_not_sent": {
+      "message": "The mower could not send the updated map (code 203); the change may already have been applied. Check the setting once the map has refreshed before trying again."
+    },
     "command_not_delivered": {
       "message": "コマンドを芝刈り機に送信できませんでした。オフラインか、MQTT 経由で到達できません。芝刈り機の電源が入りネットワークに接続されていることを確認して、もう一度お試しください。"
     },

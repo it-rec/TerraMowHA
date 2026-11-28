@@ -489,8 +489,9 @@
       "high_grass_edge_trim_mode": {
         "name": "긴 잔디 가장자리 다듬기 모드",
         "state": {
+          "high_grass_edge_trim_disabled": "Disabled",
           "high_grass_edge_trim_standard": "표준",
-          "high_grass_edge_trim_intensive": "강력"
+          "high_grass_edge_trim_enhanced": "강력"
         }
       }
     },
@@ -606,6 +607,15 @@
     }
   },
   "exceptions": {
+    "map_edit_no_map": {
+      "message": "The mower has not reported its current map yet, so the map setting cannot be changed. Try again once the map has loaded."
+    },
+    "map_edit_unconfirmed": {
+      "message": "The mower did not confirm the map setting change. Check the setting once the map has refreshed and try again."
+    },
+    "map_edit_map_not_sent": {
+      "message": "The mower could not send the updated map (code 203); the change may already have been applied. Check the setting once the map has refreshed before trying again."
+    },
     "command_not_delivered": {
       "message": "잔디깎이에 명령을 보낼 수 없습니다. 오프라인이거나 MQTT로 연결할 수 없습니다. 잔디깎이의 전원이 켜져 있고 네트워크에 연결되어 있는지 확인한 후 다시 시도하세요."
     },

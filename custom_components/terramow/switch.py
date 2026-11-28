@@ -9,7 +9,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import TerraMowBasicData, TerraMowConfigEntry
-from .const import SCHEDULE_DP, WEEKDAY_TO_DEVICE
+from .const import (
+    COMPATIBILITY_INFO_DP,
+    MAP_EDIT_CMD_SET_THOROUGH_CORNER_CUTTING,
+    MIN_MAP_LEVEL_CORNER_CUTTING_VERSION,
+    SCHEDULE_DP,
+    WEEKDAY_TO_DEVICE,
+)
 from .entity import TerraMowEntity
 from .entity_utils import PushUpdateMixin
 
@@ -42,16 +48,18 @@ async def async_setup_entry(
 
 
 class ThoroughCornerCuttingSwitch(PushUpdateMixin, TerraMowEntity, SwitchEntity):
-    """Switch for enabling thorough corner cutting in mow_param.
+    """Thorough corner cutting for the current map.
 
-    Note: enable_thorough_corner_cutting is reported under
-    map_info["mow_param"], but the documented data point for global
-    operation parameter writes is dp_155. Until a dedicated DP for the
-    mow_param flags is documented, we publish the toggle to dp_155 with
-    the matching sub-dict — adjust if firmware exposes a different DP.
+    A map-level setting: the state is the current map's
+    ``mow_param.enable_thorough_corner_cutting`` and a change is a dp_120
+    map edit (``MAP_EDIT_COMMAND_SET_THOROUGH_CORNER_CUTTING``) bound to that
+    map's id. dp_155 does not carry it. Unavailable when dp_127 reports
+    ``module.thorough_corner_cutting`` below 2 (unsupported or legacy dp_150
+    global setting).
     """
 
     _push_map_info = True
+    _push_dp_ids = (COMPATIBILITY_INFO_DP,)
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "thorough_corner_cutting"
@@ -69,6 +77,17 @@ class ThoroughCornerCuttingSwitch(PushUpdateMixin, TerraMowEntity, SwitchEntity)
         if not isinstance(mow_param, dict):
             return None
         return mow_param
+
+    @property
+    def available(self) -> bool:
+        hub = self.hub
+        return (
+            super().available
+            and hub is not None
+            and hub.map_level_setting_supported(
+                "thorough_corner_cutting", MIN_MAP_LEVEL_CORNER_CUTTING_VERSION
+            )
+        )
 
     @property
     def is_on(self) -> bool | None:
@@ -92,9 +111,11 @@ class ThoroughCornerCuttingSwitch(PushUpdateMixin, TerraMowEntity, SwitchEntity)
             _LOGGER.error("Lawn mower not available")
             return
 
-        command = {"enable_thorough_corner_cutting": enabled}
-        _LOGGER.info("Setting thorough corner cutting to %s", enabled)
-        hub.publish_data_point(155, command)
+        await hub.async_map_edit(
+            MAP_EDIT_CMD_SET_THOROUGH_CORNER_CUTTING,
+            "set_thorough_corner_cutting_param",
+            {"enable_thorough_corner_cutting": enabled},
+        )
 
 
 class ScheduleSwitch(PushUpdateMixin, TerraMowEntity, SwitchEntity):
