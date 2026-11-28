@@ -489,8 +489,9 @@
       "high_grass_edge_trim_mode": {
         "name": "Kantenmodus bei hohem Gras",
         "state": {
+          "high_grass_edge_trim_disabled": "Deaktiviert",
           "high_grass_edge_trim_standard": "Standard",
-          "high_grass_edge_trim_intensive": "Intensiv"
+          "high_grass_edge_trim_enhanced": "Intensiv"
         }
       }
     },
@@ -606,6 +607,15 @@
     }
   },
   "exceptions": {
+    "map_edit_no_map": {
+      "message": "Der Mäher hat seine aktuelle Karte noch nicht gemeldet, daher kann die Karteneinstellung nicht geändert werden. Bitte erneut versuchen, sobald die Karte geladen ist."
+    },
+    "map_edit_unconfirmed": {
+      "message": "Der Mäher hat die Änderung der Karteneinstellung nicht bestätigt. Bitte die Einstellung nach der Kartenaktualisierung prüfen und erneut versuchen."
+    },
+    "map_edit_map_not_sent": {
+      "message": "Der Mäher konnte die aktualisierte Karte nicht senden (Code 203); die Änderung wurde möglicherweise bereits übernommen. Bitte die Einstellung nach der Kartenaktualisierung prüfen, bevor es erneut versucht wird."
+    },
     "command_not_delivered": {
       "message": "Der Befehl konnte nicht an den Mäher gesendet werden – er ist offline oder über MQTT nicht erreichbar. Stelle sicher, dass der Mäher eingeschaltet und mit dem Netzwerk verbunden ist, und versuche es erneut."
     },

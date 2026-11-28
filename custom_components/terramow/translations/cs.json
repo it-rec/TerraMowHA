@@ -489,8 +489,9 @@
       "high_grass_edge_trim_mode": {
         "name": "Režim sečení okrajů vysoké trávy",
         "state": {
+          "high_grass_edge_trim_disabled": "Disabled",
           "high_grass_edge_trim_standard": "Standardní",
-          "high_grass_edge_trim_intensive": "Intenzivní"
+          "high_grass_edge_trim_enhanced": "Intenzivní"
         }
       }
     },
@@ -606,6 +607,15 @@
     }
   },
   "exceptions": {
+    "map_edit_no_map": {
+      "message": "The mower has not reported its current map yet, so the map setting cannot be changed. Try again once the map has loaded."
+    },
+    "map_edit_unconfirmed": {
+      "message": "The mower did not confirm the map setting change. Check the setting once the map has refreshed and try again."
+    },
+    "map_edit_map_not_sent": {
+      "message": "The mower could not send the updated map (code 203); the change may already have been applied. Check the setting once the map has refreshed before trying again."
+    },
     "command_not_delivered": {
       "message": "Příkaz se nepodařilo odeslat do sekačky — je offline nebo nedostupná přes MQTT. Zkontrolujte, že je sekačka zapnutá a připojená k síti, a zkuste to znovu."
     },

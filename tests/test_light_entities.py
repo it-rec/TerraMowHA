@@ -147,7 +147,7 @@ def test_edge_trim_button_starts_edge_trim() -> None:
 
 
 # ---------------------------------------------------------------------------
-# thorough corner cutting switch (dp_155 via mow_param)
+# thorough corner cutting switch (dp_120 map edit of mow_param)
 # ---------------------------------------------------------------------------
 
 
@@ -162,13 +162,13 @@ def test_corner_cutting_switch_read_path() -> None:
 
 def test_corner_cutting_switch_write_path() -> None:
     hub = _hub()
+    hub.async_map_edit = AsyncMock()
     switch = ThoroughCornerCuttingSwitch(hub.basic_data, hub.hass)
 
     asyncio.run(switch.async_turn_on())
-    topic, command = _published(hub)
-    assert topic == "data_point/155/app"
-    assert command == {"enable_thorough_corner_cutting": True}
-
     asyncio.run(switch.async_turn_off())
-    _, command = _published(hub)
-    assert command == {"enable_thorough_corner_cutting": False}
+    params = [call.args[2] for call in hub.async_map_edit.await_args_list]
+    assert params == [
+        {"enable_thorough_corner_cutting": True},
+        {"enable_thorough_corner_cutting": False},
+    ]

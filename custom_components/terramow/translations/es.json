@@ -489,8 +489,9 @@
       "high_grass_edge_trim_mode": {
         "name": "Modo de corte de bordes con hierba alta",
         "state": {
+          "high_grass_edge_trim_disabled": "Disabled",
           "high_grass_edge_trim_standard": "Estándar",
-          "high_grass_edge_trim_intensive": "Intensivo"
+          "high_grass_edge_trim_enhanced": "Intensivo"
         }
       }
     },
@@ -606,6 +607,15 @@
     }
   },
   "exceptions": {
+    "map_edit_no_map": {
+      "message": "The mower has not reported its current map yet, so the map setting cannot be changed. Try again once the map has loaded."
+    },
+    "map_edit_unconfirmed": {
+      "message": "The mower did not confirm the map setting change. Check the setting once the map has refreshed and try again."
+    },
+    "map_edit_map_not_sent": {
+      "message": "The mower could not send the updated map (code 203); the change may already have been applied. Check the setting once the map has refreshed before trying again."
+    },
     "command_not_delivered": {
       "message": "No se pudo enviar el comando al robot cortacésped — está desconectado o no es accesible por MQTT. Comprueba que esté encendido y conectado a la red e inténtalo de nuevo."
     },

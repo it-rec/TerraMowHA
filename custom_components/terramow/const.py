@@ -107,6 +107,29 @@ COMMAND_REPLY_DPS = (103, 105, 106)
 # vendor integration; a missing reply still keeps optimistic semantics.
 COMMAND_REPLY_TIMEOUT = 5.0
 
+# dp_120: map editing channel. Requests carry ``seq``, the target map's
+# ``map_id``, a ``command`` name and exactly that command's parameter object;
+# the /robot side replies ``{seq, code}`` (``code`` 0 = success, protobuf
+# JSON may omit it). Thorough corner cutting and the high-grass edge trim
+# mode are per-map ``mow_param`` settings written here, not via dp_155
+# (vendor docs: docs/en/developers/map_edit.md).
+MAP_EDIT_DP = 120
+MAP_EDIT_CMD_SET_THOROUGH_CORNER_CUTTING = (
+    "MAP_EDIT_COMMAND_SET_THOROUGH_CORNER_CUTTING"
+)
+MAP_EDIT_CMD_SET_HIGH_GRASS_EDGE_TRIM_MODE = (
+    "MAP_EDIT_COMMAND_SET_HIGH_GRASS_EDGE_TRIM_MODE"
+)
+# Reply code 203: map data could not be sent. The edit may already have been
+# applied, so it is neither success nor a clean rejection.
+MAP_EDIT_CODE_MAP_NOT_SENT = 203
+
+# dp_127 feature compatibility versions from which the setting is map-level
+# (dp_120). Lower reported versions use the legacy dp_150 interface (or lack
+# the feature), which this integration does not write.
+MIN_MAP_LEVEL_CORNER_CUTTING_VERSION = 2
+MIN_MAP_LEVEL_HIGH_GRASS_EDGE_TRIM_VERSION = 3
+
 # dp_122: full weekly schedule channel (GET/ADD/DELETE commands).
 SCHEDULE_DP = 122
 

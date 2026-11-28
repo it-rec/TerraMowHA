@@ -49,6 +49,8 @@ from .const import (
     COMPATIBILITY_INFO_DP,
     CONF_SERIAL,
     DOMAIN,
+    MAP_EDIT_CODE_MAP_NOT_SENT,
+    MAP_EDIT_DP,
     MAP_INFO_TOPIC,
     MAP_META_TOPIC,
     MIN_EDGE_TRIM_CONTROL_VERSION,
@@ -1322,6 +1324,7 @@ class TerraMowHub:
         self.register_callback(COMMAND_ACK_DP, self.on_command_ack)
         for dp_id in COMMAND_REPLY_DPS:
             self.register_callback(dp_id, partial(self.on_command_reply, dp_id=dp_id))
+        self.register_callback(MAP_EDIT_DP, self.on_map_edit_reply)
         self.register_callback(COMPATIBILITY_INFO_DP, self.on_compatibility_info)
 
     async def on_global_params(self, payload: str) -> None:
@@ -2631,6 +2634,80 @@ class TerraMowHub:
         if type(seq) is not int or type(ret) is not int:
             return
         self._resolve_ack(dp_id, seq, ret)
+
+    async def on_map_edit_reply(self, payload: str) -> None:
+        """Handle a dp_120 map edit reply (``{seq, code}``).
+
+        Unlike the control replies the result is in ``code``, not ``ret``; a
+        missing ``code`` is the protobuf JSON default and means success. A
+        payload without an integer ``seq`` never resolves a request.
+        """
+        try:
+            data = json.loads(payload)
+        except json.JSONDecodeError:
+            _LOGGER.debug("Non-JSON payload on dp_%s: %s", MAP_EDIT_DP, payload[:200])
+            return
+        if not isinstance(data, dict):
+            return
+        seq = data.get("seq")
+        code = data.get("code", 0)
+        if type(seq) is not int or type(code) is not int:
+            return
+        self._resolve_ack(MAP_EDIT_DP, seq, code)
+
+    async def async_map_edit(
+        self, command: str, param_field: str, param: dict[str, Any]
+    ) -> None:
+        """Send a dp_120 map edit for the current map and wait for its reply.
+
+        The request is bound to the current map's ``id`` at send time, so a
+        map switch cannot redirect it. Only ``code`` 0 counts as success; a
+        timeout or a disconnect does not confirm the edit, and code 203 (map
+        data not sent) may already have applied it. The reply carries no copy
+        of the setting -- entity state keeps reading the map's ``mow_param``,
+        which the device reports in its next map snapshot.
+        """
+        map_id = self._map_info.get("id")
+        if type(map_id) is not int:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="map_edit_no_map"
+            )
+        data = {
+            "seq": self.get_cmd_seq(),
+            "map_id": map_id,
+            "command": command,
+            param_field: param,
+        }
+        _LOGGER.info("Map edit %s on map %s: %s", command, map_id, param)
+        code = await self._async_wait_ack(MAP_EDIT_DP, data, COMMAND_REPLY_TIMEOUT)
+        if code == 0:
+            return
+        if code is None:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="map_edit_unconfirmed"
+            )
+        _LOGGER.warning(
+            "Device rejected map edit seq=%s with code=%s", data["seq"], code
+        )
+        if code == MAP_EDIT_CODE_MAP_NOT_SENT:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="map_edit_map_not_sent"
+            )
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="command_rejected",
+            translation_placeholders={"code": str(code)},
+        )
+
+    def map_level_setting_supported(self, module: str, minimum: int) -> bool:
+        """Whether dp_127 allows writing a map-level ``mow_param`` setting.
+
+        False only when ``module.<module>`` is reported below ``minimum``
+        (unsupported or legacy dp_150 interface). Firmware that does not
+        report the field is treated as current (map-level) firmware.
+        """
+        version = self._module_version(module)
+        return version is None or version >= minimum
 
     def _resolve_ack(self, source_dp: int, seq: int, code: int) -> None:
         """Record an ack/reply and complete the command waiting on its seq.

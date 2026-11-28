@@ -690,8 +690,11 @@ def test_mode_select_attrs_short_circuits() -> None:
 def test_high_grass_options_are_lowercase_tokens() -> None:
     hub = _shub()
     select = HighGrassEdgeTrimModeSelect(hub.basic_data, hub.hass)
-    assert len(select.options) == 2
-    assert "high_grass_edge_trim_standard" in select.options
+    assert select.options == [
+        "high_grass_edge_trim_disabled",
+        "high_grass_edge_trim_standard",
+        "high_grass_edge_trim_enhanced",
+    ]
 
 
 def test_high_grass_current_option_none_paths() -> None:

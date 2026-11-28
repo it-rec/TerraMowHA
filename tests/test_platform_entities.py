@@ -7,7 +7,7 @@ navigation/upgrade binary sensors and the firmware update entity.
 
 import asyncio
 import json
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -137,25 +137,25 @@ def test_high_grass_select_reads_map_info() -> None:
     hub._update_map_info(
         {
             "mow_param": {
-                "high_grass_edge_trim_mode": {"mode": "HIGH_GRASS_EDGE_TRIM_INTENSIVE"}
+                "high_grass_edge_trim_mode": {"mode": "HIGH_GRASS_EDGE_TRIM_ENHANCED"}
             },
         }
     )
-    assert select.current_option == "high_grass_edge_trim_intensive"
+    assert select.current_option == "high_grass_edge_trim_enhanced"
 
 
 def test_high_grass_select_write_path() -> None:
     hub = _hub()
+    hub.async_map_edit = AsyncMock()
     select = HighGrassEdgeTrimModeSelect(hub.basic_data, hub.hass)
-    select.async_write_ha_state = MagicMock()
 
     asyncio.run(select.async_select_option("high_grass_edge_trim_standard"))
 
-    topic, command = _published(hub)
-    assert topic == "data_point/155/app"
-    assert command == {
-        "high_grass_edge_trim_mode": {"mode": "HIGH_GRASS_EDGE_TRIM_STANDARD"}
-    }
+    hub.async_map_edit.assert_awaited_once_with(
+        "MAP_EDIT_COMMAND_SET_HIGH_GRASS_EDGE_TRIM_MODE",
+        "set_high_grass_edge_trim_mode_param",
+        {"high_grass_edge_trim_mode": {"mode": "HIGH_GRASS_EDGE_TRIM_STANDARD"}},
+    )
 
 
 # ---------------------------------------------------------------------------
